@@ -68,32 +68,40 @@ class AppServer {
         if (this.running)
             return;
         this.running = true;        
-           
+        this.app = new Koa();        
+        this.app.use(BodyParser());
+        let middlewares = [];   
         if (this.options.plugin){         
             for (let n in this.options.plugin){                
                 let opt = this.options.plugin[n];
                 let p = require(n);                
+                if (typeof(p._middleware) == 'function')
+                    middlewares.push(p._middleware);
                 if (typeof(p._init) == 'function')
-                    p._init(opt);
+                    p._init(opt, function(middleware){
+                        if (middleware && middlewares.indexOf(middleware) < 0)
+                            middlewares.push(middleware);
+                    });
             }
         }
         if (this.options.port || this.options.securePort){
             this.ssl = {};
-            this.app = new Koa();        
-            this.app.use(BodyParser());
-
-            for (var v in this.options.middleware){
+            for (let v in this.options.middleware){
                 let opt = this.options.middleware[v];
                 let p = require(v);
                 
                 if (typeof(p._middleware) == 'function'){
                     if (typeof(p._init) == 'function')
                         p._init(opt);
-                    this.app.use(p._middleware);
+                    if (middlewares.indexOf(p._middleware) < 0)
+                        this.app.use(p._middleware);
                 }
                 else if (typeof(p) == 'function'){
                     this.app.use(p(opt));
                 }                                    
+            }
+            for (let i = 0; i < middlewares.length; i ++){
+                this.app.use(middlewares[i]);
             }
             this.app.use(ctx => {
                 ctx.status = 404;
