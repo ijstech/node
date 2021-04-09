@@ -109,12 +109,15 @@ class AppServer {
         // })   
         this.app.use(BodyParser());
         let middlewares = [];   
+        let handlers = [];
         if (this.options.plugin){         
             for (let n in this.options.plugin){                
                 let opt = this.options.plugin[n];
                 let p = require(n);                
                 if (typeof(p._middleware) == 'function')
                     middlewares.push(p._middleware);
+                else if (typeof(p._handler) == 'function')
+                    handlers.push(p._handler);
                 if (typeof(p._init) == 'function'){
                     p._init(opt, function(middleware){
                         if (middleware && middlewares.indexOf(middleware) < 0)
@@ -160,7 +163,13 @@ class AppServer {
             for (let i = 0; i < middlewares.length; i ++){
                 this.app.use(middlewares[i]);
             };
-            this.app.use(ctx => {
+            this.app.use(async function(ctx){                
+                for (let i = 0; i < handlers.length; i ++){
+                    let handler = handlers[i]
+                    let result = await handler(ctx);
+                    if (result)
+                        return;
+                };                
                 ctx.status = 404;
                 ctx.body = page404;
             });            
