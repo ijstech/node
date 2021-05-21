@@ -87,27 +87,10 @@ class AppServer {
             }
         })
     }
-    start(){
+    start(){        
         if (this.running)
             return;
-        this.running = true;     
-        // this.app.use(async function(ctx, next){    
-        //     return new Promise(function(resolve, reject){
-        //         if (ctx.request.type == 'multipart/form-data'){
-        //             var data = "";
-        //             ctx.req.on("data", chunk => {
-        //                 data += chunk
-        //             });
-        //             ctx.req.on("end", async () => {
-        //                 ctx.raw_data = data;                
-        //                 await next();
-        //             });            
-        //         }
-        //         else            
-        //             await next();
-        //     })                                
-        // })   
-        this.app.use(BodyParser());
+        this.running = true;                     
         let middlewares = [];   
         let handlers = [];
         if (this.options.plugin){         
@@ -117,7 +100,7 @@ class AppServer {
                 if (typeof(p._middleware) == 'function')
                     middlewares.push(p._middleware);
                 else if (typeof(p._handler) == 'function')
-                    handlers.push(p._handler);
+                    handlers.push(p._handler);                
                 if (typeof(p._init) == 'function'){
                     p._init(opt, function(middleware){
                         if (middleware && middlewares.indexOf(middleware) < 0)
@@ -127,6 +110,7 @@ class AppServer {
             };
         };   
         if (this.options.port || this.options.securePort){
+            this.app.use(BodyParser());
             this.ssl = {};
             let self = this;
             if (this.options.port){                        
