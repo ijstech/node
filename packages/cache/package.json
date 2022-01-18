@@ -1,0 +1,10 @@
+{
+    "name": "@ijstech/cache",
+    "version": "0.1.0",
+    "main": "./lib/index.js",
+    "types": "./types/index.d.ts",    
+    "scripts": {
+        "build": "npm run clean && tsc",
+        "clean": "rm -f tsconfig.tsbuildinfo && rm -rf lib && rm -rf types"
+    }
+}

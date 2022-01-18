@@ -1,5 +1,6 @@
 package-lock.json
+tsconfig.tsbuildinfo
 node_modules
 config.js
 certs
-plugins
+temp

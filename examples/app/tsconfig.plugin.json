@@ -1,0 +1,18 @@
+{
+    "extends": "../../tsconfig.build.json", 
+    "include": [
+      "src/plugins/hello/index.ts"
+    ],    
+    "compilerOptions": {      
+      "module": "amd",
+      "outFile": "./lib/plugins/hello/index.js",
+      "rootDir": "./src/plugins/hello" ,
+      "composite": false,
+      "declaration": false
+    },    
+    "references": [
+        {
+          "path": "../../packages/plugin"
+        }
+    ]
+  }

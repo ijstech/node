@@ -1,4 +1,4 @@
-module.exports = `
+export const page404 = `
 <!DOCTYPE html>
 <html>
 
@@ -72,7 +72,10 @@ module.exports = `
     <body>
         <h1>4<span><i class="fas fa-ghost"></i></span>4</h1>
         <h2>Error: 404 page not found</h2>
-        <p>Sorry, the page you're looking for cannot be accessed</p>
+        <p>Sorry, the page you're looking for cannot be found!</p>
     </body>
 </html>
-`
+`;
+export default {
+    page404
+}

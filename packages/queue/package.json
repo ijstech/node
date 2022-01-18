@@ -1,0 +1,13 @@
+{
+    "name": "@ijstech/queue",
+    "description": "Job Queue plugin",
+    "version": "0.1.0",
+    "main": "./lib/index.js",
+    "types": "./types/index.d.ts",    
+    "dependencies": {
+        "bee-queue": "1.4.0"
+    },
+    "scripts": {
+        "build": "rm -rf lib && rm -rf types && rm -f tsconfig.tsbuildinfo && tsc"
+    }
+}

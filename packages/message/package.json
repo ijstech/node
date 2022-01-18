@@ -1,0 +1,13 @@
+{
+    "name": "@ijstech/message",
+    "description": "Message channel plugin",
+    "version": "0.1.0",
+    "main": "./lib/index.js",
+    "types": "./types/index.d.ts",    
+    "dependencies": {
+        "redis": "3.1.2"
+    },
+    "scripts": {
+        "build": "rm -rf lib && rm -rf types && rm -f tsconfig.tsbuildinfo && tsc"
+    }
+}

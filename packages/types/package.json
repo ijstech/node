@@ -1,0 +1,4 @@
+{
+    "name": "@ijstech/types",    
+    "types": "./src/index.d.ts"
+}

@@ -1,0 +1,10 @@
+{
+    "name": "http-server-example",
+    "dependencies": {
+        "@ijstech/node": "file:../../"
+    },
+    "scripts": {
+        "build": "rm -rf ./lib && tsc && tsc --p ./src/plugins/hello/tsconfig.json && tsc --p ./src/plugins/worker/tsconfig.json && tsc --p ./src/plugins/job/tsconfig.json",
+        "start": "node lib"
+    }
+}

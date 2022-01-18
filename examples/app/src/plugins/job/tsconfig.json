@@ -1,0 +1,18 @@
+{
+    "extends": "../../../../../tsconfig.build.json", 
+    "include": [
+      "*.ts"
+    ],    
+    "compilerOptions": {      
+      "module": "amd",
+      "outFile": "../../../lib/plugins/job/index.js",
+      "rootDir": "." ,
+      "composite": false,
+      "declaration": false
+    },    
+    "references": [
+        {
+          "path": "../../../../.."
+        }
+    ]
+  }

@@ -1,0 +1,23 @@
+{ 
+    "compilerOptions": {
+        "skipLibCheck": false,
+        "target": "es2017",
+        "module": "commonjs",     
+        "moduleResolution": "node",       
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "declaration": true,
+        "removeComments": true,   
+        "forceConsistentCasingInFileNames": true,             
+        "rootDir": ".",
+        "baseUrl": ".",
+        "outDir": "lib",
+        "composite": true,
+        "paths": {
+            "@ijstech/*": ["./packages/*/src"],
+            "@ijstech/node": ["./src"]
+        }
+    },
+    "exclude": ["node_modules", "dist", "lib", "__tests__", "**/*.test*", "**/*.spec*"]
+  }
