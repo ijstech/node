@@ -5,6 +5,7 @@
         "module": "commonjs",     
         "moduleResolution": "node",       
         "allowSyntheticDefaultImports": true,
+        "experimentalDecorators": true,
         "esModuleInterop": true,
         "resolveJsonModule": true,
         "declaration": true,

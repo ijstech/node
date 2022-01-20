@@ -1,0 +1,6 @@
+{
+    "name": "@ijstech/pdm",
+    "scripts": {
+        "test": "ts-node src/pdm.ts"
+    }
+}
