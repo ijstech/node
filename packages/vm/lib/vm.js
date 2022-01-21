@@ -100,24 +100,22 @@ class VM {
             global._$$modules = {};
             global.define = function (id, deps, callback) {
                 let result = [];
+                let exports = {};
                 for (let i = 0; i < deps.length; i++) {
                     let dep = deps[i];
                     if (dep == 'require')
                         result.push(null);
                     else if (dep == 'exports') {
-                        if (id) {
-                            global._$$modules[id] = {};
-                            result.push(global._$$modules[id]);
-                        }
-                        else
-                            result.push({});
+                        result.push(exports);
                     }
                     else
                         result.push(global._$$modules[dep]);
                 }
-                let module = callback.apply(this, result);
-                if (module)
-                    global._$$modules[id] = module;
+                callback.apply(this, result);
+                if (global['$$currPackName'] && id == 'index')
+                    global._$$modules[global['$$currPackName']] = exports;
+                else
+                    global._$$modules[id] = exports;
             };
             function referenceFunction(obj) {
                 return function (...args) {
@@ -189,6 +187,19 @@ class VM {
               return $0.applySync(undefined, args, { arguments: { copy: true }, result: { copy: true, promise: true }});
             }
           `, [func], { arguments: { reference: true }, result: { copy: true, promise: true } });
+    }
+    ;
+    injectGlobalPackage(packName, script) {
+        let s = this.isolate.compileScriptSync(`new function () {    
+            try{
+                global.$$currPackName = "${packName}";
+                ${script}
+            }
+            finally{
+                delete global.$$currPackName;
+            }
+        }`);
+        s.runSync(this.context);
     }
     ;
     injectGlobalScript(script) {

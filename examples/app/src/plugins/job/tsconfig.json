@@ -4,15 +4,15 @@
       "*.ts"
     ],    
     "compilerOptions": {      
+      "baseUrl": ".",
       "module": "amd",
       "outFile": "../../../lib/plugins/job/index.js",
       "rootDir": "." ,
       "composite": false,
-      "declaration": false
-    },    
-    "references": [
-        {
-          "path": "../../../../.."
-        }
-    ]
+      "declaration": false,
+      "paths": {
+        "@pack/demo": ["../../../demoPack"],
+        "@ijstech/node": ["../../../../.."]
+      }
+    }    
   }

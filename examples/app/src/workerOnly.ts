@@ -27,7 +27,7 @@ async function main(){
         schedule: {
             jobs: [
                 {   
-                    isolated: true,                    
+                    isolated: true,
                     cron: '*/4 * * * * *', //every 4 seconds
                     scriptPath: './plugins/job/index.js',                    
                     params: {
@@ -40,6 +40,9 @@ async function main(){
                             },
                             publish: ['msg_channel1']
                         }
+                    },
+                    dependencies: {
+                        "@pack/demo": "file:../demoPack"
                     }
                 }
             ]

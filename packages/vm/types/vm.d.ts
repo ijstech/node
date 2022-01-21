@@ -40,6 +40,7 @@ export declare class VM {
     injectGlobalObject(name: string, obj: any, script?: string): void;
     injectGlobalValue(name: string, value: any, script?: string): void;
     injectGlobalFunction(funcName: string, func: any): void;
+    injectGlobalPackage(packName: string, script: string): void;
     injectGlobalScript(script: string): void;
     get script(): string;
     set script(value: string);

@@ -43,7 +43,7 @@
     "scripts": {
         "build": "npm run build:modules && npm run build:node && npm run build:examples",
         "build:examples": "npm run build:example:app",
-        "build:example:app": "cd examples/app && npm run build && cd ../../",
+        "build:example:app": "cd examples/app && npm run build && cd ../../",        
         "build:modules": "npm run build:module:plugin && npm run build:module:cache && npm run build:module:db && npm run build:module:message && npm run build:module:queue && npm run build:module:http && npm run build:module:schedule && npm run build:module:vm && npm run build:module:app",
         "build:module:app": "cd packages/app && npm run build && cd ../../",
         "build:module:cache": "cd packages/cache && npm run build && cd ../../",
@@ -56,6 +56,6 @@
         "build:module:vm": "cd packages/vm && npm run build && cd ../../",
         "build:node": "rm -rf ./lib && rm -rf ./types && rm -f tsconfig.tsbuildinfo && tsc",
         "example:http": "node examples/app/lib/http",
-        "example:workerOnly": "node examples/app/lib/workerOnly"
+        "example:worker": "node examples/app/lib/workerOnly"
     }
 }

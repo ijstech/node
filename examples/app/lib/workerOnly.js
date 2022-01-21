@@ -44,6 +44,9 @@ async function main() {
                             },
                             publish: ['msg_channel1']
                         }
+                    },
+                    dependencies: {
+                        "@pack/demo": "file:../demoPack"
                     }
                 }
             ]

@@ -1,10 +1,9 @@
 import Koa from 'koa';
 import { VM } from '@ijstech/vm';
 import * as Types from '@ijstech/types';
-export declare function resolveFilePath(rootPaths: string[], filePath: string): string;
-export declare function getScript(filePath: string): Promise<string>;
+export declare function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string;
 export declare type IPluginScript = any;
-export declare function loadScript(script: string): IPluginScript;
+export declare function loadModule(script: string, name?: string): IPluginScript;
 export declare type IPackageVersion = string;
 export interface IDependencies {
     [packageName: string]: IPackageVersion;
@@ -70,20 +69,23 @@ export declare abstract class IRouterPlugin extends IPlugin {
     route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;
 }
 export declare abstract class IWorkerPlugin extends IPlugin {
-    init?: (params: any) => Promise<void>;
+    init?: (params?: any) => Promise<boolean>;
     message?: (session: ISession, channel: string, msg: string) => void;
     process(session: ISession, data: any): Promise<any>;
 }
-declare class RouterPluginVM implements IRouterPlugin {
-    private options;
+declare class PluginVM {
+    protected options: IPluginOptions;
     vm: VM;
     constructor(options: IPluginOptions);
+    init(): Promise<boolean>;
+    loadDependencies(): Promise<void>;
+}
+declare class RouterPluginVM extends PluginVM implements IRouterPlugin {
+    init(): Promise<boolean>;
     route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;
 }
-declare class WorkerPluginVM implements IWorkerPlugin {
-    private options;
-    vm: VM;
-    constructor(options: IPluginOptions);
+declare class WorkerPluginVM extends PluginVM implements IWorkerPlugin {
+    init(): Promise<boolean>;
     message(session: ISession, channel: string, msg: string): Promise<void>;
     process(session: ISession, data?: any): Promise<boolean>;
 }
@@ -112,9 +114,4 @@ export declare class Worker extends Plugin {
     message(channel: string, msg: string): Promise<void>;
     process(data?: any): Promise<any>;
 }
-declare const _default: {
-    getScript: typeof getScript;
-    loadScript: typeof loadScript;
-    resolveFilePath: typeof resolveFilePath;
-};
-export default _default;
+export {};

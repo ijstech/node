@@ -3,61 +3,87 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Worker = exports.Router = exports.loadScript = exports.getScript = exports.resolveFilePath = void 0;
+exports.Worker = exports.Router = exports.loadModule = exports.resolveFilePath = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const vm_1 = require("@ijstech/vm");
 const RootPath = path_1.default.dirname(require.main.filename);
-let plugins = {};
+let Modules = {};
+let LoadingPackageName = '';
 global.define = function (id, deps, callback) {
+    console.dir('define: ' + id);
     let result = [];
+    let exports = {};
     for (let i = 0; i < deps.length; i++) {
         let dep = deps[i];
         if (dep == 'require')
             result.push(null);
         else if (dep == 'exports') {
-            if (id) {
-                plugins[id] = {};
-                result.push(plugins[id]);
-            }
-            else
-                result.push({});
+            result.push(exports);
         }
-        else
-            result.push(plugins[dep]);
+        else {
+            result.push(Modules[dep]);
+        }
     }
-    let module = callback.apply(this, result);
-    if (module)
-        plugins[id] = module;
+    callback.apply(this, result);
+    if (id == 'index')
+        Modules[LoadingPackageName || 'index'] = exports;
+    else
+        Modules[id] = exports;
 };
-function resolveFilePath(rootPaths, filePath) {
+function resolveFilePath(rootPaths, filePath, allowsOutsideRootPath) {
     let rootPath = path_1.default.resolve(...rootPaths);
     let result = path_1.default.join(rootPath, filePath);
+    if (allowsOutsideRootPath)
+        return result;
     return result.startsWith(rootPath) ? result : undefined;
 }
 exports.resolveFilePath = resolveFilePath;
 ;
 function getScript(filePath) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         if (filePath.startsWith('./'))
             filePath = resolveFilePath([RootPath], filePath);
         fs_1.default.readFile(filePath, 'utf8', (err, result) => {
             if (err)
-                reject(err);
+                resolve('');
             else
                 resolve(result);
         });
     });
 }
-exports.getScript = getScript;
 ;
-function loadScript(script) {
-    plugins = {};
-    var m = new module.constructor();
-    m._compile(script, 'index');
-    return plugins['index'];
+async function getPackage(filePath) {
+    let text = await getScript(filePath + '/package.json');
+    if (text)
+        return JSON.parse(text);
 }
-exports.loadScript = loadScript;
+;
+async function getPackageScript(filePath) {
+    let result;
+    if (filePath.startsWith('file:')) {
+        let packPath = resolveFilePath([RootPath], filePath.substring(5), true);
+        let pack = await getPackage(packPath);
+        if (pack) {
+            let libPath = resolveFilePath([packPath], pack.main);
+            if (libPath)
+                return await getScript(libPath);
+        }
+        ;
+    }
+    ;
+}
+;
+function loadModule(script, name) {
+    console.dir('loadModule: ' + name);
+    LoadingPackageName = name;
+    var m = new module.constructor();
+    m.filename = name;
+    m._compile(script, name || 'index');
+    LoadingPackageName = '';
+    return Modules[name || 'index'];
+}
+exports.loadModule = loadModule;
 ;
 ;
 ;
@@ -118,7 +144,7 @@ function RouterResponse(ctx) {
 ;
 ;
 ;
-class RouterPluginVM {
+class PluginVM {
     constructor(options) {
         this.options = options;
         this.vm = new vm_1.VM({
@@ -126,7 +152,32 @@ class RouterPluginVM {
             memoryLimit: options.memoryLimit,
             timeLimit: options.timeLimit
         });
-        this.vm.injectGlobalScript(options.script);
+    }
+    ;
+    async init() {
+        await this.loadDependencies();
+        this.vm.injectGlobalScript(this.options.script);
+        return;
+    }
+    ;
+    async loadDependencies() {
+        if (this.options.dependencies) {
+            for (let packname in this.options.dependencies) {
+                let pack = this.options.dependencies[packname];
+                let script = await getPackageScript(pack);
+                if (script)
+                    this.vm.injectGlobalPackage(packname, script);
+            }
+            ;
+        }
+        ;
+    }
+    ;
+}
+;
+class RouterPluginVM extends PluginVM {
+    async init() {
+        await super.init();
         this.vm.injectGlobalScript(`
             let module = global._$$modules['index'];            
             global.$$router = new module.default();
@@ -140,6 +191,7 @@ class RouterPluginVM {
                 return false;
             };
         `;
+        return;
     }
     ;
     async route(session, request, response) {
@@ -156,15 +208,9 @@ class RouterPluginVM {
     ;
 }
 ;
-class WorkerPluginVM {
-    constructor(options) {
-        this.options = options;
-        this.vm = new vm_1.VM({
-            logging: true,
-            memoryLimit: options.memoryLimit,
-            timeLimit: options.timeLimit
-        });
-        this.vm.injectGlobalScript(options.script);
+class WorkerPluginVM extends PluginVM {
+    async init() {
+        await super.init();
         this.vm.injectGlobalScript(`
             let module = global._$$modules['index'];            
             global.$$worker = new module.default();
@@ -188,6 +234,7 @@ class WorkerPluginVM {
                 return false;
             };
         `;
+        return true;
     }
     ;
     async message(session, channel, msg) {
@@ -230,10 +277,20 @@ class Plugin {
     }
     ;
     async createModule() {
+        if (this.options.dependencies) {
+            for (let packname in this.options.dependencies) {
+                let pack = this.options.dependencies[packname];
+                let script = await getPackageScript(pack);
+                if (script)
+                    loadModule(script, packname);
+            }
+            ;
+        }
+        ;
         if (!this.options.script)
             this.options.script = await getScript(this.options.scriptPath);
         let script = this.options.script;
-        let module = loadScript(script);
+        let module = loadModule(script);
         if (module) {
             if (module.default)
                 module = module.default;
@@ -275,9 +332,12 @@ class Router extends Plugin {
     }
     ;
     async createVM() {
+        super.createVM();
         if (!this.options.script)
             this.options.script = await getScript(this.options.scriptPath);
-        return new RouterPluginVM(this.options);
+        let result = new RouterPluginVM(this.options);
+        await result.init();
+        return result;
     }
     ;
     async route(ctx) {
@@ -300,9 +360,12 @@ class Worker extends Plugin {
     }
     ;
     async createVM() {
+        super.createVM();
         if (!this.options.script)
             this.options.script = await getScript(this.options.scriptPath);
-        return new WorkerPluginVM(this.options);
+        let result = new WorkerPluginVM(this.options);
+        await result.init();
+        return result;
     }
     ;
     async message(channel, msg) {
@@ -334,8 +397,3 @@ class Worker extends Plugin {
 }
 exports.Worker = Worker;
 ;
-exports.default = {
-    getScript,
-    loadScript,
-    resolveFilePath
-};

@@ -1,0 +1,9 @@
+{
+    "name": "@pack/demo",
+    "version": "0.1.0",
+    "main": "./lib/index.js",
+    "types": "./types",
+    "scripts": {
+        "build": "rm -rf lib && rm -rf types && tsc --p tsconfig.types.json && tsc --p tsconfig.lib.json "
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "name": "job",
+    "dependencies": {
+        "@pack/demo": "file:../../../demoPack"
+    },
+    "scripts": {
+        "build": "tsc"
+    }
+}
