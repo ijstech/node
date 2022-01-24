@@ -1,21 +1,8 @@
 import {IVM} from './types';
 
 export default function loadModule(vm: IVM){
-    return vm.injectGlobalObject('console', vmConsole(vm));//
-
-    vm.injectGlobalObject('_$$console', vmConsole(vm), `    
-    let console = referenceToObject(global._$$console);
-    delete global._$$console;
-    global.console = {
-        log: function(...args){   
-            console.log(JSON.stringify(args));
-        },
-        dir: function(...args){
-            console.dir(JSON.stringify(args));
-        }
-    }; 
-    `)
-}
+    return vm.injectGlobalObject('console', vmConsole(vm));
+};
 function vmConsole(vm: IVM){    
     return {
         log: function(args: any) {            

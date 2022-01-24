@@ -84,6 +84,10 @@ function RecordSet(tableName: string, recordType: typeof TRecord, recordSetType?
     };
 };
 interface IFields{[name: string]: IField}
+interface InsertOptions{
+    updateOnDuplicate?: boolean;
+    ignoreOnDuplicate?: boolean;  
+}
 class TRecordSet<T>{        
     private _recordType: any;
     private _fields: IFields;
@@ -101,9 +105,7 @@ class TRecordSet<T>{
             resolve(this._records.length)
         });
     };
-    append<TB extends keyof T>(data?: {
-        [C in TB]: T[C]
-    }): T{
+    applyInsert<TB extends keyof T>(data: {[C in TB]?: T[C]} | {[C in TB]?: T[C]}[], options?: InsertOptions): void{
         let result = new this._recordType(this)
         this._records.push(result);
         if (data){
@@ -111,6 +113,26 @@ class TRecordSet<T>{
                 result[p] = data[p];
         };
         return result;
+    };
+    applyDelete(): TQuery<T>{
+        return new TQuery<T>(this);
+    };
+    applyUpdate<TB extends keyof T>(data?: {
+        [C in TB]: T[C]
+    }): TQuery<T>{
+        return new TQuery<T>(this);
+    };
+    add<TB extends keyof T>(data?: {[C in TB]?: T[C]}): T{
+        let result = new this._recordType(this)
+        this._records.push(result);
+        if (data){
+            for (let p in data)
+                result[p] = data[p];
+        };
+        return result;
+    };
+    delete(record: T){
+
     };
     async fetch(): Promise<T[]>{
         return [];
@@ -164,7 +186,7 @@ class UserRecordSet<T extends User> extends TRecordSet<T>{
         console.dir('queryByName');
         this.query.where('name', '=', name);     
         let records = await this.fetch();           
-        let user = records[0] || this.append();
+        let user = records[0] || this.add();
         user.name = name;        
         return user;   
     };
@@ -188,14 +210,32 @@ async function test(){
         qry.where('age', 'between', 1, 2).or('age','>', 20)
     });
     
-    let user = context.user.append({
-        age: 1,
+    let user = context.user.add({
+        age: 10,        
         name: 'ycwong'
     });
     user.name = 'yc';
     console.dir('user.age: ' + user.age);
     console.dir('user.name: ' + user.name);
 
+    //insert record
+    context.user.applyInsert([{
+        age: 1,
+        name: 'ycwong'
+    }, {
+        age: 12,
+        name: 'abc'
+    }], {updateOnDuplicate: true});
+
+    //udpate record
+    context.user.applyUpdate({
+        name: 'yc123'
+    }).where('name', '=', 'yc');
+
+    //delete records
+    context.user.applyDelete().where('name','=','yc');
+
+    //customized query function
     let yc = await context.user.queryByName('ycwong');
     console.dir('yc.name: ' + yc.name);
     console.dir('records count: ' + await context.user.count);
