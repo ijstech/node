@@ -7,8 +7,7 @@ import * as Types from '@ijstech/types';
 const RootPath = Path.dirname(require.main.filename);
 let Modules = {};
 let LoadingPackageName: string = '';
-global.define = function(id: string, deps: string[], callback: Function){      
-    console.dir('define: ' + id);
+global.define = function(id: string, deps: string[], callback: Function){
     let result = [];
     let exports = {};
     for (let i = 0; i < deps.length; i ++){
@@ -65,8 +64,7 @@ async function getPackageScript(filePath: string): Promise<string>{
     };
 };
 export type IPluginScript = any;
-export function loadModule(script: string, name?: string): IPluginScript{    
-    console.dir('loadModule: ' + name);
+export function loadModule(script: string, name?: string): IPluginScript{
     LoadingPackageName = name;
     var m = new (<any>module).constructor();
     m.filename = name;
@@ -289,6 +287,8 @@ class Plugin{
     protected options: IPluginOptions;
     protected plugin: any;
     protected _session: ISession;
+    public vm: VM;
+    public data: any;
 
     constructor(options: IPluginOptions){
         this.options = options;        
@@ -297,9 +297,11 @@ class Plugin{
         if (!this.plugin){
             if (this.options.isolated === false)
                 this.plugin = await this.createModule();            
-            else
+            else{
                 this.plugin = await this.createVM();            
-        }
+                this.vm = this.plugin.vm;
+            };
+        };
     };
     createVM(): any{
         return;
@@ -326,14 +328,17 @@ class Plugin{
     get session(): ISession{        
         if (this._session)
             return this._session
-        let result = Session(this.options);        
+        let result = Session(this.options);  
+        let script = '';      
         this._session = result;
         if (this.options.plugins){
             for (let v in this.options.plugins){                
                 try{
                     let m = require('@ijstech/' + v);
                     let plugin = m.loadPlugin(this, this.options.plugins[v], this.plugin.vm);
-                    if (plugin)
+                    if (typeof(plugin) == 'string')
+                        script += plugin
+                    else if (plugin)
                         result.plugins[v] = plugin;
                 }
                 catch(err){
@@ -342,7 +347,7 @@ class Plugin{
             };
         };
         if (this.plugin.vm)
-            this.plugin.vm.injectGlobalValue('$$session', result);
+            this.plugin.vm.injectGlobalValue('$$session', result, script);
         return result;
     };
 };

@@ -93,6 +93,8 @@ declare class Plugin {
     protected options: IPluginOptions;
     protected plugin: any;
     protected _session: ISession;
+    vm: VM;
+    data: any;
     constructor(options: IPluginOptions);
     createPlugin(): Promise<void>;
     createVM(): any;

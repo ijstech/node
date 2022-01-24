@@ -37,7 +37,8 @@ async function main() {
                                     redis: config_js_1.default.redis
                                 },
                                 publish: ['msg_channel1']
-                            }
+                            },
+                            wallet: config_js_1.default.wallet
                         }
                     },
                     {
@@ -66,7 +67,8 @@ async function main() {
                                     redis: config_js_1.default.redis
                                 },
                                 publish: ['msg_channel1']
-                            }
+                            },
+                            wallet: config_js_1.default.wallet
                         }
                     }
                 ]
@@ -88,6 +90,9 @@ async function main() {
                             },
                             subscribe: ['msg_channel1']
                         }
+                    },
+                    dependencies: {
+                        "@pack/demo": "file:../demoPack"
                     }
                 }
             ]

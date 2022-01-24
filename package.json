@@ -24,6 +24,8 @@
         "@ijstech/queue": "file:./packages/queue",
         "@ijstech/schedule": "file:./packages/schedule",
         "@ijstech/vm": "file:./packages/vm",
+        "@ijstech/wallet": "file:./packages/wallet",
+        "@ijstech/eth-wallet": "git+https://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:x-oauth-basic@github.com/ijstech/eth-wallet.git",
         "bee-queue": "1.4.0",
         "cron-parser": "4.2.0",
         "isolated-vm": "4.3.6",
@@ -54,6 +56,7 @@
         "build:module:queue": "cd packages/queue && npm run build && cd ../../",
         "build:module:schedule": "cd packages/schedule && npm run build && cd ../../",
         "build:module:vm": "cd packages/vm && npm run build && cd ../../",
+        "build:module:wallet": "cd packages/wallet && npm run build && cd ../../",
         "build:node": "rm -rf ./lib && rm -rf ./types && rm -f tsconfig.tsbuildinfo && tsc",
         "example:http": "node examples/app/lib/http",
         "example:worker": "node examples/app/lib/workerOnly"

@@ -90,7 +90,7 @@ export class VM {
                     result[v] = {
                         ref: this.functionToReference(obj[v]), 
                         type: 'func',
-                        async: obj['$$' + v]?true:false
+                        async: true //obj['$$' + v]?true:false
                     };
                 }
                 else if(typeof obj[v] === 'object'){
@@ -229,11 +229,11 @@ export class VM {
     };    
     get script(): string{
         return this._script;
-    }
+    };
     set script(value: string){
         this._script = value;
         this.compileScript();
-    }
+    };
     private compileScript(){
         if (this._script)      
             this.compiledScript = this.context.evalSync(`(async () =>{${this._script}})`, { reference: true, result: { promise: true } });        
@@ -243,7 +243,7 @@ export class VM {
     };    
     private emitEvent(event: Events, data?: any){
         this.events.emit(event, data);
-    }
+    };
     async execute() {        
         if (this.executing)
             return;
@@ -297,7 +297,7 @@ export class VM {
         }
         finally{
             this.executing = false;
-        }
+        };
     };
     on(event: Events, cb: any){
         return this.events.on(event, cb);

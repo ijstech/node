@@ -133,15 +133,15 @@ export class HttpServer {
                     for (let i = 0; i < this.options.router.routes.length; i++){
                         let router = this.options.router.routes[i];                        
                         if ((ctx.url + '/').startsWith(router.baseUrl + '/') || (ctx.url + '?').startsWith(router.baseUrl + '?')){
-                            // if (!(<any>router)._plugin)
-                            //     (<any>router)._plugin = new Router(router);                            
-                            // let result = await (<any>router)._plugin.route(ctx);                            
-                            // if (result)                           
-                            //     return;
-                            let route = new Router(router);
-                            let result = await route.route(ctx);                            
-                            if (result != undefined)
+                            if (!(<any>router)._plugin)
+                                (<any>router)._plugin = new Router(router);                            
+                            let result = await (<any>router)._plugin.route(ctx);                            
+                            if (result)                           
                                 return;
+                            // let route = new Router(router);
+                            // let result = await route.route(ctx);                            
+                            // if (result != undefined)
+                            //     return;
                         }
                     }
                 };

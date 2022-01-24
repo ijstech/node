@@ -66,7 +66,7 @@ class VM {
                     result[v] = {
                         ref: this.functionToReference(obj[v]),
                         type: 'func',
-                        async: obj['$$' + v] ? true : false
+                        async: true
                     };
                 }
                 else if (typeof obj[v] === 'object') {
@@ -209,10 +209,12 @@ class VM {
     get script() {
         return this._script;
     }
+    ;
     set script(value) {
         this._script = value;
         this.compileScript();
     }
+    ;
     compileScript() {
         if (this._script)
             this.compiledScript = this.context.evalSync(`(async () =>{${this._script}})`, { reference: true, result: { promise: true } });
@@ -225,6 +227,7 @@ class VM {
     emitEvent(event, data) {
         this.events.emit(event, data);
     }
+    ;
     async execute() {
         if (this.executing)
             return;
@@ -278,6 +281,7 @@ class VM {
         finally {
             this.executing = false;
         }
+        ;
     }
     ;
     on(event, cb) {

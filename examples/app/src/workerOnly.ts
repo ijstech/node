@@ -20,6 +20,9 @@ async function main(){
                             },
                             subscribe: ['msg_channel1']
                         }
+                    },
+                    dependencies: {
+                        "@pack/demo": "file:../demoPack"
                     }
                 }
             ]

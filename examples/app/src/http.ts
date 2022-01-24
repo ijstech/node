@@ -33,10 +33,11 @@ async function main(){
                                     redis: Config.redis
                                 },
                                 publish: ['msg_channel1']
-                            }
+                            },
+                            wallet: Config.wallet
                         }
                     },
-                    {   
+                    {
                         baseUrl: '/vm/hello',
                         methods: ['GET'],
                         scriptPath: './plugins/hello/index.js',
@@ -62,7 +63,8 @@ async function main(){
                                     redis: Config.redis
                                 },
                                 publish: ['msg_channel1']
-                            }
+                            },
+                            wallet: Config.wallet
                         }
                     } 
                 ]
@@ -84,6 +86,9 @@ async function main(){
                             },
                             subscribe: ['msg_channel1']
                         }
+                    },
+                    dependencies: {
+                        "@pack/demo": "file:../demoPack"
                     }
                 }
             ]

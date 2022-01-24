@@ -9,8 +9,19 @@ export interface IPlugins{
     db?: IDBPlugin;
     queue?: IQueuePlugin;
     message?: IMessagePlugin;
+    wallet?: IWalletPlugin;
 }
-
+export interface VM {
+    injectGlobalObject(name: string, obj: any, script?: string): void;
+    injectGlobalValue(name: string, value: any, script?: string): void;
+    injectGlobalFunction(funcName: string, func: any): void;
+    injectGlobalPackage(packName: string, script: string): void;
+    injectGlobalScript(script: string): void;
+}
+export interface IWorker {
+    data: any;
+    vm: VM;
+}
 export type IPackageVersion = string;
 export interface IDependencies {
     [packageName: string]: IPackageVersion;
@@ -28,7 +39,29 @@ export interface IPluginOptions {
 export interface IWorkerPluginOptions extends IPluginOptions{    
     processing?: boolean;
 }
-
+//Wallet Plugin
+export interface IWalletNetwork{
+    chainName?: string;
+    provider?: string;
+}
+export interface IWalletNetworks {
+    [chainId: number]: IWalletNetwork;
+}
+export interface IWalletAccount {
+    address: string;
+    privateKey?: string;
+}
+export interface IWalletRequiredPluginOptions{
+    chainId: number;
+    networks: IWalletNetworks;
+    accounts: IWalletAccount[];
+}
+export interface IWalletPlugin{
+    get address(): string;
+    get chainId(): number;
+    set chainId(value: number);    
+    getBalance(): Promise<number>;
+}
 //Queue Plugin
 export interface IQueuePluginOptions extends IWorkerPluginOptions{    
     jobQueue: string;
@@ -107,5 +140,6 @@ export interface IRequiredPlugins{
     cache?: ICacheClientOptions,
     db?: IDBRequiredPluginOptions,
     queue?: IQueueRequiredPluginOptions,
-    message?: IMessageRequiredPluginOptions    
+    message?: IMessageRequiredPluginOptions,
+    wallet?: IWalletRequiredPluginOptions
 }

@@ -123,9 +123,10 @@ class HttpServer {
                     for (let i = 0; i < this.options.router.routes.length; i++) {
                         let router = this.options.router.routes[i];
                         if ((ctx.url + '/').startsWith(router.baseUrl + '/') || (ctx.url + '?').startsWith(router.baseUrl + '?')) {
-                            let route = new plugin_1.Router(router);
-                            let result = await route.route(ctx);
-                            if (result != undefined)
+                            if (!router._plugin)
+                                router._plugin = new plugin_1.Router(router);
+                            let result = await router._plugin.route(ctx);
+                            if (result)
                                 return;
                         }
                     }

@@ -8,5 +8,20 @@ module.exports = {
         user: '',
         password: '',
         database: ''
+    },
+    wallet: {
+        chainId: 4,
+        networks: {
+            4: {
+                chainName: '',
+                provider: ''
+            }
+        },
+        accounts: [
+            {
+                address: '',
+                privateKey: ''
+            }
+        ]
     }
 }

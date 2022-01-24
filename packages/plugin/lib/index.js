@@ -11,7 +11,6 @@ const RootPath = path_1.default.dirname(require.main.filename);
 let Modules = {};
 let LoadingPackageName = '';
 global.define = function (id, deps, callback) {
-    console.dir('define: ' + id);
     let result = [];
     let exports = {};
     for (let i = 0; i < deps.length; i++) {
@@ -75,7 +74,6 @@ async function getPackageScript(filePath) {
 }
 ;
 function loadModule(script, name) {
-    console.dir('loadModule: ' + name);
     LoadingPackageName = name;
     var m = new module.constructor();
     m.filename = name;
@@ -267,9 +265,13 @@ class Plugin {
         if (!this.plugin) {
             if (this.options.isolated === false)
                 this.plugin = await this.createModule();
-            else
+            else {
                 this.plugin = await this.createVM();
+                this.vm = this.plugin.vm;
+            }
+            ;
         }
+        ;
     }
     ;
     createVM() {
@@ -302,13 +304,16 @@ class Plugin {
         if (this._session)
             return this._session;
         let result = Session(this.options);
+        let script = '';
         this._session = result;
         if (this.options.plugins) {
             for (let v in this.options.plugins) {
                 try {
                     let m = require('@ijstech/' + v);
                     let plugin = m.loadPlugin(this, this.options.plugins[v], this.plugin.vm);
-                    if (plugin)
+                    if (typeof (plugin) == 'string')
+                        script += plugin;
+                    else if (plugin)
                         result.plugins[v] = plugin;
                 }
                 catch (err) {
@@ -320,7 +325,7 @@ class Plugin {
         }
         ;
         if (this.plugin.vm)
-            this.plugin.vm.injectGlobalValue('$$session', result);
+            this.plugin.vm.injectGlobalValue('$$session', result, script);
         return result;
     }
     ;

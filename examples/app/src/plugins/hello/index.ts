@@ -1,3 +1,4 @@
+import { Wallet } from '@ijstech/eth-wallet';
 import {IRequiredPlugins, IRouterPlugin, IRouterRequest, IRouterResponse, ISession} from '@ijstech/node';
 import {helloWorld} from './hello';
 
@@ -36,6 +37,23 @@ class HelloWorld implements IRouterPlugin{
             response.end(JSON.stringify({
                 cachedData: data
             }, null, 4))
+        }
+        else if (request.path == '/wallet'){
+            try{
+                let chainId = session.plugins.wallet.chainId || 1;                
+                let balance = await session.plugins.wallet.getBalance();
+                let address = session.plugins.wallet.address;
+                response.end(JSON.stringify({
+                    address: address,
+                    balance: balance || 0,
+                    chainId: chainId
+                }, null, 4))
+            }
+            catch(err){
+                response.end({
+                    error: err.message
+                })
+            }
         }
         else if (request.path == '/db'){
             let con = session.plugins.db.getConnection('db1');

@@ -1,6 +1,7 @@
-import {IRedisConnection, IMySQLConnection} from '@ijstech/types';
+import {IRedisConnection, IMySQLConnection, IWalletRequiredPluginOptions} from '@ijstech/types';
 declare const Config: {
     redis: IRedisConnection,
-    mysql: IMySQLConnection
+    mysql: IMySQLConnection,
+    wallet: IWalletRequiredPluginOptions
 }
 export = Config
