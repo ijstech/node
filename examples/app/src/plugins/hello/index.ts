@@ -26,6 +26,19 @@ class HelloWorld implements IRouterPlugin{
                 msg: request.query
             }, null, 4))
         }
+        else if (request.path == '/proxy'){
+            let target = {
+                x: 10,
+                y: 20
+            };
+            
+            let hanler = {
+                get: (obj:any, prop:any) => 42
+            };
+            
+            target = new Proxy(target, hanler);
+            response.end('target.x: ' + target.x)
+        }
         else if (request.path == '/cache'){
             let key = 'cache_key';
             let data = '';

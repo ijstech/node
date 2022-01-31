@@ -19,6 +19,10 @@ function getPluginClient(vm, db, client) {
     if (!vm.loadedPlugins[name]) {
         vm.loadedPlugins[name] = true;
         let plugin = {
+            async applyQueries(queries) {
+                let result = await client.applyQueries(queries);
+                return result;
+            },
             beginTransaction() {
                 return client.beginTransaction();
             },

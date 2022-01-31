@@ -5,6 +5,16 @@ export declare class MySQLClient implements Types.IDBClient {
     private options;
     private transaction;
     constructor(options: Types.IMySQLConnection);
+    applyQueries(queries: Types.IQuery[]): Promise<Types.IQueryResult[]>;
+    private applyQuery;
+    private applyDeleteQuery;
+    private applyInsertQuery;
+    private applySelectQuery;
+    private applyUpdateQuery;
+    private applyUpdateRecords;
+    escape(entity: string): string;
+    private getFields;
+    private getQuery;
     get connection(): MySQL.Connection;
     private end;
     beginTransaction(): Promise<boolean>;

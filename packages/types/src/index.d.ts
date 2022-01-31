@@ -99,6 +99,34 @@ export interface ICacheClientOptions{
 }
 
 //DB Plugin
+export interface IField{
+    prop?: string;
+    field?: string;        
+    record?: string;
+    size?: number;
+    details?: any;
+    table?: string;
+    dataType?: 'key'|'ref'|'1toM'|'char'|'varchar'|'boolean'|'integer'|'decimal'|'date'|'blob'|'text'|'mediumText'|'longText';
+}
+export interface IFields{[name: string]: IField}
+export interface IQueryRecord{
+    a: 'i'|'d'|'u', //insert, delete/ update
+    k: string;
+    d: IQueryData;
+}
+export interface IQueryData{[prop: string]: any}
+export interface IQuery{
+    id: number;
+    table: string;
+    fields: IFields;
+    queries?: any[];
+    records?: IQueryRecord[];
+}
+export interface IQueryResult {
+    id?: number;
+    result?: any;
+    error?: string;
+}
 export interface IMySQLConnection{
     host: string;
     port?: number;
@@ -110,6 +138,7 @@ export interface IDBPlugin{
     getConnection(name: string): IDBClient;
 }
 export interface IDBClient{
+    applyQueries(queries: IQuery[]): Promise<IQueryResult[]>;
     query(sql: string, params?: any[]): Promise<any>;
     beginTransaction():Promise<boolean>;
     commit():Promise<boolean>;

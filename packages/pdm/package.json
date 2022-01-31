@@ -1,6 +1,9 @@
 {
     "name": "@ijstech/pdm",
+    "main": "./lib/index.js",
+    "types": "./types/index.d.ts",
     "scripts": {
-        "test": "ts-node src/pdm.ts"
+        "build": "tsc",
+        "test": "mocha --exit --require ts-node/register test/*.spec.ts"
     }
 }

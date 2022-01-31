@@ -17,6 +17,10 @@ function getPluginClient(vm: VM, db: string, client: Types.IDBClient): Types.IDB
     if (!vm.loadedPlugins[name]){
         vm.loadedPlugins[name] = true;        
         let plugin: Types.IDBClient = {
+            async applyQueries(queries: Types.IQuery[]): Promise<Types.IQueryResult[]>{
+                let result = await client.applyQueries(queries);
+                return result;
+            },
             beginTransaction(): Promise<boolean>{
                 return client.beginTransaction();
             },

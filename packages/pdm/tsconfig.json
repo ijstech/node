@@ -3,13 +3,17 @@
     "compilerOptions": {
         "experimentalDecorators": true,
         "outDir": "lib",
-        "declarationDir": "types",
-        "rootDir": "src"
+        "declarationDir": "types"
     },
     "include": [
-        "src"
+        "./src"
     ],
     "references": [
-        
+        {
+            "path": "../db"
+        },
+        {
+            "path": "../types"
+        }
     ]
 }

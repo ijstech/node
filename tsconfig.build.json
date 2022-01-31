@@ -20,5 +20,5 @@
             "@ijstech/node": ["./src"]
         }
     },
-    "exclude": ["node_modules", "dist", "lib", "__tests__", "**/*.test*", "**/*.spec*"]
+    "exclude": ["node_modules", "dist", "lib"]
   }

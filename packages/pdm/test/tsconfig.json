@@ -1,0 +1,20 @@
+{
+    "extends": "../../../tsconfig.build.json",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "experimentalDecorators": true,
+        "paths": {
+            "@ijstech/*": ["../../*/src"]
+        }
+    },
+    "include": [
+        "../",
+        "src",
+        "model"
+    ],
+    "references": [        
+        {
+            "path": "../../db"
+        }
+    ]
+}
