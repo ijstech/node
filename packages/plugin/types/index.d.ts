@@ -26,30 +26,6 @@ export interface IRouterPluginOptions extends Types.IPluginOptions {
     baseUrl: string | string[];
     methods: IRouterPluginMethod[];
 }
-interface ParsedUrlQuery {
-    [key: string]: string | string[];
-}
-export interface IRouterRequest {
-    method: string;
-    hostname: string;
-    path: string;
-    url: string;
-    origUrl: string;
-    ip: string;
-    query?: ParsedUrlQuery;
-    params?: any;
-    body?: any;
-    type?: string;
-    cookie: (name: string) => string;
-    header: (name: string) => string;
-}
-declare type ResponseType = 'application/json' | 'image/gif' | 'image/jpeg' | 'image/png' | 'image/svg+xml' | 'text/plain' | 'text/html';
-export interface IRouterResponse {
-    statusCode: number;
-    cookie: (name: string, value: string, option: any) => void;
-    end: (value: any, contentType?: ResponseType) => void;
-    header: (name: string, value: string) => void;
-}
 export declare type QueueName = string;
 export interface IRequiredPlugins {
     queue?: QueueName[];
@@ -63,7 +39,7 @@ export interface ISession {
     plugins: Types.IPlugins;
 }
 export declare abstract class IRouterPlugin extends IPlugin {
-    route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;
+    route(session: ISession, request: Types.IRouterRequest, response: Types.IRouterResponse): Promise<boolean>;
 }
 export declare abstract class IWorkerPlugin extends IPlugin {
     init?: (params?: any) => Promise<boolean>;
@@ -79,7 +55,7 @@ declare class PluginVM {
 }
 declare class RouterPluginVM extends PluginVM implements IRouterPlugin {
     init(): Promise<boolean>;
-    route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;
+    route(session: ISession, request: Types.IRouterRequest, response: Types.IRouterResponse): Promise<boolean>;
 }
 declare class WorkerPluginVM extends PluginVM implements IWorkerPlugin {
     init(): Promise<boolean>;

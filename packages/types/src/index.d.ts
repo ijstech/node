@@ -1,3 +1,37 @@
+interface ParsedUrlQuery {[key: string]: string | string[]}
+export interface IRouterRequest{    
+    method: string,
+    hostname: string,
+    path: string;
+    url: string;    
+    origUrl: string;    
+    ip: string;
+    query?: ParsedUrlQuery;
+    params?: any;
+    body?: any;
+    type?: string;
+    cookie: (name: string)=> string;
+    header: (name: string)=> string;
+}
+export interface ISession{
+    params?: any;
+    plugins: IPlugins;
+}
+export type ResponseType = 'application/json'|'image/gif'|'image/jpeg'|'image/png'|'image/svg+xml'|'text/plain'|'text/html'
+export interface IRouterResponse{
+    statusCode: number;
+    cookie: (name:string, value:string, option: any)=>void;
+    end: (value: any, contentType?: ResponseType)=>void;
+    header: (name:string, value: string)=>void;
+}
+export declare abstract class IRouterPlugin {
+    route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;    
+}
+export declare abstract class IWorkerPlugin {    
+    init?: (params?: any)=>Promise<boolean>;        
+    message?: (session: ISession, channel: string, msg: string)=>void;
+    process(session: ISession, data: any): Promise<any>;
+}
 export interface IRedisConnection {
     host: string;
     port?: number;

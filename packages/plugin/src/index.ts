@@ -94,28 +94,14 @@ export interface IRouterPluginOptions extends Types.IPluginOptions {
     baseUrl: string|string[];
     methods: IRouterPluginMethod[];
 };
-interface ParsedUrlQuery {[key: string]: string | string[]};
-export interface IRouterRequest{    
-    method: string,
-    hostname: string,
-    path: string;
-    url: string;    
-    origUrl: string;    
-    ip: string;
-    query?: ParsedUrlQuery;
-    params?: any;
-    body?: any;
-    type?: string;
-    cookie: (name: string)=> string;
-    header: (name: string)=> string;
-};
+
 function cloneObject(value: any): any{
     if (value)
         return JSON.parse(JSON.stringify(value))
     else
         return;
 };
-function RouterRequest(ctx: Koa.Context): IRouterRequest{
+function RouterRequest(ctx: Koa.Context): Types.IRouterRequest{
     return {
         method: ctx.method,
         hostname: ctx.hostname || '',
@@ -135,20 +121,14 @@ function RouterRequest(ctx: Koa.Context): IRouterRequest{
         }
     };
 };
-type ResponseType = 'application/json'|'image/gif'|'image/jpeg'|'image/png'|'image/svg+xml'|'text/plain'|'text/html';
-export interface IRouterResponse{
-    statusCode: number;
-    cookie: (name:string, value:string, option: any)=>void;
-    end: (value: any, contentType?: ResponseType)=>void;
-    header: (name:string, value: string)=>void;
-};
-function RouterResponse(ctx: Koa.Context): IRouterResponse{
+
+function RouterResponse(ctx: Koa.Context): Types.IRouterResponse{
     return {
         statusCode: 200,
         cookie: function(name: string, value: string, option?: any){
             ctx.cookies.set(name, value, option)
         },
-        end: function(value: any, contentType?: ResponseType){       
+        end: function(value: any, contentType?: Types.ResponseType){       
             if (!contentType && typeof(value) == 'object')
                 contentType = 'application/json';
             ctx.response.set('Content-Type', contentType || 'text/plain');
@@ -172,7 +152,7 @@ export interface ISession{
     plugins: Types.IPlugins;
 };
 export declare abstract class IRouterPlugin extends IPlugin{
-    route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;    
+    route(session: ISession, request: Types.IRouterRequest, response: Types.IRouterResponse): Promise<boolean>;    
 };
 export declare abstract class IWorkerPlugin extends IPlugin{    
     init?: (params?: any)=>Promise<boolean>;        
@@ -224,7 +204,7 @@ class RouterPluginVM extends PluginVM implements IRouterPlugin{
         `;
         return;
     };
-    async route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>{
+    async route(session: ISession, request: Types.IRouterRequest, response: Types.IRouterResponse): Promise<boolean>{
         this.vm.injectGlobalValue('$$request', request);
         this.vm.injectGlobalValue('$$response', response);
         let result = await this.vm.execute();

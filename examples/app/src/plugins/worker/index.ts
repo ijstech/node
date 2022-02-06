@@ -1,4 +1,4 @@
-import {IWorkerPlugin, ISession} from '@ijstech/node';
+import {IWorkerPlugin, ISession} from '@ijstech/types';
 import {Demo} from '@pack/demo';
 
 class Worker implements IWorkerPlugin {

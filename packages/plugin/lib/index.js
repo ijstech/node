@@ -86,8 +86,6 @@ exports.loadModule = loadModule;
 ;
 ;
 ;
-;
-;
 function cloneObject(value) {
     if (value)
         return JSON.parse(JSON.stringify(value));
@@ -115,7 +113,6 @@ function RouterRequest(ctx) {
         }
     };
 }
-;
 ;
 function RouterResponse(ctx) {
     return {

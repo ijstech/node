@@ -1,5 +1,4 @@
-import { Wallet } from '@ijstech/eth-wallet';
-import {IRequiredPlugins, IRouterPlugin, IRouterRequest, IRouterResponse, ISession} from '@ijstech/node';
+import {IRouterPlugin, IRouterRequest, IRouterResponse, ISession} from '@ijstech/types';
 import {helloWorld} from './hello';
 
 class HelloWorld implements IRouterPlugin{
