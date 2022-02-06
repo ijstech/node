@@ -22,10 +22,6 @@ export interface IWorker {
     data: any;
     vm: VM;
 }
-export type IPackageVersion = string;
-export interface IDependencies {
-    [packageName: string]: IPackageVersion;
-}
 export interface IPluginOptions {
     memoryLimit?: number;
     timeLimit?: number;
@@ -165,6 +161,20 @@ export interface IMessageConnection{
 }
 
 //Plugins option interface
+export type IPackageVersion = string;
+export interface IDependencies {
+    [packageName: string]: IPackageVersion;
+}
+export interface IPluginOptions {
+    memoryLimit?: number;
+    timeLimit?: number;
+    isolated?: boolean;
+    script?: string;
+    scriptPath?: string;
+    params?: any;
+    dependencies?: IDependencies;    
+    plugins?: IRequiredPlugins;
+}
 export interface IRequiredPlugins{
     cache?: ICacheClientOptions,
     db?: IDBRequiredPluginOptions,

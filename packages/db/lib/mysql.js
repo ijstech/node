@@ -40,7 +40,7 @@ class MySQLClient {
             }
             catch (err) {
                 this.rollback();
-                return [{ error: err.message || '$exception' }];
+                return [{ error: typeof (err) == 'string' ? err : err.message || '$exception' }];
             }
             finally {
                 this.end();
@@ -117,7 +117,8 @@ class MySQLClient {
         let params = [];
         sql = `SELECT ${this.getFields(fields)} FROM ${this.escape(tableName)} `;
         sql += 'WHERE ' + this.getQuery(fields, qry, params);
-        return await this.query(sql, params);
+        let result = await this.query(sql, params);
+        return result;
     }
     ;
     async applyUpdateQuery(tableName, fields, data, qry) {
@@ -175,19 +176,25 @@ class MySQLClient {
         let result = '';
         for (let prop in fields) {
             let field = fields[prop];
-            if (!data || typeof (data[prop]) != 'undefined') {
-                if (result) {
-                    result += ',';
-                    result += this.escape(field.field || prop);
+            if (!field.details) {
+                if (!data || typeof (data[prop]) != 'undefined') {
+                    if (result) {
+                        result += ',';
+                        result += this.escape(field.field || prop);
+                    }
+                    else
+                        result = this.escape(field.field || prop);
+                    if (data) {
+                        result += '=?';
+                        params.push(data[prop]);
+                    }
+                    ;
                 }
-                else
-                    result = this.escape(field.field || prop);
-                if (data) {
-                    result += '=?';
-                    params.push(data[prop]);
-                }
+                ;
             }
+            ;
         }
+        ;
         return result;
     }
     ;

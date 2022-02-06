@@ -94,6 +94,19 @@ class HttpServer {
         });
     }
     ;
+    checkBaseUrl(url, routerOptions) {
+        if (Array.isArray(routerOptions.baseUrl)) {
+            for (let i = 0; i < routerOptions.baseUrl.length; i++) {
+                let baseUrl = routerOptions.baseUrl[i];
+                if ((url + '/').startsWith(baseUrl + '/') || (url + '?').startsWith(baseUrl + '?'))
+                    return baseUrl;
+            }
+            ;
+        }
+        else if ((url + '/').startsWith(routerOptions.baseUrl + '/') || (url + '?').startsWith(routerOptions.baseUrl + '?'))
+            return routerOptions.baseUrl;
+    }
+    ;
     async start() {
         if (this.running)
             return;
@@ -122,14 +135,36 @@ class HttpServer {
                 if (this.options.router && this.options.router.routes) {
                     for (let i = 0; i < this.options.router.routes.length; i++) {
                         let router = this.options.router.routes[i];
-                        if ((ctx.url + '/').startsWith(router.baseUrl + '/') || (ctx.url + '?').startsWith(router.baseUrl + '?')) {
-                            if (!router._plugin)
-                                router._plugin = new plugin_1.Router(router);
-                            let result = await router._plugin.route(ctx);
-                            if (result)
-                                return;
+                        let baseUrl = this.checkBaseUrl(ctx.url, router);
+                        if (baseUrl) {
+                            if (router.form) {
+                                let pack = require('@ijstech/form');
+                                if (pack.default) {
+                                    let config = {
+                                        baseUrl: baseUrl,
+                                        host: router.form.host,
+                                        token: router.form.token,
+                                        package: router.form.package,
+                                        mainForm: router.form.mainForm,
+                                        params: router.params
+                                    };
+                                    await pack.default(ctx, config);
+                                    return true;
+                                }
+                                ;
+                            }
+                            else {
+                                if (!router._plugin)
+                                    router._plugin = new plugin_1.Router(router);
+                                let result = await router._plugin.route(ctx, baseUrl);
+                                if (result)
+                                    return;
+                            }
+                            ;
                         }
+                        ;
                     }
+                    ;
                 }
                 ;
                 ctx.status = 404;

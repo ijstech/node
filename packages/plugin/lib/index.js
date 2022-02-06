@@ -88,8 +88,6 @@ exports.loadModule = loadModule;
 ;
 ;
 ;
-;
-;
 function cloneObject(value) {
     if (value)
         return JSON.parse(JSON.stringify(value));
@@ -333,6 +331,7 @@ class Plugin {
 ;
 class Router extends Plugin {
     constructor(options) {
+        console.dir(options);
         super(options);
     }
     ;
@@ -345,7 +344,7 @@ class Router extends Plugin {
         return result;
     }
     ;
-    async route(ctx) {
+    async route(ctx, baseUrl) {
         ctx.origUrl = ctx.url;
         ctx.url = ctx.url.slice(this.options.baseUrl.length);
         if (!ctx.url.startsWith('/'))

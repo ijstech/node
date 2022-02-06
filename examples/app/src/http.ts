@@ -7,6 +7,24 @@ async function main(){
             port: 8088,
             router: {
                 routes: [
+                    {
+                        baseUrl: '/app',
+                        isolated: false,
+                        methods:['GET','POST'],
+                        form: Config.form,
+                        params: {
+                            
+                        }
+                    },
+                    {
+                        baseUrl: '/github',
+                        isolated: false,
+                        methods:['GET'],
+                        github: Config.github,
+                        params: {
+                            
+                        }
+                    },
                     {   
                         baseUrl: '/hello',
                         methods: ['GET'],

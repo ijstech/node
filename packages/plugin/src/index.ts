@@ -72,29 +72,26 @@ export function loadModule(script: string, name?: string): IPluginScript{
     LoadingPackageName = '';
     return Modules[name || 'index'];
 };
-export type IPackageVersion = string;
-export interface IDependencies {
-    [packageName: string]: IPackageVersion;
-};
-export interface IPluginOptions {
-    memoryLimit?: number;
-    timeLimit?: number;
-    isolated?: boolean;    
-    script?: string;
-    scriptPath?: string;
-    params?: any;
-    dependencies?: IDependencies;    
-    plugins?: Types.IRequiredPlugins;
-};
-export interface IWorkerPluginOptions extends IPluginOptions{    
+export interface IWorkerPluginOptions extends Types.IPluginOptions{    
     processing?: boolean;
 };
 export interface IQueuePluginOptions extends IWorkerPluginOptions{
     queue: string;
 };
 export type IRouterPluginMethod = 'GET'|'POST'|'PUT'|'DELETE';
-export interface IRouterPluginOptions extends IPluginOptions {
-    baseUrl: string;
+export interface IRouterPluginOptions extends Types.IPluginOptions {
+    form?: {
+        host: string,
+        token: string,
+        package?: string,
+        mainForm?: string
+    },
+    github?: {
+        org: string,
+        repo: string,
+        token: string
+    },
+    baseUrl: string|string[];
     methods: IRouterPluginMethod[];
 };
 interface ParsedUrlQuery {[key: string]: string | string[]};
@@ -183,9 +180,9 @@ export declare abstract class IWorkerPlugin extends IPlugin{
     process(session: ISession, data: any): Promise<any>;
 };
 class PluginVM{
-    protected options: IPluginOptions;
+    protected options: Types.IPluginOptions;
     public vm: VM;        
-    constructor(options: IPluginOptions){
+    constructor(options: Types.IPluginOptions){
         this.options = options;        
         this.vm = new VM({
             logging: true,
@@ -277,20 +274,20 @@ class WorkerPluginVM extends PluginVM implements IWorkerPlugin{
         return result;
     };
 };
-function Session(options: IPluginOptions): ISession{
+function Session(options: Types.IPluginOptions): ISession{
     return {
         params: options.params,
         plugins: {}
     };
 };
 class Plugin{
-    protected options: IPluginOptions;
+    protected options: Types.IPluginOptions;
     protected plugin: any;
     protected _session: ISession;
     public vm: VM;
     public data: any;
 
-    constructor(options: IPluginOptions){
+    constructor(options: Types.IPluginOptions){
         this.options = options;        
     };        
     async createPlugin(){
@@ -355,6 +352,7 @@ export class Router extends Plugin{
     protected plugin: IRouterPlugin;
     protected options: IRouterPluginOptions;    
     constructor(options: IRouterPluginOptions){
+        console.dir(options)
         super(options);
     };
     async createVM(): Promise<RouterPluginVM>{
@@ -365,7 +363,7 @@ export class Router extends Plugin{
         await result.init();
         return result;
     };
-    async route(ctx: Koa.Context): Promise<boolean>{         
+    async route(ctx: Koa.Context, baseUrl: string): Promise<boolean>{         
         ctx.origUrl = ctx.url;
         ctx.url = ctx.url.slice(this.options.baseUrl.length);        
         if (!ctx.url.startsWith('/'))

@@ -1,9 +1,8 @@
 import Queue from 'bee-queue';
-import { IPluginOptions } from '@ijstech/plugin';
 import * as Types from '@ijstech/types';
 declare type Job = Queue.Job<any>;
 export { Job };
-export interface IJobQueueOptions extends IPluginOptions {
+export interface IJobQueueOptions extends Types.IPluginOptions {
     jobQueue: string;
     disabled?: boolean;
     connection: Types.IJobQueueConnectionOptions;

@@ -4,29 +4,26 @@ import * as Types from '@ijstech/types';
 export declare function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string;
 export declare type IPluginScript = any;
 export declare function loadModule(script: string, name?: string): IPluginScript;
-export declare type IPackageVersion = string;
-export interface IDependencies {
-    [packageName: string]: IPackageVersion;
-}
-export interface IPluginOptions {
-    memoryLimit?: number;
-    timeLimit?: number;
-    isolated?: boolean;
-    script?: string;
-    scriptPath?: string;
-    params?: any;
-    dependencies?: IDependencies;
-    plugins?: Types.IRequiredPlugins;
-}
-export interface IWorkerPluginOptions extends IPluginOptions {
+export interface IWorkerPluginOptions extends Types.IPluginOptions {
     processing?: boolean;
 }
 export interface IQueuePluginOptions extends IWorkerPluginOptions {
     queue: string;
 }
 export declare type IRouterPluginMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
-export interface IRouterPluginOptions extends IPluginOptions {
-    baseUrl: string;
+export interface IRouterPluginOptions extends Types.IPluginOptions {
+    form?: {
+        host: string;
+        token: string;
+        package?: string;
+        mainForm?: string;
+    };
+    github?: {
+        org: string;
+        repo: string;
+        token: string;
+    };
+    baseUrl: string | string[];
     methods: IRouterPluginMethod[];
 }
 interface ParsedUrlQuery {
@@ -74,9 +71,9 @@ export declare abstract class IWorkerPlugin extends IPlugin {
     process(session: ISession, data: any): Promise<any>;
 }
 declare class PluginVM {
-    protected options: IPluginOptions;
+    protected options: Types.IPluginOptions;
     vm: VM;
-    constructor(options: IPluginOptions);
+    constructor(options: Types.IPluginOptions);
     init(): Promise<boolean>;
     loadDependencies(): Promise<void>;
 }
@@ -90,12 +87,12 @@ declare class WorkerPluginVM extends PluginVM implements IWorkerPlugin {
     process(session: ISession, data?: any): Promise<boolean>;
 }
 declare class Plugin {
-    protected options: IPluginOptions;
+    protected options: Types.IPluginOptions;
     protected plugin: any;
     protected _session: ISession;
     vm: VM;
     data: any;
-    constructor(options: IPluginOptions);
+    constructor(options: Types.IPluginOptions);
     createPlugin(): Promise<void>;
     createVM(): any;
     createModule(): Promise<any>;
@@ -106,7 +103,7 @@ export declare class Router extends Plugin {
     protected options: IRouterPluginOptions;
     constructor(options: IRouterPluginOptions);
     createVM(): Promise<RouterPluginVM>;
-    route(ctx: Koa.Context): Promise<boolean>;
+    route(ctx: Koa.Context, baseUrl: string): Promise<boolean>;
 }
 export declare class Worker extends Plugin {
     protected plugin: IWorkerPlugin;

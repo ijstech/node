@@ -12,6 +12,20 @@ async function main() {
             router: {
                 routes: [
                     {
+                        baseUrl: '/app',
+                        isolated: false,
+                        methods: ['GET', 'POST'],
+                        form: config_js_1.default.form,
+                        params: {}
+                    },
+                    {
+                        baseUrl: '/github',
+                        isolated: false,
+                        methods: ['GET'],
+                        github: config_js_1.default.github,
+                        params: {}
+                    },
+                    {
                         baseUrl: '/hello',
                         methods: ['GET'],
                         scriptPath: './plugins/hello/index.js',
