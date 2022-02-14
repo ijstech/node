@@ -7,7 +7,7 @@ define("hello", ["require", "exports"], function (require, exports) {
     }
     exports.helloWorld = helloWorld;
 });
-define("index", ["require", "exports", "hello"], function (require, exports, hello_1) {
+define("index", ["require", "exports", "hello", "@pack/demo"], function (require, exports, hello_1, demo_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class HelloWorld {
@@ -21,7 +21,6 @@ define("index", ["require", "exports", "hello"], function (require, exports, hel
                     response.end(JSON.stringify(job, null, 4));
                 }
                 catch (err) {
-                    console.dir('exception');
                     console.dir(err.message);
                 }
             }
@@ -72,6 +71,14 @@ define("index", ["require", "exports", "hello"], function (require, exports, hel
                         error: err.message
                     });
                 }
+            }
+            else if (request.path == '/pdm') {
+                let demo = new demo_1.Demo();
+                let empNo = 1002;
+                if (request.query.employeeNumber)
+                    empNo = parseInt(request.query.employeeNumber);
+                let emp = await demo.employee(empNo);
+                response.end(emp);
             }
             else if (request.path == '/db') {
                 let con = session.plugins.db.getConnection('db1');

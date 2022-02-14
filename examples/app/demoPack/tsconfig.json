@@ -1,0 +1,24 @@
+{
+  "extends": "../../../tsconfig.build.json",
+  "include": [
+    "src/**/*"
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outFile": "./lib/index.js",
+    "rootDir": ".",    
+    "emitDeclarationOnly": true,
+    "paths": {      
+      "@ijstech/pdm": ["../../../packages/pdm"],
+      "@ijstech/types": ["../../../packages/types"]
+    }
+  },
+  "references": [
+    {
+      "path": "../../../packages/pdm"
+    },
+    {
+      "path": "../../../packages/types"
+    }
+  ]
+}

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.loadPlugin = exports.getClient = void 0;
 const mysql_1 = require("./mysql");
 let Clients = {};
+;
 function getClient(options) {
     if (options.mysql) {
         let opt = options.mysql;
@@ -25,6 +26,10 @@ function getPluginClient(vm, db, client) {
             },
             beginTransaction() {
                 return client.beginTransaction();
+            },
+            async checkTableExists(tableName) {
+                let result = await client.checkTableExists(tableName);
+                return result;
             },
             commit() {
                 return client.commit();

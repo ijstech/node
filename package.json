@@ -25,6 +25,7 @@
         "@ijstech/plugin": "file:./packages/plugin",
         "@ijstech/queue": "file:./packages/queue",
         "@ijstech/schedule": "file:./packages/schedule",
+        "@ijstech/types": "file:./packages/types",
         "@ijstech/vm": "file:./packages/vm",
         "@ijstech/wallet": "file:./packages/wallet",
         "@ijstech/eth-wallet": "git+https://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:x-oauth-basic@github.com/ijstech/eth-wallet.git",

@@ -1,8 +1,45 @@
+import * as Types from '@ijstech/types';
+interface IRecordSet {
+    _id: number;
+    _queries: any[];
+    fields: Types.IFields;
+    keyField: Types.IField;
+    tableName: string;
+    mergeRecords(data: any): any[];
+    reset(): void;
+}
+interface IRecord {
+    $$record: any;
+    $$proxy: any;
+    $$newRecord: boolean;
+    $$recordSet: IRecordSet;
+    $$keyValue: string;
+    $$deleted: boolean;
+    $$modified: boolean;
+    $$origValues: {
+        [prop: string]: any;
+    };
+    $$modifies: {
+        [prop: string]: any;
+    };
+}
 export declare class TContext {
     private $$records;
-    constructor();
+    private _client;
+    private _recordSets;
+    private _recordSetIdxCount;
+    private _recordIdxCount;
+    private _modifiedRecords;
+    private _applyQueries;
+    private _deletedRecords;
+    constructor(client?: Types.IDBClient);
+    private getApplyQueries;
+    private applyDelete;
+    private applyInsert;
+    private applyUpdate;
     private initRecordsets;
-    fetch(): Promise<boolean>;
+    fetch(recordSet?: IRecordSet): Promise<any>;
+    private modifyRecord;
     reset(): void;
     save(): Promise<any>;
 }
@@ -16,21 +53,16 @@ declare type QueryFuncOverload<DT> = {
     <T extends DT>(callback: (qr: TQuery<T>) => void): TQueryAndOr<T>;
 };
 declare class TQueryAndOr<T> {
-    private recordSet;
     private parentQuery;
     private queries;
-    constructor(recordSet: TRecordSet<T>, parentQuery?: any);
+    constructor(parentQuery?: any);
     and: QueryFuncOverload<T>;
     or: QueryFuncOverload<T>;
 }
 declare class TQuery<T> {
-    private recordSet;
     private queries;
-    constructor(recordSet: TRecordSet<T>, queries?: any);
+    constructor(queries?: any);
     where: QueryFuncOverload<T>;
-}
-interface IFields {
-    [name: string]: IField;
 }
 interface InsertOptions {
     updateOnDuplicate?: boolean;
@@ -38,72 +70,86 @@ interface InsertOptions {
 }
 export declare class TRecord {
     private $$fields;
+    private data;
     private recordSet;
-    constructor(recordSet: TRecordSet<any>);
+    constructor(recordSet: TRecordSet<any>, data: any);
+}
+interface IContext {
+    applyDelete(recordSet: IRecordSet, query: any[]): void;
+    applyInsert(recordSet: IRecordSet, data: any): void;
+    applyUpdate(recordSet: IRecordSet, data: Types.IQueryData, query: any[]): void;
+    modifyRecord(record: any): void;
 }
 export declare class TRecordSet<T> {
+    private _id;
     private _recordType;
     private _fields;
+    private _keyField;
     protected _queries: any[];
+    protected _recordsIdx: {};
     protected _records: T[];
     protected _context: TContext;
-    constructor(context: TContext, record: any);
+    protected _master: IRecord;
+    protected _masterField: string;
+    protected _currIdx: number;
+    protected _tableName: string;
+    protected _fetchAll: boolean;
+    constructor(context: TContext, record: any, tableName: string, master?: IRecord, masterField?: string);
     add<TB extends keyof T>(data?: {
         [C in TB]?: T[C];
     }): T;
     applyInsert<TB extends keyof T>(data: {
         [C in TB]?: T[C];
-    } | {
-        [C in TB]?: T[C];
-    }[], options?: InsertOptions): void;
+    }, options?: InsertOptions): void;
     applyDelete(): TQuery<T>;
     applyUpdate<TB extends keyof T>(data?: {
         [C in TB]: T[C];
     }): TQuery<T>;
-    get count(): Promise<number>;
+    get context(): IContext;
+    get count(): number;
+    get current(): T;
     delete(record: T): void;
-    get fields(): IFields;
-    get first(): Promise<T>;
-    get query(): TQuery<T>;
-    fetch(): Promise<TRecordSet<T>>;
-    records(index: number): T;
+    fetch(): Promise<T[]>;
+    get fields(): Types.IFields;
+    get first(): T;
+    protected mergeRecords(records: any[]): any[];
     get next(): T;
+    protected get keyField(): Types.IField;
+    private proxy;
+    get query(): TQuery<T>;
+    queryRecord(keyValue: string): Promise<T>;
+    records(index: number): T;
+    reset(): void;
+    get tableName(): string;
+    private validateFieldValue;
+    values<FieldName extends keyof T>(field: FieldName): T[FieldName][];
 }
-export interface IField {
-    field?: string;
-    size?: number;
-    dataType?: 'key' | 'ref' | 'char' | 'varchar' | 'boolean' | 'integer' | 'decimal' | 'date' | 'blob' | 'text' | 'mediumText' | 'longText';
-    details?: typeof TRecord;
-}
-export interface IGuidField extends IField {
-    primaryKey?: boolean;
-}
-export interface IRefField extends IField {
+export interface IRefField extends Types.IField {
     record: string;
 }
-export interface IStringField extends IField {
+export interface IStringField extends Types.IField {
     dataType?: 'char' | 'varchar' | 'text' | 'mediumText' | 'longText';
 }
-export interface IBooleanField extends IField {
+export interface IBooleanField extends Types.IField {
 }
-export interface IDecimalField extends IField {
+export interface IDecimalField extends Types.IField {
     digits?: number;
     decimals?: number;
 }
-export interface IIntegerField extends IField {
+export interface IIntegerField extends Types.IField {
     digits?: number;
     decimals?: number;
 }
-export interface IDateField extends IField {
+export interface IDateField extends Types.IField {
 }
 export declare function RecordSet(tableName: string, recordType: typeof TRecord, recordSetType?: any): (target: TContext, propName: string, params?: any) => void;
-export declare function KeyField(fieldType?: IGuidField): (target: TRecord, propName: string) => void;
+export declare function KeyField(fieldType?: Types.IField): (target: TRecord, propName: string) => void;
 export declare function RefTo<T extends TContext>(record: keyof T, field?: string): (target: TRecord, propName: string) => void;
 export declare function StringField(fieldType?: IStringField): (target: TRecord, propName: string) => void;
 export declare function DecimalField(fieldType?: IDecimalField): (target: TRecord, propName: string) => void;
 export declare function IntegerField(fieldType?: IIntegerField): (target: TRecord, propName: string) => void;
 export declare function BooleanField(fieldType?: IBooleanField): (target: TRecord, propName: string) => void;
 export declare function DateField(fieldType?: IDateField): (target: TRecord, propName: string) => void;
-export declare function BlobField(fieldType?: IField): (target: TRecord, propName: string) => void;
+export declare function BlobField(fieldType?: Types.IField): (target: TRecord, propName: string) => void;
 export declare function OneToMany<T>(record: typeof TRecord, prop: keyof T, tableName: string, fieldName: string): (target: TRecord, propName: string) => void;
 export {};

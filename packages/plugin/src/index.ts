@@ -3,6 +3,7 @@ import Path from 'path';
 import Koa from 'koa';
 import {VM} from '@ijstech/vm';
 import * as Types from '@ijstech/types';
+import Github from './github';
 
 const RootPath = Path.dirname(require.main.filename);
 let Modules = {};
@@ -22,7 +23,7 @@ global.define = function(id: string, deps: string[], callback: Function){
         }
     }    
     callback.apply(this, result);
-    if (id == 'index')
+    if (id == 'index' || id == 'plugin')
         Modules[LoadingPackageName || 'index'] = exports
     else
         Modules[id] = exports
@@ -51,17 +52,31 @@ async function getPackage(filePath: string): Promise<any>{
     if (text)
         return JSON.parse(text);
 };
+function getPackageDir(pack: string): string{
+    if (pack[0] != '/')
+    pack = require.resolve(pack);
+    let dir = Path.dirname(pack);
+    if (Fs.existsSync(Path.resolve(dir, 'package.json')))
+        return dir
+    else
+        return getPackageDir(dir);
+}
 async function getPackageScript(filePath: string): Promise<string>{
     let result: string;
-    if (filePath.startsWith('file:')){
-        let packPath = resolveFilePath([RootPath], filePath.substring(5), true);
+    let packPath = '';
+    if (filePath.startsWith('file:'))
+        packPath = resolveFilePath([RootPath], filePath.substring(5), true)
+    else
+        packPath = getPackageDir(filePath);
+        
+    if (packPath){
         let pack = await getPackage(packPath);
         if (pack){
-            let libPath = resolveFilePath([packPath], pack.main);
+            let libPath = resolveFilePath([packPath], pack.plugin || pack.main || 'index.js');
             if (libPath)
                 return await getScript(libPath);
         };
-    };
+    };  
 };
 export type IPluginScript = any;
 export function loadModule(script: string, name?: string): IPluginScript{
@@ -176,6 +191,11 @@ class PluginVM{
         return;
     };
     async loadDependencies(){
+        if (this.options.plugins.db) {
+            let script = await getPackageScript('@ijstech/pdm');
+            if (script)
+                this.vm.injectGlobalPackage('@ijstech/pdm', script);
+        };
         if (this.options.dependencies){
             for (let packname in this.options.dependencies){
                 let pack = this.options.dependencies[packname];                
@@ -187,7 +207,7 @@ class PluginVM{
     };
 };
 class RouterPluginVM extends PluginVM implements IRouterPlugin{
-    async init(): Promise<boolean>{
+    async init(): Promise<boolean>{        
         await super.init();
         this.vm.injectGlobalScript(`
             let module = global._$$modules['index'];            
@@ -278,12 +298,27 @@ class Plugin{
                 this.plugin = await this.createVM();            
                 this.vm = this.plugin.vm;
             };
+            for (let v in this.options.plugins){  
+                if (v == 'db'){
+                    let m = require('@ijstech/pdm');
+                    m.loadPlugin(this, this.options.plugins.db, this.plugin.vm);                    
+                    break;
+                };
+            };
         };
     };
     createVM(): any{
         return;
     };    
-    async createModule(): Promise<any>{        
+    async createModule(): Promise<any>{
+        for (let v in this.options.plugins){  
+            if (v == 'db'){
+                let script = await getPackageScript('@ijstech/pdm');
+                if (script)
+                    loadModule(script, '@ijstech/pdm');
+                break;
+            };
+        };
         if (this.options.dependencies){
             for (let packname in this.options.dependencies){
                 let pack = this.options.dependencies[packname];                
@@ -292,15 +327,27 @@ class Plugin{
                     loadModule(script, packname)
             };
         };
-        if (!this.options.script)
-            this.options.script = await getScript(this.options.scriptPath);
-        let script = this.options.script;
-        let module = loadModule(script);
-        if (module){
-            if (module.default)
-                module = module.default;
-            return new module(this.options);
-        }         
+        if (!this.options.script){
+            if (this.options.github){
+                this.options.script = await Github.getFile({
+                    org: this.options.github.org,
+                    repo: this.options.github.repo,
+                    token: this.options.github.token,
+                    filePath: 'lib/index.js'
+                })                
+            }
+            else
+                this.options.script = await getScript(this.options.scriptPath);
+        }
+        let script = this.options.script;        
+        if (script){
+            let module = loadModule(script);
+            if (module){
+                if (module.default)
+                    module = module.default;
+                return new module(this.options);
+            }         
+        }
     };
     get session(): ISession{        
         if (this._session)
@@ -317,6 +364,12 @@ class Plugin{
                         script += plugin
                     else if (plugin)
                         result.plugins[v] = plugin;
+                    if (v == 'db'){
+                        let m = require('@ijstech/pdm');
+                        let plugin = m.loadPlugin(this, this.options.plugins[v], this.plugin.vm);
+                        if (typeof(plugin) == 'string')
+                            script += plugin
+                    }
                 }
                 catch(err){
                     console.dir(err);
@@ -332,7 +385,6 @@ export class Router extends Plugin{
     protected plugin: IRouterPlugin;
     protected options: IRouterPluginOptions;    
     constructor(options: IRouterPluginOptions){
-        console.dir(options)
         super(options);
     };
     async createVM(): Promise<RouterPluginVM>{
@@ -343,15 +395,17 @@ export class Router extends Plugin{
         await result.init();
         return result;
     };
-    async route(ctx: Koa.Context, baseUrl: string): Promise<boolean>{         
+    async route(ctx: Koa.Context, baseUrl: string): Promise<boolean>{
         ctx.origUrl = ctx.url;
         ctx.url = ctx.url.slice(this.options.baseUrl.length);        
         if (!ctx.url.startsWith('/'))
             ctx.url = '/' + ctx.url;
-        let result: boolean;        
+        let result: boolean;
         await this.createPlugin();
-        result = await this.plugin.route(this.session, RouterRequest(ctx), RouterResponse(ctx));
-        return result;
+        if (this.plugin){
+            result = await this.plugin.route(this.session, RouterRequest(ctx), RouterResponse(ctx));
+            return result;
+        }
     };
 };
 export class Worker extends Plugin{
@@ -382,7 +436,8 @@ export class Worker extends Plugin{
         this.options.processing = true;
         try{            
             await this.createPlugin();
-            result = await this.plugin.process(this.session, data);
+            if (this.plugin)
+                result = await this.plugin.process(this.session, data);
         }
         catch(err){
             console.dir(err)

@@ -1,10 +1,3 @@
--- --------------------------------------------------------
--- Host:                         127.0.0.1
--- Server version:               5.7.30 - MySQL Community Server (GPL)
--- Server OS:                    Linux
--- HeidiSQL Version:             11.0.0.5919
--- --------------------------------------------------------
-
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET NAMES utf8 */;
 /*!50503 SET NAMES utf8mb4 */;
@@ -12,7 +5,7 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 
 -- Dumping structure for table classicmodels.customers
-CREATE TABLE IF NOT EXISTS `customers` (
+CREATE TABLE `customers` (
   `guid` char(36) NOT NULL,
   `salesRepEmployeeGuid` char(36) DEFAULT NULL,
   `customerNumber` int(11) DEFAULT NULL,
@@ -33,8 +26,8 @@ CREATE TABLE IF NOT EXISTS `customers` (
 -- Dumping data for table classicmodels.customers: ~122 rows (approximately)
 /*!40000 ALTER TABLE `customers` DISABLE KEYS */;
 INSERT INTO `customers` (`guid`, `salesRepEmployeeGuid`, `customerNumber`, `customerName`, `contactLastName`, `contactFirstName`, `phone`, `addressLine1`, `addressLine2`, `city`, `state`, `postalCode`, `country`, `creditLimit`) VALUES
-	('611214e4-7d92-11ec-be40-0242ac120004', '7a30ddff-7d92-11ec-be40-0242ac120004', 103, 'Atelier graphique', 'Schmitt', 'Carine ', '40.32.2555', '54, rue Royale', '1643256612020', 'Nantes', NULL, '44000', 'France', 21000.00),
-	('6112226f-7d92-11ec-be40-0242ac120004', '7a30dd42-7d92-11ec-be40-0242ac120004', 112, 'Signal Gift Stores', 'King', 'Jean', '7025551838', '8489 Strong St.', '1643256612020', 'Las Vegas', 'NV', '83030', 'USA', 71800.00),
+	('611214e4-7d92-11ec-be40-0242ac120004', '7a30ddff-7d92-11ec-be40-0242ac120004', 103, 'Atelier graphique', 'Schmitt', 'Carine ', '40.32.2555', '54, rue Royale', '', 'Nantes', NULL, '44000', 'France', 21000.00),
+	('6112226f-7d92-11ec-be40-0242ac120004', '7a30dd42-7d92-11ec-be40-0242ac120004', 112, 'Signal Gift Stores', 'King', 'Jean', '7025551838', '8489 Strong St.', '', 'Las Vegas', 'NV', '83030', 'USA', 71800.00),
 	('611222f2-7d92-11ec-be40-0242ac120004', '7a30de75-7d92-11ec-be40-0242ac120004', 114, 'Australian Collectors, Co.', 'Ferguson', 'Peter', '03 9520 4555', '636 St Kilda Road', 'Level 3', 'Melbourne', 'Victoria', '3004', 'Australia', 117300.00),
 	('61122320-7d92-11ec-be40-0242ac120004', '7a30ddff-7d92-11ec-be40-0242ac120004', 119, 'La Rochelle Gifts', 'Labrune', 'Janine ', '40.67.8555', '67, rue des Cinquante Otages', NULL, 'Nantes', NULL, '44000', 'France', 118200.00),
 	('61122347-7d92-11ec-be40-0242ac120004', '7a30de58-7d92-11ec-be40-0242ac120004', 121, 'Baane Mini Imports', 'Bergulfsen', 'Jonas ', '07-98 9555', 'Erling Skakkes gate 78', NULL, 'Stavern', NULL, '4110', 'Norway', 81700.00),
@@ -158,7 +151,7 @@ INSERT INTO `customers` (`guid`, `salesRepEmployeeGuid`, `customerNumber`, `cust
 /*!40000 ALTER TABLE `customers` ENABLE KEYS */;
 
 -- Dumping structure for table classicmodels.employees
-CREATE TABLE IF NOT EXISTS `employees` (
+CREATE TABLE `employees` (
   `guid` char(36) NOT NULL DEFAULT '',
   `employeeNumber` int(11) NOT NULL,
   `officeGuid` char(36) NOT NULL DEFAULT '',
@@ -200,7 +193,7 @@ INSERT INTO `employees` (`guid`, `employeeNumber`, `officeGuid`, `reportsToGuid`
 /*!40000 ALTER TABLE `employees` ENABLE KEYS */;
 
 -- Dumping structure for table classicmodels.offices
-CREATE TABLE IF NOT EXISTS `offices` (
+CREATE TABLE `offices` (
   `guid` char(36) NOT NULL DEFAULT '',
   `officeCode` varchar(10) NOT NULL,
   `city` varchar(50) NOT NULL,
@@ -227,7 +220,7 @@ INSERT INTO `offices` (`guid`, `officeCode`, `city`, `phone`, `addressLine1`, `a
 /*!40000 ALTER TABLE `offices` ENABLE KEYS */;
 
 -- Dumping structure for table classicmodels.orderdetails
-CREATE TABLE IF NOT EXISTS `orderdetails` (
+CREATE TABLE `orderdetails` (
   `guid` char(36) NOT NULL DEFAULT '',
   `orderGuid` char(36) NOT NULL DEFAULT '',
   `productGuid` char(36) NOT NULL DEFAULT '',
@@ -237,10 +230,10 @@ CREATE TABLE IF NOT EXISTS `orderdetails` (
   PRIMARY KEY (`guid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
--- Dumping data for table classicmodels.orderdetails: ~2,996 rows (approximately)
+-- Dumping data for table classicmodels.orderdetails: ~3,052 rows (approximately)
 /*!40000 ALTER TABLE `orderdetails` DISABLE KEYS */;
 INSERT INTO `orderdetails` (`guid`, `orderGuid`, `productGuid`, `quantityOrdered`, `priceEach`, `orderLineNumber`) VALUES
-	('93a72cb4-7d92-11ec-be40-0242ac120004', 'a258967a-7d92-11ec-be40-0242ac120004', 'e13ef1c1-7d92-11ec-be40-0242ac120004', 20, 136.00, 3),
+	('93a72cb4-7d92-11ec-be40-0242ac120004', 'a258967a-7d92-11ec-be40-0242ac120004', 'e13ef1c1-7d92-11ec-be40-0242ac120004', 2, 136.00, 3),
 	('93a7369e-7d92-11ec-be40-0242ac120004', 'a258967a-7d92-11ec-be40-0242ac120004', 'e13ef3dd-7d92-11ec-be40-0242ac120004', 50, 55.09, 2),
 	('93a737a9-7d92-11ec-be40-0242ac120004', 'a258967a-7d92-11ec-be40-0242ac120004', 'e13efa5b-7d92-11ec-be40-0242ac120004', 22, 75.46, 4),
 	('93a737cb-7d92-11ec-be40-0242ac120004', 'a258967a-7d92-11ec-be40-0242ac120004', 'e13f074e-7d92-11ec-be40-0242ac120004', 49, 35.29, 1),
@@ -3239,7 +3232,7 @@ INSERT INTO `orderdetails` (`guid`, `orderGuid`, `productGuid`, `quantityOrdered
 /*!40000 ALTER TABLE `orderdetails` ENABLE KEYS */;
 
 -- Dumping structure for table classicmodels.orders
-CREATE TABLE IF NOT EXISTS `orders` (
+CREATE TABLE `orders` (
   `guid` char(36) NOT NULL DEFAULT '',
   `orderNumber` int(11) NOT NULL,
   `customerGuid` char(36) NOT NULL DEFAULT '',
@@ -3583,7 +3576,7 @@ INSERT INTO `orders` (`guid`, `orderNumber`, `customerGuid`, `orderDate`, `requi
 /*!40000 ALTER TABLE `orders` ENABLE KEYS */;
 
 -- Dumping structure for table classicmodels.payments
-CREATE TABLE IF NOT EXISTS `payments` (
+CREATE TABLE `payments` (
   `guid` char(36) NOT NULL DEFAULT '',
   `customerGuid` char(36) NOT NULL DEFAULT '',
   `checkNumber` varchar(50) NOT NULL,
@@ -3871,7 +3864,7 @@ INSERT INTO `payments` (`guid`, `customerGuid`, `checkNumber`, `paymentDate`, `a
 /*!40000 ALTER TABLE `payments` ENABLE KEYS */;
 
 -- Dumping structure for table classicmodels.productlines
-CREATE TABLE IF NOT EXISTS `productlines` (
+CREATE TABLE `productlines` (
   `guid` char(36) NOT NULL DEFAULT '',
   `productLine` varchar(50) NOT NULL,
   `textDescription` varchar(4000) DEFAULT NULL,
@@ -3893,7 +3886,7 @@ INSERT INTO `productlines` (`guid`, `productLine`, `textDescription`, `htmlDescr
 /*!40000 ALTER TABLE `productlines` ENABLE KEYS */;
 
 -- Dumping structure for table classicmodels.products
-CREATE TABLE IF NOT EXISTS `products` (
+CREATE TABLE `products` (
   `guid` char(36) NOT NULL DEFAULT '',
   `productLineGuid` char(36) NOT NULL DEFAULT '',
   `productCode` varchar(15) NOT NULL,

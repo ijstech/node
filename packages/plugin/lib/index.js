@@ -7,6 +7,7 @@ exports.Worker = exports.Router = exports.loadModule = exports.resolveFilePath =
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const vm_1 = require("@ijstech/vm");
+const github_1 = __importDefault(require("./github"));
 const RootPath = path_1.default.dirname(require.main.filename);
 let Modules = {};
 let LoadingPackageName = '';
@@ -25,7 +26,7 @@ global.define = function (id, deps, callback) {
         }
     }
     callback.apply(this, result);
-    if (id == 'index')
+    if (id == 'index' || id == 'plugin')
         Modules[LoadingPackageName || 'index'] = exports;
     else
         Modules[id] = exports;
@@ -58,13 +59,26 @@ async function getPackage(filePath) {
         return JSON.parse(text);
 }
 ;
+function getPackageDir(pack) {
+    if (pack[0] != '/')
+        pack = require.resolve(pack);
+    let dir = path_1.default.dirname(pack);
+    if (fs_1.default.existsSync(path_1.default.resolve(dir, 'package.json')))
+        return dir;
+    else
+        return getPackageDir(dir);
+}
 async function getPackageScript(filePath) {
     let result;
-    if (filePath.startsWith('file:')) {
-        let packPath = resolveFilePath([RootPath], filePath.substring(5), true);
+    let packPath = '';
+    if (filePath.startsWith('file:'))
+        packPath = resolveFilePath([RootPath], filePath.substring(5), true);
+    else
+        packPath = getPackageDir(filePath);
+    if (packPath) {
         let pack = await getPackage(packPath);
         if (pack) {
-            let libPath = resolveFilePath([packPath], pack.main);
+            let libPath = resolveFilePath([packPath], pack.plugin || pack.main || 'index.js');
             if (libPath)
                 return await getScript(libPath);
         }
@@ -154,6 +168,12 @@ class PluginVM {
     }
     ;
     async loadDependencies() {
+        if (this.options.plugins.db) {
+            let script = await getPackageScript('@ijstech/pdm');
+            if (script)
+                this.vm.injectGlobalPackage('@ijstech/pdm', script);
+        }
+        ;
         if (this.options.dependencies) {
             for (let packname in this.options.dependencies) {
                 let pack = this.options.dependencies[packname];
@@ -265,6 +285,15 @@ class Plugin {
                 this.vm = this.plugin.vm;
             }
             ;
+            for (let v in this.options.plugins) {
+                if (v == 'db') {
+                    let m = require('@ijstech/pdm');
+                    m.loadPlugin(this, this.options.plugins.db, this.plugin.vm);
+                    break;
+                }
+                ;
+            }
+            ;
         }
         ;
     }
@@ -274,6 +303,16 @@ class Plugin {
     }
     ;
     async createModule() {
+        for (let v in this.options.plugins) {
+            if (v == 'db') {
+                let script = await getPackageScript('@ijstech/pdm');
+                if (script)
+                    loadModule(script, '@ijstech/pdm');
+                break;
+            }
+            ;
+        }
+        ;
         if (this.options.dependencies) {
             for (let packname in this.options.dependencies) {
                 let pack = this.options.dependencies[packname];
@@ -284,14 +323,26 @@ class Plugin {
             ;
         }
         ;
-        if (!this.options.script)
-            this.options.script = await getScript(this.options.scriptPath);
+        if (!this.options.script) {
+            if (this.options.github) {
+                this.options.script = await github_1.default.getFile({
+                    org: this.options.github.org,
+                    repo: this.options.github.repo,
+                    token: this.options.github.token,
+                    filePath: 'lib/index.js'
+                });
+            }
+            else
+                this.options.script = await getScript(this.options.scriptPath);
+        }
         let script = this.options.script;
-        let module = loadModule(script);
-        if (module) {
-            if (module.default)
-                module = module.default;
-            return new module(this.options);
+        if (script) {
+            let module = loadModule(script);
+            if (module) {
+                if (module.default)
+                    module = module.default;
+                return new module(this.options);
+            }
         }
     }
     ;
@@ -310,6 +361,12 @@ class Plugin {
                         script += plugin;
                     else if (plugin)
                         result.plugins[v] = plugin;
+                    if (v == 'db') {
+                        let m = require('@ijstech/pdm');
+                        let plugin = m.loadPlugin(this, this.options.plugins[v], this.plugin.vm);
+                        if (typeof (plugin) == 'string')
+                            script += plugin;
+                    }
                 }
                 catch (err) {
                     console.dir(err);
@@ -328,7 +385,6 @@ class Plugin {
 ;
 class Router extends Plugin {
     constructor(options) {
-        console.dir(options);
         super(options);
     }
     ;
@@ -348,8 +404,10 @@ class Router extends Plugin {
             ctx.url = '/' + ctx.url;
         let result;
         await this.createPlugin();
-        result = await this.plugin.route(this.session, RouterRequest(ctx), RouterResponse(ctx));
-        return result;
+        if (this.plugin) {
+            result = await this.plugin.route(this.session, RouterRequest(ctx), RouterResponse(ctx));
+            return result;
+        }
     }
     ;
 }
@@ -383,7 +441,8 @@ class Worker extends Plugin {
         this.options.processing = true;
         try {
             await this.createPlugin();
-            result = await this.plugin.process(this.session, data);
+            if (this.plugin)
+                result = await this.plugin.process(this.session, data);
         }
         catch (err) {
             console.dir(err);

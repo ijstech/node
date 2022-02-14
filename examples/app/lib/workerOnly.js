@@ -18,6 +18,11 @@ async function main() {
                     scriptPath: './plugins/worker/index.js',
                     plugins: {
                         cache: {},
+                        db: {
+                            "db1": {
+                                mysql: config_js_1.default.mysql
+                            }
+                        },
                         message: {
                             connection: {
                                 redis: config_js_1.default.redis
@@ -41,6 +46,11 @@ async function main() {
                         msg: 'hello'
                     },
                     plugins: {
+                        db: {
+                            "db1": {
+                                mysql: config_js_1.default.mysql
+                            }
+                        },
                         message: {
                             connection: {
                                 redis: config_js_1.default.redis

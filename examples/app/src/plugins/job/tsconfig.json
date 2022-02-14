@@ -3,8 +3,8 @@
     "include": [
       "*.ts"
     ],    
-    "compilerOptions": {      
-      "baseUrl": ".",
+    "compilerOptions": {   
+      "baseUrl": ".",  
       "module": "amd",
       "outFile": "../../../lib/plugins/job/index.js",
       "rootDir": "." ,
@@ -12,7 +12,12 @@
       "declaration": false,
       "paths": {
         "@pack/demo": ["../../../demoPack"],
-        "@ijstech/node": ["../../../../.."]
+        "@ijstech/types": ["../../../../../packages/types"]
       }
-    }    
-  }
+    },
+    "references": [
+      {
+        "path": "../../../../.."
+      }
+  ]
+}

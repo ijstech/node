@@ -1,11 +1,12 @@
 import {IRouterPlugin, IRouterRequest, IRouterResponse, ISession} from '@ijstech/types';
 import {helloWorld} from './hello';
+import { Demo } from '@pack/demo';
 
 class HelloWorld implements IRouterPlugin{
     message(channel: string, msg: string):void{
 
     }
-    async route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean> {        
+    async route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean> {
         if (request.path == '/job'){
             let job;
             try{
@@ -13,7 +14,6 @@ class HelloWorld implements IRouterPlugin{
                 response.end(JSON.stringify(job, null, 4));
             }
             catch(err){
-                console.dir('exception')
                 console.dir(err.message)
             }
         }
@@ -66,6 +66,14 @@ class HelloWorld implements IRouterPlugin{
                     error: err.message
                 })
             }
+        }
+        else if (request.path == '/pdm'){
+            let demo = new Demo();
+            let empNo = 1002;
+            if (request.query.employeeNumber)
+                empNo = parseInt(<string>request.query.employeeNumber);
+            let emp = await demo.employee(empNo);
+            response.end(emp)
         }
         else if (request.path == '/db'){
             let con = session.plugins.db.getConnection('db1');

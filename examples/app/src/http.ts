@@ -17,10 +17,14 @@ async function main(){
                         }
                     },
                     {
-                        baseUrl: '/github',
+                        baseUrl: '/demo1',
                         isolated: false,
                         methods:['GET'],
-                        github: Config.github,
+                        github: {
+                            org: 'yc-wong',
+                            repo: 'demo1',
+                            token: ''
+                        },
                         params: {
                             
                         }
@@ -51,8 +55,11 @@ async function main(){
                                     redis: Config.redis
                                 },
                                 publish: ['msg_channel1']
-                            },
-                            wallet: Config.wallet
+                            }//,
+                            // wallet: Config.wallet
+                        },
+                        dependencies: {
+                            "@pack/demo": "file:../demoPack"                            
                         }
                     },
                     {
@@ -81,8 +88,11 @@ async function main(){
                                     redis: Config.redis
                                 },
                                 publish: ['msg_channel1']
-                            },
-                            wallet: Config.wallet
+                            }//,
+                            // wallet: Config.wallet
+                        },
+                        dependencies: {
+                            "@pack/demo": "file:../demoPack"
                         }
                     } 
                 ]

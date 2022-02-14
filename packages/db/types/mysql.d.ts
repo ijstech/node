@@ -12,6 +12,7 @@ export declare class MySQLClient implements Types.IDBClient {
     private applySelectQuery;
     private applyUpdateQuery;
     private applyUpdateRecords;
+    checkTableExists(tableName: string): Promise<boolean>;
     escape(entity: string): string;
     private getFields;
     private getQuery;
@@ -19,6 +20,7 @@ export declare class MySQLClient implements Types.IDBClient {
     private end;
     beginTransaction(): Promise<boolean>;
     commit(): Promise<boolean>;
-    query(sql: string, params?: any[]): Promise<any>;
+    import(sql: string): Promise<boolean>;
+    query(sql: string, params?: any[]): Promise<any[]>;
     rollback(): Promise<boolean>;
 }

@@ -112,7 +112,7 @@ class VM {
                         result.push(global._$$modules[dep]);
                 }
                 callback.apply(this, result);
-                if (global['$$currPackName'] && id == 'index')
+                if (global['$$currPackName'] && (id == 'index' || id == 'plugin'))
                     global._$$modules[global['$$currPackName']] = exports;
                 else
                     global._$$modules[id] = exports;

@@ -171,6 +171,7 @@ export interface IDBClient{
     applyQueries(queries: IQuery[]): Promise<IQueryResult[]>;
     query(sql: string, params?: any[]): Promise<any>;
     beginTransaction():Promise<boolean>;
+    checkTableExists(tableName: string): Promise<boolean>;
     commit():Promise<boolean>;
     rollback(): Promise<boolean>;
 }
@@ -199,10 +200,16 @@ export type IPackageVersion = string;
 export interface IDependencies {
     [packageName: string]: IPackageVersion;
 }
+export interface IGithubOptions {
+    org: string;
+    repo: string;
+    token?: string;
+}
 export interface IPluginOptions {
     memoryLimit?: number;
     timeLimit?: number;
     isolated?: boolean;
+    github?: IGithubOptions;
     script?: string;
     scriptPath?: string;
     params?: any;

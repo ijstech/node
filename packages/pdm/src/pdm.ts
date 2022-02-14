@@ -21,7 +21,7 @@ interface IRecordSet{
     fields: Types.IFields;
     keyField: Types.IField;
     tableName: string;
-    mergeRecords(data: any): void;
+    mergeRecords(data: any): any[];
     reset(): void;
 };
 interface IRecord {
@@ -102,7 +102,7 @@ export class TContext {
             t.recordSet = this[n];
         };
     };
-    async fetch(recordSet?: IRecordSet): Promise<boolean>{        
+    async fetch(recordSet?: IRecordSet): Promise<any>{        
         let queries = [];       
         let self = this;   
         function getQueries(){
@@ -134,23 +134,29 @@ export class TContext {
                 getQueries();          
             }
         };
-        let client = this._client;
-        let result = await client.applyQueries(queries);
+        let client = this._client || global['$$pdm_plugin'];        
+        let data = await client.applyQueries(queries);
+        if (typeof(data) == 'string')
+            data = JSON.parse(data);
+            
+        if (data && data[0] && data[0].error)            
+            throw data[0].error;
 
-        if (result && result[0] && result[0].error)            
-            throw result[0].error;
-
-        for (let i = 0; i < result.length; i ++){
-            let r = result[i];
+        let result: any[];
+        for (let i = 0; i < data.length; i ++){
+            let r = data[i];
             if (r.id){
                 let recordSet = this._recordSets[r.id]
                 if (recordSet){
-                    recordSet.mergeRecords(r.result);
+                    result = recordSet.mergeRecords(r.result);
                     recordSet._queries = [];
                 }
             };
         };
-        return true;
+        if (recordSet)
+            return result
+        else
+            return true;
     };
     private modifyRecord(record: any){
         if (!record.$$id)
@@ -363,7 +369,7 @@ export class TRecordSet<T>{
             this.context.modifyRecord(rd)
         }
     };
-    async fetch(): Promise<boolean>{
+    async fetch(): Promise<T[]>{
         if (this._master && !this._fetchAll){
             this._fetchAll = true;
             this._queries.push({a:'s',q:[[this._masterField,'=', this._master.$$keyValue]]})
@@ -384,8 +390,9 @@ export class TRecordSet<T>{
         this._currIdx = 0;
         return this.proxy(<any>this._records[0]);
     }
-    protected mergeRecords(records: any[]){     
-        let keyField = this.keyField;        
+    protected mergeRecords(records: any[]): any[]{     
+        let keyField = this.keyField;    
+        let result = [];    
         if (keyField){
             records.forEach((record)=>{
                 let kv = record[keyField.prop || keyField.field];
@@ -397,12 +404,14 @@ export class TRecordSet<T>{
                     else if (this._recordsIdx[kv]['$$record']){
                         this._recordsIdx[kv]['$$record'] = record;
                     }
+                    result.push(this._recordsIdx[kv]);
                 }
             })
         }
         else{
             this._records = this._records.concat(records);
         }
+        return result;
     }
     get next(): T{
         if (this._currIdx < this._records.length)

@@ -2,13 +2,11 @@
     "extends": "../../tsconfig.build.json",
     "compilerOptions": {
         "baseUrl": ".",
-        "experimentalDecorators": true,
         "outDir": "lib",
+        "declaration": false,
+        "composite": false,
         "rootDir": "src",
-        "declaration": true,
-        "declarationDir": "./types",
         "paths": {
-            "@ijstech/db": ["../db"],
             "@ijstech/types": ["../types"]
         }
     },

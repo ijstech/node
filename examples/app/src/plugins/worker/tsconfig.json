@@ -1,18 +1,18 @@
 {
-    "extends": "../../../../../tsconfig.build.json", 
-    "include": [
-      "./index.ts"
-    ],
-    "compilerOptions": {      
-      "baseUrl": ".",
-      "module": "amd",
-      "outFile": "../../../lib/plugins/worker/index.js",
-      "rootDir": "." ,
-      "composite": false,
-      "declaration": false,      
-      "paths": {
-        "@pack/demo": ["../../../demoPack"],
-        "@ijstech/node": ["../../../../.."]
-      }
+  "extends": "../../../../../tsconfig.build.json",
+  "include": [
+    "*.ts"
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "amd",
+    "outFile": "../../../lib/plugins/worker/index.js",
+    "rootDir": ".",
+    "composite": false,
+    "declaration": false,
+    "paths": {
+      "@pack/demo": ["../../../demoPack"],
+      "@ijstech/types": ["../../../../../packages/types"]
     }
+  }
 }

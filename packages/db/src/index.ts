@@ -3,7 +3,10 @@ import {VM} from '@ijstech/vm';
 import * as Types from '@ijstech/types';
 
 let Clients = {};
-export function getClient(options?: Types.IDbConnectionOptions): Types.IDBClient{
+export interface IClient extends Types.IDBClient{
+    import(sql: string): Promise<boolean>;
+};
+export function getClient(options?: Types.IDbConnectionOptions): IClient{
     if (options.mysql){
         let opt = options.mysql;
         let id = opt.host + ':' + opt.user + ':' + opt.database;
@@ -23,6 +26,10 @@ function getPluginClient(vm: VM, db: string, client: Types.IDBClient): Types.IDB
             },
             beginTransaction(): Promise<boolean>{
                 return client.beginTransaction();
+            },
+            async checkTableExists(tableName: string): Promise<boolean>{
+                let result = await client.checkTableExists(tableName);
+                return result;
             },
             commit(): Promise<boolean>{
                 return client.commit();

@@ -169,9 +169,16 @@ class MySQLClient {
         return;
     }
     ;
+    async checkTableExists(tableName) {
+        let sql = `SHOW TABLES LIKE ?`;
+        let result = await this.query(sql, [tableName]);
+        return result.length > 0;
+    }
+    ;
     escape(entity) {
         return this.connection.escapeId(entity);
     }
+    ;
     getFields(fields, data, params) {
         let result = '';
         for (let prop in fields) {
@@ -280,6 +287,38 @@ class MySQLClient {
                 else {
                     resolve(true);
                 }
+            });
+        });
+    }
+    ;
+    import(sql) {
+        return new Promise((resolve) => {
+            let config = JSON.parse(JSON.stringify(this.options));
+            config.multipleStatements = true;
+            let connection = MySQL.createConnection(config);
+            connection.beginTransaction(function (err) {
+                if (err) {
+                    connection.end();
+                    resolve(false);
+                }
+                else {
+                    connection.query(sql, [], function (err, result) {
+                        if (err) {
+                            connection.rollback(function (err) {
+                                connection.end();
+                                resolve(false);
+                            });
+                        }
+                        else {
+                            connection.commit(function () {
+                                connection.end();
+                                resolve(true);
+                            });
+                        }
+                        ;
+                    });
+                }
+                ;
             });
         });
     }

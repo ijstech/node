@@ -1,4 +1,5 @@
 import * as Types from '@ijstech/types';
+import { rejects } from 'assert';
 import * as MySQL from 'mysql';
 
 export class MySQLClient implements Types.IDBClient{
@@ -135,9 +136,14 @@ export class MySQLClient implements Types.IDBClient{
         };
         return;
     };
+    async checkTableExists(tableName: string): Promise<boolean>{
+        let sql = `SHOW TABLES LIKE ?`;
+        let result = await this.query(sql, [tableName]);
+        return result.length > 0;
+    };
     escape(entity: string): string{
         return this.connection.escapeId(entity)
-    }
+    };
     private getFields(fields: Types.IFields, data?: Types.IQueryData, params?: any[]): string{
         let result = '';
         for (let prop in fields){            
@@ -236,7 +242,36 @@ export class MySQLClient implements Types.IDBClient{
             });
         });
     };
-    query(sql: string, params?: any[]): Promise<any> {
+    import(sql: string): Promise<boolean>{
+        return new Promise((resolve)=>{
+            let config = JSON.parse(JSON.stringify(this.options));        
+            config.multipleStatements = true;
+            let connection = MySQL.createConnection(config);
+            connection.beginTransaction(function(err){          
+                if (err){
+                    connection.end();
+                    resolve(false);
+                }
+                else{
+                    connection.query(sql, [], function(err, result){
+                        if (err){
+                            connection.rollback(function(err){
+                                connection.end();
+                                resolve(false);
+                            })
+                        }
+                        else{
+                            connection.commit(function(){
+                                connection.end();
+                                resolve(true);
+                            });
+                        };
+                    });
+                };
+            });
+        });
+    };
+    query(sql: string, params?: any[]): Promise<any[]> {
         return new Promise((resolve, reject)=>{
             try{
                 this.connection.query(sql, params, function(err, result){

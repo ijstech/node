@@ -2,18 +2,15 @@
     "extends": "../../tsconfig.build.json",
     "compilerOptions": {
         "baseUrl": ".",
+        "module": "AMD",
         "experimentalDecorators": true,
-        "outDir": "lib",
         "rootDir": "src",
-        "declaration": true,
-        "declarationDir": "./types",
-        "paths": {
-            "@ijstech/db": ["../db"],
-            "@ijstech/types": ["../types"]
-        }
+        "declaration": false,
+        "composite": false,
+        "outFile": "./plugin/index.js",        
     },
     "include": [
-        "./src/index.ts",
+        "./src/plugin.ts",
         "./src/pdm.ts"
     ],
     "references": [

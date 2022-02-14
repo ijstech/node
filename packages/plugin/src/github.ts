@@ -29,13 +29,11 @@ export function request(method: string, urlString: string, data: any, headers?: 
             let data = '';
             let contentType = res.headers['content-type'];            
             res.on('data', (chunk) => {
-                data += chunk;
+                if (res.statusCode == 200)
+                    data += chunk;
             });
             res.on('end', ()=>{
-                if (contentType && contentType.indexOf('json'))                
-                    resolve(JSON.parse(data))
-                else
-                    resolve(data)
+                resolve(data)
             })
         }
         let req: Http.ClientRequest;    
@@ -57,11 +55,13 @@ export async function getFile(options: {
     filePath: string,
     token: string
 }): Promise<any>{
-    let result = await get(`https://api.github.com/repos/${options.org}/${options.repo}/contents/${options.filePath}`, {
+    let headers:any = {
         "User-Agent": 'ijstech_secure_node',
-        Authorization: `token ${options.token}`,
         Accept: 'application/vnd.github.v3.raw'
-    })
+    };
+    if (options.token)
+        headers.Authorization = `token ${options.token}`;
+    let result = await get(`https://api.github.com/repos/${options.org}/${options.repo}/contents/${options.filePath}`, headers)
     return result;
 }
 export default {

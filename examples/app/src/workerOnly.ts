@@ -14,6 +14,11 @@ async function main(){
                     scriptPath: './plugins/worker/index.js',                    
                     plugins: {
                         cache: {},
+                        db: {
+                            "db1": {
+                                mysql: Config.mysql
+                            }
+                        },
                         message: {
                             connection: {
                                 redis: Config.redis
@@ -37,6 +42,11 @@ async function main(){
                         msg: 'hello'
                     },
                     plugins: {
+                        db: {
+                            "db1": {
+                                mysql: Config.mysql
+                            }
+                        },
                         message: {
                             connection: {
                                 redis: Config.redis

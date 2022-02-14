@@ -3,21 +3,33 @@ import * as assert from 'assert';
 import Context from './model/sample.pdm';
 import * as Config from './config.js';
 import * as DB from '../../db/src';
-import * as Types from '../../types/src';
+import Fs from 'fs';
+
+require.extensions['.sql'] = function (module, filename) {
+    module.exports = Fs.readFileSync(filename, 'utf8');
+};
+const sql = require('./model/sample.sql');
 
 describe('PDM', function() {
     this.timeout(20000);
-    let client: Types.IDBClient;
-    before(function(){
+    let client: DB.IClient;
+    before(async function(){        
         client = DB.getClient(Config);
+        let tableExists = await client.checkTableExists('customers');
+        if (!tableExists){
+            let result = await client.import(sql);
+            if (!result)            
+                throw new Error('Import DB data failed!');
+        }
     })    
     it('Query Customer where customerNumber in [112, 114]', async function(){
         let context = new Context(client);
         context.customer.query.where('customerNumber', 'in', [112,114]);
-        await context.customer.fetch();
+        let records = await context.customer.fetch();        
         assert.strictEqual(context.customer.count, 2);
+        assert.strictEqual(records[0].customerNumber, 112);
         let values = context.customer.values('customerNumber');
-        assert.deepStrictEqual(values, [112,114]);
+        assert.deepStrictEqual(values, [112,114]);           
     });
     it('Query Customer where customerNumber = 112 or 114', async function(){
         let context = new Context(client);
@@ -121,8 +133,7 @@ describe('PDM', function() {
         assert.strictEqual(order.guid, (await order.orderDetails.first.order).guid);
         assert.strictEqual(order.orderDetails.count, 4);
         let detail = order.orderDetails.first;
-        let qty = detail.quantityOrdered;
-        console.dir('qty: ' + qty);
+        let qty = detail.quantityOrdered;        
         detail.quantityOrdered = 999;
         await context.save();
     })
