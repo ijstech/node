@@ -1,7 +1,5 @@
 import * as Types from '@ijstech/types';
-import { rejects } from 'assert';
 import * as MySQL from 'mysql';
-import {IIntegerField} from "../../pdm";
 
 export class MySQLClient implements Types.IDBClient{
     private _connection: MySQL.Connection;
@@ -309,7 +307,6 @@ export class MySQLClient implements Types.IDBClient{
     };
     private async syncTableSchema(tableName: string, fields: Types.IFields): Promise<boolean> {
         try {
-            console.log('synchronze table schema')
             const tableExists = await this.checkTableExists(tableName);
             if(!tableExists) {
                 let pkName;
@@ -339,11 +336,11 @@ export class MySQLClient implements Types.IDBClient{
                             break;
                         case 'integer':
                             columnBuilder.push(`${this.escape(fieldName)} INT(?) NOT NULL`);
-                            columnBuilderParams.push((<IIntegerField> field).digits || 11);
+                            columnBuilderParams.push((<Types.IIntegerField> field).digits || 11);
                             break;
                         case 'decimal':
                             columnBuilder.push(`${this.escape(fieldName)} DECIMAL(?, ?) NOT NULL`);
-                            columnBuilderParams.push((<IIntegerField> field).digits || 11, (<IIntegerField> field).decimals || 2);
+                            columnBuilderParams.push((<Types.IDecimalField> field).digits || 11, (<Types.IDecimalField> field).decimals || 2);
                             break;
                         case 'date':
                             columnBuilder.push(`${this.escape(fieldName)} DATE NOT NULL`);
@@ -403,11 +400,11 @@ export class MySQLClient implements Types.IDBClient{
                                 break;
                             case 'integer':
                                 columnBuilder.push(`ADD ${this.escape(fieldName)} INT(?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                columnBuilderParams.push((<IIntegerField> field).digits || 11);
+                                columnBuilderParams.push((<Types.IIntegerField> field).digits || 11);
                                 break;
                             case 'decimal':
                                 columnBuilder.push(`ADD ${this.escape(fieldName)} DECIMAL(?, ?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                columnBuilderParams.push((<IIntegerField> field).digits || 11, (<IIntegerField> field).decimals || 2)
+                                columnBuilderParams.push((<Types.IDecimalField> field).digits || 11, (<Types.IDecimalField> field).decimals || 2)
                                 break;
                             case 'date':
                                 columnBuilder.push(`ADD ${this.escape(fieldName)} DATE NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
