@@ -2,7 +2,7 @@ import * as PDM from '../../src';
 
 class Customer extends PDM.TRecord{
     @PDM.KeyField()
-    guid: string;        
+    guid: string;
     @PDM.RefTo<Context>('employee', 'salesRepEmployeeGuid')
     salesRep: Promise<Employee>;
     @PDM.IntegerField()
@@ -52,7 +52,7 @@ class Employee extends PDM.TRecord{
 };
 class Office extends PDM.TRecord{
     @PDM.KeyField()
-    guid: string;  
+    guid: string;
     @PDM.StringField({size: 10})
     officeCode: string;
     @PDM.StringField()
@@ -88,7 +88,7 @@ class OrderDetails extends PDM.TRecord{
 }
 class Order extends PDM.TRecord{
     @PDM.KeyField()
-    guid: string;  
+    guid: string;
     @PDM.OneToMany<OrderDetails>(OrderDetails, 'order', 'orderDetails', 'orderGuid')
     orderDetails: PDM.TRecordSet<OrderDetails>;
     @PDM.IntegerField()
@@ -108,7 +108,7 @@ class Order extends PDM.TRecord{
 }
 class Payment extends PDM.TRecord{
     @PDM.KeyField()
-    guid: string;  
+    guid: string;
     @PDM.RefTo<Context>('customer', 'customerGuid')
     customer: Promise<Customer>;
     @PDM.StringField()
@@ -120,7 +120,7 @@ class Payment extends PDM.TRecord{
 }
 class ProductLine extends PDM.TRecord{
     @PDM.KeyField()
-    guid: string;  
+    guid: string;
     @PDM.StringField()
     productLine: string;
     @PDM.StringField({size:4000})
@@ -132,7 +132,7 @@ class ProductLine extends PDM.TRecord{
 };
 class Product extends PDM.TRecord{
     @PDM.KeyField()
-    guid: string;  
+    guid: string;
     @PDM.RefTo<Context>('productLine', 'productLineGuid')
     productLine: Promise<ProductLine>;
     @PDM.StringField({size: 15})
@@ -152,9 +152,35 @@ class Product extends PDM.TRecord{
     @PDM.DecimalField()
     MSRP: number;
 };
+class Demo extends PDM.TRecord{
+    @PDM.KeyField()
+    guid: string;
+    @PDM.StringField()
+    string: string;
+    @PDM.DecimalField()
+    decimal: number;
+    @PDM.IntegerField()
+    integer: number;
+    @PDM.BooleanField()
+    boolean: boolean;
+    @PDM.DateField()
+    date: Date;
+    @PDM.BlobField()
+    blob: string;
+    @PDM.StringField()
+    newField: string;
+    @PDM.StringField({size: 11})
+    size: string;
+};
+class DemoItem extends PDM.TRecord {
+    @PDM.KeyField()
+    guid: string;
+    @PDM.RefTo<Context>('demo', 'demoGuid')
+    demo: Promise<Demo>;
+}
 export default class Context extends PDM.TContext {
     @PDM.RecordSet('customers', Customer)
-    customer: PDM.TRecordSet<Customer>;    
+    customer: PDM.TRecordSet<Customer>;
     @PDM.RecordSet('employees', Employee)
     employee: PDM.TRecordSet<Employee>;
     @PDM.RecordSet('offices', Office)
@@ -167,4 +193,8 @@ export default class Context extends PDM.TContext {
     productLine: PDM.TRecordSet<ProductLine>;
     @PDM.RecordSet('products', Product)
     product: PDM.TRecordSet<Product>;
+    @PDM.RecordSet('demo', Demo)
+    demo: PDM.TRecordSet<Demo>;
+    @PDM.RecordSet('demoItem', DemoItem)
+    demoItem: PDM.TRecordSet<DemoItem>;
 };

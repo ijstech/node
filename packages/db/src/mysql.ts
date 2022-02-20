@@ -1,5 +1,4 @@
 import * as Types from '@ijstech/types';
-import { rejects } from 'assert';
 import * as MySQL from 'mysql';
 
 export class MySQLClient implements Types.IDBClient{
@@ -9,7 +8,7 @@ export class MySQLClient implements Types.IDBClient{
 
     constructor(options: Types.IMySQLConnection){
         this.options = options;
-    };    
+    };
     async applyQueries(queries: Types.IQuery[]): Promise<Types.IQueryResult[]>{
         let result = [];
         if (Array.isArray(queries)){
@@ -31,13 +30,13 @@ export class MySQLClient implements Types.IDBClient{
         };
         return result;
     };
-    private async applyQuery(result: any[], query: Types.IQuery): Promise<any>{        
+    private async applyQuery(result: any[], query: Types.IQuery): Promise<any>{
         let tableName = query.table;
         let fields = query.fields;
         let id = query.id;
         if (Array.isArray(query.queries) && query.queries.length > 0){
-            for (let i = 0; i < query.queries.length; i ++){            
-                let q = query.queries[i];                
+            for (let i = 0; i < query.queries.length; i ++){
+                let q = query.queries[i];
                 if (q.a == 's'){
                     let r = await this.applySelectQuery(tableName, fields, q.q);
                     result.push({
@@ -73,30 +72,34 @@ export class MySQLClient implements Types.IDBClient{
         };
         return result;
     };
-    private async applyDeleteQuery(tableName: string, fields: any, qry: any[]): Promise<any>{        
+    private async applyDeleteQuery(tableName: string, fields: any, qry: any[]): Promise<any>{
+        await this.syncTableSchema(tableName, fields);
         let sql = '';
         let params = [];
         sql = `DELETE FROM ${this.escape(tableName)} `
         sql += 'WHERE ' + this.getQuery(fields, qry, params);
         return await this.query(sql, params);
     };
-    private async applyInsertQuery(tableName: string, fields: any, data: Types.IQueryData): Promise<any>{        
+    private async applyInsertQuery(tableName: string, fields: any, data: Types.IQueryData): Promise<any>{
+        await this.syncTableSchema(tableName, fields);
         let sql = '';
         let params = [];
         sql = `INSERT INTO ${this.escape(tableName)} SET ${this.getFields(fields, data, params)}`;
         return await this.query(sql, params);
     };
-    private async applySelectQuery(tableName: string, fields: any, qry: any[]): Promise<any>{        
+    private async applySelectQuery(tableName: string, fields: any, qry: any[]): Promise<any>{
+        await this.syncTableSchema(tableName, fields);
         let sql = '';
         let params = [];
-        sql = `SELECT ${this.getFields(fields)} FROM ${this.escape(tableName)} `;        
-        sql += 'WHERE ' + this.getQuery(fields, qry, params);        
-        let result = await this.query(sql, params);        
+        sql = `SELECT ${this.getFields(fields)} FROM ${this.escape(tableName)} `;
+        sql += 'WHERE ' + this.getQuery(fields, qry, params);
+        let result = await this.query(sql, params);
         return result;
     };
-    private async applyUpdateQuery(tableName: string, fields: Types.IFields, data: any, qry: Types.IQuery[]): Promise<any>{        
+    private async applyUpdateQuery(tableName: string, fields: Types.IFields, data: any, qry: Types.IQuery[]): Promise<any>{
+        await this.syncTableSchema(tableName, fields);
         let sql = '';
-        let params = [];        
+        let params = [];
         sql = `UPDATE ${this.escape(tableName)} SET ${this.getFields(fields, data, params)} `
         sql += 'WHERE ' + this.getQuery(fields, qry, params);
         return await this.query(sql, params);
@@ -112,7 +115,7 @@ export class MySQLClient implements Types.IDBClient{
                 keyField = field;
                 break;
             };
-        };        
+        };
         for (let i = 0; i < records.length; i ++){
             let record = records[i];
             let params = [];
@@ -146,7 +149,7 @@ export class MySQLClient implements Types.IDBClient{
     };
     private getFields(fields: Types.IFields, data?: Types.IQueryData, params?: any[]): string{
         let result = '';
-        for (let prop in fields){            
+        for (let prop in fields){
             let field = fields[prop];
             if (!field.details){
                 if (!data || typeof(data[prop]) != 'undefined'){
@@ -166,7 +169,7 @@ export class MySQLClient implements Types.IDBClient{
         return result;
     };
     private getQuery(fields: Types.IFields, query: any[], params: any[]){
-        if (query.length == 1)            
+        if (query.length == 1)
             return this.getQuery(fields, query[0], params);
         let sql = '('
         if (Array.isArray(query)){
@@ -201,7 +204,7 @@ export class MySQLClient implements Types.IDBClient{
                         sql += ' ' + query[i] + ' ';
                 };
             };
-        };    
+        };
         sql += ')';
         return sql;
     };
@@ -229,11 +232,11 @@ export class MySQLClient implements Types.IDBClient{
     commit(): Promise<boolean> {
         return new Promise((resolve, reject)=>{
             this.transaction = false;
-            this.connection.commit((err)=>{        
+            this.connection.commit((err)=>{
                 try{
                     this.end();
                 }
-                catch(err){};        
+                catch(err){};
                 if (err)
                     reject(err)
                 else{
@@ -244,10 +247,10 @@ export class MySQLClient implements Types.IDBClient{
     };
     import(sql: string): Promise<boolean>{
         return new Promise((resolve)=>{
-            let config = JSON.parse(JSON.stringify(this.options));        
+            let config = JSON.parse(JSON.stringify(this.options));
             config.multipleStatements = true;
             let connection = MySQL.createConnection(config);
-            connection.beginTransaction(function(err){          
+            connection.beginTransaction(function(err){
                 if (err){
                     connection.end();
                     resolve(false);
@@ -290,7 +293,7 @@ export class MySQLClient implements Types.IDBClient{
     rollback(): Promise<boolean>{
         return new Promise((resolve, reject)=>{
             this.transaction = false;
-            this.connection.rollback((err)=>{                        
+            this.connection.rollback((err)=>{
                 try{
                     this.end();
                 }
@@ -298,8 +301,157 @@ export class MySQLClient implements Types.IDBClient{
                 if (err)
                     reject(err)
                 else
-                    resolve(true)                
+                    resolve(true)
             });
         });
     };
+    private async syncTableSchema(tableName: string, fields: Types.IFields): Promise<boolean> {
+        try {
+            const tableExists = await this.checkTableExists(tableName);
+            if(!tableExists) {
+                let pkName;
+                const columnBuilder = [];
+                const columnBuilderParams = [];
+                for(const fieldName in fields) {
+                    const field = fields[fieldName];
+                    switch(field.dataType) {
+                        case 'key':
+                            pkName = fieldName;
+                            columnBuilder.push(`${this.escape(fieldName)} CHAR(36) NOT NULL DEFAULT ''`);
+                            break;
+                        case 'ref':
+                            columnBuilder.push(`${this.escape(field.field)} CHAR(36) DEFAULT NULL`);
+                        case '1toM':
+                            break;
+                        case 'char':
+                            columnBuilder.push(`${this.escape(fieldName)} CHAR(?) NOT NULL`);
+                            columnBuilderParams.push(field.size);
+                            break;
+                        case 'varchar':
+                            columnBuilder.push(`${this.escape(fieldName)} VARCHAR(?) NOT NULL`);
+                            columnBuilderParams.push(field.size);
+                            break;
+                        case 'boolean':
+                            columnBuilder.push(`${this.escape(fieldName)} TINYINT(1) NOT NULL`);
+                            break;
+                        case 'integer':
+                            columnBuilder.push(`${this.escape(fieldName)} INT(?) NOT NULL`);
+                            columnBuilderParams.push((<Types.IIntegerField> field).digits || 11);
+                            break;
+                        case 'decimal':
+                            columnBuilder.push(`${this.escape(fieldName)} DECIMAL(?, ?) NOT NULL`);
+                            columnBuilderParams.push((<Types.IDecimalField> field).digits || 11, (<Types.IDecimalField> field).decimals || 2);
+                            break;
+                        case 'date':
+                            columnBuilder.push(`${this.escape(fieldName)} DATE NOT NULL`);
+                            break;
+                        case 'blob':
+                            columnBuilder.push(`${this.escape(fieldName)} MEDIUMBLOB`);
+                            break;
+                        case 'text':
+                            columnBuilder.push(`${this.escape(fieldName)} TEXT`);
+                            break;
+                        case 'mediumText':
+                            columnBuilder.push(`${this.escape(fieldName)} MEDIUMTEXT`);
+                            break;
+                        case 'longText':
+                            columnBuilder.push(`${this.escape(fieldName)} LONGTEXT`);
+                            break;
+                    }
+                }
+                if(pkName) {
+                    columnBuilder.push(`PRIMARY KEY (${this.escape(pkName)})`);
+                }
+                if(columnBuilder.length > 0) {
+                    const sql = `CREATE TABLE ${this.escape(tableName)} (${columnBuilder.join(', ')})`;
+                    await this.query(sql, columnBuilderParams);
+                }
+                return true;
+            }
+            else {
+                const sql = `DESCRIBE ${this.escape(tableName)}`;
+                const columnDef = await this.query(sql);
+                const columnBuilder = [];
+                const columnBuilderParams = [];
+                let prevField;
+                for (const fieldName in fields) {
+                    const field = fields[fieldName];
+                    const currentField = columnDef.find(v => v['Field'] === (field.field || fieldName));
+                    if(!currentField) {
+                        switch(field.dataType) {
+                            case 'key':
+                                columnBuilder.push(`ADD PRIMARY KEY (${this.escape(fieldName)}) FIRST`)
+                                break;
+                            case 'ref':
+                                columnBuilder.push(`ADD ${this.escape(field.field)} CHAR(36) DEFAULT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case '1toM':
+                                break;
+                            case 'char':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} CHAR(?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilderParams.push(field.size);
+                                break;
+                            case 'varchar':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} VARCHAR(?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilderParams.push(field.size);
+                                break;
+                            case 'boolean':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} TINYINT(1) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case 'integer':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} INT(?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilderParams.push((<Types.IIntegerField> field).digits || 11);
+                                break;
+                            case 'decimal':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} DECIMAL(?, ?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilderParams.push((<Types.IDecimalField> field).digits || 11, (<Types.IDecimalField> field).decimals || 2)
+                                break;
+                            case 'date':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} DATE NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case 'blob':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} MEDIUMBLOB ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case 'text':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} TEXT ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case 'mediumText':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} MEDIUMTEXT ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case 'longText':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} LONGTEXT ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                        }
+                    } else {
+                        switch (field.dataType) {
+                            case 'varchar':
+                                if (currentField['Type'].indexOf('varchar') >= 0) {
+                                    const match = currentField['Type'].match(/\d+/g);
+                                    if (match) {
+                                        const size = parseInt(match[0]);
+                                        if (field.size > size) {
+                                            columnBuilder.push(`MODIFY ${this.escape(fieldName)} VARCHAR(?)`);
+                                            columnBuilderParams.push(field.size);
+                                        }
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                    prevField = fieldName;
+                }
+
+                if(columnBuilder.length > 0) {
+                    const sql = `ALTER TABLE ${this.escape(tableName)} ${columnBuilder.join(', ')}`;
+                    await this.query(sql, columnBuilderParams);
+                }
+
+            }
+
+        }
+        catch(e) {
+            console.log(e);
+            throw e;
+        }
+    }
 };

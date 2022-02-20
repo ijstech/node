@@ -1,10 +1,10 @@
 interface ParsedUrlQuery {[key: string]: string | string[]}
-export interface IRouterRequest{    
+export interface IRouterRequest{
     method: string,
     hostname: string,
     path: string;
-    url: string;    
-    origUrl: string;    
+    url: string;
+    origUrl: string;
     ip: string;
     query?: ParsedUrlQuery;
     params?: any;
@@ -25,10 +25,10 @@ export interface IRouterResponse{
     header: (name:string, value: string)=>void;
 }
 export declare abstract class IRouterPlugin {
-    route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;    
+    route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;
 }
-export declare abstract class IWorkerPlugin {    
-    init?: (params?: any)=>Promise<boolean>;        
+export declare abstract class IWorkerPlugin {
+    init?: (params?: any)=>Promise<boolean>;
     message?: (session: ISession, channel: string, msg: string)=>void;
     process(session: ISession, data: any): Promise<any>;
 }
@@ -59,14 +59,14 @@ export interface IWorker {
 export interface IPluginOptions {
     memoryLimit?: number;
     timeLimit?: number;
-    isolated?: boolean;    
+    isolated?: boolean;
     script?: string;
     scriptPath?: string;
     params?: any;
-    dependencies?: IDependencies;    
+    dependencies?: IDependencies;
     plugins?: IRequiredPlugins;
 }
-export interface IWorkerPluginOptions extends IPluginOptions{    
+export interface IWorkerPluginOptions extends IPluginOptions{
     processing?: boolean;
 }
 //Wallet Plugin
@@ -89,14 +89,14 @@ export interface IWalletRequiredPluginOptions{
 export interface IWalletPlugin{
     get address(): string;
     get chainId(): number;
-    set chainId(value: number);    
+    set chainId(value: number);
     getBalance(): Promise<number>;
 }
 //Queue Plugin
-export interface IQueuePluginOptions extends IWorkerPluginOptions{    
+export interface IQueuePluginOptions extends IWorkerPluginOptions{
     jobQueue: string;
     disabled?: boolean;
-    connection: IJobQueueConnectionOptions;    
+    connection: IJobQueueConnectionOptions;
 }
 export interface IQueueOptions {
     workers: IQueuePluginOptions[];
@@ -118,7 +118,7 @@ export interface IQueuePlugin {
 }
 
 //Cache Plugin
-export interface ICachePlugin{    
+export interface ICachePlugin{
     del(key: string): Promise<boolean>;
 	get(key: string): Promise<string>;
     getValue(key: string): Promise<any>;
@@ -131,7 +131,7 @@ export interface ICacheClientOptions{
 //DB Plugin
 export interface IField{
     prop?: string;
-    field?: string;        
+    field?: string;
     record?: string;
     size?: number;
     details?: any;
@@ -139,6 +139,26 @@ export interface IField{
     dataType?: 'key'|'ref'|'1toM'|'char'|'varchar'|'boolean'|'integer'|'decimal'|'date'|'blob'|'text'|'mediumText'|'longText';
 }
 export interface IFields{[name: string]: IField}
+export interface IRefField extends IField{
+    record: string;
+}
+export interface IStringField extends IField{
+    dataType?: 'char'|'varchar'|'text'|'mediumText'|'longText'
+};
+export interface IBooleanField extends IField{
+
+};
+export interface IDecimalField extends IField{
+    digits ?: number;
+    decimals?: number;
+};
+export interface IIntegerField extends IField{
+    digits ?: number;
+    decimals?: number;
+};
+export interface IDateField extends IField{
+
+};
 export interface IQueryRecord{
     a: 'i'|'d'|'u', //insert, delete/ update
     k: string;
@@ -213,7 +233,7 @@ export interface IPluginOptions {
     script?: string;
     scriptPath?: string;
     params?: any;
-    dependencies?: IDependencies;    
+    dependencies?: IDependencies;
     plugins?: IRequiredPlugins;
 }
 export interface IRequiredPlugins{
