@@ -98,6 +98,7 @@ class MySQLClient {
     }
     ;
     async applyDeleteQuery(tableName, fields, qry) {
+        await this.syncTableSchema(tableName, fields);
         let sql = '';
         let params = [];
         sql = `DELETE FROM ${this.escape(tableName)} `;
@@ -106,6 +107,7 @@ class MySQLClient {
     }
     ;
     async applyInsertQuery(tableName, fields, data) {
+        await this.syncTableSchema(tableName, fields);
         let sql = '';
         let params = [];
         sql = `INSERT INTO ${this.escape(tableName)} SET ${this.getFields(fields, data, params)}`;
@@ -113,6 +115,7 @@ class MySQLClient {
     }
     ;
     async applySelectQuery(tableName, fields, qry) {
+        await this.syncTableSchema(tableName, fields);
         let sql = '';
         let params = [];
         sql = `SELECT ${this.getFields(fields)} FROM ${this.escape(tableName)} `;
@@ -122,6 +125,7 @@ class MySQLClient {
     }
     ;
     async applyUpdateQuery(tableName, fields, data, qry) {
+        await this.syncTableSchema(tableName, fields);
         let sql = '';
         let params = [];
         sql = `UPDATE ${this.escape(tableName)} SET ${this.getFields(fields, data, params)} `;
@@ -358,6 +362,153 @@ class MySQLClient {
         });
     }
     ;
+    async syncTableSchema(tableName, fields) {
+        try {
+            const tableExists = await this.checkTableExists(tableName);
+            if (!tableExists) {
+                let pkName;
+                const columnBuilder = [];
+                const columnBuilderParams = [];
+                for (const fieldName in fields) {
+                    const field = fields[fieldName];
+                    switch (field.dataType) {
+                        case 'key':
+                            pkName = fieldName;
+                            columnBuilder.push(`${this.escape(fieldName)} CHAR(36) NOT NULL DEFAULT ''`);
+                            break;
+                        case 'ref':
+                            columnBuilder.push(`${this.escape(field.field)} CHAR(36) DEFAULT NULL`);
+                        case '1toM':
+                            break;
+                        case 'char':
+                            columnBuilder.push(`${this.escape(fieldName)} CHAR(?) NOT NULL`);
+                            columnBuilderParams.push(field.size);
+                            break;
+                        case 'varchar':
+                            columnBuilder.push(`${this.escape(fieldName)} VARCHAR(?) NOT NULL`);
+                            columnBuilderParams.push(field.size);
+                            break;
+                        case 'boolean':
+                            columnBuilder.push(`${this.escape(fieldName)} TINYINT(1) NOT NULL`);
+                            break;
+                        case 'integer':
+                            columnBuilder.push(`${this.escape(fieldName)} INT(?) NOT NULL`);
+                            columnBuilderParams.push(field.digits || 11);
+                            break;
+                        case 'decimal':
+                            columnBuilder.push(`${this.escape(fieldName)} DECIMAL(?, ?) NOT NULL`);
+                            columnBuilderParams.push(field.digits || 11, field.decimals || 2);
+                            break;
+                        case 'date':
+                            columnBuilder.push(`${this.escape(fieldName)} DATE NOT NULL`);
+                            break;
+                        case 'blob':
+                            columnBuilder.push(`${this.escape(fieldName)} MEDIUMBLOB`);
+                            break;
+                        case 'text':
+                            columnBuilder.push(`${this.escape(fieldName)} TEXT`);
+                            break;
+                        case 'mediumText':
+                            columnBuilder.push(`${this.escape(fieldName)} MEDIUMTEXT`);
+                            break;
+                        case 'longText':
+                            columnBuilder.push(`${this.escape(fieldName)} LONGTEXT`);
+                            break;
+                    }
+                }
+                if (pkName) {
+                    columnBuilder.push(`PRIMARY KEY (${this.escape(pkName)})`);
+                }
+                if (columnBuilder.length > 0) {
+                    const sql = `CREATE TABLE ${this.escape(tableName)} (${columnBuilder.join(', ')})`;
+                    await this.query(sql, columnBuilderParams);
+                }
+                return true;
+            }
+            else {
+                const sql = `DESCRIBE ${this.escape(tableName)}`;
+                const columnDef = await this.query(sql);
+                const columnBuilder = [];
+                const columnBuilderParams = [];
+                let prevField;
+                for (const fieldName in fields) {
+                    const field = fields[fieldName];
+                    const currentField = columnDef.find(v => v['Field'] === (field.field || fieldName));
+                    if (!currentField) {
+                        switch (field.dataType) {
+                            case 'key':
+                                columnBuilder.push(`ADD PRIMARY KEY (${this.escape(fieldName)}) FIRST`);
+                                break;
+                            case 'ref':
+                                columnBuilder.push(`ADD ${this.escape(field.field)} CHAR(36) DEFAULT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case '1toM':
+                                break;
+                            case 'char':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} CHAR(?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilderParams.push(field.size);
+                                break;
+                            case 'varchar':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} VARCHAR(?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilderParams.push(field.size);
+                                break;
+                            case 'boolean':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} TINYINT(1) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case 'integer':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} INT(?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilderParams.push(field.digits || 11);
+                                break;
+                            case 'decimal':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} DECIMAL(?, ?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilderParams.push(field.digits || 11, field.decimals || 2);
+                                break;
+                            case 'date':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} DATE NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case 'blob':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} MEDIUMBLOB ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case 'text':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} TEXT ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case 'mediumText':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} MEDIUMTEXT ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case 'longText':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} LONGTEXT ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                        }
+                    }
+                    else {
+                        switch (field.dataType) {
+                            case 'varchar':
+                                if (currentField['Type'].indexOf('varchar') >= 0) {
+                                    const match = currentField['Type'].match(/\d+/g);
+                                    if (match) {
+                                        const size = parseInt(match[0]);
+                                        if (field.size > size) {
+                                            columnBuilder.push(`MODIFY ${this.escape(fieldName)} VARCHAR(?)`);
+                                            columnBuilderParams.push(field.size);
+                                        }
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                    prevField = fieldName;
+                }
+                if (columnBuilder.length > 0) {
+                    const sql = `ALTER TABLE ${this.escape(tableName)} ${columnBuilder.join(', ')}`;
+                    await this.query(sql, columnBuilderParams);
+                }
+            }
+        }
+        catch (e) {
+            console.log(e);
+            throw e;
+        }
+    }
 }
 exports.MySQLClient = MySQLClient;
 ;

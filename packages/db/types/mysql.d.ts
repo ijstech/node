@@ -23,4 +23,5 @@ export declare class MySQLClient implements Types.IDBClient {
     import(sql: string): Promise<boolean>;
     query(sql: string, params?: any[]): Promise<any[]>;
     rollback(): Promise<boolean>;
+    private syncTableSchema;
 }

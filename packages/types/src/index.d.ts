@@ -144,21 +144,21 @@ export interface IRefField extends IField{
 }
 export interface IStringField extends IField{
     dataType?: 'char'|'varchar'|'text'|'mediumText'|'longText'
-};
+}
 export interface IBooleanField extends IField{
 
-};
+}
 export interface IDecimalField extends IField{
     digits ?: number;
     decimals?: number;
-};
+}
 export interface IIntegerField extends IField{
     digits ?: number;
     decimals?: number;
-};
+}
 export interface IDateField extends IField{
 
-};
+}
 export interface IQueryRecord{
     a: 'i'|'d'|'u', //insert, delete/ update
     k: string;
