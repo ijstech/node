@@ -3,13 +3,12 @@ import * as assert from 'assert';
 import Context from './model/sample.pdm';
 import * as Config from './config.js';
 import * as DB from '../../db/src';
-import Fs from 'fs';
 import * as Types from '@ijstech/types';
 
-require.extensions['.sql'] = function (module, filename) {
-    module.exports = Fs.readFileSync(filename, 'utf8');
-};
-const sql = require('./model/sample.sql');
+// require.extensions['.sql'] = function (module, filename) {
+//     module.exports = Fs.readFileSync(filename, 'utf8');
+// };
+// const sql = require('./model/sample.sql');
 
 describe('PDM', function() {
     this.timeout(20000);
@@ -94,5 +93,49 @@ describe('PDM', function() {
        else {
            assert.fail('No table columns found.');
        }
+    });
+    it('Insert record into demo', async function () {
+        let context = new Context(client);
+        await client.query(`INSERT INTO demo VALUES (UUID(), '123', 12.5, 12, true, CURDATE(), null, '123', 12)`);
+        await client.query(`INSERT INTO demo VALUES (UUID(), '123', 12.5, 12, true, CURDATE(), null, '123', 12)`);
+        context.demo.query.where('guid', '!=', 'NULL');
+        const data = await context.demo.fetch();
+        assert.strictEqual(data.length, 2);
+    });
+    it('Drop the column String', async function () {
+        const schemaBeforeDropColumn = await client.query('DESCRIBE demo');
+        assert.strictEqual(!!schemaBeforeDropColumn.find(v => v['Field'] === 'string'), true);
+        await client.query('ALTER TABLE demo DROP COLUMN string');
+        const schemaAfterDropColumn = await client.query('DESCRIBE demo');
+        assert.strictEqual(!!schemaAfterDropColumn.find(v => v['Field'] === 'string'), false);
+    })
+    it('Run queries and synchronize the column', async () => {
+        let context = new Context(client);
+        context.demo.query.where('guid', '!=', 'NULL');
+        await context.demo.fetch();
+        const tableSchema = await client.query(`DESCRIBE demo`);
+        assert.strictEqual(!!tableSchema.find(v => v['Field'] === 'string'), true);
+    });
+    it('Drop the primary key', async function () {
+        const schemaBeforeDropColumn = await client.query('DESCRIBE demo');
+        assert.strictEqual(!!schemaBeforeDropColumn.find(v => v['Field'] === 'guid'), true);
+        assert.strictEqual(schemaBeforeDropColumn.find(v => v['Field'] === 'guid')['Key'], 'PRI');
+        await client.query('ALTER TABLE demo DROP COLUMN guid');
+        const schemaAfterDropColumn = await client.query('DESCRIBE demo');
+        assert.strictEqual(!!schemaAfterDropColumn.find(v => v['Field'] === 'guid'), false);
+    });
+    it('Run queries and synchronize the column', async () => {
+        try {
+            let context = new Context(client);
+            context.demo.query.where('guid', '!=', 'NULL');
+            await context.demo.fetch();
+            const tableSchema = await client.query(`DESCRIBE demo`);
+            assert.strictEqual(!!tableSchema.find(v => v['Field'] === 'guid'), true);
+            assert.strictEqual(tableSchema.find(v => v['Field'] === 'guid')['Key'], '');
+        }
+        catch(e) {
+            console.log('error');
+            assert.fail(e);
+        }
     });
 });

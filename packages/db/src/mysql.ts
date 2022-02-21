@@ -372,6 +372,7 @@ export class MySQLClient implements Types.IDBClient{
                 const sql = `DESCRIBE ${this.escape(tableName)}`;
                 const columnDef = await this.query(sql);
                 const columnBuilder = [];
+                const columnBuilderPK = [];
                 const columnBuilderParams = [];
                 let prevField;
                 for (const fieldName in fields) {
@@ -380,7 +381,8 @@ export class MySQLClient implements Types.IDBClient{
                     if(!currentField) {
                         switch(field.dataType) {
                             case 'key':
-                                columnBuilder.push(`ADD PRIMARY KEY (${this.escape(fieldName)}) FIRST`)
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} CHAR(36) NOT NULL DEFAULT '' FIRST`);
+                                columnBuilderPK.push(`ADD PRIMARY KEY (${this.escape(fieldName)})`);
                                 break;
                             case 'ref':
                                 columnBuilder.push(`ADD ${this.escape(field.field)} CHAR(36) DEFAULT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
@@ -444,6 +446,10 @@ export class MySQLClient implements Types.IDBClient{
                 if(columnBuilder.length > 0) {
                     const sql = `ALTER TABLE ${this.escape(tableName)} ${columnBuilder.join(', ')}`;
                     await this.query(sql, columnBuilderParams);
+                }
+                if(columnBuilderPK.length > 0) {
+                    const sql2 = `ALTER TABLE ${this.escape(tableName)} ${columnBuilderPK.join(',')}`;
+                    await this.query(sql2);
                 }
 
             }
