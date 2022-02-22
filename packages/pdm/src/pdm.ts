@@ -1,4 +1,5 @@
 import * as Types from '@ijstech/types';
+import * as GraphQL from "graphql";
 
 function generateUUID() { // Public Domain/MIT
     var d = new Date().getTime();//Timestamp
@@ -44,23 +45,24 @@ export class TContext {
         recordType: typeof TRecord,
         recordSetType: typeof TRecordSet,
         recordSet?: IRecordSet
-    }}; 
+    }};
     private _client: Types.IDBClient;
     private _recordSets:{[id: number]: IRecordSet} = {};
-    private _recordSetIdxCount = 1;   
+    private _recordSetIdxCount = 1;
     private _recordIdxCount = 1;
-    
     private _modifiedRecords:{[id: number]: IRecord} = {};
     private _applyQueries:{[id: number]: Types.IQuery} = {};
     private _deletedRecords = {};
-    constructor(client?: Types.IDBClient){        
+    public graphql: TGraphQL;
+    constructor(client?: Types.IDBClient){
         this.initRecordsets();
-        this._client = client;        
+        this._client = client;
+        this.initGraphQL();
     };
     private getApplyQueries(recordSet: IRecordSet): any[]{
         if (!recordSet._id)
             recordSet._id = this._recordSetIdxCount++;
-        let id = recordSet._id;        
+        let id = recordSet._id;
         if (!this._applyQueries[id])
             this._applyQueries[id] = {
                 id: recordSet._id,
@@ -94,17 +96,20 @@ export class TContext {
     };
     private initRecordsets(){
         for (let n in this.$$records){
-            let t = this.$$records[n];            
+            let t = this.$$records[n];
             if (t.recordSetType)
                 this[n] = new ((<any>t).recordSetType)(this, t.recordType, t.tableName)
             else
-                this[n] = new TRecordSet<typeof t.recordType>(this, t.recordType, t.tableName);            
+                this[n] = new TRecordSet<typeof t.recordType>(this, t.recordType, t.tableName);
             t.recordSet = this[n];
         };
     };
-    async fetch(recordSet?: IRecordSet): Promise<any>{        
-        let queries = [];       
-        let self = this;   
+    private initGraphQL() {
+        this.graphql = new TGraphQL(this, this.$$records, this._client);
+    }
+    async fetch(recordSet?: IRecordSet): Promise<any>{
+        let queries = [];
+        let self = this;
         function getQueries(){
             if (recordSet._queries.length > 0){
                 let id = recordSet._id;
@@ -131,15 +136,15 @@ export class TContext {
                 let rs = this.$$records[v];
                 let tableName = rs.tableName;
                 recordSet = rs.recordSet;
-                getQueries();          
+                getQueries();
             }
         };
-        let client = this._client || global['$$pdm_plugin'];        
+        let client = this._client || global['$$pdm_plugin'];
         let data = await client.applyQueries(queries);
         if (typeof(data) == 'string')
             data = JSON.parse(data);
-            
-        if (data && data[0] && data[0].error)            
+
+        if (data && data[0] && data[0].error)
             throw data[0].error;
 
         let result: any[];
@@ -165,15 +170,15 @@ export class TContext {
     }
     reset(){
         for (let v in this.$$records){
-            let rs = this.$$records[v];            
+            let rs = this.$$records[v];
             rs.recordSet.reset();
         }
     };
     async save():Promise<any>{
         let data = {};
-        for (let i in this._modifiedRecords){            
-            let record = this._modifiedRecords[i]; 
-            let id = record.$$recordSet._id;            
+        for (let i in this._modifiedRecords){
+            let record = this._modifiedRecords[i];
+            let id = record.$$recordSet._id;
             if (!data[id]){
                 data[id] = <Types.IQuery>{
                     fields: record.$$recordSet.fields,
@@ -184,14 +189,14 @@ export class TContext {
             };
             let records = data[id].records;
             records.push(<Types.IQueryRecord>{
-                a: record.$$newRecord?'i':record.$$deleted?'d':'u',                
+                a: record.$$newRecord?'i':record.$$deleted?'d':'u',
                 k: record.$$keyValue,
                 d: record.$$deleted?undefined:record.$$modifies
             })
-        };        
-        for (let i in this._applyQueries){            
-            let query = this._applyQueries[i]; 
-            let id = query.id;            
+        };
+        for (let i in this._applyQueries){
+            let query = this._applyQueries[i];
+            let id = query.id;
             if (!data[id]){
                 data[id] = <Types.IQuery>{
                     fields: query.fields,
@@ -201,19 +206,19 @@ export class TContext {
                 }
             };
             data[id].queries = query.queries;
-        };  
+        };
         let queries = [];
         for (let i in data)
             queries.push(data[i]);
         let client = this._client;
         let result = await client.applyQueries(queries);
-        
-        if (result && result[0] && result[0].error)            
+
+        if (result && result[0] && result[0].error)
             throw result[0].error;
-            
-        for (let i in this._modifiedRecords){            
-            let record = this._modifiedRecords[i]; 
-            delete record.$$modified;            
+
+        for (let i in this._modifiedRecords){
+            let record = this._modifiedRecords[i];
+            delete record.$$modified;
             delete record.$$newRecord;
             delete record.$$keyValue;
             delete record.$$modifies;
@@ -231,7 +236,7 @@ function queryFunc<T, FieldName extends keyof T>(field: FieldName, op: QueryOper
 function queryFunc<T, FieldName extends keyof T>(field: FieldName, op: ArrayQueryOperator, value: T[FieldName][]):TQueryAndOr<T>;
 function queryFunc<T, FieldName extends keyof T>(field: FieldName, op: RangeQueryOperator, valueFrom: T[FieldName], valueTo: T[FieldName]):TQueryAndOr<T>;
 function queryFunc<T>(callback: (qr: TQuery<T>)=>void): TQueryAndOr<T>;
-function queryFunc<T>(...args: any[]): any{    
+function queryFunc<T>(...args: any[]): any{
     if (typeof(args[0]) == 'function'){
         let qry = [];
         this.queries.push(qry);
@@ -253,25 +258,25 @@ class TQueryAndOr<T>{
     private parentQuery: any;
     private queries: any;
     constructor(/*recordSet: TRecordSet<T>, */parentQuery?: any){
-        this.parentQuery = parentQuery || []; 
+        this.parentQuery = parentQuery || [];
         // this.recordSet = recordSet;
-    };    
-    and: QueryFuncOverload<T> = (...args: any[]): TQueryAndOr<T>=>{        
+    };
+    and: QueryFuncOverload<T> = (...args: any[]): TQueryAndOr<T>=>{
         this.queries = [];
-        this.parentQuery.push('and');        
+        this.parentQuery.push('and');
         this.parentQuery.push(this.queries);
         return queryFunc.apply(this, args);
     };
     or: QueryFuncOverload<T> = (...args: any[]): TQueryAndOr<T>=>{
         this.queries = [];
-        this.parentQuery.push('or');        
+        this.parentQuery.push('or');
         this.parentQuery.push(this.queries);
         return queryFunc.apply(this, args);
     };
 };
 class TQuery<T>{
     // private recordSet: TRecordSet<T>;
-    private queries: any;    
+    private queries: any;
     constructor(/*recordSet: TRecordSet<T>, */queries?: any){
         this.queries = queries || [];
         // this.recordSet = recordSet;
@@ -282,7 +287,7 @@ class TQuery<T>{
 };
 interface InsertOptions{
     updateOnDuplicate?: boolean;
-    ignoreOnDuplicate?: boolean;  
+    ignoreOnDuplicate?: boolean;
 };
 export class TRecord {
     private $$fields: Types.IFields;
@@ -299,12 +304,13 @@ interface IContext{
     applyUpdate(recordSet: IRecordSet, data: Types.IQueryData, query: any[]): void;
     modifyRecord(record: any): void;
 }
-export class TRecordSet<T>{     
-    private _id: number;   
+
+export class TRecordSet<T>{
+    private _id: number;
     private _recordType: any;
     private _fields: Types.IFields;
     private _keyField: Types.IField;
-    protected _queries = [];    
+    protected _queries = [];
     protected _recordsIdx = {};
     protected _records: T[] = [];
     protected _context: TContext;
@@ -313,17 +319,17 @@ export class TRecordSet<T>{
     protected _currIdx: number = 0;
     protected _tableName: string;
     protected _fetchAll: boolean;
-    constructor(context: TContext, record: any, tableName: string, master?: IRecord, masterField?: string){        
+    constructor(context: TContext, record: any, tableName: string, master?: IRecord, masterField?: string){
         this._context = <any>context;
         this._recordType = record;
         this._tableName = tableName;
         this._master = master;
         this._masterField = masterField;
     };
-    add<TB extends keyof T>(data?: {[C in TB]?: T[C]}): T{        
+    add<TB extends keyof T>(data?: {[C in TB]?: T[C]}): T{
         let result = data || {};
         (<IRecord>result).$$newRecord = true;
-        let fields = this.fields;        
+        let fields = this.fields;
         if (!result[this.keyField.prop])
             result[this.keyField.prop] = generateUUID();
         this._records.push(<any>result);
@@ -335,7 +341,7 @@ export class TRecordSet<T>{
         this.context.applyInsert(<any>this, data);
     };
     applyDelete(): TQuery<T>{
-        let qry = [];        
+        let qry = [];
         this.context.applyDelete(<any>this, qry);
         let result = new TQuery<T>(qry);
         return result;
@@ -359,7 +365,7 @@ export class TRecordSet<T>{
     }
     delete(record: T){
         let rd = (<any>record).$$record;
-        let idx = this._records.indexOf(rd);        
+        let idx = this._records.indexOf(rd);
         if (idx > -1){
             rd.$$deleted = true;
             rd.$$keyValue = rd[this.keyField.prop];
@@ -374,25 +380,25 @@ export class TRecordSet<T>{
             this._fetchAll = true;
             this._queries.push({a:'s',q:[[this._masterField,'=', this._master.$$keyValue]]})
         }
-        return new Promise(async (resolve)=>{            
+        return new Promise(async (resolve)=>{
             let result = await this._context.fetch(<any>this);
             resolve(result)
         })
     };
     get fields(): Types.IFields{
-        if (!this._fields){                        
-            let rd = new this._recordType();            
+        if (!this._fields){
+            let rd = new this._recordType();
             this._fields = rd.$$fields;
-        };        
+        };
         return this._fields;
     };
     get first(): T{
         this._currIdx = 0;
         return this.proxy(<any>this._records[0]);
     }
-    protected mergeRecords(records: any[]): any[]{     
-        let keyField = this.keyField;    
-        let result = [];    
+    protected mergeRecords(records: any[]): any[]{
+        let keyField = this.keyField;
+        let result = [];
         if (keyField){
             records.forEach((record)=>{
                 let kv = record[keyField.prop || keyField.field];
@@ -421,12 +427,12 @@ export class TRecordSet<T>{
     protected get keyField(): Types.IField{
         if (this._keyField)
             return this._keyField;
-        let fields = this.fields;        
+        let fields = this.fields;
         for (let f in fields){
             let field = fields[f];
             if (field.dataType == 'key'){
                 if (!field.field)
-                    field.field = f;                
+                    field.field = f;
                 field.prop = f;
                 this._keyField = field;
                 return field;
@@ -438,7 +444,7 @@ export class TRecordSet<T>{
             return;
         if (!record.$$proxy){
             record.$$record = record;
-            record.$$recordSet = <any>this;            
+            record.$$recordSet = <any>this;
             record.$$proxy = new Proxy(record, {
                 get: (obj, prop: string) => {
                     let field = this.fields[prop];
@@ -448,7 +454,7 @@ export class TRecordSet<T>{
                         else if (!record.$$record[prop]){
                             return new Promise(async (resolve)=>{
                                 let rs = this.context[field.record];
-                                let rd = await rs.queryRecord(record.$$record[field.field])                                
+                                let rd = await rs.queryRecord(record.$$record[field.field])
                                 record.$$record[prop] = rd?rd:null;
                                 if (record.$$record[prop] === null)
                                     return resolve(null);
@@ -470,10 +476,10 @@ export class TRecordSet<T>{
                         return record.$$record;
                     return record.$$record[prop];
                 },
-                set: (obj: any, prop: string, value: any) => {                      
+                set: (obj: any, prop: string, value: any) => {
                     if (!record.$$keyValue)
                         record.$$keyValue = record.$$record[this.keyField.field];
-                    record.$$origValues = record.$$origValues || {};                    
+                    record.$$origValues = record.$$origValues || {};
                     if (typeof(record.$$origValues[prop]) == 'undefined')
                         record.$$origValues[prop] = record.$$record[prop];
                     record.$$modifies = record.$$modifies || {};
@@ -491,9 +497,9 @@ export class TRecordSet<T>{
         return record.$$proxy;
     };
     get query(): TQuery<T>{
-        let qry = [];        
+        let qry = [];
         let result = new TQuery<T>(qry);
-        this._queries.push({a:'s', q: qry});        
+        this._queries.push({a:'s', q: qry});
         return result;
     };
     async queryRecord(keyValue: string): Promise<T>{
@@ -528,12 +534,132 @@ export class TRecordSet<T>{
     values<FieldName extends keyof T>(field: FieldName): T[FieldName][]{
         let result = [];
         for (let i = 0; i < this._records.length; i ++){
-            let r = this._records[i];            
+            let r = this._records[i];
             result.push(r[field])
         }
         return result;
     }
 };
+export class TGraphQL {
+    private _schema: GraphQL.GraphQLSchema;
+    private _context: TContext;
+    private _client: Types.IDBClient;
+    private $$records: {[name: string]: {
+            tableName: string,
+            recordType: typeof TRecord,
+            recordSetType: typeof TRecordSet,
+            recordSet?: IRecordSet
+        }}
+    constructor(context: TContext, records, client: Types.IDBClient) {
+        this._context = context;
+        this.$$records = records;
+        this._client = client;
+        this._schema = this.buildSchema();
+    }
+    private buildSchema(): GraphQL.GraphQLSchema {
+        const rootQueryTypeFields = {};
+        for(const tableName in this.$$records) {
+            const fields = this._context[tableName]['fields'];
+            const fieldObject = {};
+            const criteria = {};
+            for(const fieldName in fields) {
+                const field = fields[fieldName];
+                let type;
+                switch(field.dataType) {
+                    case 'key':
+                    case 'char':
+                    case 'varchar':
+                    case 'date':
+                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLString);
+                        criteria[fieldName] = { type: GraphQL.GraphQLString };
+                        break;
+                    case 'ref':
+                    case '1toM':
+                        break;
+                    case 'boolean':
+                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLBoolean);
+                        criteria[fieldName] = { type: GraphQL.GraphQLBoolean };
+                        break;
+                    case 'integer':
+                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLInt);
+                        criteria[fieldName] = { type: GraphQL.GraphQLInt };
+                        break;
+                    case 'decimal':
+                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLFloat);
+                        criteria[fieldName] = { type: GraphQL.GraphQLFloat };
+                        break;
+                    case 'blob':
+                    case 'text':
+                    case 'mediumText':
+                    case 'longText':
+                        type = GraphQL.GraphQLString;
+                        criteria[fieldName] = { type: GraphQL.GraphQLString };
+                        break;
+                }
+                if(type) {
+                    fieldObject[fieldName] = { type };
+                    criteria[fieldName]['dataType'] = field.dataType;
+                }
+            }
+            const tableType = new GraphQL.GraphQLObjectType({
+                name: tableName,
+                fields: () => fieldObject,
+            });
+            rootQueryTypeFields[tableName] = {
+                type: new GraphQL.GraphQLList(tableType),
+                args: criteria,
+                resolve: async (parent, args) => {
+                    let sql = `SELECT * FROM ?? WHERE 1 = 1 `;
+                    let params = [tableName];
+                    for(const arg in args) {
+                        const value = args[arg];
+                        const dataType = criteria[arg]['dataType'];
+                        switch(dataType) {
+                            case 'key':
+                            case 'char':
+                            case 'varchar':
+                            case 'date':
+                            case 'boolean':
+                            case 'integer':
+                            case 'decimal':
+                                sql += `AND ?? = ?`;
+                                params.push(arg, value);
+                                break;
+                            case 'blob':
+                            case 'text':
+                            case 'mediumText':
+                            case 'longText':
+                                sql += `AND ?? LIKE CONCAT('%', ?, '%')`;
+                                params.push(arg, value);
+                                break;
+                        }
+                    }
+                    const data = await this._client.query(sql, params);
+                    return data;
+                }
+            }
+        }
+        const rootQueryType = new GraphQL.GraphQLObjectType({
+            name: 'Query',
+            description: 'Root query',
+            fields: () => rootQueryTypeFields
+        });
+        return new GraphQL.GraphQLSchema({
+            query: rootQueryType
+        })
+    }
+
+    query(source: string): Promise<any> {
+        return new Promise((resolve, reject) => {
+            GraphQL.graphql({
+                schema: this._schema,
+                source: source
+            }).then(data => resolve(data.data)).catch(e => {
+                throw e;
+            });
+        });
+    }
+}
 export interface IRefField extends Types.IField{
     record: string;
 }
@@ -555,7 +681,7 @@ export interface IDateField extends Types.IField{
 
 };
 export function RecordSet(tableName: string, recordType: typeof TRecord, recordSetType?: any){
-    return function (target: TContext, propName: string, params?: any) {                
+    return function (target: TContext, propName: string, params?: any) {
         target['$$records'] = target['$$records'] || {};
         target['$$records'][propName] = {
             tableName: tableName,
@@ -657,9 +783,9 @@ class Booking extends TRecord{
     @KeyField()
     guid: string;
     @RefTo<UserContext>('user', 'user_guid')
-    user: User;  
+    user: User;
     @DateField()
-    time: Date;  
+    time: Date;
 }
 class User extends TRecord {
     @KeyField()
@@ -678,5 +804,5 @@ class UserRecordSet<T extends User> extends TRecordSet<T>{
 };
 export default class UserContext extends TContext {
     @RecordSet('user_info', User, UserRecordSet)
-    user: UserRecordSet<User>;    
+    user: UserRecordSet<User>;
 };*/
