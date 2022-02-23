@@ -96,8 +96,8 @@ describe('PDM', function() {
     });
     it('Insert record into demo', async function () {
         let context = new Context(client);
-        await client.query(`INSERT INTO demo VALUES (UUID(), '123', 12.5, 12, true, CURDATE(), null, '123', 12)`);
-        await client.query(`INSERT INTO demo VALUES (UUID(), '123', 12.5, 12, true, CURDATE(), null, '123', 12)`);
+        await client.query(`INSERT INTO demo VALUES (UUID(), '123', 12.5, 12, true, CURDATE(), null, 'text', '123', '12')`);
+        await client.query(`INSERT INTO demo VALUES (UUID(), '123', 12.5, 12, true, CURDATE(), null, 'text', '123', '12')`);
         context.demo.query.where('guid', '!=', 'NULL');
         const data = await context.demo.fetch();
         assert.strictEqual(data.length, 2);
