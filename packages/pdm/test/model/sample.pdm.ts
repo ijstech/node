@@ -167,6 +167,8 @@ class Demo extends PDM.TRecord{
     date: Date;
     @PDM.BlobField()
     blob: string;
+    @PDM.StringField({dataType: 'text'})
+    text: string;
     @PDM.StringField()
     newField: string;
     @PDM.StringField({size: 11})

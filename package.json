@@ -17,6 +17,7 @@
         "@ijstech/app": "file:./packages/app",
         "@ijstech/cache": "file:./packages/cache",
         "@ijstech/db": "file:./packages/db",
+        "@ijstech/eth-wallet": "git+https://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:x-oauth-basic@github.com/ijstech/eth-wallet.git",
         "@ijstech/form": "file:./packages/form",
         "@ijstech/http": "file:./packages/http",
         "@ijstech/message": "file:./packages/message",
@@ -28,9 +29,9 @@
         "@ijstech/types": "file:./packages/types",
         "@ijstech/vm": "file:./packages/vm",
         "@ijstech/wallet": "file:./packages/wallet",
-        "@ijstech/eth-wallet": "git+https://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:x-oauth-basic@github.com/ijstech/eth-wallet.git",
         "bee-queue": "1.4.0",
         "cron-parser": "4.2.0",
+        "graphql": "16.3.0",
         "isolated-vm": "4.3.6",
         "koa": "2.13.0",
         "koa-bodyparser": "4.3.0",
@@ -47,10 +48,10 @@
         "ts-node": "10.1.0",
         "typescript": "4.3.5"
     },
-    "scripts": {        
+    "scripts": {
         "build": "npm run build:modules && npm run build:node && npm run build:examples",
         "build:examples": "npm run build:example:app",
-        "build:example:app": "cd examples/app && npm run build && cd ../../",        
+        "build:example:app": "cd examples/app && npm run build && cd ../../",
         "build:modules": "npm run build:module:plugin && npm run build:module:cache && npm run build:module:form && npm run build:module:db && npm run build:module:message && npm run build:module:queue && npm run build:module:http && npm run build:module:schedule && npm run build:module:vm && npm run build:module:app",
         "build:module:app": "cd packages/app && npm run build && cd ../../",
         "build:module:cache": "cd packages/cache && npm run build && cd ../../",
@@ -66,6 +67,8 @@
         "build:module:wallet": "cd packages/wallet && npm run build && cd ../../",
         "build:node": "rm -rf ./lib && rm -rf ./types && rm -f tsconfig.tsbuildinfo && tsc",
         "test:pdm": "mocha --exit --require ts-node/register packages/pdm/test/*.spec.ts",
+        "test:tableschema": "mocha --exit --require ts-node/register packages/pdm/test/table-schema.spec.ts",
+        "test:graphql": "mocha --exit --require ts-node/register packages/pdm/test/graphql.spec.ts",
         "example:http": "node examples/app/lib/http",
         "example:worker": "node examples/app/lib/workerOnly"
     }
