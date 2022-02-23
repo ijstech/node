@@ -73,7 +73,12 @@ export class MySQLClient implements Types.IDBClient{
         return result;
     };
     private async applyDeleteQuery(tableName: string, fields: any, qry: any[]): Promise<any>{
-        await this.syncTableSchema(tableName, fields);
+        try {
+            await this.syncTableSchema(tableName, fields);
+        }
+        catch(e) {
+
+        }
         let sql = '';
         let params = [];
         sql = `DELETE FROM ${this.escape(tableName)} `
@@ -81,14 +86,24 @@ export class MySQLClient implements Types.IDBClient{
         return await this.query(sql, params);
     };
     private async applyInsertQuery(tableName: string, fields: any, data: Types.IQueryData): Promise<any>{
-        await this.syncTableSchema(tableName, fields);
+        try {
+            await this.syncTableSchema(tableName, fields);
+        }
+        catch(e) {
+
+        }
         let sql = '';
         let params = [];
         sql = `INSERT INTO ${this.escape(tableName)} SET ${this.getFields(fields, data, params)}`;
         return await this.query(sql, params);
     };
     private async applySelectQuery(tableName: string, fields: any, qry: any[]): Promise<any>{
-        await this.syncTableSchema(tableName, fields);
+        try {
+            await this.syncTableSchema(tableName, fields);
+        }
+        catch(e) {
+
+        }
         let sql = '';
         let params = [];
         sql = `SELECT ${this.getFields(fields)} FROM ${this.escape(tableName)} `;
@@ -97,7 +112,12 @@ export class MySQLClient implements Types.IDBClient{
         return result;
     };
     private async applyUpdateQuery(tableName: string, fields: Types.IFields, data: any, qry: Types.IQuery[]): Promise<any>{
-        await this.syncTableSchema(tableName, fields);
+        try {
+            await this.syncTableSchema(tableName, fields);
+        }
+        catch(e) {
+
+        }
         let sql = '';
         let params = [];
         sql = `UPDATE ${this.escape(tableName)} SET ${this.getFields(fields, data, params)} `
@@ -456,7 +476,6 @@ export class MySQLClient implements Types.IDBClient{
 
         }
         catch(e) {
-            console.log(e);
             throw e;
         }
     }
