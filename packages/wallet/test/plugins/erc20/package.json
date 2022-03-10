@@ -1,0 +1,8 @@
+{
+    "name": "erc20",
+    "main": "lib",
+    "types": "types",
+    "scripts": {
+        "build": "rm -rf lib && rm -rf types && tsc && tsc --p tsconfig.lib.json"
+    }
+}

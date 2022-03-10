@@ -1,0 +1,19 @@
+{ 
+    "compilerOptions": {
+        "declaration": true,             
+        "declarationDir": "types",
+        "emitDeclarationOnly": true,   
+        "module": "CommonJS",
+        "moduleResolution": "Node",
+        "outDir": "lib",        
+        "rootDir": "src",
+        "target": "es2017"
+    },
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "node_modules",
+        "test"
+    ]
+}

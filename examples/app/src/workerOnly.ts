@@ -1,4 +1,4 @@
-import {AppServer, IAppServerOptions} from "@ijstech/node";
+import {AppServer, IAppServerOptions} from "@ijstech/app";
 import Config from '../data/config.js';
 
 async function main(){

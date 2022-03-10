@@ -8,14 +8,9 @@
         "baseUrl": ".",     
 		"rootDir": "src",
 		"declarationDir": "types",
-		"experimentalDecorators": true
-	},
-	"references": [
-		{
-			"path": "./packages/app"
-		},
-		{
-			"path": "./packages/plugin"
-		}		
-	]
+		"experimentalDecorators": true,
+		"paths": {
+            "@ijstech/*": ["./packages/*"]
+        }
+	}
 }

@@ -1,5 +1,6 @@
 import {IRouterPlugin, IRouterRequest, IRouterResponse, ISession} from '@ijstech/types';
 import {helloWorld} from './hello';
+import {BigNumber} from "bignumber.js";
 import { Demo } from '@pack/demo';
 
 class HelloWorld implements IRouterPlugin{
@@ -53,7 +54,7 @@ class HelloWorld implements IRouterPlugin{
         else if (request.path == '/wallet'){
             try{
                 let chainId = session.plugins.wallet.chainId || 1;                
-                let balance = await session.plugins.wallet.getBalance();
+                let balance = await session.plugins.wallet.balance;
                 let address = session.plugins.wallet.address;
                 response.end(JSON.stringify({
                     address: address,
@@ -86,6 +87,10 @@ class HelloWorld implements IRouterPlugin{
             catch(err){
                 console.dir(err.message)
             }
+        }
+        else if (request.path == '/bignumber'){
+            let num = new BigNumber(123);
+            response.end(num.toString());
         }
         else{
             response.end(JSON.stringify({

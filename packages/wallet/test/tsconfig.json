@@ -1,0 +1,14 @@
+{
+    "extends": "../../../tsconfig.build.json",
+    "include": [
+        ".",
+        "src"
+    ],
+    "compilerOptions": {
+        "baseUrl": ".",
+        "rootDir": ".",
+        "paths": {
+            "@ijstech/*": ["../../*"]
+        }
+    }
+}

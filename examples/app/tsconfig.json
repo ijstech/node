@@ -4,14 +4,13 @@
 		"src/*.ts"
 	],
 	"compilerOptions": {
+		"baseUrl": ".",
 		"outDir": "lib",
 		"rootDir": "src",
 		"composite": false,
-		"declaration": false
-	},
-	"references": [
-		{
-			"path": "../.."
-		}
-	]
+		"declaration": false,
+		"paths": {
+            "@ijstech/*": ["../../packages/*"]
+        }
+	}
 }

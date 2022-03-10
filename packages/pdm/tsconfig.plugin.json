@@ -7,19 +7,11 @@
         "composite": false,
         "rootDir": "src",
         "paths": {
-            "@ijstech/types": ["../types"]
+            "@ijstech/*": ["../*"]
         }
     },
     "include": [
         "./src/index.ts",
         "./src/pdm.ts"
-    ],
-    "references": [
-        {
-            "path": "../db"
-        },
-        {
-            "path": "../types"
-        }
     ]
 }

@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 interface ParsedUrlQuery {[key: string]: string | string[]}
 export interface IRouterRequest{
     method: string,
@@ -69,6 +70,23 @@ export interface IPluginOptions {
 export interface IWorkerPluginOptions extends IPluginOptions{
     processing?: boolean;
 }
+export type IRouterPluginMethod = 'GET'|'POST'|'PUT'|'DELETE';
+export interface IRouterPluginOptions extends IPluginOptions {
+    form?: {
+        host: string,
+        token: string,
+        package?: string,
+        mainForm?: string
+    },
+    github?: {
+        org: string,
+        repo: string,
+        token: string
+    },
+    baseUrl: string|string[];
+    methods: IRouterPluginMethod[];
+}
+
 //Wallet Plugin
 export interface IWalletNetwork{
     chainName?: string;
@@ -86,12 +104,83 @@ export interface IWalletRequiredPluginOptions{
     networks: IWalletNetworks;
     accounts: IWalletAccount[];
 }
-export interface IWalletPlugin{
-    get address(): string;
-    get chainId(): number;
-    set chainId(value: number);
-    getBalance(): Promise<number>;
+export interface IWalletUtils{
+    fromWei(value: any, unit?: string): string;
+    hexToUtf8(value: string): string;
+    toUtf8(value: any): string;		
+    toWei(value: string, unit?: string): string;
 }
+export interface IWalletEventLog {
+    event: string
+    address: string
+    returnValues: any
+    logIndex: number
+    transactionIndex: number
+    transactionHash: string
+    blockHash: string
+    blockNumber: number
+    raw ? : {
+        data: string,
+        topics: string[]
+    }
+}
+export interface IWalletLog {
+    address: string;
+    data: string;
+    topics: Array <string>;
+    logIndex: number;
+    transactionHash?: string;
+    transactionIndex: number;
+    blockHash?: string;
+    type?: string;
+    blockNumber: number;
+}
+export interface IWalletTransactionReceipt{
+    transactionHash: string;
+    transactionIndex: number;
+    blockHash: string;
+    blockNumber: number;
+    from: string;
+    to: string;
+    contractAddress: string;
+    cumulativeGasUsed: number;
+    gasUsed: number;
+    logs ? : Array <IWalletLog>;
+    events ? : {
+        [eventName: string]: IWalletEventLog | IWalletEventLog[]
+    };
+    status: string;
+}
+export interface IWalletEvent{
+    name: string;
+    address: string;
+    blockNumber: number;
+    logIndex: number;
+    topics: string[];
+    transactionHash: string;
+    transactionIndex: number;        
+    data: any;
+    rawData: any;
+}
+export interface IWalletPlugin {		
+    address: string;
+    balance: Promise<BigNumber>;
+    chainId: number;
+    decode(abi:any, event:IWalletLog|IWalletEventLog, raw?:{data: string,topics: string[]}): IWalletEvent;
+    decodeLog(inputs: any, hexString: string, topics: any): any;
+    getAbiEvents(abi: any[]): any;
+    getAbiTopics(abi: any[], eventNames: string[]): any[];    
+    methods(...args: any): Promise<any>;
+    send(to: string, amount: number): Promise<IWalletTransactionReceipt>;
+    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<IWalletEvent[]>;
+    utils: IWalletUtils;
+}
+// export interface IWalletPlugin implements IWallet{
+//     get address(): string;
+//     get chainId(): number;
+//     set chainId(value: number);
+//     getBalance(): Promise<number>;
+// }
 //Queue Plugin
 export interface IQueuePluginOptions extends IWorkerPluginOptions{
     jobQueue: string;

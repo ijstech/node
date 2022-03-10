@@ -4,22 +4,13 @@
     ],
     "extends": "../../tsconfig.build.json",
     "compilerOptions": {
-        "outDir": "lib",
+        "baseUrl": ".",     
         "declarationDir": "types",
-        "rootDir": "src"
-    },    
-    "references": [
-        {
-            "path": "../http"
-        },
-        {
-            "path": "../plugin"
-        },        
-        {
-            "path": "../queue"
-        },
-        {
-            "path": "../schedule"
+		"experimentalDecorators": true,
+        "outDir": "lib",   
+		"rootDir": "src",
+		"paths": {
+            "@ijstech/*": ["../*"]
         }
-    ]
+    }
 }

@@ -9,16 +9,7 @@
     "rootDir": ".",    
     "emitDeclarationOnly": true,
     "paths": {      
-      "@ijstech/pdm": ["../../../packages/pdm"],
-      "@ijstech/types": ["../../../packages/types"]
+      "@ijstech/*": ["../../../packages/*"]
     }
-  },
-  "references": [
-    {
-      "path": "../../../packages/pdm"
-    },
-    {
-      "path": "../../../packages/types"
-    }
-  ]
+  }
 }

@@ -1,0 +1,13 @@
+{ 
+    "extends": "../../tsconfig.build.json",
+    "include": [
+        "src/index.ts",
+        "src/compiler.ts"
+    ],
+    "compilerOptions": {        
+        "baseUrl": ".",
+        "outDir": "lib",
+        "declarationDir": "types",
+        "rootDir": "src"
+    }
+}

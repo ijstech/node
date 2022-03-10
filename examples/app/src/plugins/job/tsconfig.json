@@ -12,12 +12,7 @@
       "declaration": false,
       "paths": {
         "@pack/demo": ["../../../demoPack"],
-        "@ijstech/types": ["../../../../../packages/types"]
+        "@ijstech/*": ["../../../../../packages/*"]
       }
-    },
-    "references": [
-      {
-        "path": "../../../../.."
-      }
-  ]
+    }
 }

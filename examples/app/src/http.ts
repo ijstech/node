@@ -1,4 +1,4 @@
-import {AppServer, IAppServerOptions} from "@ijstech/node";
+import {AppServer, IAppServerOptions} from "@ijstech/app";
 import Config from '../data/config.js';
 
 async function main(){
@@ -59,7 +59,8 @@ async function main(){
                             // wallet: Config.wallet
                         },
                         dependencies: {
-                            "@pack/demo": "file:../demoPack"                            
+                            "@pack/demo": "file:../demoPack",
+                            "bignumber.js": "*"
                         }
                     },
                     {
@@ -92,7 +93,8 @@ async function main(){
                             // wallet: Config.wallet
                         },
                         dependencies: {
-                            "@pack/demo": "file:../demoPack"
+                            "@pack/demo": "file:../demoPack",
+                            "bignumber.js": "*"
                         }
                     } 
                 ]

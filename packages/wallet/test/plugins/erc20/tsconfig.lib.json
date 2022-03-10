@@ -1,0 +1,15 @@
+{
+    "extends": "../../../../../tsconfig.build.json",
+    "include": [
+        "./src"
+    ],
+    "compilerOptions": {
+        "baseUrl": ".",
+        "composite": false,
+        "declaration": false,
+        "experimentalDecorators": true,
+        "rootDir": "./src",
+        "module": "amd",        
+        "outFile": "lib/index.js"
+    }
+}

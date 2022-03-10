@@ -117,28 +117,34 @@ export class VM {
         let script = this.isolate.compileScriptSync(`new ` + <any>function () {
             let ivm = global._ivm;            
             delete global._ivm;        
-            global._$$modules = {};                
+            global._$$modules = {};            
             global.define = function(id, deps, callback){      
-                let result = [];
-                let exports = {};
-                for (let i = 0; i < deps.length; i ++){
-                    let dep = deps[i];
-                    if (dep == 'require')
-                        result.push(null)
-                    else if (dep == 'exports'){
-                        result.push(exports);
-                    }
-                    else
-                        result.push(global._$$modules[dep])
-                }    
-                callback.apply(this, result)
-                // if (module){
+                if (typeof(id) == 'function'){
+                    callback = id;
+                    global._$$modules[global['$$currPackName']] = callback();
+                }
+                else{
+                    let result = [];
+                    let exports = {};
+                    for (let i = 0; i < deps.length; i ++){
+                        let dep = deps[i];
+                        if (dep == 'require')
+                            result.push(null)
+                        else if (dep == 'exports'){
+                            result.push(exports);
+                        }
+                        else
+                            result.push(global._$$modules[dep])
+                    }   
+                    if (callback) 
+                        callback.apply(this, result)
                     if (global['$$currPackName'] && (id == 'index' || id == 'plugin'))
                         global._$$modules[global['$$currPackName']] = exports;    
                     else
                         global._$$modules[id] = exports;
-                // }
-            };            
+                };
+            };   
+            global.define.amd = true;         
             function referenceFunction(obj){
                 return function(...args){
                     // if (obj.async){                        

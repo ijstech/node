@@ -3,31 +3,41 @@ import Path from 'path';
 import Koa from 'koa';
 import {VM} from '@ijstech/vm';
 import * as Types from '@ijstech/types';
+export {IWorkerPluginOptions, IRouterPluginOptions} from '@ijstech/types';
 import Github from './github';
 
 const RootPath = Path.dirname(require.main.filename);
 let Modules = {};
 let LoadingPackageName: string = '';
 global.define = function(id: string, deps: string[], callback: Function){
-    let result = [];
-    let exports = {};
-    for (let i = 0; i < deps.length; i ++){
-        let dep = deps[i];
-        if (dep == 'require')
-            result.push(null)
-        else if (dep == 'exports'){
-            result.push(exports);
-        }
-        else{
-            result.push(Modules[dep]);
-        }
-    }    
-    callback.apply(this, result);
-    if (id == 'index' || id == 'plugin')
-        Modules[LoadingPackageName || 'index'] = exports
-    else
-        Modules[id] = exports
+    if (typeof (id) == 'function') {
+        callback = id;
+        Modules[LoadingPackageName] = callback();
+    }
+    else{
+        let result = [];
+        let exports = {};
+        for (let i = 0; i < deps.length; i ++){
+            let dep = deps[i];
+            if (dep == 'require')
+                result.push(null)
+            else if (dep == 'exports'){
+                result.push(exports);
+            }
+            else{
+                result.push(Modules[dep]);
+            }
+        };
+        if (callback)
+            callback.apply(this, result);
+        if (id == 'index' || id == 'plugin')
+            Modules[LoadingPackageName || 'index'] = exports
+        else
+            Modules[id] = exports;
+    };
 };
+// global.define.amd = true;
+
 export function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string{    
     let rootPath = Path.resolve(...rootPaths);    
     let result = Path.join(rootPath, filePath);
@@ -60,21 +70,31 @@ function getPackageDir(pack: string): string{
         return dir
     else
         return getPackageDir(dir);
-}
-async function getPackageScript(filePath: string): Promise<string>{
+};
+export async function getPackageScript(filePath: string, packName?: string): Promise<string>{
     let result: string;
     let packPath = '';
     if (filePath.startsWith('file:'))
         packPath = resolveFilePath([RootPath], filePath.substring(5), true)
+    else if (filePath == '*'){   
+        if (packName.startsWith('@ijstech/')){
+            packName = packName.slice(9)
+            packPath = resolveFilePath([__dirname, '../..'], packName, true)        
+        }
+        else {
+            packPath = getPackageDir(packName);
+        }
+    }
     else
         packPath = getPackageDir(filePath);
-        
     if (packPath){
         let pack = await getPackage(packPath);
         if (pack){
-            let libPath = resolveFilePath([packPath], pack.plugin || pack.main || 'index.js');
-            if (libPath)
-                return await getScript(libPath);
+            let libPath = resolveFilePath([packPath], pack.plugin || pack.browser || pack.main || 'index.js');            
+            if (libPath){
+                let script = await getScript(libPath);
+                return script;
+            }
         };
     };  
 };
@@ -87,29 +107,6 @@ export function loadModule(script: string, name?: string): IPluginScript{
     LoadingPackageName = '';
     return Modules[name || 'index'];
 };
-export interface IWorkerPluginOptions extends Types.IPluginOptions{    
-    processing?: boolean;
-};
-export interface IQueuePluginOptions extends IWorkerPluginOptions{
-    queue: string;
-};
-export type IRouterPluginMethod = 'GET'|'POST'|'PUT'|'DELETE';
-export interface IRouterPluginOptions extends Types.IPluginOptions {
-    form?: {
-        host: string,
-        token: string,
-        package?: string,
-        mainForm?: string
-    },
-    github?: {
-        org: string,
-        repo: string,
-        token: string
-    },
-    baseUrl: string|string[];
-    methods: IRouterPluginMethod[];
-};
-
 function cloneObject(value: any): any{
     if (value)
         return JSON.parse(JSON.stringify(value))
@@ -191,17 +188,23 @@ class PluginVM{
         return;
     };
     async loadDependencies(){
-        if (this.options.plugins.db) {
+        if (this.options.plugins && this.options.plugins.db) {
             let script = await getPackageScript('@ijstech/pdm');
             if (script)
                 this.vm.injectGlobalPackage('@ijstech/pdm', script);
         };
         if (this.options.dependencies){
             for (let packname in this.options.dependencies){
-                let pack = this.options.dependencies[packname];                
-                let script = await getPackageScript(pack);
-                if (script)
-                    this.vm.injectGlobalPackage(packname, script);
+                let pack = this.options.dependencies[packname];
+                if (pack.startsWith('file://') || pack.startsWith('*')){
+                    let script = await getPackageScript(pack, packname);
+                    if (script){
+                        this.vm.injectGlobalPackage(packname, script);
+                    }
+                }
+                else{
+                    this.vm.injectGlobalPackage(packname, pack);
+                }
             };
         };
     };
@@ -288,9 +291,16 @@ class Plugin{
     public data: any;
 
     constructor(options: Types.IPluginOptions){
-        this.options = options;        
-    };        
-    async createPlugin(){
+        this.options = options;   
+    };
+    async addPackage(packName: string, script?: string){
+        await this.createPlugin();
+        if (!script){
+            script = await getPackageScript('*', packName); 
+        }
+        loadModule(script, packName);
+    }
+    async createPlugin(){        
         if (!this.plugin){
             if (this.options.isolated === false)
                 this.plugin = await this.createModule();            
@@ -298,6 +308,7 @@ class Plugin{
                 this.plugin = await this.createVM();            
                 this.vm = this.plugin.vm;
             };
+
             for (let v in this.options.plugins){  
                 if (v == 'db'){
                     let m = require('@ijstech/pdm');
@@ -321,8 +332,8 @@ class Plugin{
         };
         if (this.options.dependencies){
             for (let packname in this.options.dependencies){
-                let pack = this.options.dependencies[packname];                
-                let script = await getPackageScript(pack);
+                let pack = this.options.dependencies[packname];
+                let script = await getPackageScript(pack, packname);
                 if (script)
                     loadModule(script, packname)
             };
@@ -336,9 +347,9 @@ class Plugin{
                     filePath: 'lib/index.js'
                 })                
             }
-            else
+            else if (this.options.scriptPath)
                 this.options.script = await getScript(this.options.scriptPath);
-        }
+        };
         let script = this.options.script;        
         if (script){
             let module = loadModule(script);
@@ -346,12 +357,12 @@ class Plugin{
                 if (module.default)
                     module = module.default;
                 return new module(this.options);
-            }         
-        }
+            };   
+        };
     };
     get session(): ISession{        
         if (this._session)
-            return this._session
+            return this._session;
         let result = Session(this.options);  
         let script = '';      
         this._session = result;
@@ -368,8 +379,8 @@ class Plugin{
                         let m = require('@ijstech/pdm');
                         let plugin = m.loadPlugin(this, this.options.plugins[v], this.plugin.vm);
                         if (typeof(plugin) == 'string')
-                            script += plugin
-                    }
+                            script += plugin;
+                    };
                 }
                 catch(err){
                     console.dir(err);
@@ -383,13 +394,13 @@ class Plugin{
 };
 export class Router extends Plugin{    
     protected plugin: IRouterPlugin;
-    protected options: IRouterPluginOptions;    
-    constructor(options: IRouterPluginOptions){
+    protected options: Types.IRouterPluginOptions;    
+    constructor(options: Types.IRouterPluginOptions){
         super(options);
     };
-    async createVM(): Promise<RouterPluginVM>{
+    async createVM(): Promise<RouterPluginVM>{        
         super.createVM();
-        if (!this.options.script)
+        if (!this.options.script && this.options.scriptPath)
             this.options.script = await getScript(this.options.scriptPath);        
         let result = new RouterPluginVM(this.options);
         await result.init();
@@ -410,13 +421,13 @@ export class Router extends Plugin{
 };
 export class Worker extends Plugin{
     protected plugin: IWorkerPlugin;
-    protected options: IWorkerPluginOptions;    
-    constructor(options: IWorkerPluginOptions){
+    protected options: Types.IWorkerPluginOptions;    
+    constructor(options: Types.IWorkerPluginOptions){
         super(options);
     };
     async createVM(): Promise<WorkerPluginVM>{
-        super.createVM();
-        if (!this.options.script)
+        super.createVM();        
+        if (!this.options.script && this.options.scriptPath)
             this.options.script = await getScript(this.options.scriptPath);
         let result = new WorkerPluginVM(this.options);
         await result.init();

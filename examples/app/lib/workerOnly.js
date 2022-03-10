@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const node_1 = require("@ijstech/node");
+const app_1 = require("@ijstech/app");
 const config_js_1 = __importDefault(require("../data/config.js"));
 async function main() {
     const Options = {
@@ -65,7 +65,7 @@ async function main() {
             ]
         }
     };
-    let app = new node_1.AppServer(Options);
+    let app = new app_1.AppServer(Options);
     app.start();
 }
 ;

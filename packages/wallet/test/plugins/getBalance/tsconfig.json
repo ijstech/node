@@ -1,0 +1,24 @@
+{
+    "extends": "../../../../../tsconfig.build.json",
+    "include": [
+        "./src"
+    ],
+    "compilerOptions": {
+        "baseUrl": ".",
+        "composite": false,
+        "declaration": false,
+        "module": "amd",
+        "outFile": "lib/index.js",
+        "rootDir": "src",
+        "experimentalDecorators": true,  
+        "paths": {
+            "@ijstech/*": ["../../../../*"],
+            "erc20": ["../erc20/src"],
+        }      
+    },
+    "references": [        
+        {
+            "path": "../erc20"
+        }
+    ]
+}

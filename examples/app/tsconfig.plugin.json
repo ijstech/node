@@ -4,15 +4,14 @@
       "src/plugins/hello/index.ts"
     ],    
     "compilerOptions": {      
+      "baseUrl": "",
       "module": "amd",
       "outFile": "./lib/plugins/hello/index.js",
       "rootDir": "./src/plugins/hello" ,
       "composite": false,
-      "declaration": false
-    },    
-    "references": [
-        {
-          "path": "../../packages/plugin"
-        }
-    ]
+      "declaration": false,
+      "paths": {
+        "@ijstech/*": ["../../packages/*"]
+      }
+    }
   }

@@ -9,6 +9,9 @@
         "outFile": "lib/index.js",
         "rootDir": "src",
         "composite": false,
-        "declaration": false
+        "declaration": false,
+        "paths": {      
+          "@ijstech/*": ["../../../packages/*"]
+        }
     }
   }

@@ -1,31 +1,11 @@
 import Koa from 'koa';
 import { VM } from '@ijstech/vm';
 import * as Types from '@ijstech/types';
+export { IWorkerPluginOptions, IRouterPluginOptions } from '@ijstech/types';
 export declare function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string;
+export declare function getPackageScript(filePath: string, packName?: string): Promise<string>;
 export declare type IPluginScript = any;
 export declare function loadModule(script: string, name?: string): IPluginScript;
-export interface IWorkerPluginOptions extends Types.IPluginOptions {
-    processing?: boolean;
-}
-export interface IQueuePluginOptions extends IWorkerPluginOptions {
-    queue: string;
-}
-export declare type IRouterPluginMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
-export interface IRouterPluginOptions extends Types.IPluginOptions {
-    form?: {
-        host: string;
-        token: string;
-        package?: string;
-        mainForm?: string;
-    };
-    github?: {
-        org: string;
-        repo: string;
-        token: string;
-    };
-    baseUrl: string | string[];
-    methods: IRouterPluginMethod[];
-}
 export declare type QueueName = string;
 export interface IRequiredPlugins {
     queue?: QueueName[];
@@ -69,6 +49,7 @@ declare class Plugin {
     vm: VM;
     data: any;
     constructor(options: Types.IPluginOptions);
+    addPackage(packName: string, script?: string): Promise<void>;
     createPlugin(): Promise<void>;
     createVM(): any;
     createModule(): Promise<any>;
@@ -76,17 +57,16 @@ declare class Plugin {
 }
 export declare class Router extends Plugin {
     protected plugin: IRouterPlugin;
-    protected options: IRouterPluginOptions;
-    constructor(options: IRouterPluginOptions);
+    protected options: Types.IRouterPluginOptions;
+    constructor(options: Types.IRouterPluginOptions);
     createVM(): Promise<RouterPluginVM>;
     route(ctx: Koa.Context, baseUrl: string): Promise<boolean>;
 }
 export declare class Worker extends Plugin {
     protected plugin: IWorkerPlugin;
-    protected options: IWorkerPluginOptions;
-    constructor(options: IWorkerPluginOptions);
+    protected options: Types.IWorkerPluginOptions;
+    constructor(options: Types.IWorkerPluginOptions);
     createVM(): Promise<WorkerPluginVM>;
     message(channel: string, msg: string): Promise<void>;
     process(data?: any): Promise<any>;
 }
-export {};

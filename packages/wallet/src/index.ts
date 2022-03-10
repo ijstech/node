@@ -1,4 +1,5 @@
 import {Wallet} from '@ijstech/eth-wallet';
+import {BigNumber} from 'bignumber.js';
 import * as Types from '@ijstech/types';
 
 export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequiredPluginOptions): string | Types.IWalletPlugin{
@@ -22,12 +23,16 @@ export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequired
                     // wallet.provider = network.provider
                 }
             },
-            async getBalance(): Promise<number>{
+            async balance(): Promise<string>{
                 let balance = await wallet.balance;
-                return balance.toNumber();
+                return balance.toString();
+            },
+            async methods(...args){
+                return await wallet.methods.apply(wallet, args);
             }
         });
         return `
+        let BigNumber = global._$$modules['bignumber.js'];
         global.$$session.plugins.wallet = {
             get address(){
                 return global.$$wallet_plugin.getAddress();
@@ -38,8 +43,14 @@ export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequired
             set chainId(value){
                 global.$$wallet_plugin.setChainId(value);
             },
-            async getBalance(){
-                return await global.$$wallet_plugin.getBalance();
+            get balance(){
+                return new Promise(async(resolve)=>{
+                    let result = await global.$$wallet_plugin.balance();                    
+                    resolve(new BigNumber(result));
+                })
+            },
+            async methods(...args) {
+                return await global.$$wallet_plugin.methods.apply(this, args);
             }
         }`
     }
@@ -47,6 +58,12 @@ export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequired
         return {
             get address(): string{
                 return wallet.address;
+            },            
+            get balance(): Promise<BigNumber>{
+                return new Promise(async (resolve)=>{                    
+                    // let result = (await wallet.balance).toNumber();
+                    resolve(new BigNumber(await wallet.balance))
+                });
             },
             get chainId(): number{                
                 return wallet.chainId;
@@ -54,8 +71,43 @@ export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequired
             set chainId(value: number){
                 wallet.chainId = value;
             },
-            async getBalance(): Promise<number>{
-                return (await wallet.balance).toNumber();
+            decode(abi:any, event:Types.IWalletEventLog, raw?:{data: string,topics: string[]}): Types.IWalletEvent{
+                return wallet.decode(abi, event, raw)
+            },
+            decodeLog(inputs: any, hexString: string, topics: any): any{
+                return wallet.decodeLog(inputs, hexString, topics);
+            },
+            getAbiEvents(abi: any[]): any{
+                return wallet.getAbiEvents(abi);
+            },
+            getAbiTopics(abi: any[], eventNames: string[]): any[]{
+                return wallet.getAbiTopics(abi, eventNames);
+            },
+            methods(...args: any): Promise<any>{
+                return wallet.methods.apply(wallet, args);
+            },
+            send(to: string, amount: number): Promise<Types.IWalletTransactionReceipt>{
+                return wallet.send(to, amount);
+            },
+            scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<Types.IWalletEvent[]>{
+                return wallet.scanEvents(fromBlock, toBlock, topics, events, address);
+            },
+            utils: {
+                fromWei(value: any, unit?: any): string{
+                    return wallet.utils.fromWei(value, unit);
+                },
+                hexToUtf8(value: string): string{
+                    console.dir('hexToUtf8');
+                    return '';
+                    // return wallet.utils.hexToUtf8(value);
+                },
+                toUtf8(value: any): string{
+                    return wallet.utils.toUtf8(value);
+                },
+                toWei(value: string, unit?: any): string{
+                    return wallet.utils.toWei(value, unit);
+                }
             }
         };
     };
+    

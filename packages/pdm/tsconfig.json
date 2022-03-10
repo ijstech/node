@@ -8,20 +8,11 @@
         "declaration": true,
         "declarationDir": "./types",
         "paths": {
-            "@ijstech/db": ["../db"],
-            "@ijstech/types": ["../types"]
+            "@ijstech/*": ["../*"]
         }
     },
     "include": [
         "./src/index.ts",
         "./src/pdm.ts"
-    ],
-    "references": [
-        {
-            "path": "../db"
-        },
-        {
-            "path": "../types"
-        }
     ]
 }

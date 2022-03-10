@@ -7,7 +7,7 @@ define("hello", ["require", "exports"], function (require, exports) {
     }
     exports.helloWorld = helloWorld;
 });
-define("index", ["require", "exports", "hello", "@pack/demo"], function (require, exports, hello_1, demo_1) {
+define("index", ["require", "exports", "hello", "bignumber.js", "@pack/demo"], function (require, exports, hello_1, bignumber_js_1, demo_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class HelloWorld {
@@ -58,7 +58,7 @@ define("index", ["require", "exports", "hello", "@pack/demo"], function (require
             else if (request.path == '/wallet') {
                 try {
                     let chainId = session.plugins.wallet.chainId || 1;
-                    let balance = await session.plugins.wallet.getBalance();
+                    let balance = await session.plugins.wallet.balance;
                     let address = session.plugins.wallet.address;
                     response.end(JSON.stringify({
                         address: address,
@@ -91,6 +91,10 @@ define("index", ["require", "exports", "hello", "@pack/demo"], function (require
                 catch (err) {
                     console.dir(err.message);
                 }
+            }
+            else if (request.path == '/bignumber') {
+                let num = new bignumber_js_1.BigNumber(123);
+                response.end(num.toString());
             }
             else {
                 response.end(JSON.stringify({
