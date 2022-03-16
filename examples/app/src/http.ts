@@ -59,8 +59,10 @@ async function main(){
                             // wallet: Config.wallet
                         },
                         dependencies: {
-                            "@pack/demo": "file:../demoPack",
-                            "bignumber.js": "*"
+                            "@pack/demo": {
+                                script: "file:../demoPack"
+                            },
+                            "bignumber.js": {}
                         }
                     },
                     {

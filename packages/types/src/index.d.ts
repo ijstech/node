@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+export {BigNumber};
 interface ParsedUrlQuery {[key: string]: string | string[]}
 export interface IRouterRequest{
     method: string,
@@ -90,7 +91,7 @@ export interface IRouterPluginOptions extends IPluginOptions {
 //Wallet Plugin
 export interface IWalletNetwork{
     chainName?: string;
-    provider?: string;
+    provider?: any;
 }
 export interface IWalletNetworks {
     [chainId: number]: IWalletNetwork;
@@ -162,25 +163,87 @@ export interface IWalletEvent{
     data: any;
     rawData: any;
 }
-export interface IWalletPlugin {		
+export interface IWalletTransaction {
+    hash: string;
+    nonce: number;
+    blockHash: string | null;
+    blockNumber: number | null;
+    transactionIndex: number | null;
+    from: string;
+    to: string | null;
+    value: string;
+    gasPrice: string;
+    maxPriorityFeePerGas?: number | string | BigNumber;
+    maxFeePerGas?: number | string | BigNumber;
+    gas: number;
+    input: string;
+}
+export interface IWalletBlockTransactionObject{
+    number: number;
+    hash: string;
+    parentHash: string;
+    nonce: string;
+    sha3Uncles: string;
+    logsBloom: string;
+    transactionRoot: string;
+    stateRoot: string;
+    receiptsRoot: string;
+    miner: string;
+    extraData: string;
+    gasLimit: number;
+    gasUsed: number;
+    timestamp: number | string;
+    baseFeePerGas?: number;
+    size: number;
+    difficulty: number;
+    totalDifficulty: number;
+    uncles: string[];
+    transactions: IWalletTransaction[];
+}
+export interface IWalletEvent {
+    name: string;
+    address: string;
+    blockNumber: number;
+    logIndex: number;
+    topics: string[];
+    transactionHash: string;
+    transactionIndex: number;
+    data: any;
+    rawData: any;
+}
+export interface IWalletPlugin {
+    account: IWalletAccount;
+    accounts: Promise<string[]>;
     address: string;
     balance: Promise<BigNumber>;
+    balanceOf(address: string): Promise<BigNumber>;
     chainId: number;
+    createAccount(): IWalletAccount;
     decode(abi:any, event:IWalletLog|IWalletEventLog, raw?:{data: string,topics: string[]}): IWalletEvent;
+    decodeEventData(data: IWalletLog, events?: any): Promise<IWalletEvent>;
     decodeLog(inputs: any, hexString: string, topics: any): any;
+    defaultAccount: string;
     getAbiEvents(abi: any[]): any;
-    getAbiTopics(abi: any[], eventNames: string[]): any[];    
+    getAbiTopics(abi: any[], eventNames: string[]): any[];
+    getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>;
+    getBlockNumber(): Promise<number>;
+    getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
+    getChainId(): Promise<number>;
+    getContractAbi(address: string);
+    getContractAbiEvents(address: string);		
     methods(...args: any): Promise<any>;
-    send(to: string, amount: number): Promise<IWalletTransactionReceipt>;
-    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<IWalletEvent[]>;
+    privateKey: string;
+    provider: any;
+    recoverSigner(msg: string, signature: string): Promise<string>;		
+    registerAbi(abi: any[] | string, address?: string|string[], handler?: any): string;
+    registerAbiContracts(abiHash: string, address: string|string[], handler?: any): any;
+    send(to: string, amount: number): Promise<IWalletTransactionReceipt>;		
+    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<IWalletEvent[]>;		
+    signMessage(msg: string): Promise<string>;
+    signTransaction(tx: any, privateKey?: string): Promise<string>;
     utils: IWalletUtils;
+    verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;		
 }
-// export interface IWalletPlugin implements IWallet{
-//     get address(): string;
-//     get chainId(): number;
-//     set chainId(value: number);
-//     getBalance(): Promise<number>;
-// }
 //Queue Plugin
 export interface IQueuePluginOptions extends IWorkerPluginOptions{
     jobQueue: string;
@@ -305,9 +368,12 @@ export interface IMessageConnection{
 }
 
 //Plugins option interface
-export type IPackageVersion = string;
+export type IPackageScript = {
+    version?: string,
+    script?: string
+};
 export interface IDependencies {
-    [packageName: string]: IPackageVersion;
+    [packageName: string]: IPackageScript | string;
 }
 export interface IGithubOptions {
     org: string;

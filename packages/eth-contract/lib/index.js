@@ -233,7 +233,7 @@ define("index", ["require", "exports", "bignumber.js"], function (require, expor
         }
         methods(...args) {
             args.unshift(this._address);
-            args.unshift(this._abi);            
+            args.unshift(this._abi);
             return this.wallet.methods.apply(this.wallet, args);
         }
         getAbiTopics(eventNames) {

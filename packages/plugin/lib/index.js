@@ -3,10 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Worker = exports.Router = exports.loadModule = exports.getPackageScript = exports.resolveFilePath = void 0;
+exports.Worker = exports.Router = exports.loadModule = exports.getPackageScript = exports.resolveFilePath = exports.BigNumber = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const vm_1 = require("@ijstech/vm");
+var types_1 = require("@ijstech/types");
+Object.defineProperty(exports, "BigNumber", { enumerable: true, get: function () { return types_1.BigNumber; } });
 const github_1 = __importDefault(require("./github"));
 const RootPath = path_1.default.dirname(require.main.filename);
 let Modules = {};
@@ -78,28 +80,37 @@ function getPackageDir(pack) {
         return getPackageDir(dir);
 }
 ;
-async function getPackageScript(filePath, packName) {
+async function getPackageScript(packName, pack) {
     let result;
     let packPath = '';
-    if (filePath.startsWith('file:'))
-        packPath = resolveFilePath([RootPath], filePath.substring(5), true);
-    else if (filePath == '*') {
+    if (!pack) {
+        pack = {};
         if (packName.startsWith('@ijstech/')) {
             packName = packName.slice(9);
             packPath = resolveFilePath([__dirname, '../..'], packName, true);
         }
+        ;
+        if (!packPath)
+            packPath = getPackageDir(packName);
+    }
+    else if (pack) {
+        if (pack.script && pack.script.startsWith('file:'))
+            packPath = resolveFilePath([RootPath], pack.script.substring(5), true);
+        else if (pack.script && pack.script != '*')
+            return pack.script;
         else {
             packPath = getPackageDir(packName);
         }
+        ;
     }
-    else
-        packPath = getPackageDir(filePath);
+    ;
     if (packPath) {
-        let pack = await getPackage(packPath);
-        if (pack) {
-            let libPath = resolveFilePath([packPath], pack.plugin || pack.browser || pack.main || 'index.js');
+        let p = await getPackage(packPath);
+        if (p) {
+            let libPath = resolveFilePath([packPath], p.plugin || p.browser || p.main || 'index.js');
             if (libPath) {
                 let script = await getScript(libPath);
+                pack.script = script;
                 return script;
             }
         }
@@ -196,15 +207,13 @@ class PluginVM {
         if (this.options.dependencies) {
             for (let packname in this.options.dependencies) {
                 let pack = this.options.dependencies[packname];
-                if (pack.startsWith('file://') || pack.startsWith('*')) {
-                    let script = await getPackageScript(pack, packname);
-                    if (script) {
-                        this.vm.injectGlobalPackage(packname, script);
-                    }
+                if (typeof (pack) == 'string')
+                    pack = { script: pack };
+                let script = await getPackageScript(packname, pack);
+                if (script) {
+                    this.vm.injectGlobalPackage(packname, script);
                 }
-                else {
-                    this.vm.injectGlobalPackage(packname, pack);
-                }
+                ;
             }
             ;
         }
@@ -260,7 +269,10 @@ class WorkerPluginVM extends PluginVM {
                         global.$$worker.message(global.$$session, global.$$message.channel, global.$$message.msg);
                     }
                     else{
-                        let result = await global.$$worker.process(global.$$session, global.$$data);                        
+                        let data = global.$$data;
+                        if (data)
+                            data = JSON.parse(data);
+                        let result = await global.$$worker.process(global.$$session, data);                        
                         return result;
                     }
                 }
@@ -282,7 +294,7 @@ class WorkerPluginVM extends PluginVM {
     ;
     async process(session, data) {
         if (data != null)
-            this.vm.injectGlobalValue('$$data', data);
+            this.vm.injectGlobalValue('$$data', JSON.stringify(data));
         let result = await this.vm.execute();
         return result;
     }
@@ -304,7 +316,7 @@ class Plugin {
     async addPackage(packName, script) {
         await this.createPlugin();
         if (!script) {
-            script = await getPackageScript('*', packName);
+            script = await getPackageScript(packName);
         }
         loadModule(script, packName);
     }
@@ -348,7 +360,9 @@ class Plugin {
         if (this.options.dependencies) {
             for (let packname in this.options.dependencies) {
                 let pack = this.options.dependencies[packname];
-                let script = await getPackageScript(pack, packname);
+                if (typeof (pack) == 'string')
+                    pack = { script: pack };
+                let script = await getPackageScript(packname, pack);
                 if (script)
                     loadModule(script, packname);
             }

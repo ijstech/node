@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Compiler = void 0;
+exports.WalletPluginCompiler = exports.PluginCompiler = exports.Compiler = void 0;
 const fs_1 = __importDefault(require("fs"));
 const typescript_1 = __importDefault(require("typescript"));
 const path_1 = __importDefault(require("path"));
@@ -28,24 +28,24 @@ function getPackageDir(pack) {
     else
         return getPackageDir(dir);
 }
-function getPackageInfo(packName) {
+async function getPackageInfo(packName) {
     try {
         let path = getPackageDir(packName);
-        let pack = JSON.parse(fs_1.default.readFileSync(path_1.default.join(path, 'package.json'), 'utf8'));
-        let dts = fs_1.default.readFileSync(path_1.default.join(path, pack.types), 'utf8');
+        let pack = JSON.parse(await fs_1.default.promises.readFile(path_1.default.join(path, 'package.json'), 'utf8'));
+        let content = await fs_1.default.promises.readFile(path_1.default.join(path, pack.plugin || pack.types), 'utf8');
         return {
             version: pack.version,
-            dts: dts
+            dts: { "index.d.ts": content }
         };
     }
     catch (err) {
         if (!packName.startsWith('@types/'))
-            return getPackageInfo('@types/' + packName);
+            return await getPackageInfo('@types/' + packName);
     }
     ;
     return {
         version: '*',
-        dts: 'declare const m: any; export default m;'
+        dts: { "index.d.ts": 'declare const m: any; export default m;' }
     };
 }
 class Compiler {
@@ -72,6 +72,7 @@ class Compiler {
             target: typescript_1.default.ScriptTarget.ES2017
         };
         this.files = {};
+        this.packageFiles = {};
         this.fileNames = [];
     }
     ;
@@ -91,7 +92,7 @@ class Compiler {
                 if (file.endsWith('.ts')) {
                     let content = await fs_1.default.promises.readFile(fullPath, 'utf8');
                     result[filePath] = content;
-                    this.addFile(filePath, content);
+                    this.addFileContent(filePath, content);
                 }
             }
         }
@@ -99,38 +100,45 @@ class Compiler {
         return result;
     }
     ;
-    addFile(fileName, content) {
+    async addFile(filePath, fileName) {
+        let content = await fs_1.default.promises.readFile(filePath, 'utf8');
+        this.addFileContent(fileName || 'index.ts', content);
+    }
+    ;
+    addFileContent(fileName, content) {
         this.files[fileName] = content;
         this.fileNames.push(fileName);
     }
     ;
-    addPackage(packName, pack) {
-        let moduleName = '$package/' + packName + '.d.ts';
+    async addPackage(packName, pack) {
         if (!pack) {
-            pack = this.packages[moduleName];
+            pack = this.packages[packName];
             if (!pack) {
-                pack = getPackageInfo(packName);
-                this.packages[moduleName] = pack;
+                pack = await getPackageInfo(packName);
+                this.packages[packName] = pack;
             }
             ;
         }
         else
-            this.packages[moduleName] = pack;
-        return this.packages[moduleName];
+            this.packages[packName] = pack;
+        for (let n in pack.dts) {
+            this.packageFiles[packName + '/' + n] = pack.dts[n];
+        }
+        return this.packages[packName];
     }
     ;
-    compile(emitDeclaration) {
+    async compile(emitDeclaration) {
         let result = {
             errors: [],
             script: null,
-            dts: null,
+            dts: {},
         };
         const host = {
             getSourceFile: this.getSourceFile.bind(this),
             getDefaultLibFileName: () => "lib.d.ts",
             writeFile: (fileName, content) => {
                 if (fileName.endsWith('d.ts'))
-                    result.dts = content;
+                    result.dts[fileName] = content;
                 else
                     result.script = content;
             },
@@ -166,7 +174,10 @@ class Compiler {
     }
     ;
     fileExists(fileName) {
-        return true;
+        let result = this.fileNames.indexOf(fileName) > -1 || this.packageFiles[fileName] != undefined;
+        if (!result && fileName.endsWith('.ts'))
+            result = this.packages[fileName.slice(0, -3)] != undefined;
+        return result;
     }
     ;
     getSourceFile(fileName, languageVersion, onError) {
@@ -174,17 +185,8 @@ class Compiler {
             let lib = getLib('lib.es5.d.ts');
             return typescript_1.default.createSourceFile(fileName, lib, languageVersion);
         }
-        else if (fileName.startsWith('$package/')) {
-            if (this.packages[fileName])
-                return typescript_1.default.createSourceFile(fileName, this.packages[fileName].dts, languageVersion);
-            else
-                return typescript_1.default.createSourceFile(fileName, 'declare const m: any; export default m;', languageVersion);
-        }
-        else {
-            let content = this.files[fileName];
-            return typescript_1.default.createSourceFile(fileName, content || '', languageVersion);
-        }
-        ;
+        let content = this.packageFiles[fileName] || this.files[fileName];
+        return typescript_1.default.createSourceFile(fileName, content, languageVersion);
     }
     ;
     readFile(fileName) {
@@ -200,15 +202,8 @@ class Compiler {
             });
             if (result.resolvedModule) {
                 if (!moduleName.startsWith('./')) {
-                    let packName = '$package/' + moduleName + '.d.ts';
-                    let pack = this.packages[packName];
-                    if (!pack) {
-                        pack = getPackageInfo(moduleName);
-                        this.packages[packName] = pack;
-                    }
-                    ;
                     resolvedModules.push({
-                        resolvedFileName: packName,
+                        resolvedFileName: moduleName + '/index.d.ts',
                         extension: '.ts',
                         isExternalLibraryImport: true
                     });
@@ -224,4 +219,21 @@ class Compiler {
     ;
 }
 exports.Compiler = Compiler;
+;
+class PluginCompiler extends Compiler {
+    async compile(emitDeclaration) {
+        await this.addPackage('bignumber.js');
+        await this.addPackage('@ijstech/plugin');
+        return super.compile(emitDeclaration);
+    }
+}
+exports.PluginCompiler = PluginCompiler;
+;
+class WalletPluginCompiler extends PluginCompiler {
+    async compile(emitDeclaration) {
+        await this.addPackage('@ijstech/eth-contract');
+        return super.compile(emitDeclaration);
+    }
+}
+exports.WalletPluginCompiler = WalletPluginCompiler;
 ;

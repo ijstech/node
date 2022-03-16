@@ -2,7 +2,11 @@
     "name": "erc20",
     "main": "lib",
     "types": "types",
-    "scripts": {
-        "build": "rm -rf lib && rm -rf types && tsc && tsc --p tsconfig.lib.json"
+    "dependencies": {
+        "@ijstech/eth-contract": "github:ijstech/eth-contract"
+    },
+    "scripts": {        
+        "build": "rm -rf lib && rm -rf types && tsc && tsc --p tsconfig.lib.json",
+        "compileContract": "npx github:ijstech/eth-contract 0.6.11 contract src"
     }
 }

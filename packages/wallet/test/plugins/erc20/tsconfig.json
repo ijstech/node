@@ -10,9 +10,6 @@
         "outDir": "lib",
         "declaration": true,
         "declarationDir": "types",        
-        "experimentalDecorators": true,
-        "paths": {
-            "@ijstech/*": ["../../../../*"]
-        }
+        "experimentalDecorators": true
     }
 }

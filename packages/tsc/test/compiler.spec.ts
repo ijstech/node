@@ -5,43 +5,57 @@ import Path from 'path';
 describe('Compiler', function() {    
     it("compile", function(){
         let compiler = new Compiler();
-        compiler.addFile('index.ts', `
+        compiler.addFileContent('index.ts', `
             import * as Demo from './lib/demo';
             Demo.test();
         `)
-        compiler.addFile('lib/demo.ts', `
+        compiler.addFileContent('lib/demo.ts', `
             export function test(): number{
                 return 1
             }
         `)
         let result = compiler.compile(false);
         assert.strictEqual(typeof(result.script), 'string');
-        assert.strictEqual(result.dts, null);
+        assert.deepStrictEqual(result.dts, {});
         assert.strictEqual(result.errors.length, 0);
     });
     it("import JSON", function(){
         let compiler = new Compiler();
-        compiler.addFile('index.ts', `
+        compiler.addFileContent('index.ts', `
             import Demo from './demo.json';
             let value = Demo.value;
-        `)
-        compiler.addFile('demo.json.ts', `export default
+        `);
+        compiler.addFileContent('demo.json.ts', `export default
             {
                 value: true
             }
-        `)
-        let result = compiler.compile(true);        
+        `);
+        let result = compiler.compile(true); 
         assert.strictEqual(typeof(result.script), 'string');
-        assert.strictEqual(typeof(result.dts), 'string');
+        assert.strictEqual(typeof(result.dts['index.d.ts']), 'string');
+        assert.strictEqual(result.errors.length, 0);
+    });
+    it("Add Package", async function(){
+        let compiler = new Compiler();
+        compiler.addFileContent('index.ts', `
+            import {BigNumber} from 'bignumber.js';
+            let n = new BigNumber(123);
+            console.dir(n);
+        `);
+        await compiler.addPackage('bignumber.js');
+        let result = compiler.compile(true);      
+        assert.strictEqual(typeof(result.script), 'string');
+        assert.strictEqual(typeof(result.dts['index.d.ts']), 'string');
         assert.strictEqual(result.errors.length, 0);
     });
     it("Add Directory", async function(){
         let path = Path.join(__dirname, 'samples');        
         let compiler = new Compiler();
         let files = await compiler.addDirectory(path);
+        await compiler.addPackage('bignumber.js');
         let result = compiler.compile(true);
         assert.strictEqual(typeof(result.script), 'string');
-        assert.strictEqual(typeof(result.dts), 'string');
+        assert.strictEqual(typeof(result.dts['index.d.ts']), 'string');
         assert.strictEqual(result.errors.length, 0);
     })
 })
