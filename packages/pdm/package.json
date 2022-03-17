@@ -1,10 +1,11 @@
 {
     "name": "@ijstech/pdm",
-    "main": "./lib/index.js",
-    "plugin": "./plugin/index.js",
-    "types": "./types/index.d.ts",
+    "main": "lib/index.js",
+    "plugin": "plugin/index.js",
+    "pluginTypes": "pluginTypes/plugin.d.ts",
+    "types": "types/index.d.ts",    
     "scripts": {
-        "build": "rm -rf types && rm -f tsconfig.tsbuildinfo && tsc && rm -rf lib && tsc --p tsconfig.build.json && tsc --p tsconfig.plugin.json",
+        "build": "rm -f *.tsbuildinfo && rm -rf plugin &&  rm -rf types && rm -rf lib && rm -rf pluginTypes && tsc && tsc --p tsconfig.plugin.json && tsc --p tsconfig.plugin.types.json",
         "test": "mocha --exit --require ts-node/register test/*.spec.ts"
     }
 }

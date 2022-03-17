@@ -12,7 +12,7 @@
         }
     },
     "include": [
-        "./src/index.ts",
-        "./src/pdm.ts"
+        "src/index.ts",
+        "src/pdm.ts"
     ]
 }

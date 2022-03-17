@@ -11,9 +11,6 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -23,13 +20,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.loadPlugin = void 0;
-__exportStar(require("./pdm"), exports);
+const PDM = __importStar(require("./pdm"));
 const DB = __importStar(require("@ijstech/db"));
+exports.default = PDM;
 function loadPlugin(worker, options) {
     let client;
     if (worker.vm) {
         if (!client)
-            client = DB.getClient(options.db1);
+            client = DB.getClient(options[Object.keys(options)[0]]);
         worker.vm.injectGlobalObject('$$pdm_plugin', {
             async applyQueries(queries) {
                 let result = await client.applyQueries(queries);
@@ -39,7 +37,7 @@ function loadPlugin(worker, options) {
     }
     else {
         if (!client)
-            client = DB.getClient(options.db1);
+            client = DB.getClient(options[Object.keys(options)[0]]);
         global['$$pdm_plugin'] = {
             async applyQueries(queries) {
                 let result = await client.applyQueries(queries);

@@ -2,12 +2,12 @@
     "extends": "../../tsconfig.build.json",
     "compilerOptions": {
         "baseUrl": ".",
-        "module": "AMD",
         "experimentalDecorators": true,
+        "emitDeclarationOnly": true,
+        "outDir": "plugin",
         "rootDir": "src",
-        "declaration": false,
-        "composite": false,
-        "outFile": "./plugin/index.js",        
+        "declaration": true,
+        "declarationDir": "pluginTypes",
         "paths": {
             "@ijstech/*": ["../*"]
         }

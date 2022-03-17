@@ -1,6 +1,26 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.OneToMany = exports.BlobField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.RecordSet = exports.TRecordSet = exports.TRecord = exports.TContext = void 0;
+exports.OneToMany = exports.BlobField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.RecordSet = exports.TGraphQL = exports.TRecordSet = exports.TRecord = exports.TContext = void 0;
+const GraphQL = __importStar(require("graphql"));
 function generateUUID() {
     var d = new Date().getTime();
     var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now() * 1000)) || 0;
@@ -80,6 +100,12 @@ class TContext {
             t.recordSet = this[n];
         }
         ;
+    }
+    ;
+    get graphql() {
+        if (!this._graphql)
+            this._graphql = new TGraphQL(this, this.$$records, this._client);
+        return this._graphql;
     }
     ;
     async fetch(recordSet) {
@@ -194,7 +220,7 @@ class TContext {
         let queries = [];
         for (let i in data)
             queries.push(data[i]);
-        let client = this._client;
+        let client = this._client || global['$$pdm_plugin'];
         let result = await client.applyQueries(queries);
         if (result && result[0] && result[0].error)
             throw result[0].error;
@@ -511,6 +537,117 @@ class TRecordSet {
 }
 exports.TRecordSet = TRecordSet;
 ;
+class TGraphQL {
+    constructor(context, records, client) {
+        this._context = context;
+        this.$$records = records;
+        this._client = client;
+        this._schema = this.buildSchema();
+    }
+    buildSchema() {
+        const rootQueryTypeFields = {};
+        for (const tableName in this.$$records) {
+            const fields = this._context[tableName]['fields'];
+            const fieldObject = {};
+            const criteria = {};
+            for (const fieldName in fields) {
+                const field = fields[fieldName];
+                let type;
+                switch (field.dataType) {
+                    case 'key':
+                    case 'char':
+                    case 'varchar':
+                    case 'date':
+                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLString);
+                        criteria[fieldName] = { type: GraphQL.GraphQLString };
+                        break;
+                    case 'ref':
+                    case '1toM':
+                        break;
+                    case 'boolean':
+                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLBoolean);
+                        criteria[fieldName] = { type: GraphQL.GraphQLBoolean };
+                        break;
+                    case 'integer':
+                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLInt);
+                        criteria[fieldName] = { type: GraphQL.GraphQLInt };
+                        break;
+                    case 'decimal':
+                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLFloat);
+                        criteria[fieldName] = { type: GraphQL.GraphQLFloat };
+                        break;
+                    case 'blob':
+                    case 'text':
+                    case 'mediumText':
+                    case 'longText':
+                        type = GraphQL.GraphQLString;
+                        criteria[fieldName] = { type: GraphQL.GraphQLString };
+                        break;
+                }
+                if (type) {
+                    fieldObject[fieldName] = { type };
+                    criteria[fieldName]['dataType'] = field.dataType;
+                }
+            }
+            const tableType = new GraphQL.GraphQLObjectType({
+                name: tableName,
+                fields: () => fieldObject,
+            });
+            rootQueryTypeFields[tableName] = {
+                type: new GraphQL.GraphQLList(tableType),
+                args: criteria,
+                resolve: async (parent, args) => {
+                    let sql = `SELECT * FROM ?? WHERE 1 = 1 `;
+                    let params = [tableName];
+                    for (const arg in args) {
+                        const value = args[arg];
+                        const dataType = criteria[arg]['dataType'];
+                        switch (dataType) {
+                            case 'key':
+                            case 'char':
+                            case 'varchar':
+                            case 'date':
+                            case 'boolean':
+                            case 'integer':
+                            case 'decimal':
+                                sql += `AND ?? = ?`;
+                                params.push(arg, value);
+                                break;
+                            case 'blob':
+                            case 'text':
+                            case 'mediumText':
+                            case 'longText':
+                                sql += `AND ?? LIKE CONCAT('%', ?, '%')`;
+                                params.push(arg, value);
+                                break;
+                        }
+                    }
+                    const data = await this._client.query(sql, params);
+                    return data;
+                }
+            };
+        }
+        const rootQueryType = new GraphQL.GraphQLObjectType({
+            name: 'Query',
+            description: 'Root query',
+            fields: () => rootQueryTypeFields
+        });
+        return new GraphQL.GraphQLSchema({
+            query: rootQueryType
+        });
+    }
+    query(source) {
+        return new Promise((resolve, reject) => {
+            GraphQL.graphql({
+                schema: this._schema,
+                source: source
+            }).then(data => resolve(data.data)).catch(e => {
+                throw e;
+            });
+        });
+    }
+}
+exports.TGraphQL = TGraphQL;
 ;
 ;
 ;

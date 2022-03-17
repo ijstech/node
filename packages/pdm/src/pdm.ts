@@ -53,11 +53,10 @@ export class TContext {
     private _modifiedRecords:{[id: number]: IRecord} = {};
     private _applyQueries:{[id: number]: Types.IQuery} = {};
     private _deletedRecords = {};
-    public graphql: TGraphQL;
+    private _graphql: TGraphQL;
     constructor(client?: Types.IDBClient){
         this.initRecordsets();
         this._client = client;
-        this.initGraphQL();
     };
     private getApplyQueries(recordSet: IRecordSet): any[]{
         if (!recordSet._id)
@@ -104,9 +103,11 @@ export class TContext {
             t.recordSet = this[n];
         };
     };
-    private initGraphQL() {
-        this.graphql = new TGraphQL(this, this.$$records, this._client);
-    }
+    get graphql(): TGraphQL{
+        if (!this._graphql)
+            this._graphql = new TGraphQL(this, this.$$records, this._client);
+        return this._graphql;
+    };
     async fetch(recordSet?: IRecordSet): Promise<any>{
         let queries = [];
         let self = this;
@@ -210,7 +211,7 @@ export class TContext {
         let queries = [];
         for (let i in data)
             queries.push(data[i]);
-        let client = this._client;
+        let client = this._client || global['$$pdm_plugin'];
         let result = await client.applyQueries(queries);
 
         if (result && result[0] && result[0].error)
@@ -777,7 +778,6 @@ export function OneToMany<T>(record: typeof TRecord, prop: keyof T, tableName: s
         target['$$fields'][propName] = {details: record, table: tableName, field: fieldName, prop: <string>prop, dataType: '1toM'};
     };
 }
-
 /* Sample Model
 class Booking extends TRecord{
     @KeyField()
