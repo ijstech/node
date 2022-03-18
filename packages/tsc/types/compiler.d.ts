@@ -15,6 +15,7 @@ export interface ICompilerResult {
     };
 }
 interface IPackage {
+    path?: string;
     dts: {
         [file: string]: string;
     };
@@ -28,7 +29,7 @@ export declare class Compiler {
     private fileNames;
     private packages;
     constructor();
-    addDirectory(dir: string, parentDir?: string): Promise<{}>;
+    addDirectory(dir: string, parentDir?: string, packName?: string): Promise<{}>;
     addFile(filePath: string, fileName?: string): Promise<void>;
     addFileContent(fileName: string, content: string): void;
     addPackage(packName: string, pack?: IPackage): Promise<IPackage>;

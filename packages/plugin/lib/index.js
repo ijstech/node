@@ -96,12 +96,10 @@ async function getPackageScript(packName, pack) {
     else if (pack) {
         if (pack.script && pack.script.startsWith('file:'))
             packPath = resolveFilePath([RootPath], pack.script.substring(5), true);
-        else if (pack.script && pack.script != '*')
+        else if (pack.script)
             return pack.script;
-        else {
+        else
             packPath = getPackageDir(packName);
-        }
-        ;
     }
     ;
     if (packPath) {
@@ -207,8 +205,6 @@ class PluginVM {
         if (this.options.dependencies) {
             for (let packname in this.options.dependencies) {
                 let pack = this.options.dependencies[packname];
-                if (typeof (pack) == 'string')
-                    pack = { script: pack };
                 let script = await getPackageScript(packname, pack);
                 if (script) {
                     this.vm.injectGlobalPackage(packname, script);
@@ -360,8 +356,6 @@ class Plugin {
         if (this.options.dependencies) {
             for (let packname in this.options.dependencies) {
                 let pack = this.options.dependencies[packname];
-                if (typeof (pack) == 'string')
-                    pack = { script: pack };
                 let script = await getPackageScript(packname, pack);
                 if (script)
                     loadModule(script, packname);

@@ -32,9 +32,10 @@ async function getPackageInfo(packName) {
     try {
         let path = getPackageDir(packName);
         let pack = JSON.parse(await fs_1.default.promises.readFile(path_1.default.join(path, 'package.json'), 'utf8'));
-        let content = await fs_1.default.promises.readFile(path_1.default.join(path, pack.plugin || pack.types), 'utf8');
+        let content = await fs_1.default.promises.readFile(path_1.default.join(path, pack.pluginTypes || pack.types), 'utf8');
         return {
             version: pack.version,
+            path: path_1.default.dirname(path_1.default.join(path, pack.pluginTypes || pack.types)),
             dts: { "index.d.ts": content }
         };
     }
@@ -55,6 +56,7 @@ class Compiler {
             allowJs: false,
             alwaysStrict: true,
             declaration: false,
+            experimentalDecorators: true,
             resolveJsonModule: false,
             module: typescript_1.default.ModuleKind.AMD,
             noEmitOnError: true,
@@ -65,9 +67,10 @@ class Compiler {
             allowJs: false,
             alwaysStrict: true,
             declaration: true,
+            emitDeclarationOnly: true,
+            experimentalDecorators: true,
             resolveJsonModule: false,
             module: typescript_1.default.ModuleKind.CommonJS,
-            emitDeclarationOnly: true,
             noEmitOnError: true,
             target: typescript_1.default.ScriptTarget.ES2017
         };
@@ -76,20 +79,22 @@ class Compiler {
         this.fileNames = [];
     }
     ;
-    async addDirectory(dir, parentDir) {
+    async addDirectory(dir, parentDir, packName) {
+        packName = packName || '';
         parentDir = parentDir || '';
         let result = {};
         let files = await fs_1.default.promises.readdir(dir);
         for (let i = 0; i < files.length; i++) {
             let file = files[i];
             let fullPath = path_1.default.join(dir, file);
-            let filePath = path_1.default.join(parentDir, file);
             let stat = await fs_1.default.promises.stat(fullPath);
             if (stat.isDirectory()) {
-                Object.assign(result, await this.addDirectory(fullPath, filePath));
+                let filePath = path_1.default.join(parentDir, file);
+                Object.assign(result, await this.addDirectory(fullPath, filePath, packName));
             }
             else {
                 if (file.endsWith('.ts')) {
+                    let filePath = path_1.default.join(packName, parentDir, file);
                     let content = await fs_1.default.promises.readFile(fullPath, 'utf8');
                     result[filePath] = content;
                     this.addFileContent(filePath, content);
@@ -121,6 +126,8 @@ class Compiler {
         }
         else
             this.packages[packName] = pack;
+        if (pack.path)
+            this.addDirectory(pack.path, '', packName);
         for (let n in pack.dts) {
             this.packageFiles[packName + '/' + n] = pack.dts[n];
         }

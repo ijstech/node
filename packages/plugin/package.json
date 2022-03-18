@@ -2,7 +2,7 @@
     "name": "@ijstech/plugin",
     "version": "0.1.0",
     "main": "lib/index.js",
-    "plugin": "plugin/index.d.ts",
+    "pluginTypes": "plugin/index.d.ts",
     "types": "types/index.d.ts",    
     "scripts": {
         "build": "rm -rf lib && rm -rf types && rm -f tsconfig.tsbuildinfo && tsc",

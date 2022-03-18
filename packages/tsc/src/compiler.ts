@@ -25,6 +25,7 @@ export interface ICompilerResult {
     dts: {[file: string]: string};
 };
 interface IPackage{
+    path?: string;
     dts: {[file: string]: string},
     version: string,
 }
@@ -40,10 +41,11 @@ function getPackageDir(pack: string): string{
 async function getPackageInfo(packName: string): Promise<IPackage>{
     try{
         let path = getPackageDir(packName);
-        let pack = JSON.parse(await Fs.promises.readFile(Path.join(path, 'package.json'), 'utf8'));
-        let content = await Fs.promises.readFile(Path.join(path, pack.plugin || pack.types), 'utf8');
+        let pack = JSON.parse(await Fs.promises.readFile(Path.join(path, 'package.json'), 'utf8'));                
+        let content = await Fs.promises.readFile(Path.join(path, pack.pluginTypes || pack.types), 'utf8');
         return {
             version: pack.version,
+            path: Path.dirname(Path.join(path, pack.pluginTypes || pack.types)),
             dts: {"index.d.ts": content}
         };
     }
@@ -68,7 +70,8 @@ export class Compiler {
         this.scriptOptions = {            
             allowJs: false,
             alwaysStrict: true,
-            declaration: false,            
+            declaration: false,      
+            experimentalDecorators: true,      
             resolveJsonModule: false,
             module: TS.ModuleKind.AMD,
             noEmitOnError: true,
@@ -78,32 +81,34 @@ export class Compiler {
         this.dtsOptions = {            
             allowJs: false,
             alwaysStrict: true,
-            declaration: true,            
-            resolveJsonModule: false,
-            module: TS.ModuleKind.CommonJS,
+            declaration: true,       
             emitDeclarationOnly: true,
+            experimentalDecorators: true,     
+            resolveJsonModule: false,            
+            module: TS.ModuleKind.CommonJS,
             noEmitOnError: true,
-
             target: TS.ScriptTarget.ES2017
         };
         this.files = {};
         this.packageFiles = {};
         this.fileNames = [];
     };
-    async addDirectory(dir: string, parentDir?: string){  
+    async addDirectory(dir: string, parentDir?: string, packName?: string){  
+        packName = packName || '';
         parentDir = parentDir || '';
         let result = {};
         let files = await Fs.promises.readdir(dir);
         for (let i = 0; i < files.length; i ++){
             let file = files[i]
-            let fullPath = Path.join(dir,file);
-            let filePath = Path.join(parentDir, file);
+            let fullPath = Path.join(dir,file);            
             let stat = await Fs.promises.stat(fullPath);
             if (stat.isDirectory()){
-                Object.assign(result, await this.addDirectory(fullPath, filePath)); 
+                let filePath = Path.join(parentDir, file);
+                Object.assign(result, await this.addDirectory(fullPath, filePath, packName)); 
             }
             else{
-                if (file.endsWith('.ts')){                    
+                if (file.endsWith('.ts')){                
+                    let filePath = Path.join(packName, parentDir, file);    
                     let content = await Fs.promises.readFile(fullPath, 'utf8');
                     result[filePath] = content;
                     this.addFileContent(filePath, content);
@@ -130,6 +135,8 @@ export class Compiler {
         }
         else
             this.packages[packName] = pack;
+        if (pack.path)
+            this.addDirectory(pack.path, '', packName);
         for (let n in pack.dts){
             this.packageFiles[packName + '/' + n] = pack.dts[n];
         }
