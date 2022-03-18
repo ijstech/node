@@ -140,7 +140,7 @@ export class TContext {
                 getQueries();
             }
         };
-        let client = this._client || global['$$pdm_plugin'];        
+        let client = this._client || global['$$pdm_plugin'];
         let data = await client.applyQueries(queries);
         if (typeof(data) == 'string')
             data = JSON.parse(data);
@@ -159,7 +159,7 @@ export class TContext {
                 }
             };
         };
-        if (recordSet)          
+        if (recordSet)
             return result
         else
             return true;
@@ -379,9 +379,9 @@ export class TRecordSet<T>{
         if (this._master && !this._fetchAll){
             this._fetchAll = true;
             this._queries.push({a:'s',q:[[this._masterField,'=', this._master.$$keyValue]]})
-        }      
+        }
         return new Promise(async (resolve)=>{
-            let result = await this._context.fetch(<any>this);            
+            let result = await this._context.fetch(<any>this);
             resolve(result)
         })
     };
@@ -453,7 +453,7 @@ export class TRecordSet<T>{
                             return;
                         else if (!record.$$record[prop]){
                             return new Promise(async (resolve)=>{
-                                let rs = this.context[field.record];                                    
+                                let rs = this.context[field.record];
                                 let rd = await rs.queryRecord(record.$$record[field.field])
                                 record.$$record[prop] = rd?rd:null;
                                 if (record.$$record[prop] === null)
@@ -468,7 +468,7 @@ export class TRecordSet<T>{
                         if (!record.$$keyValue)
                             record.$$keyValue = record.$$record[this.keyField.field];
                         if (!record.$$record[prop])
-                            record.$$record[prop] = new TRecordSet<typeof field.details>(this._context, field.details, field.table, <any>record, field.prop)                        
+                            record.$$record[prop] = new TRecordSet<typeof field.details>(this._context, field.details, field.table, <any>record, field.prop)
                         return record.$$record[prop]
                     }
                     else if (prop == '$$record')
@@ -545,6 +545,7 @@ export class TRecordSet<T>{
 };
 export class TGraphQL {
     private _schema: GraphQL.GraphQLSchema;
+    private _introspection: GraphQL.IntrospectionQuery;
     private _context: TContext;
     private _client: Types.IDBClient;
     private $$records: {[name: string]: {
@@ -640,6 +641,13 @@ export class TGraphQL {
             });
         });
     };
+
+    get introspection() {
+        if(!this._introspection) {
+            this._introspection = GraphQL.introspectionFromSchema(this._schema);
+        }
+        return this._introspection;
+    }
 };
 export interface IRefField extends Types.IField{
     record: string;
