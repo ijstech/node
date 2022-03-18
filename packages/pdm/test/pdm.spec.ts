@@ -57,7 +57,7 @@ describe('PDM', function() {
         rd.customerName = name;
         await context.save();
         //query added record
-        context.reset();
+        context = new Context(client);
         assert.strictEqual(context.customer.first, undefined);
         context.customer.query.where('customerName', '=', name);
         await context.fetch();
@@ -67,7 +67,7 @@ describe('PDM', function() {
         context.customer.first.customerName = name2;
         await context.save();
         //query modified record
-        context.reset();
+        context = new Context(client);
         context.customer.query.where('customerName', '=', name2);
         await context.fetch();
         assert.strictEqual(context.customer.first.customerName, name2);
