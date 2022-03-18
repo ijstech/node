@@ -30,7 +30,7 @@ describe('GraphQL', function() {
     it('GraphQL query by columns', async function(){
         let context = new Context(client);
         const data = await context.graphql.query(`
-        { 
+        {
             demo {
                 guid
                 string
@@ -79,7 +79,7 @@ describe('GraphQL', function() {
         }
         `);
         assert.strictEqual(data.demo.length, 1)
-        const d = data.demo[0];        
+        const d = data.demo[0];
         assert.strictEqual(d['guid'], demoData[0][0]);
         assert.strictEqual(d['string'], demoData[0][1]);
         assert.strictEqual(d['decimal'], demoData[0][2]);
@@ -225,5 +225,71 @@ describe('GraphQL', function() {
         const d = data.demo[0];
         assert.strictEqual(d['text'], "Hello Test");
         assert.strictEqual(d['size'], "13");
+    });
+    it('Validate GraphQL introspection query', async function() {
+        let context = new Context(client);
+        const introspection = context.graphql.introspection;
+        const types = introspection.__schema.types;
+        const tables = context['$$records'];
+        const tableNames = Object.keys(context['$$records']);
+        const defaultSchemaFields = ['Query', 'String', 'Int', 'Float', 'Boolean', '__Schema', '__Type', '__TypeKind', '__Field', '__InputValue', '__EnumValue', '__Directive', '__DirectiveLocation'];
+        const schemaTables = types.filter(v => defaultSchemaFields.indexOf(v.name) < 0).map(v => v.name);
+        // Checking all table exists in the introspection query.
+        tableNames.forEach(table => {
+            assert.strictEqual(schemaTables.indexOf(table) >= 0,true);
+        })
+        // Field validation
+        const skipCheckingDataType = ['ref', '1toM']
+        types.forEach(schemaTable => {
+            const schemaTableName = schemaTable.name;
+            if(defaultSchemaFields.indexOf(schemaTableName) >= 0) return;
+            const schemaTableFields = schemaTable['fields'];
+            const tableFields = tables[schemaTableName].recordSet.fields;
+            for(let fieldName in tableFields) {
+                const tableField = tableFields[fieldName];
+                const schemaTableField = schemaTableFields.find(v => v.name === fieldName);
+                const dataType = tableField.dataType;
+                if(skipCheckingDataType.indexOf(dataType) >= 0) continue;
+                // Check field exists in introspection schema
+                assert.strictEqual(!!schemaTableField, true);
+                // Check type
+                switch(dataType) {
+                    case 'key':
+                    case 'char':
+                    case 'varchar':
+                    case 'date':
+                        assert.strictEqual(schemaTableField.type.kind, 'NON_NULL');
+                        assert.strictEqual(schemaTableField.type.ofType.kind, 'SCALAR');
+                        assert.strictEqual(schemaTableField.type.ofType.name, 'String');
+                        break;
+                    case 'ref':
+                    case '1toM':
+                        break;
+                    case 'boolean':
+                        assert.strictEqual(schemaTableField.type.kind, 'NON_NULL');
+                        assert.strictEqual(schemaTableField.type.ofType.kind, 'SCALAR');
+                        assert.strictEqual(schemaTableField.type.ofType.name, 'Boolean');
+                        break;
+                    case 'integer':
+                        assert.strictEqual(schemaTableField.type.kind, 'NON_NULL');
+                        assert.strictEqual(schemaTableField.type.ofType.kind, 'SCALAR');
+                        assert.strictEqual(schemaTableField.type.ofType.name, 'Int');
+                        break;
+                    case 'decimal':
+                        assert.strictEqual(schemaTableField.type.kind, 'NON_NULL');
+                        assert.strictEqual(schemaTableField.type.ofType.kind, 'SCALAR');
+                        assert.strictEqual(schemaTableField.type.ofType.name, 'Float');
+                        break;
+                    case 'blob':
+                    case 'text':
+                    case 'mediumText':
+                    case 'longText':
+                        assert.strictEqual(schemaTableField.type.kind, 'SCALAR');
+                        assert.strictEqual(schemaTableField.type.name, 'String');
+                        break;
+                }
+            }
+        })
+        assert.strictEqual(1, 1)
     })
 });
