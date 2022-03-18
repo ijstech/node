@@ -342,6 +342,7 @@ export interface IDBPlugin{
 export interface IDBClient{
     applyQueries(queries: IQuery[]): Promise<IQueryResult[]>;
     query(sql: string, params?: any[]): Promise<any>;
+    resolve(table: string, fields: IFields, criteria: any, args: any): Promise<any>;
     beginTransaction():Promise<boolean>;
     checkTableExists(tableName: string): Promise<boolean>;
     commit():Promise<boolean>;
@@ -373,7 +374,7 @@ export type IPackageScript = {
     script?: string
 };
 export interface IDependencies {
-    [packageName: string]: IPackageScript | string;
+    [packageName: string]: IPackageScript;
 }
 export interface IGithubOptions {
     org: string;
