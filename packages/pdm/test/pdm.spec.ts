@@ -13,30 +13,30 @@ const sql = require('./model/sample.sql');
 describe('PDM', function() {
     this.timeout(20000);
     let client: DB.IClient;
-    before(async function(){        
+    before(async function(){
         client = DB.getClient(Config);
         let tableExists = await client.checkTableExists('customers');
         if (!tableExists){
             let result = await client.import(sql);
-            if (!result)            
+            if (!result)
                 throw new Error('Import DB data failed!');
         }
-    })    
+    })
     it('Query Customer where customerNumber in [112, 114]', async function(){
         let context = new Context(client);
         context.customer.query.where('customerNumber', 'in', [112,114]);
-        let records = await context.customer.fetch();        
+        let records = await context.customer.fetch();
         assert.strictEqual(context.customer.count, 2);
         assert.strictEqual(records[0].customerNumber, 112);
         let values = context.customer.values('customerNumber');
-        assert.deepStrictEqual(values, [112,114]);           
+        assert.deepStrictEqual(values, [112,114]);
     });
     it('Query Customer where customerNumber = 112 or 114', async function(){
         let context = new Context(client);
         context.customer.query.where('customerNumber', '=', 112).or('customerNumber','=',114);
-        await context.fetch();        
-        assert.strictEqual(context.customer.count, 2);        
-        let values = context.customer.values('customerNumber');        
+        await context.fetch();
+        assert.strictEqual(context.customer.count, 2);
+        let values = context.customer.values('customerNumber');
         assert.deepStrictEqual(values, [112,114]);
     });
     it('Query Customer with subQuery customerNumber = 112 or 114', async function(){
@@ -46,7 +46,7 @@ describe('PDM', function() {
         }).or('customerNumber','=',114);
         await context.customer.fetch();
         assert.strictEqual(context.customer.count, 2);
-        let values = context.customer.values('customerNumber');        
+        let values = context.customer.values('customerNumber');
         assert.deepStrictEqual(values, [112,114]);
     });
     it('Add customer', async function(){
@@ -74,10 +74,10 @@ describe('PDM', function() {
         //delete record
         context.customer.delete(context.customer.first);
         assert.strictEqual(context.customer.first, undefined);
-        assert.strictEqual(context.customer.count, 0);        
-        await context.save();              
+        assert.strictEqual(context.customer.count, 0);
+        await context.save();
         //query deleted record
-        context.reset();  
+        context.reset();
         context.customer.query.where('customerName', '=', name2);
         await context.fetch();
         assert.strictEqual(context.customer.count, 0);
@@ -85,8 +85,8 @@ describe('PDM', function() {
     it('Apply Queries', async function(){
         let context = new Context(client);
         let custName = '$new_' + new Date().getTime().toString();
-        //insert 
-        context.customer.applyInsert({        
+        //insert
+        context.customer.applyInsert({
             'customerName': custName,
             'customerNumber': 8888,
             'country': 'China'
@@ -96,25 +96,25 @@ describe('PDM', function() {
         await context.fetch();
         let cust = context.customer.first;
         assert.strictEqual(cust.customerName, custName);
-        //update 
+        //update
         let newCustName = '$m' + custName;
         context.customer.applyUpdate({
             'customerName': newCustName,
             'city': 'HK'
         }).where('customerName', '=', custName);
-        await context.save(); 
+        await context.save();
         context.customer.query.where('customerName', '=', newCustName);
-        await context.fetch();           
+        await context.fetch();
         assert.strictEqual(context.customer.first.customerName, newCustName);
         assert.strictEqual(context.customer.first.customerName, cust.customerName);
         //delete
         context.customer.applyDelete().where('customerName','=',newCustName);
-        await context.save();     
-        context.reset();   
+        await context.save();
+        context.reset();
         context.customer.query.where('customerName', '=', newCustName);
-        await context.fetch();   
+        await context.fetch();
         assert.strictEqual(context.customer.count, 0);
-    });   
+    });
     it('Customer Sales Rep', async function(){
         let context = new Context(client);
         context.customer.query.where('customerNumber','=',112);
@@ -128,13 +128,13 @@ describe('PDM', function() {
         let context = new Context(client);
         context.order.query.where('orderNumber', '=', 10100);
         await context.fetch();
-        let order = context.order.first;      
-        await order.orderDetails.fetch();        
+        let order = context.order.first;
+        await order.orderDetails.fetch();
         assert.strictEqual(order.guid, (await order.orderDetails.first.order).guid);
         assert.strictEqual(order.orderDetails.count, 4);
         let detail = order.orderDetails.first;
-        let qty = detail.quantityOrdered;        
+        let qty = detail.quantityOrdered;
         detail.quantityOrdered = 999;
         await context.save();
-    })
+    });
 });
