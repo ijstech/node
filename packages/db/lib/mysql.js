@@ -55,138 +55,154 @@ class MySQLClient {
         let tableName = query.table;
         let fields = query.fields;
         let id = query.id;
-        if (Array.isArray(query.queries) && query.queries.length > 0) {
-            for (let i = 0; i < query.queries.length; i++) {
-                let q = query.queries[i];
-                if (q.a == 's') {
-                    let r = await this.applySelectQuery(tableName, fields, q.q);
-                    result.push({
-                        id: id,
-                        result: r
-                    });
+        try {
+            if (Array.isArray(query.queries) && query.queries.length > 0) {
+                for (let i = 0; i < query.queries.length; i++) {
+                    let q = query.queries[i];
+                    if (q.a == 's') {
+                        let r = await this.applySelectQuery(tableName, fields, q.q);
+                        result.push({
+                            id: id,
+                            result: r
+                        });
+                    }
+                    else if (q.a == 'i') {
+                        let r = await this.applyInsertQuery(tableName, fields, q.d);
+                        result.push({
+                            id: id,
+                            result: r
+                        });
+                    }
+                    else if (q.a == 'd') {
+                        let r = await this.applyDeleteQuery(tableName, fields, q.q);
+                        result.push({
+                            id: id,
+                            result: r
+                        });
+                    }
+                    else if (q.a == 'u') {
+                        let r = await this.applyUpdateQuery(tableName, fields, q.d, q.q);
+                        result.push({
+                            id: id,
+                            result: r
+                        });
+                    }
                 }
-                else if (q.a == 'i') {
-                    let r = await this.applyInsertQuery(tableName, fields, q.d);
-                    result.push({
-                        id: id,
-                        result: r
-                    });
-                }
-                else if (q.a == 'd') {
-                    let r = await this.applyDeleteQuery(tableName, fields, q.q);
-                    result.push({
-                        id: id,
-                        result: r
-                    });
-                }
-                else if (q.a == 'u') {
-                    let r = await this.applyUpdateQuery(tableName, fields, q.d, q.q);
-                    result.push({
-                        id: id,
-                        result: r
-                    });
-                }
+                ;
             }
             ;
+            if (Array.isArray(query.records) && query.records.length > 0) {
+                await this.applyUpdateRecords(tableName, fields, query.records);
+            }
+            ;
+            return result;
+        }
+        catch (err) {
+            throw err;
         }
         ;
-        if (Array.isArray(query.records) && query.records.length > 0) {
-            await this.applyUpdateRecords(tableName, fields, query.records);
-        }
-        ;
-        return result;
     }
     ;
     async applyDeleteQuery(tableName, fields, qry) {
         try {
             await this.syncTableSchema(tableName, fields);
+            let sql = '';
+            let params = [];
+            sql = `DELETE FROM ${this.escape(tableName)} `;
+            sql += 'WHERE ' + this.getQuery(fields, qry, params);
+            return await this.query(sql, params);
         }
-        catch (e) {
+        catch (err) {
+            throw err;
         }
-        let sql = '';
-        let params = [];
-        sql = `DELETE FROM ${this.escape(tableName)} `;
-        sql += 'WHERE ' + this.getQuery(fields, qry, params);
-        return await this.query(sql, params);
     }
     ;
     async applyInsertQuery(tableName, fields, data) {
         try {
             await this.syncTableSchema(tableName, fields);
+            let sql = '';
+            let params = [];
+            sql = `INSERT INTO ${this.escape(tableName)} SET ${this.getFields(fields, data, params)}`;
+            return await this.query(sql, params);
         }
         catch (e) {
+            throw e;
         }
-        let sql = '';
-        let params = [];
-        sql = `INSERT INTO ${this.escape(tableName)} SET ${this.getFields(fields, data, params)}`;
-        return await this.query(sql, params);
     }
     ;
     async applySelectQuery(tableName, fields, qry) {
         try {
             await this.syncTableSchema(tableName, fields);
+            let sql = '';
+            let params = [];
+            sql = `SELECT ${this.getFields(fields)} FROM ${this.escape(tableName)} `;
+            sql += 'WHERE ' + this.getQuery(fields, qry, params);
+            let result = await this.query(sql, params);
+            return result;
         }
         catch (e) {
+            throw e;
         }
-        let sql = '';
-        let params = [];
-        sql = `SELECT ${this.getFields(fields)} FROM ${this.escape(tableName)} `;
-        sql += 'WHERE ' + this.getQuery(fields, qry, params);
-        let result = await this.query(sql, params);
-        return result;
     }
     ;
     async applyUpdateQuery(tableName, fields, data, qry) {
         try {
             await this.syncTableSchema(tableName, fields);
+            let sql = '';
+            let params = [];
+            sql = `UPDATE ${this.escape(tableName)} SET ${this.getFields(fields, data, params)} `;
+            sql += 'WHERE ' + this.getQuery(fields, qry, params);
+            return await this.query(sql, params);
         }
         catch (e) {
+            throw e;
         }
-        let sql = '';
-        let params = [];
-        sql = `UPDATE ${this.escape(tableName)} SET ${this.getFields(fields, data, params)} `;
-        sql += 'WHERE ' + this.getQuery(fields, qry, params);
-        return await this.query(sql, params);
     }
     ;
     async applyUpdateRecords(tableName, fields, records) {
-        let keyField;
-        for (let f in fields) {
-            let field = fields[f];
-            if (field.dataType == 'key') {
-                if (!field.field)
-                    field.field = f;
-                field.prop = f;
-                keyField = field;
-                break;
+        try {
+            await this.syncTableSchema(tableName, fields);
+            let keyField;
+            for (let f in fields) {
+                let field = fields[f];
+                if (field.dataType == 'key') {
+                    if (!field.field)
+                        field.field = f;
+                    field.prop = f;
+                    keyField = field;
+                    break;
+                }
+                ;
+            }
+            ;
+            for (let i = 0; i < records.length; i++) {
+                let record = records[i];
+                let params = [];
+                if (record.a == 'u') {
+                    let sql = `UPDATE ${this.escape(tableName)} SET ${this.getFields(fields, record.d, params)}`;
+                    sql += ` WHERE ${this.escape(keyField.field)}=?`;
+                    params.push(record.k);
+                    await this.query(sql, params);
+                }
+                else if (record.a == 'i') {
+                    if (!record.d[keyField.prop])
+                        record.d[keyField.prop] = record.k;
+                    let sql = `INSERT INTO ${this.escape(tableName)} SET ${this.getFields(fields, record.d, params)}`;
+                    await this.query(sql, params);
+                }
+                else if (record.a == 'd' && record.k) {
+                    let sql = `DELETE FROM ${this.escape(tableName)} WHERE ${this.escape(keyField.field)}=?`;
+                    let params = [record.k];
+                    await this.query(sql, params);
+                }
+                ;
             }
             ;
         }
-        ;
-        for (let i = 0; i < records.length; i++) {
-            let record = records[i];
-            let params = [];
-            if (record.a == 'u') {
-                let sql = `UPDATE ${this.escape(tableName)} SET ${this.getFields(fields, record.d, params)}`;
-                sql += ` WHERE ${this.escape(keyField.field)}=?`;
-                params.push(record.k);
-                await this.query(sql, params);
-            }
-            else if (record.a == 'i') {
-                if (!record.d[keyField.prop])
-                    record.d[keyField.prop] = record.k;
-                let sql = `INSERT INTO ${this.escape(tableName)} SET ${this.getFields(fields, record.d, params)}`;
-                await this.query(sql, params);
-            }
-            else if (record.a == 'd' && record.k) {
-                let sql = `DELETE FROM ${this.escape(tableName)} WHERE ${this.escape(keyField.field)}=?`;
-                let params = [record.k];
-                await this.query(sql, params);
-            }
-            ;
+        catch (e) {
+            throw e;
         }
         ;
-        return;
     }
     ;
     async checkTableExists(tableName) {
@@ -361,6 +377,48 @@ class MySQLClient {
         });
     }
     ;
+    async resolve(table, fields, criteria, args) {
+        let sql = '';
+        for (let p in fields) {
+            let field = fields[p];
+            if (sql)
+                sql += ',';
+            else
+                sql = 'SELECT ';
+            sql += this.escape(field.field);
+            if (field.field !== p)
+                sql += ` as ${this.escape(p)}`;
+        }
+        sql += ` FROM ?? WHERE 1 = 1 `;
+        let params = [table];
+        for (const arg in args) {
+            const value = args[arg];
+            const fieldName = fields[arg].field;
+            const dataType = criteria[arg]['dataType'];
+            switch (dataType) {
+                case 'key':
+                case 'char':
+                case 'varchar':
+                case 'date':
+                case 'boolean':
+                case 'integer':
+                case 'decimal':
+                    sql += `AND ?? = ?`;
+                    params.push(fieldName, value);
+                    break;
+                case 'blob':
+                case 'text':
+                case 'mediumText':
+                case 'longText':
+                    sql += `AND ?? LIKE CONCAT('%', ?, '%')`;
+                    params.push(fieldName, value);
+                    break;
+            }
+        }
+        let data = await this.query(sql, params);
+        return data;
+    }
+    ;
     rollback() {
         return new Promise((resolve, reject) => {
             this.transaction = false;
@@ -385,38 +443,39 @@ class MySQLClient {
                 let pkName;
                 const columnBuilder = [];
                 const columnBuilderParams = [];
-                for (const fieldName in fields) {
-                    const field = fields[fieldName];
+                for (const prop in fields) {
+                    const field = fields[prop];
+                    const fieldName = field.field;
                     switch (field.dataType) {
                         case 'key':
                             pkName = fieldName;
-                            columnBuilder.push(`${this.escape(fieldName)} CHAR(36) NOT NULL DEFAULT ''`);
+                            columnBuilder.push(`${this.escape(fieldName)} CHAR(36) NOT NULL`);
                             break;
                         case 'ref':
-                            columnBuilder.push(`${this.escape(field.field)} CHAR(36) DEFAULT NULL`);
+                            columnBuilder.push(`${this.escape(fieldName)} CHAR(36) NULL`);
                         case '1toM':
                             break;
                         case 'char':
-                            columnBuilder.push(`${this.escape(fieldName)} CHAR(?) NOT NULL`);
+                            columnBuilder.push(`${this.escape(fieldName)} CHAR(?) NULL`);
                             columnBuilderParams.push(field.size);
                             break;
                         case 'varchar':
-                            columnBuilder.push(`${this.escape(fieldName)} VARCHAR(?) NOT NULL`);
+                            columnBuilder.push(`${this.escape(fieldName)} VARCHAR(?) NULL`);
                             columnBuilderParams.push(field.size);
                             break;
                         case 'boolean':
-                            columnBuilder.push(`${this.escape(fieldName)} TINYINT(1) NOT NULL`);
+                            columnBuilder.push(`${this.escape(fieldName)} TINYINT(1) NULL`);
                             break;
                         case 'integer':
-                            columnBuilder.push(`${this.escape(fieldName)} INT(?) NOT NULL`);
+                            columnBuilder.push(`${this.escape(fieldName)} INT(?) NULL`);
                             columnBuilderParams.push(field.digits || 11);
                             break;
                         case 'decimal':
-                            columnBuilder.push(`${this.escape(fieldName)} DECIMAL(?, ?) NOT NULL`);
+                            columnBuilder.push(`${this.escape(fieldName)} DECIMAL(?, ?) NULL`);
                             columnBuilderParams.push(field.digits || 11, field.decimals || 2);
                             break;
                         case 'date':
-                            columnBuilder.push(`${this.escape(fieldName)} DATE NOT NULL`);
+                            columnBuilder.push(`${this.escape(fieldName)} DATE NULL`);
                             break;
                         case 'blob':
                             columnBuilder.push(`${this.escape(fieldName)} MEDIUMBLOB`);
@@ -448,41 +507,42 @@ class MySQLClient {
                 const columnBuilderPK = [];
                 const columnBuilderParams = [];
                 let prevField;
-                for (const fieldName in fields) {
-                    const field = fields[fieldName];
-                    const currentField = columnDef.find(v => v['Field'] === (field.field || fieldName));
+                for (const prop in fields) {
+                    const field = fields[prop];
+                    const fieldName = field.field;
+                    const currentField = columnDef.find(v => v['Field'] === (fieldName));
                     if (!currentField) {
                         switch (field.dataType) {
                             case 'key':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} CHAR(36) NOT NULL DEFAULT '' FIRST`);
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} CHAR(36) NOT NULL FIRST`);
                                 columnBuilderPK.push(`ADD PRIMARY KEY (${this.escape(fieldName)})`);
                                 break;
                             case 'ref':
-                                columnBuilder.push(`ADD ${this.escape(field.field)} CHAR(36) DEFAULT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} CHAR(36) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
                                 break;
                             case '1toM':
                                 break;
                             case 'char':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} CHAR(?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} CHAR(?) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
                                 columnBuilderParams.push(field.size);
                                 break;
                             case 'varchar':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} VARCHAR(?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} VARCHAR(?) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
                                 columnBuilderParams.push(field.size);
                                 break;
                             case 'boolean':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} TINYINT(1) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} TINYINT(1) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
                                 break;
                             case 'integer':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} INT(?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} INT(?) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
                                 columnBuilderParams.push(field.digits || 11);
                                 break;
                             case 'decimal':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} DECIMAL(?, ?) NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} DECIMAL(?, ?) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
                                 columnBuilderParams.push(field.digits || 11, field.decimals || 2);
                                 break;
                             case 'date':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} DATE NOT NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} DATE NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
                                 break;
                             case 'blob':
                                 columnBuilder.push(`ADD ${this.escape(fieldName)} MEDIUMBLOB ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
@@ -527,7 +587,6 @@ class MySQLClient {
             }
         }
         catch (e) {
-            throw e;
         }
     }
 }

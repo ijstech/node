@@ -38,6 +38,10 @@ function getPluginClient(vm, db, client) {
                 let result = await client.query(sql, params);
                 return JSON.stringify(result);
             },
+            async resolve(table, fields, criteria, args) {
+                let result = await client.resolve(table, fields, criteria, args);
+                return JSON.stringify(result);
+            },
             rollback() {
                 return client.rollback();
             }

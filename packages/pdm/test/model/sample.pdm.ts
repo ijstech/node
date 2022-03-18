@@ -1,4 +1,4 @@
-import * as PDM from '../../src';
+import PDM from '../../src';
 
 class Customer extends PDM.TRecord{
     @PDM.KeyField()
@@ -153,7 +153,7 @@ class Product extends PDM.TRecord{
     MSRP: number;
 };
 class Demo extends PDM.TRecord{
-    @PDM.KeyField()
+    @PDM.KeyField({field: 'uuid'})
     guid: string;
     @PDM.StringField()
     string: string;
@@ -169,7 +169,7 @@ class Demo extends PDM.TRecord{
     blob: string;
     @PDM.StringField({dataType: 'text'})
     text: string;
-    @PDM.StringField()
+    @PDM.StringField({field: 'new_field'})
     newField: string;
     @PDM.StringField({size: 11})
     size: string;

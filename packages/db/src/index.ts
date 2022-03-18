@@ -38,6 +38,10 @@ function getPluginClient(vm: VM, db: string, client: Types.IDBClient): Types.IDB
                 let result = await client.query(sql, params);
                 return JSON.stringify(result);
             },
+            async resolve(table: string, fields: Types.IFields, criteria: any, args: any): Promise<any>{
+                let result = await client.resolve(table, fields, criteria, args);
+                return JSON.stringify(result);
+            },
             rollback(): Promise<boolean>{
                 return client.rollback();
             }

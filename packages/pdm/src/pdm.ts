@@ -140,7 +140,7 @@ export class TContext {
                 getQueries();
             }
         };
-        let client = this._client || global['$$pdm_plugin'];
+        let client = this._client || global['$$pdm_plugin'];        
         let data = await client.applyQueries(queries);
         if (typeof(data) == 'string')
             data = JSON.parse(data);
@@ -159,7 +159,7 @@ export class TContext {
                 }
             };
         };
-        if (recordSet)
+        if (recordSet)          
             return result
         else
             return true;
@@ -168,7 +168,7 @@ export class TContext {
         if (!record.$$id)
             record.$$id = this._recordIdxCount ++;
         this._modifiedRecords[record.$$id] = record;
-    }
+    };
     reset(){
         for (let v in this.$$records){
             let rs = this.$$records[v];
@@ -304,8 +304,7 @@ interface IContext{
     applyInsert(recordSet: IRecordSet, data: any): void;
     applyUpdate(recordSet: IRecordSet, data: Types.IQueryData, query: any[]): void;
     modifyRecord(record: any): void;
-}
-
+};
 export class TRecordSet<T>{
     private _id: number;
     private _recordType: any;
@@ -369,7 +368,7 @@ export class TRecordSet<T>{
         let idx = this._records.indexOf(rd);
         if (idx > -1){
             rd.$$deleted = true;
-            rd.$$keyValue = rd[this.keyField.prop];
+            rd.$$keyValue = rd[this.keyField.prop || this.keyField.field];
             this._records.splice(idx, 1);
             if (this._currIdx > 0)
                 this._currIdx--;
@@ -380,9 +379,9 @@ export class TRecordSet<T>{
         if (this._master && !this._fetchAll){
             this._fetchAll = true;
             this._queries.push({a:'s',q:[[this._masterField,'=', this._master.$$keyValue]]})
-        }
+        }      
         return new Promise(async (resolve)=>{
-            let result = await this._context.fetch(<any>this);
+            let result = await this._context.fetch(<any>this);            
             resolve(result)
         })
     };
@@ -402,7 +401,7 @@ export class TRecordSet<T>{
         let result = [];
         if (keyField){
             records.forEach((record)=>{
-                let kv = record[keyField.prop || keyField.field];
+                let kv = record[keyField.field];
                 if (kv){
                     if (!this._recordsIdx[kv]){
                         this._records.push(record)
@@ -450,11 +449,11 @@ export class TRecordSet<T>{
                 get: (obj, prop: string) => {
                     let field = this.fields[prop];
                     if (field && field.dataType == 'ref'){
-                        if (record.$$record[prop] === null)
+                        if (record.$$record[field.field] === null)
                             return;
                         else if (!record.$$record[prop]){
                             return new Promise(async (resolve)=>{
-                                let rs = this.context[field.record];
+                                let rs = this.context[field.record];                                    
                                 let rd = await rs.queryRecord(record.$$record[field.field])
                                 record.$$record[prop] = rd?rd:null;
                                 if (record.$$record[prop] === null)
@@ -468,29 +467,32 @@ export class TRecordSet<T>{
                     else if (field && field.details){
                         if (!record.$$keyValue)
                             record.$$keyValue = record.$$record[this.keyField.field];
-                        if (!record.$$record[prop]){
-                            record.$$record[prop] = new TRecordSet<typeof field.details>(this._context, field.details, field.table, <any>record, field.prop)
-                        }
-                        record.$$record[prop]
+                        if (!record.$$record[prop])
+                            record.$$record[prop] = new TRecordSet<typeof field.details>(this._context, field.details, field.table, <any>record, field.prop)                        
+                        return record.$$record[prop]
                     }
                     else if (prop == '$$record')
                         return record.$$record;
-                    return record.$$record[prop];
+                    else if (field)
+                        return record.$$record[field.field]
+                    else
+                        return record.$$record[prop]
                 },
                 set: (obj: any, prop: string, value: any) => {
                     if (!record.$$keyValue)
                         record.$$keyValue = record.$$record[this.keyField.field];
+                    let fieldName = this.fields[prop].field;
                     record.$$origValues = record.$$origValues || {};
-                    if (typeof(record.$$origValues[prop]) == 'undefined')
-                        record.$$origValues[prop] = record.$$record[prop];
+                    if (typeof(record.$$origValues[fieldName]) == 'undefined')
+                        record.$$origValues[fieldName] = record.$$record[fieldName];
                     record.$$modifies = record.$$modifies || {};
-                    record.$$modifies[prop] = value;
+                    record.$$modifies[fieldName] = value;
                     this.validateFieldValue(prop, value);
                     if (!record.$$modified){
                         record.$$modified = true;
                         this.context.modifyRecord(record)
                     };
-                    record.$$record[prop] = value;
+                    record.$$record[fieldName] = value;
                     return true;
                 }
             });
@@ -515,23 +517,23 @@ export class TRecordSet<T>{
     };
     records(index: number): T{
         return this.proxy(<any>this._records[index]);
-    }
+    };
     reset(){
         this._currIdx = 0;
         this._queries = [];
         this._records = [];
         this._recordsIdx = {};
-    }
+    };
     get tableName(): string{
         return this._tableName;
-    }
+    };
     private validateFieldValue(prop: string, value: any){
         let field = this.fields[prop]
         if (!field)
             throw `Field "${prop}" is not defined`;
         if (field.dataType == 'varchar' && value && value.length > field.size)
             throw `Value for "${prop}" is too long`;
-    }
+    };
     values<FieldName extends keyof T>(field: FieldName): T[FieldName][]{
         let result = [];
         for (let i = 0; i < this._records.length; i ++){
@@ -556,50 +558,52 @@ export class TGraphQL {
         this.$$records = records;
         this._client = client;
         this._schema = this.buildSchema();
-    }
+    };
     private buildSchema(): GraphQL.GraphQLSchema {
         const rootQueryTypeFields = {};
         for(const tableName in this.$$records) {
             const fields = this._context[tableName]['fields'];
             const fieldObject = {};
             const criteria = {};
-            for(const fieldName in fields) {
-                const field = fields[fieldName];
-                let type;
+            for(const prop in fields) {
+                const field = fields[prop];
+                const fieldName = field.field;
+                let type:any;
                 switch(field.dataType) {
                     case 'key':
                     case 'char':
                     case 'varchar':
                     case 'date':
                         type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLString);
-                        criteria[fieldName] = { type: GraphQL.GraphQLString };
+                        criteria[prop] = { type: GraphQL.GraphQLString };
                         break;
                     case 'ref':
                     case '1toM':
                         break;
                     case 'boolean':
                         type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLBoolean);
-                        criteria[fieldName] = { type: GraphQL.GraphQLBoolean };
+                        criteria[prop] = { type: GraphQL.GraphQLBoolean };
                         break;
                     case 'integer':
                         type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLInt);
-                        criteria[fieldName] = { type: GraphQL.GraphQLInt };
+                        criteria[prop] = { type: GraphQL.GraphQLInt };
                         break;
                     case 'decimal':
                         type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLFloat);
-                        criteria[fieldName] = { type: GraphQL.GraphQLFloat };
+                        criteria[prop] = { type: GraphQL.GraphQLFloat };
                         break;
                     case 'blob':
                     case 'text':
                     case 'mediumText':
                     case 'longText':
                         type = GraphQL.GraphQLString;
-                        criteria[fieldName] = { type: GraphQL.GraphQLString };
+                        criteria[prop] = { type: GraphQL.GraphQLString };
                         break;
                 }
                 if(type) {
-                    fieldObject[fieldName] = { type };
-                    criteria[fieldName]['dataType'] = field.dataType;
+                    type.field = fieldName;
+                    fieldObject[prop] = { type };
+                    criteria[prop]['dataType'] = field.dataType;
                 }
             }
             const tableType = new GraphQL.GraphQLObjectType({
@@ -610,33 +614,10 @@ export class TGraphQL {
                 type: new GraphQL.GraphQLList(tableType),
                 args: criteria,
                 resolve: async (parent, args) => {
-                    let sql = `SELECT * FROM ?? WHERE 1 = 1 `;
-                    let params = [tableName];
-                    for(const arg in args) {
-                        const value = args[arg];
-                        const dataType = criteria[arg]['dataType'];
-                        switch(dataType) {
-                            case 'key':
-                            case 'char':
-                            case 'varchar':
-                            case 'date':
-                            case 'boolean':
-                            case 'integer':
-                            case 'decimal':
-                                sql += `AND ?? = ?`;
-                                params.push(arg, value);
-                                break;
-                            case 'blob':
-                            case 'text':
-                            case 'mediumText':
-                            case 'longText':
-                                sql += `AND ?? LIKE CONCAT('%', ?, '%')`;
-                                params.push(arg, value);
-                                break;
-                        }
-                    }
-                    const data = await this._client.query(sql, params);
-                    return data;
+                    let result = await this._client.resolve(tableName, fields, criteria, args);
+                    if (typeof(result) == 'string')
+                        result = JSON.parse(result);
+                    return result;
                 }
             }
         }
@@ -648,8 +629,7 @@ export class TGraphQL {
         return new GraphQL.GraphQLSchema({
             query: rootQueryType
         })
-    }
-
+    };
     query(source: string): Promise<any> {
         return new Promise((resolve, reject) => {
             GraphQL.graphql({
@@ -659,11 +639,11 @@ export class TGraphQL {
                 throw e;
             });
         });
-    }
-}
+    };
+};
 export interface IRefField extends Types.IField{
     record: string;
-}
+};
 export interface IStringField extends Types.IField{
     dataType?: 'char'|'varchar'|'text'|'mediumText'|'longText'
 };
@@ -777,7 +757,7 @@ export function OneToMany<T>(record: typeof TRecord, prop: keyof T, tableName: s
         target['$$fields'] = target['$$fields'] || {};
         target['$$fields'][propName] = {details: record, table: tableName, field: fieldName, prop: <string>prop, dataType: '1toM'};
     };
-}
+};
 /* Sample Model
 class Booking extends TRecord{
     @KeyField()

@@ -1,11 +1,10 @@
 import * as DB from "@ijstech/db";
 import * as Config from "./config";
+import Types from '@ijstech/types';
 import assert from "assert";
 import Context from "./model/sample.pdm";
-import * as Types from "@ijstech/types";
-import {graphql, buildSchema, graphqlSync} from 'graphql';
 
-describe('GraphQL test', function() {
+describe('GraphQL', function() {
     this.timeout(20000);
     let client: DB.IClient;
     const demoData = [
@@ -80,7 +79,7 @@ describe('GraphQL test', function() {
         }
         `);
         assert.strictEqual(data.demo.length, 1)
-        const d = data.demo[0];
+        const d = data.demo[0];        
         assert.strictEqual(d['guid'], demoData[0][0]);
         assert.strictEqual(d['string'], demoData[0][1]);
         assert.strictEqual(d['decimal'], demoData[0][2]);
