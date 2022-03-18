@@ -1,4 +1,4 @@
-import * as PDM from '@ijstech/pdm';
+import PDM from '@ijstech/pdm';
 export declare class Customer extends PDM.TRecord {
     guid: string;
     salesRep: Promise<Employee>;

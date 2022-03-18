@@ -27,7 +27,7 @@ async function main(){
                         }
                     },
                     dependencies: {
-                        "@pack/demo": "file:../demoPack"
+                        "@pack/demo": {script:"file:../demoPack"}
                     }
                 }
             ]
@@ -55,7 +55,7 @@ async function main(){
                         }
                     },
                     dependencies: {
-                        "@pack/demo": "file:../demoPack"
+                        "@pack/demo": {script:"file:../demoPack"}
                     }
                 }
             ]
