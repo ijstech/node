@@ -312,15 +312,15 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
             let result = data || {};
             result.$$newRecord = true;
             let fields = this.fields;
-            if (!result[this.keyField.prop])
-                result[this.keyField.prop] = generateUUID();
+            if (!result[this.keyField.field])
+                result[this.keyField.field] = generateUUID();
             this._records.push(result);
             return this.proxy(result);
         }
         ;
         applyInsert(data, options) {
-            if (this.keyField && typeof (data[this.keyField.prop]) == 'undefined')
-                data[this.keyField.prop] = generateUUID();
+            if (this.keyField && typeof (data[this.keyField.field]) == 'undefined')
+                data[this.keyField.field] = generateUUID();
             this.context.applyInsert(this, data);
         }
         ;
@@ -638,6 +638,12 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
             });
         }
         ;
+        get introspection() {
+            if (!this._introspection) {
+                this._introspection = GraphQL.introspectionFromSchema(this._schema);
+            }
+            return this._introspection;
+        }
     }
     exports.TGraphQL = TGraphQL;
     ;
@@ -662,6 +668,7 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
     function KeyField(fieldType) {
         return function (target, propName) {
             fieldType = fieldType || {};
+            fieldType.field = fieldType.field || propName;
             fieldType.dataType = 'key';
             target['$$fields'] = target['$$fields'] || {};
             target['$$fields'][propName] = fieldType;
@@ -694,7 +701,8 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
     ;
     function DecimalField(fieldType) {
         return function (target, propName) {
-            fieldType = fieldType || { field: propName };
+            fieldType = fieldType || {};
+            fieldType.field = fieldType.field || propName;
             fieldType.dataType = 'decimal';
             if (typeof (fieldType.digits) == 'undefined')
                 fieldType.digits = 10;
@@ -710,7 +718,8 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
     ;
     function IntegerField(fieldType) {
         return function (target, propName) {
-            fieldType = fieldType || { field: propName };
+            fieldType = fieldType || {};
+            fieldType.field = fieldType.field || propName;
             fieldType.dataType = 'integer';
             if (typeof (fieldType.digits) == 'undefined')
                 fieldType.digits = 10;
@@ -726,7 +735,8 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
     ;
     function BooleanField(fieldType) {
         return function (target, propName) {
-            fieldType = fieldType || { field: propName };
+            fieldType = fieldType || {};
+            fieldType.field = fieldType.field || propName;
             fieldType.dataType = 'boolean';
             target['$$fields'] = target['$$fields'] || {};
             target['$$fields'][propName] = fieldType;
@@ -736,7 +746,8 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
     ;
     function DateField(fieldType) {
         return function (target, propName) {
-            fieldType = fieldType || { field: propName };
+            fieldType = fieldType || {};
+            fieldType.field = fieldType.field || propName;
             fieldType.dataType = 'date';
             target['$$fields'] = target['$$fields'] || {};
             target['$$fields'][propName] = fieldType;
@@ -746,7 +757,8 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
     ;
     function BlobField(fieldType) {
         return function (target, propName) {
-            fieldType = fieldType || { field: propName };
+            fieldType = fieldType || {};
+            fieldType.field = fieldType.field || propName;
             fieldType.dataType = 'blob';
             target['$$fields'] = target['$$fields'] || {};
             target['$$fields'][propName] = fieldType;

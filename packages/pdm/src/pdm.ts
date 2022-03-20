@@ -16,7 +16,7 @@ function generateUUID() { // Public Domain/MIT
         return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
     });
 };
-interface IRecordSet{
+export interface IRecordSet{
     _id: number;
     _queries: any[];
     fields: Types.IFields;
@@ -140,7 +140,7 @@ export class TContext {
                 getQueries();
             }
         };
-        let client = this._client || global['$$pdm_plugin'];
+        let client = this._client || global['$$pdm_plugin'];        
         let data = await client.applyQueries(queries);
         if (typeof(data) == 'string')
             data = JSON.parse(data);
@@ -330,14 +330,14 @@ export class TRecordSet<T>{
         let result = data || {};
         (<IRecord>result).$$newRecord = true;
         let fields = this.fields;
-        if (!result[this.keyField.prop])
-            result[this.keyField.prop] = generateUUID();
+        if (!result[this.keyField.field])
+            result[this.keyField.field] = generateUUID();
         this._records.push(<any>result);
         return this.proxy(<any>result);
     };
     applyInsert<TB extends keyof T>(data: {[C in TB]?: T[C]}, options?: InsertOptions): void{
-        if (this.keyField && typeof(data[this.keyField.prop]) == 'undefined')
-            data[this.keyField.prop] = generateUUID();
+        if (this.keyField && typeof(data[this.keyField.field]) == 'undefined')
+            data[this.keyField.field] = generateUUID();
         this.context.applyInsert(<any>this, data);
     };
     applyDelete(): TQuery<T>{
@@ -545,7 +545,7 @@ export class TRecordSet<T>{
 };
 export class TGraphQL {
     private _schema: GraphQL.GraphQLSchema;
-    private _introspection: GraphQL.IntrospectionQuery;
+    private _introspection: any;
     private _context: TContext;
     private _client: Types.IDBClient;
     private $$records: {[name: string]: {
@@ -641,8 +641,7 @@ export class TGraphQL {
             });
         });
     };
-
-    get introspection() {
+    get introspection(): any {
         if(!this._introspection) {
             this._introspection = GraphQL.introspectionFromSchema(this._schema);
         }
@@ -682,6 +681,7 @@ export function RecordSet(tableName: string, recordType: typeof TRecord, recordS
 export function KeyField(fieldType?: Types.IField){
     return function (target: TRecord, propName: string) {
         fieldType = fieldType || {};
+        fieldType.field = fieldType.field || propName;
         fieldType.dataType = 'key';
         target['$$fields'] = target['$$fields'] || {};
         target['$$fields'][propName] = fieldType;
@@ -710,7 +710,8 @@ export function StringField(fieldType?: IStringField){
 };
 export function DecimalField(fieldType?: IDecimalField){
     return function (target: TRecord, propName: string) {
-        fieldType = fieldType || {field: propName};
+        fieldType = fieldType || {};
+        fieldType.field = fieldType.field || propName;
         fieldType.dataType = 'decimal';
         if (typeof(fieldType.digits) == 'undefined')
             fieldType.digits = 10;
@@ -724,7 +725,8 @@ export function DecimalField(fieldType?: IDecimalField){
 };
 export function IntegerField(fieldType?: IIntegerField){
     return function (target: TRecord, propName: string) {
-        fieldType = fieldType || {field: propName};
+        fieldType = fieldType || {};
+        fieldType.field = fieldType.field || propName;
         fieldType.dataType = 'integer';
         if (typeof(fieldType.digits) == 'undefined')
             fieldType.digits = 10;
@@ -738,7 +740,8 @@ export function IntegerField(fieldType?: IIntegerField){
 };
 export function BooleanField(fieldType?: IBooleanField){
     return function (target: TRecord, propName: string) {
-        fieldType = fieldType || {field: propName};
+        fieldType = fieldType || {};
+        fieldType.field = fieldType.field || propName;
         fieldType.dataType = 'boolean';
         target['$$fields'] = target['$$fields'] || {};
         target['$$fields'][propName] = fieldType;
@@ -746,7 +749,8 @@ export function BooleanField(fieldType?: IBooleanField){
 };
 export function DateField(fieldType?: IDateField){
     return function (target: TRecord, propName: string) {
-        fieldType = fieldType || {field: propName};
+        fieldType = fieldType || {};
+        fieldType.field = fieldType.field || propName;
         fieldType.dataType = 'date';
         target['$$fields'] = target['$$fields'] || {};
         target['$$fields'][propName] = fieldType;
@@ -754,7 +758,8 @@ export function DateField(fieldType?: IDateField){
 };
 export function BlobField(fieldType?: Types.IField){
     return function (target: TRecord, propName: string) {
-        fieldType = fieldType || {field: propName};
+        fieldType = fieldType || {};
+        fieldType.field = fieldType.field || propName;
         fieldType.dataType = 'blob';
         target['$$fields'] = target['$$fields'] || {};
         target['$$fields'][propName] = fieldType;

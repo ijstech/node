@@ -1,6 +1,5 @@
 import * as Types from '@ijstech/types';
-import * as GraphQL from "graphql";
-interface IRecordSet {
+export interface IRecordSet {
     _id: number;
     _queries: any[];
     fields: Types.IFields;
@@ -136,7 +135,7 @@ export declare class TGraphQL {
     constructor(context: TContext, records: any, client: Types.IDBClient);
     private buildSchema;
     query(source: string): Promise<any>;
-    get introspection(): GraphQL.IntrospectionQuery;
+    get introspection(): any;
 }
 export interface IRefField extends Types.IField {
     record: string;

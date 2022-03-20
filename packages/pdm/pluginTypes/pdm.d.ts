@@ -1,5 +1,5 @@
 import * as Types from '@ijstech/types';
-interface IRecordSet {
+export interface IRecordSet {
     _id: number;
     _queries: any[];
     fields: Types.IFields;
@@ -128,12 +128,14 @@ export declare class TRecordSet<T> {
 }
 export declare class TGraphQL {
     private _schema;
+    private _introspection;
     private _context;
     private _client;
     private $$records;
     constructor(context: TContext, records: any, client: Types.IDBClient);
     private buildSchema;
     query(source: string): Promise<any>;
+    get introspection(): any;
 }
 export interface IRefField extends Types.IField {
     record: string;

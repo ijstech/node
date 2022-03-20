@@ -185,8 +185,8 @@ class MySQLClient {
                     await this.query(sql, params);
                 }
                 else if (record.a == 'i') {
-                    if (!record.d[keyField.prop])
-                        record.d[keyField.prop] = record.k;
+                    if (!record.d[keyField.field])
+                        record.d[keyField.field] = record.k;
                     let sql = `INSERT INTO ${this.escape(tableName)} SET ${this.getFields(fields, record.d, params)}`;
                     await this.query(sql, params);
                 }
@@ -219,17 +219,18 @@ class MySQLClient {
         let result = '';
         for (let prop in fields) {
             let field = fields[prop];
+            let fieldName = field.field;
             if (!field.details) {
-                if (!data || typeof (data[prop]) != 'undefined') {
+                if (!data || typeof (data[fieldName]) != 'undefined') {
                     if (result) {
                         result += ',';
-                        result += this.escape(field.field || prop);
+                        result += this.escape(fieldName);
                     }
                     else
-                        result = this.escape(field.field || prop);
+                        result = this.escape(fieldName);
                     if (data) {
                         result += '=?';
-                        params.push(data[prop]);
+                        params.push(data[fieldName]);
                     }
                     ;
                 }
