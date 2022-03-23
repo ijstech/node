@@ -10,6 +10,7 @@ const vm_1 = require("@ijstech/vm");
 var types_1 = require("@ijstech/types");
 Object.defineProperty(exports, "BigNumber", { enumerable: true, get: function () { return types_1.BigNumber; } });
 const github_1 = __importDefault(require("./github"));
+const tsc_1 = require("@ijstech/tsc");
 const RootPath = path_1.default.dirname(require.main.filename);
 let Modules = {};
 let LoadingPackageName = '';
@@ -52,22 +53,41 @@ function resolveFilePath(rootPaths, filePath, allowsOutsideRootPath) {
 exports.resolveFilePath = resolveFilePath;
 ;
 function getScript(filePath) {
-    return new Promise((resolve) => {
-        if (filePath.startsWith('./'))
+    return new Promise(async (resolve) => {
+        if (!filePath.startsWith('/'))
             filePath = resolveFilePath([RootPath], filePath);
-        fs_1.default.readFile(filePath, 'utf8', (err, result) => {
-            if (err)
-                resolve('');
-            else
-                resolve(result);
-        });
+        let isDir = (await fs_1.default.promises.lstat(filePath)).isDirectory();
+        if (isDir) {
+            let pack = await getPackage(filePath);
+            if (pack.directories && pack.directories.bin) {
+                let compiler = new tsc_1.PluginCompiler();
+                compiler.addDirectory(resolveFilePath([filePath], pack.directories.bin));
+                let result = await compiler.compile();
+                console.dir(result);
+                resolve(result.script);
+            }
+            resolve('');
+        }
+        else {
+            fs_1.default.readFile(filePath, 'utf8', (err, result) => {
+                if (err)
+                    resolve('');
+                else
+                    resolve(result);
+            });
+        }
     });
 }
 ;
 async function getPackage(filePath) {
-    let text = await getScript(filePath + '/package.json');
-    if (text)
-        return JSON.parse(text);
+    try {
+        let text = await getScript(filePath + '/package.json');
+        if (text)
+            return JSON.parse(text);
+    }
+    catch (err) {
+        return {};
+    }
 }
 ;
 function getPackageDir(pack) {
@@ -189,7 +209,7 @@ class PluginVM {
         });
     }
     ;
-    async init() {
+    async setup() {
         await this.loadDependencies();
         this.vm.injectGlobalScript(this.options.script);
         return;
@@ -219,22 +239,48 @@ class PluginVM {
 }
 ;
 class RouterPluginVM extends PluginVM {
-    async init() {
-        await super.init();
+    async setup() {
+        await super.setup();
         this.vm.injectGlobalScript(`
             let module = global._$$modules['index'];            
             global.$$router = new module.default();
         `);
         this.vm.script = `
             try{
-                await global.$$router.route(global.$$session, global.$$request, global.$$response);
-                return true;
+                try{
+                    if (global.$$init){
+                        if (global.$$router.init){
+                            let data = global.$$data;
+                            if (data)
+                                data = JSON.parse(data);
+                            try{
+                                global.$$router.init(global.$$session, data);
+                            }
+                            catch(err){}
+                        }
+                    }
+                    else{
+                        await global.$$router.route(global.$$session, global.$$request, global.$$response);
+                        return true;
+                    }
+                }
+                finally{
+                    delete global.$$data;
+                    delete global.$$init;
+                }
             }
             catch(err){
                 return false;
             };
         `;
         return;
+    }
+    ;
+    async init(session, params) {
+        this.vm.injectGlobalValue('$$init', true);
+        if (params != null)
+            this.vm.injectGlobalValue('$$data', JSON.stringify(params));
+        await this.vm.execute();
     }
     ;
     async route(session, request, response) {
@@ -252,8 +298,8 @@ class RouterPluginVM extends PluginVM {
 }
 ;
 class WorkerPluginVM extends PluginVM {
-    async init() {
-        await super.init();
+    async setup() {
+        await super.setup();
         this.vm.injectGlobalScript(`
             let module = global._$$modules['index'];            
             global.$$worker = new module.default();
@@ -261,8 +307,16 @@ class WorkerPluginVM extends PluginVM {
         this.vm.script = `
             try{
                 try{
-                    if (global.$$message){
-                        global.$$worker.message(global.$$session, global.$$message.channel, global.$$message.msg);
+                    if (global.$$init){
+                        if (global.$$worker.init){
+                            let data = global.$$data;
+                            if (data)
+                                data = JSON.parse(data);
+                            try{
+                                global.$$worker.init(global.$$session, data);
+                            }
+                            catch(err){}
+                        }
                     }
                     else{
                         let data = global.$$data;
@@ -273,7 +327,8 @@ class WorkerPluginVM extends PluginVM {
                     }
                 }
                 finally{
-                    delete global.$$message;
+                    delete global.$$init;
+                    delete global.$$data;
                 }
             }
             catch(err){
@@ -283,9 +338,17 @@ class WorkerPluginVM extends PluginVM {
         return true;
     }
     ;
+    async init(session, params) {
+        this.vm.injectGlobalValue('$$init', true);
+        if (params != null)
+            this.vm.injectGlobalValue('$$data', JSON.stringify(params));
+        await this.vm.execute();
+    }
+    ;
     async message(session, channel, msg) {
-        this.vm.injectGlobalValue('$$message', { channel, msg });
-        this.vm.execute();
+        this.vm.injectGlobalValue('$$data', JSON.stringify({ channel, msg }));
+        let result = await this.vm.execute();
+        return result;
     }
     ;
     async process(session, data) {
@@ -389,6 +452,16 @@ class Plugin {
         ;
     }
     ;
+    async init(params) {
+        try {
+            await this.createPlugin();
+            await this.plugin.init(this.session, params);
+        }
+        catch (err) {
+            console.dir(err);
+        }
+    }
+    ;
     get session() {
         if (this._session)
             return this._session;
@@ -437,7 +510,7 @@ class Router extends Plugin {
         if (!this.options.script && this.options.scriptPath)
             this.options.script = await getScript(this.options.scriptPath);
         let result = new RouterPluginVM(this.options);
-        await result.init();
+        await result.setup();
         return result;
     }
     ;
@@ -467,14 +540,14 @@ class Worker extends Plugin {
         if (!this.options.script && this.options.scriptPath)
             this.options.script = await getScript(this.options.scriptPath);
         let result = new WorkerPluginVM(this.options);
-        await result.init();
+        await result.setup();
         return result;
     }
     ;
     async message(channel, msg) {
         try {
             await this.createPlugin();
-            this.plugin.message(this.session, channel, msg);
+            await this.plugin.process(this.session, { channel, msg });
         }
         catch (err) {
             console.dir(err);
@@ -485,8 +558,7 @@ class Worker extends Plugin {
         this.options.processing = true;
         try {
             await this.createPlugin();
-            if (this.plugin)
-                result = await this.plugin.process(this.session, data);
+            result = await this.plugin.process(this.session, data);
         }
         catch (err) {
             console.dir(err);

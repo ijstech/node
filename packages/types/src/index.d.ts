@@ -27,12 +27,13 @@ export interface IRouterResponse{
     header: (name:string, value: string)=>void;
 }
 export declare abstract class IRouterPlugin {
+    init(params?: any):Promise<void>;
     route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;
 }
 export declare abstract class IWorkerPlugin {
-    init?: (params?: any)=>Promise<boolean>;
-    message?: (session: ISession, channel: string, msg: string)=>void;
-    process(session: ISession, data: any): Promise<any>;
+    init(params?: any):Promise<void>;
+    // message?: (session: ISession, channel: string, msg: string)=>void;
+    process(session: ISession, data?: any): Promise<any>;
 }
 export interface IRedisConnection {
     host: string;

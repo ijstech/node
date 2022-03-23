@@ -13,6 +13,7 @@ export interface IRequiredPlugins {
     db?: boolean;
 }
 export declare abstract class IPlugin {
+    init(session: ISession, params?: any): Promise<void>;
 }
 export interface ISession {
     params?: any;
@@ -22,24 +23,24 @@ export declare abstract class IRouterPlugin extends IPlugin {
     route(session: ISession, request: Types.IRouterRequest, response: Types.IRouterResponse): Promise<boolean>;
 }
 export declare abstract class IWorkerPlugin extends IPlugin {
-    init?: (params?: any) => Promise<boolean>;
-    message?: (session: ISession, channel: string, msg: string) => void;
     process(session: ISession, data: any): Promise<any>;
 }
 declare class PluginVM {
     protected options: Types.IPluginOptions;
     vm: VM;
     constructor(options: Types.IPluginOptions);
-    init(): Promise<boolean>;
+    setup(): Promise<boolean>;
     loadDependencies(): Promise<void>;
 }
 declare class RouterPluginVM extends PluginVM implements IRouterPlugin {
-    init(): Promise<boolean>;
+    setup(): Promise<boolean>;
+    init(session: ISession, params?: any): Promise<void>;
     route(session: ISession, request: Types.IRouterRequest, response: Types.IRouterResponse): Promise<boolean>;
 }
 declare class WorkerPluginVM extends PluginVM implements IWorkerPlugin {
-    init(): Promise<boolean>;
-    message(session: ISession, channel: string, msg: string): Promise<void>;
+    setup(): Promise<boolean>;
+    init(session: ISession, params?: any): Promise<void>;
+    message(session: ISession, channel: string, msg: string): Promise<any>;
     process(session: ISession, data?: any): Promise<boolean>;
 }
 declare class Plugin {
@@ -53,6 +54,7 @@ declare class Plugin {
     createPlugin(): Promise<void>;
     createVM(): any;
     createModule(): Promise<any>;
+    init(params?: any): Promise<void>;
     get session(): ISession;
 }
 export declare class Router extends Plugin {

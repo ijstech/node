@@ -43,8 +43,10 @@ export class Scheduler {
         }                
         if (job.next.getTime() < new Date().getTime()){
             job.processing = true;
-            if (!job.plugin)
+            if (!job.plugin){
                 job.plugin = new Worker(job);                    
+                await job.plugin.init(job.params);
+            }
             await job.plugin.process()
             job.next = CronParser.parseExpression(job.cron).next();
             console.log('Scheduled: ' + job.next.toString() + ' ' + job.scriptPath)

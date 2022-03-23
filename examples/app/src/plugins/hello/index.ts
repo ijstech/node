@@ -3,10 +3,10 @@ import {helloWorld} from './hello';
 import {BigNumber} from "bignumber.js";
 import { Demo } from '@pack/demo';
 
-class HelloWorld implements IRouterPlugin{
-    message(channel: string, msg: string):void{
-
-    }
+class HelloWorld implements IRouterPlugin{    
+    async init(params?: any): Promise<void> {
+        
+    };
     async route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean> {
         if (request.path == '/job'){
             let job;

@@ -11,8 +11,9 @@ define("index", ["require", "exports", "hello", "bignumber.js", "@pack/demo"], f
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class HelloWorld {
-        message(channel, msg) {
+        async init(params) {
         }
+        ;
         async route(session, request, response) {
             if (request.path == '/job') {
                 let job;
