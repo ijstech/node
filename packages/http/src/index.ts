@@ -182,9 +182,10 @@ export class HttpServer {
                         };
                     }
                     else{
-                        if (!(<any>router)._plugin)
+                        if (!(<any>router)._plugin){
                             (<any>router)._plugin = new Router(router); 
-                        await (<any>router)._plugin.init(router.params);
+                            await (<any>router)._plugin.init(router.params);
+                        };
                         let result = await (<any>router)._plugin.route(ctx, baseUrl);                            
                         if (result)                           
                             return;
