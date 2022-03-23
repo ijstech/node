@@ -231,6 +231,7 @@ class PluginCompiler extends Compiler {
     async compile(emitDeclaration) {
         await this.addPackage('@ijstech/plugin');
         await this.addPackage('@ijstech/types');
+        await this.addPackage('bignumber.js');
         return super.compile(emitDeclaration);
     }
 }
@@ -238,7 +239,6 @@ exports.PluginCompiler = PluginCompiler;
 ;
 class WalletPluginCompiler extends PluginCompiler {
     async compile(emitDeclaration) {
-        await this.addPackage('bignumber.js');
         await this.addPackage('@ijstech/eth-contract');
         return super.compile(emitDeclaration);
     }
