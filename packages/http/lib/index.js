@@ -94,17 +94,45 @@ class HttpServer {
         });
     }
     ;
-    checkBaseUrl(url, routerOptions) {
-        if (Array.isArray(routerOptions.baseUrl)) {
-            for (let i = 0; i < routerOptions.baseUrl.length; i++) {
-                let baseUrl = routerOptions.baseUrl[i];
-                if ((url + '/').startsWith(baseUrl + '/') || (url + '?').startsWith(baseUrl + '?'))
-                    return baseUrl;
+    getRouter(url) {
+        if (this.options.router && this.options.router.routes) {
+            let matched;
+            let matchedUrl;
+            let matchedLength = 0;
+            for (let i = 0; i < this.options.router.routes.length; i++) {
+                let router = this.options.router.routes[i];
+                if (Array.isArray(router.baseUrl)) {
+                    for (let i = 0; i < router.baseUrl.length; i++) {
+                        let baseUrl = router.baseUrl[i];
+                        if ((url + '/').startsWith(baseUrl + '/') || (url + '?').startsWith(baseUrl + '?')) {
+                            if (!matched || baseUrl.split('/').length > matchedLength) {
+                                matched = router;
+                                matchedUrl = baseUrl;
+                                matchedLength = baseUrl.split('/').length;
+                            }
+                            ;
+                        }
+                        ;
+                    }
+                    ;
+                }
+                else if ((url + '/').startsWith(router.baseUrl + '/') || (url + '?').startsWith(router.baseUrl + '?')) {
+                    if (!matched || router.baseUrl.split('/').length > matchedLength) {
+                        matched = router;
+                        matchedUrl = router.baseUrl;
+                        matchedLength = router.baseUrl.split('/').length;
+                    }
+                    ;
+                }
+                ;
             }
             ;
+            return {
+                router: matched,
+                baseUrl: matchedUrl
+            };
         }
-        else if ((url + '/').startsWith(routerOptions.baseUrl + '/') || (url + '?').startsWith(routerOptions.baseUrl + '?'))
-            return routerOptions.baseUrl;
+        ;
     }
     ;
     async start() {
@@ -132,37 +160,33 @@ class HttpServer {
             }
             ;
             this.app.use(async (ctx) => {
-                if (this.options.router && this.options.router.routes) {
-                    for (let i = 0; i < this.options.router.routes.length; i++) {
-                        let router = this.options.router.routes[i];
-                        let baseUrl = this.checkBaseUrl(ctx.url, router);
-                        if (baseUrl) {
-                            if (router.form) {
-                                let pack = require('@ijstech/form');
-                                if (pack.default) {
-                                    let config = {
-                                        baseUrl: baseUrl,
-                                        host: router.form.host,
-                                        token: router.form.token,
-                                        package: router.form.package,
-                                        mainForm: router.form.mainForm,
-                                        params: router.params
-                                    };
-                                    await pack.default(ctx, config);
-                                    return true;
-                                }
-                                ;
-                            }
-                            else {
-                                if (!router._plugin)
-                                    router._plugin = new plugin_1.Router(router);
-                                let result = await router._plugin.route(ctx, baseUrl);
-                                if (result)
-                                    return;
-                            }
-                            ;
+                let matched = this.getRouter(ctx.url);
+                if (matched.router) {
+                    let router = matched.router;
+                    let baseUrl = matched.baseUrl;
+                    if (router.form) {
+                        let pack = require('@ijstech/form');
+                        if (pack.default) {
+                            let config = {
+                                baseUrl: baseUrl,
+                                host: router.form.host,
+                                token: router.form.token,
+                                package: router.form.package,
+                                mainForm: router.form.mainForm,
+                                params: router.params
+                            };
+                            await pack.default(ctx, config);
+                            return true;
                         }
                         ;
+                    }
+                    else {
+                        if (!router._plugin)
+                            router._plugin = new plugin_1.Router(router);
+                        await router._plugin.init(router.params);
+                        let result = await router._plugin.route(ctx, baseUrl);
+                        if (result)
+                            return;
                     }
                     ;
                 }

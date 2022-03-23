@@ -106,16 +106,38 @@ export class HttpServer {
             };
         });
     };
-    checkBaseUrl(url: string, routerOptions: IRouterPluginOptions): string{
-        if (Array.isArray(routerOptions.baseUrl)){
-            for (let i = 0; i < routerOptions.baseUrl.length; i ++){
-                let baseUrl = routerOptions.baseUrl[i];
-                if ((url + '/').startsWith(baseUrl + '/') || (url + '?').startsWith(baseUrl + '?'))
-                    return baseUrl;
+    getRouter(url: string): {router: IRouterPluginOptions, baseUrl: string}{
+        if (this.options.router && this.options.router.routes){
+            let matched: IRouterPluginOptions;
+            let matchedUrl: string;
+            let matchedLength = 0;
+            for (let i = 0; i < this.options.router.routes.length; i++){
+                let router = this.options.router.routes[i];
+                if (Array.isArray(router.baseUrl)){
+                    for (let i = 0; i < router.baseUrl.length; i ++){
+                        let baseUrl = router.baseUrl[i];
+                        if ((url + '/').startsWith(baseUrl + '/') || (url + '?').startsWith(baseUrl + '?')){
+                            if (!matched || baseUrl.split('/').length > matchedLength){
+                                matched = router;
+                                matchedUrl = baseUrl;
+                                matchedLength = baseUrl.split('/').length;
+                            };
+                        };
+                    };
+                }
+                else if ((url + '/').startsWith(router.baseUrl + '/') || (url + '?').startsWith(router.baseUrl + '?')){
+                    if (!matched || router.baseUrl.split('/').length > matchedLength){
+                        matched = router;
+                        matchedUrl = router.baseUrl;
+                        matchedLength = router.baseUrl.split('/').length;
+                    };
+                };
             };
-        }
-        else if ((url + '/').startsWith(routerOptions.baseUrl + '/') || (url + '?').startsWith(routerOptions.baseUrl + '?'))
-            return routerOptions.baseUrl;
+            return {
+                router: matched,
+                baseUrl: matchedUrl
+            };
+        };
     };
     async start(){        
         if (this.running)
@@ -140,38 +162,32 @@ export class HttpServer {
                 console.log(`https server is running at ${this.options.securePort}`);
             };
             this.app.use(async (ctx: Koa.Context)=>{                                
-                if (this.options.router && this.options.router.routes){
-                    for (let i = 0; i < this.options.router.routes.length; i++){
-                        let router = this.options.router.routes[i];
-                        let baseUrl = this.checkBaseUrl(ctx.url, router);
-                        if (baseUrl){
-                            if (router.form){
-                                let pack = require('@ijstech/form');
-                                if (pack.default){
-                                    let config = {
-                                        baseUrl: baseUrl,
-                                        host: router.form.host,
-                                        token: router.form.token,
-                                        package: router.form.package,
-                                        mainForm: router.form.mainForm,
-                                        params: router.params
-                                    }
-                                    await pack.default(ctx, config);
-                                    return true;
-                                };
+                let matched = this.getRouter(ctx.url);
+                if (matched.router){
+                    let router = matched.router;
+                    let baseUrl = matched.baseUrl;
+                    if (router.form){
+                        let pack = require('@ijstech/form');
+                        if (pack.default){
+                            let config = {
+                                baseUrl: baseUrl,
+                                host: router.form.host,
+                                token: router.form.token,
+                                package: router.form.package,
+                                mainForm: router.form.mainForm,
+                                params: router.params
                             }
-                            else{
-                                if (!(<any>router)._plugin)
-                                    (<any>router)._plugin = new Router(router);                            
-                                let result = await (<any>router)._plugin.route(ctx, baseUrl);                            
-                                if (result)                           
-                                    return;
-                            };
-                            // let route = new Router(router);
-                            // let result = await route.route(ctx);                            
-                            // if (result != undefined)
-                            //     return;
+                            await pack.default(ctx, config);
+                            return true;
                         };
+                    }
+                    else{
+                        if (!(<any>router)._plugin)
+                            (<any>router)._plugin = new Router(router); 
+                        await (<any>router)._plugin.init(router.params);
+                        let result = await (<any>router)._plugin.route(ctx, baseUrl);                            
+                        if (result)                           
+                            return;
                     };
                 };
                 ctx.status = 404;

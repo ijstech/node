@@ -28,7 +28,10 @@ export declare class HttpServer {
     private https;
     constructor(options: IHttpServerOptions);
     getCert(domain: string): Promise<Tls.SecureContext>;
-    checkBaseUrl(url: string, routerOptions: IRouterPluginOptions): string;
+    getRouter(url: string): {
+        router: IRouterPluginOptions;
+        baseUrl: string;
+    };
     start(): Promise<void>;
     use(middleware: any): void;
 }

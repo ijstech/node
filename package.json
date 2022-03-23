@@ -26,6 +26,7 @@
         "@ijstech/plugin": "file:./packages/plugin",
         "@ijstech/queue": "file:./packages/queue",
         "@ijstech/schedule": "file:./packages/schedule",
+        "@ijstech/tsc": "file:./packages/tsc",
         "@ijstech/types": "file:./packages/types",
         "@ijstech/vm": "file:./packages/vm",
         "@ijstech/wallet": "file:./packages/wallet",
