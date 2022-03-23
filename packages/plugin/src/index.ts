@@ -48,26 +48,31 @@ export function resolveFilePath(rootPaths: string[], filePath: string, allowsOut
 };
 function getScript(filePath: string): Promise<string>{
     return new Promise(async (resolve)=>{
-        if (!filePath.startsWith('/'))
-            filePath = resolveFilePath([RootPath], filePath);
-        let isDir = (await Fs.promises.lstat(filePath)).isDirectory();
-        if (isDir){
-            let pack = await getPackage(filePath);
-            if (pack.directories && pack.directories.bin){
-                let compiler = new PluginCompiler();
-                compiler.addDirectory(resolveFilePath([filePath], pack.directories.bin))
-                let result = await compiler.compile();
-                return resolve(result.script)
+        try{
+            if (!filePath.startsWith('/'))
+                filePath = resolveFilePath([RootPath], filePath, true);
+            let isDir = (await Fs.promises.lstat(filePath)).isDirectory();
+            if (isDir){
+                let pack = await getPackage(filePath);
+                if (pack.directories && pack.directories.bin){
+                    let compiler = new PluginCompiler();
+                    compiler.addDirectory(resolveFilePath([filePath], pack.directories.bin))
+                    let result = await compiler.compile();
+                    return resolve(result.script)
+                }
+                resolve('');
             }
-            resolve('');
+            else{
+                Fs.readFile(filePath, 'utf8', (err, result)=>{
+                    if (err)
+                        resolve('')
+                    else
+                        resolve(result);
+                });
+            }
         }
-        else{
-            Fs.readFile(filePath, 'utf8', (err, result)=>{
-                if (err)
-                    resolve('')
-                else
-                    resolve(result);
-            });
+        catch(err){
+            resolve('')
         }
     });
 };

@@ -54,26 +54,31 @@ exports.resolveFilePath = resolveFilePath;
 ;
 function getScript(filePath) {
     return new Promise(async (resolve) => {
-        if (!filePath.startsWith('/'))
-            filePath = resolveFilePath([RootPath], filePath);
-        let isDir = (await fs_1.default.promises.lstat(filePath)).isDirectory();
-        if (isDir) {
-            let pack = await getPackage(filePath);
-            if (pack.directories && pack.directories.bin) {
-                let compiler = new tsc_1.PluginCompiler();
-                compiler.addDirectory(resolveFilePath([filePath], pack.directories.bin));
-                let result = await compiler.compile();
-                return resolve(result.script);
+        try {
+            if (!filePath.startsWith('/'))
+                filePath = resolveFilePath([RootPath], filePath, true);
+            let isDir = (await fs_1.default.promises.lstat(filePath)).isDirectory();
+            if (isDir) {
+                let pack = await getPackage(filePath);
+                if (pack.directories && pack.directories.bin) {
+                    let compiler = new tsc_1.PluginCompiler();
+                    compiler.addDirectory(resolveFilePath([filePath], pack.directories.bin));
+                    let result = await compiler.compile();
+                    return resolve(result.script);
+                }
+                resolve('');
             }
-            resolve('');
+            else {
+                fs_1.default.readFile(filePath, 'utf8', (err, result) => {
+                    if (err)
+                        resolve('');
+                    else
+                        resolve(result);
+                });
+            }
         }
-        else {
-            fs_1.default.readFile(filePath, 'utf8', (err, result) => {
-                if (err)
-                    resolve('');
-                else
-                    resolve(result);
-            });
+        catch (err) {
+            resolve('');
         }
     });
 }
