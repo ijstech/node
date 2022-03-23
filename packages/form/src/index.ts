@@ -10,6 +10,8 @@ const RootDir = Path.resolve(__dirname, '..');
 const ApiPath = '/api/1.0/module';
 
 function html(baseUrl: string, form?: string){
+    if (baseUrl == '/')
+        baseUrl = '';
     let result = `
     <!DOCTYPE html><html>
     <head>
@@ -153,7 +155,11 @@ async function route(ctx: Context, options: any){
     }
     else{ 
         let url = Url.parse(ctx.url).pathname;
-        let path = url.slice(baseUrl.length);
+        let path = '';
+        if (baseUrl == '/assets' && url.startsWith('/assets/'))
+            path = url
+        else
+            path = url.slice(baseUrl.length);
         await readAsset(ctx, path);
     };
 };

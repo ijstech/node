@@ -13,6 +13,8 @@ const Stat = util_1.promisify(fs_1.default.stat);
 const RootDir = path_1.default.resolve(__dirname, '..');
 const ApiPath = '/api/1.0/module';
 function html(baseUrl, form) {
+    if (baseUrl == '/')
+        baseUrl = '';
     let result = `
     <!DOCTYPE html><html>
     <head>
@@ -163,7 +165,11 @@ async function route(ctx, options) {
     }
     else {
         let url = url_1.default.parse(ctx.url).pathname;
-        let path = url.slice(baseUrl.length);
+        let path = '';
+        if (baseUrl == '/assets' && url.startsWith('/assets/'))
+            path = url;
+        else
+            path = url.slice(baseUrl.length);
         await readAsset(ctx, path);
     }
     ;
