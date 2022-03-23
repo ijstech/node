@@ -1,7 +1,7 @@
 import Koa from 'koa';
 import { VM } from '@ijstech/vm';
 import * as Types from '@ijstech/types';
-export { BigNumber, IWorkerPluginOptions, IRouterPluginOptions } from '@ijstech/types';
+export { BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions } from '@ijstech/types';
 export declare function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string;
 export declare function getPackageScript(packName: string, pack?: Types.IPackageScript): Promise<string>;
 export declare type IPluginScript = any;

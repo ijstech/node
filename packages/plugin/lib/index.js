@@ -63,8 +63,7 @@ function getScript(filePath) {
                 let compiler = new tsc_1.PluginCompiler();
                 compiler.addDirectory(resolveFilePath([filePath], pack.directories.bin));
                 let result = await compiler.compile();
-                console.dir(result);
-                resolve(result.script);
+                return resolve(result.script);
             }
             resolve('');
         }

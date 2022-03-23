@@ -3,7 +3,7 @@ import Path from 'path';
 import Koa from 'koa';
 import {VM} from '@ijstech/vm';
 import * as Types from '@ijstech/types';
-export {BigNumber, IWorkerPluginOptions, IRouterPluginOptions} from '@ijstech/types';
+export {BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions} from '@ijstech/types';
 import Github from './github';
 import {PluginCompiler} from '@ijstech/tsc';
 
@@ -57,8 +57,7 @@ function getScript(filePath: string): Promise<string>{
                 let compiler = new PluginCompiler();
                 compiler.addDirectory(resolveFilePath([filePath], pack.directories.bin))
                 let result = await compiler.compile();
-                console.dir(result);
-                resolve(result.script)
+                return resolve(result.script)
             }
             resolve('');
         }
