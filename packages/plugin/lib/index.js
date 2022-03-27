@@ -385,6 +385,20 @@ class Plugin {
     }
     async createPlugin() {
         if (!this.plugin) {
+            if (!this.options.script && this.options.scriptPath) {
+                if (this.options.github) {
+                    this.options.script = await github_1.default.getFile({
+                        org: this.options.github.org,
+                        repo: this.options.github.repo,
+                        token: this.options.github.token,
+                        filePath: 'lib/index.js'
+                    });
+                }
+                else if (this.options.scriptPath.endsWith('.js'))
+                    this.options.script = await getScript(this.options.scriptPath);
+                else
+                    this.options.script = await tsc_1.PluginScript(this.options);
+            }
             if (this.options.isolated === false)
                 this.plugin = await this.createModule();
             else {
@@ -395,10 +409,17 @@ class Plugin {
             for (let v in this.options.plugins) {
                 if (v == 'db') {
                     let m = require('@ijstech/pdm');
-                    m.loadPlugin(this, this.options.plugins.db, this.plugin.vm);
+                    m.loadPlugin(this, this.options.plugins.db);
                     break;
                 }
                 ;
+            }
+            ;
+            for (let v in this.options.dependencies) {
+                if (['@ijstech/crypto'].indexOf(v) > -1) {
+                    let m = require(v);
+                    m.loadPlugin(this);
+                }
             }
             ;
         }
@@ -428,19 +449,6 @@ class Plugin {
                     loadModule(script, packname);
             }
             ;
-        }
-        ;
-        if (!this.options.script) {
-            if (this.options.github) {
-                this.options.script = await github_1.default.getFile({
-                    org: this.options.github.org,
-                    repo: this.options.github.repo,
-                    token: this.options.github.token,
-                    filePath: 'lib/index.js'
-                });
-            }
-            else if (this.options.scriptPath)
-                this.options.script = await getScript(this.options.scriptPath);
         }
         ;
         let script = this.options.script;
@@ -511,8 +519,6 @@ class Router extends Plugin {
     ;
     async createVM() {
         super.createVM();
-        if (!this.options.script && this.options.scriptPath)
-            this.options.script = await getScript(this.options.scriptPath);
         let result = new RouterPluginVM(this.options);
         await result.setup();
         return result;
@@ -541,8 +547,6 @@ class Worker extends Plugin {
     ;
     async createVM() {
         super.createVM();
-        if (!this.options.script && this.options.scriptPath)
-            this.options.script = await getScript(this.options.scriptPath);
         let result = new WorkerPluginVM(this.options);
         await result.setup();
         return result;

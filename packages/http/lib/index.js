@@ -13,7 +13,6 @@ const http_1 = __importDefault(require("http"));
 const https_1 = __importDefault(require("https"));
 const _404_1 = __importDefault(require("./templates/404"));
 const plugin_1 = require("@ijstech/plugin");
-const tsc_1 = require("@ijstech/tsc");
 const RootPath = path_1.default.dirname(require.main.filename);
 ;
 ;
@@ -182,16 +181,20 @@ class HttpServer {
                         ;
                     }
                     else {
-                        if (!router._plugin) {
-                            if (!router.script && router.scriptPath)
-                                router.script = await tsc_1.PluginScript(router);
-                            router._plugin = new plugin_1.Router(router);
-                            await router._plugin.init(router.params);
+                        try {
+                            if (!router._plugin) {
+                                router._plugin = new plugin_1.Router(router);
+                                await router._plugin.init(router.params);
+                            }
+                            ;
+                            let result = await router._plugin.route(ctx, baseUrl);
+                            if (result)
+                                return;
                         }
-                        ;
-                        let result = await router._plugin.route(ctx, baseUrl);
-                        if (result)
+                        catch (err) {
+                            ctx.status = 500;
                             return;
+                        }
                     }
                     ;
                 }

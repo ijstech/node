@@ -1,0 +1,18 @@
+{
+    "extends": "../../tsconfig.build.json",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "experimentalDecorators": true,
+        "emitDeclarationOnly": true,
+        "outDir": "plugin",
+        "rootDir": "src",
+        "declaration": true,
+        "declarationDir": "pluginTypes",
+        "paths": {
+            "@ijstech/*": ["../*"]
+        }
+    },
+    "include": [
+        "src"
+    ]
+}

@@ -183,15 +183,19 @@ export class HttpServer {
                         };
                     }
                     else{
-                        if (!(<any>router)._plugin){
-                            if (!router.script && router.scriptPath)
-                                router.script = await PluginScript(router);
-                            (<any>router)._plugin = new Router(router); 
-                            await (<any>router)._plugin.init(router.params);
-                        };
-                        let result = await (<any>router)._plugin.route(ctx, baseUrl);                            
-                        if (result)                           
+                        try{
+                            if (!(<any>router)._plugin){
+                                (<any>router)._plugin = new Router(router); 
+                                await (<any>router)._plugin.init(router.params);
+                            };
+                            let result = await (<any>router)._plugin.route(ctx, baseUrl);                            
+                            if (result)                           
+                                return;
+                        }
+                        catch(err){
+                            ctx.status = 500;
                             return;
+                        }
                     };
                 };
                 ctx.status = 404;

@@ -1,0 +1,18 @@
+{
+    "extends": "../../tsconfig.build.json",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "experimentalDecorators": true,
+        "outDir": "lib",
+        "rootDir": "src",
+        "declaration": true,
+        "declarationDir": "./types",
+        "paths": {
+            "@ijstech/*": ["../*"]
+        }
+    },
+    "include": [
+        "src/index.ts",
+        "src/crypto.ts"
+    ]
+}
