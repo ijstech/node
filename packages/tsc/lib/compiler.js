@@ -3,11 +3,34 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.WalletPluginCompiler = exports.PluginCompiler = exports.Compiler = void 0;
+exports.PluginScript = exports.WalletPluginCompiler = exports.PluginCompiler = exports.Compiler = exports.resolveFilePath = void 0;
 const fs_1 = __importDefault(require("fs"));
 const typescript_1 = __importDefault(require("typescript"));
 const path_1 = __importDefault(require("path"));
 const Libs = {};
+const RootPath = path_1.default.dirname(require.main.filename);
+async function getPackageScriptDir(filePath) {
+    try {
+        let path = resolveFilePath([RootPath], filePath, true);
+        let text = await fs_1.default.promises.readFile(path + '/package.json', 'utf8');
+        if (text) {
+            let pack = JSON.parse(text);
+            if (pack.directories.bin)
+                return resolveFilePath([path], pack.directories.bin);
+        }
+    }
+    catch (err) { }
+}
+;
+function resolveFilePath(rootPaths, filePath, allowsOutsideRootPath) {
+    let rootPath = path_1.default.resolve(...rootPaths);
+    let result = path_1.default.join(rootPath, filePath);
+    if (allowsOutsideRootPath)
+        return result;
+    return result.startsWith(rootPath) ? result : undefined;
+}
+exports.resolveFilePath = resolveFilePath;
+;
 function getLib(fileName) {
     if (!Libs[fileName]) {
         let filePath = path_1.default.join(__dirname, 'lib', fileName);
@@ -244,4 +267,42 @@ class WalletPluginCompiler extends PluginCompiler {
     }
 }
 exports.WalletPluginCompiler = WalletPluginCompiler;
+;
+async function PluginScript(plugin) {
+    if (plugin.script)
+        return plugin.script;
+    let compiler = new PluginCompiler();
+    if (plugin.plugins) {
+        if (plugin.plugins.db)
+            await compiler.addPackage('@ijstech/pdm');
+        if (plugin.plugins.wallet)
+            await compiler.addPackage('@ijstech/wallet');
+    }
+    ;
+    if (plugin.dependencies) {
+        for (let p in plugin.dependencies) {
+            if (['bignumber.js', '@ijstech/crypto', '@ijstech/eth-contract'].indexOf(p) > -1)
+                await compiler.addPackage(p);
+            else if (plugin.dependencies[p].dts)
+                await compiler.addPackage(p, { version: '*', dts: plugin.dependencies[p].dts });
+        }
+    }
+    if (plugin.scriptPath.endsWith('.ts')) {
+        if (plugin.scriptPath.startsWith('/'))
+            await compiler.addFile(plugin.scriptPath);
+        else
+            await compiler.addFile(resolveFilePath([RootPath], plugin.scriptPath, true));
+    }
+    else {
+        let path = await getPackageScriptDir(plugin.scriptPath);
+        if (path)
+            compiler.addDirectory(path);
+        else
+            compiler.addDirectory(plugin.scriptPath);
+    }
+    ;
+    let result = await compiler.compile();
+    return result.script;
+}
+exports.PluginScript = PluginScript;
 ;

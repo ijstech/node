@@ -1,1 +1,1 @@
-export {Compiler, PluginCompiler, WalletPluginCompiler, ICompilerResult} from './compiler';
+export {Compiler, PluginCompiler, WalletPluginCompiler, ICompilerResult, PluginScript} from './compiler';

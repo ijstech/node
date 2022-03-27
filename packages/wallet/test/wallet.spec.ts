@@ -1,6 +1,6 @@
 import 'mocha';
 import {IWorkerPluginOptions, Worker} from '@ijstech/plugin';
-import {Compiler, WalletPluginCompiler, ICompilerResult} from '@ijstech/tsc';
+import {Compiler, PluginScript, WalletPluginCompiler, ICompilerResult} from '@ijstech/tsc';
 import Path from 'path';
 import * as Ganache from "ganache";
 import * as assert from 'assert';
@@ -39,6 +39,7 @@ async function getScript(fileName: string): Promise<string>{
             await compiler.addDirectory(Path.resolve(__dirname, './plugins/erc20/src'));
             Erc20 = await compiler.compile(true);
             WorkerConfig.dependencies.erc20.script = Erc20.script;
+            WorkerConfig.dependencies.erc20.dts = Erc20.dts;
         };
         let compiler = new WalletPluginCompiler();    
         await compiler.addPackage('erc20', {
@@ -55,13 +56,28 @@ async function getScript(fileName: string): Promise<string>{
         console.dir(err)
     }
 }
+function scriptPath(filePath: string): string{
+    return Path.resolve(__dirname, './plugins/scripts/src', filePath)
+}
 async function runWorker(filePath: string, data?: any): Promise<any>{
-    let script = await getScript(filePath);
-    if (script){
-        WorkerConfig.script = script;
-        let worker = new Worker(WorkerConfig);
-        return await worker.process(data);
-    }
+    if (!Erc20){
+        let compiler = new WalletPluginCompiler();    
+        await compiler.addDirectory(Path.resolve(__dirname, './plugins/erc20/src'));
+        Erc20 = await compiler.compile(true);
+        WorkerConfig.dependencies.erc20.script = Erc20.script;
+        WorkerConfig.dependencies.erc20.dts = Erc20.dts;
+    };
+    WorkerConfig.scriptPath = scriptPath(filePath);
+    WorkerConfig.script = null;    
+    WorkerConfig.script = await PluginScript(WorkerConfig);    
+    let worker = new Worker(WorkerConfig);
+    return await worker.process(data);
+    // let script = await getScript(filePath);
+    // if (script){
+    //     WorkerConfig.script = script;
+    //     let worker = new Worker(WorkerConfig);
+    //     return await worker.process(data);
+    // }
 }
 describe('Wallet', function(){
     this.timeout(60000);    

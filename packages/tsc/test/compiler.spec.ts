@@ -3,7 +3,7 @@ import assert from "assert";
 import Path from 'path';
 
 describe('Compiler', function() {    
-    it("compile", function(){
+    it("compile", async function(){
         let compiler = new Compiler();
         compiler.addFileContent('index.ts', `
             import * as Demo from './lib/demo';
@@ -14,12 +14,12 @@ describe('Compiler', function() {
                 return 1
             }
         `)
-        let result = compiler.compile(false);
+        let result = await compiler.compile(false);
         assert.strictEqual(typeof(result.script), 'string');
         assert.deepStrictEqual(result.dts, {});
         assert.strictEqual(result.errors.length, 0);
     });
-    it("import JSON", function(){
+    it("import JSON", async function(){
         let compiler = new Compiler();
         compiler.addFileContent('index.ts', `
             import Demo from './demo.json';
@@ -30,7 +30,7 @@ describe('Compiler', function() {
                 value: true
             }
         `);
-        let result = compiler.compile(true); 
+        let result = await compiler.compile(true); 
         assert.strictEqual(typeof(result.script), 'string');
         assert.strictEqual(typeof(result.dts['index.d.ts']), 'string');
         assert.strictEqual(result.errors.length, 0);
@@ -43,7 +43,7 @@ describe('Compiler', function() {
             console.dir(n);
         `);
         await compiler.addPackage('bignumber.js');
-        let result = compiler.compile(true);      
+        let result = await compiler.compile(true);      
         assert.strictEqual(typeof(result.script), 'string');
         assert.strictEqual(typeof(result.dts['index.d.ts']), 'string');
         assert.strictEqual(result.errors.length, 0);
@@ -53,9 +53,9 @@ describe('Compiler', function() {
         let compiler = new Compiler();
         let files = await compiler.addDirectory(path);
         await compiler.addPackage('bignumber.js');
-        let result = compiler.compile(true);
+        let result = await compiler.compile(true);
         assert.strictEqual(typeof(result.script), 'string');
         assert.strictEqual(typeof(result.dts['index.d.ts']), 'string');
         assert.strictEqual(result.errors.length, 0);
-    })
+    });
 })

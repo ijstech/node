@@ -1,4 +1,6 @@
+import { IPluginOptions } from '@ijstech/types';
 import TS from "typescript";
+export declare function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string;
 export interface ICompilerError {
     file: string;
     start: number;
@@ -45,4 +47,5 @@ export declare class PluginCompiler extends Compiler {
 export declare class WalletPluginCompiler extends PluginCompiler {
     compile(emitDeclaration?: boolean): Promise<ICompilerResult>;
 }
+export declare function PluginScript(plugin: IPluginOptions): Promise<string>;
 export {};

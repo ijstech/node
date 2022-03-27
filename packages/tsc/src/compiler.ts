@@ -1,9 +1,29 @@
 // const TS = require("./lib/typescriptServices.js");
+import {IPluginOptions} from '@ijstech/types';
 import Fs from 'fs';
 import TS from "typescript";
-import Path from 'path';
+import Path, { resolve } from 'path';
 const Libs = {};
-
+const RootPath = Path.dirname(require.main.filename);
+async function getPackageScriptDir(filePath: string): Promise<any>{
+    try{
+        let path = resolveFilePath([RootPath], filePath, true);
+        let text = await Fs.promises.readFile(path + '/package.json', 'utf8');
+        if (text){
+            let pack = JSON.parse(text);
+            if (pack.directories.bin)
+                return resolveFilePath([path], pack.directories.bin);
+        }
+    }
+    catch(err){}
+};
+export function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string{    
+    let rootPath = Path.resolve(...rootPaths);    
+    let result = Path.join(rootPath, filePath);
+    if (allowsOutsideRootPath)
+        return result;
+    return result.startsWith(rootPath) ? result : undefined;
+};
 function getLib(fileName: string): string {
     if (!Libs[fileName]){
         let filePath = Path.join(__dirname, 'lib', fileName);
@@ -239,4 +259,38 @@ export class WalletPluginCompiler extends PluginCompiler{
         await this.addPackage('@ijstech/eth-contract');
         return super.compile(emitDeclaration);
     }
+};
+export async function PluginScript(plugin: IPluginOptions): Promise<string>{
+    if (plugin.script)
+        return plugin.script;
+    let compiler = new PluginCompiler();    
+    if (plugin.plugins){
+        if (plugin.plugins.db)
+            await compiler.addPackage('@ijstech/pdm');
+        if (plugin.plugins.wallet)
+            await compiler.addPackage('@ijstech/wallet');
+    };
+    if (plugin.dependencies){
+        for (let p in plugin.dependencies){
+            if (['bignumber.js','@ijstech/crypto', '@ijstech/eth-contract'].indexOf(p) > -1)
+                await compiler.addPackage(p);
+            else if (plugin.dependencies[p].dts)
+                await compiler.addPackage(p, {version: '*', dts: plugin.dependencies[p].dts})
+        }
+    }
+    if (plugin.scriptPath.endsWith('.ts')){
+        if (plugin.scriptPath.startsWith('/'))
+            await compiler.addFile(plugin.scriptPath)
+        else
+            await compiler.addFile(resolveFilePath([RootPath], plugin.scriptPath, true));
+    }
+    else{
+        let path = await getPackageScriptDir(plugin.scriptPath);
+        if (path)
+            compiler.addDirectory(path);
+        else
+            compiler.addDirectory(plugin.scriptPath);
+    };
+    let result = await compiler.compile();
+    return result.script;
 };

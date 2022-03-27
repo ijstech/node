@@ -8,6 +8,9 @@
         "baseUrl": ".",
         "outDir": "lib",
         "declarationDir": "types",
-        "rootDir": "src"
+        "rootDir": "src",
+        "paths": {
+            "@ijstech/*": ["../*"]
+        }
     }
 }

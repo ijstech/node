@@ -372,7 +372,10 @@ export interface IMessageConnection{
 //Plugins option interface
 export type IPackageScript = {
     version?: string,
-    script?: string
+    script?: string,
+    dts?: {
+        [file: string]: string;
+    };
 };
 export interface IDependencies {
     [packageName: string]: IPackageScript;
