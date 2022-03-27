@@ -7,6 +7,7 @@ import Http from 'http';
 import Https from 'https';
 import Templates from './templates/404';
 import {IRouterPluginOptions, Router} from '@ijstech/plugin';
+import {PluginScript} from '@ijstech/tsc';
 
 const RootPath = Path.dirname(require.main.filename);
 
@@ -183,6 +184,8 @@ export class HttpServer {
                     }
                     else{
                         if (!(<any>router)._plugin){
+                            if (!router.script && router.scriptPath)
+                                router.script = await PluginScript(router);
                             (<any>router)._plugin = new Router(router); 
                             await (<any>router)._plugin.init(router.params);
                         };

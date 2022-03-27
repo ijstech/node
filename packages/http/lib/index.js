@@ -13,6 +13,7 @@ const http_1 = __importDefault(require("http"));
 const https_1 = __importDefault(require("https"));
 const _404_1 = __importDefault(require("./templates/404"));
 const plugin_1 = require("@ijstech/plugin");
+const tsc_1 = require("@ijstech/tsc");
 const RootPath = path_1.default.dirname(require.main.filename);
 ;
 ;
@@ -182,6 +183,8 @@ class HttpServer {
                     }
                     else {
                         if (!router._plugin) {
+                            if (!router.script && router.scriptPath)
+                                router.script = await tsc_1.PluginScript(router);
                             router._plugin = new plugin_1.Router(router);
                             await router._plugin.init(router.params);
                         }
