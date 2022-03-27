@@ -187,7 +187,7 @@ export interface IRequiredPlugins{
     db?: boolean;
 };
 export declare abstract class IPlugin {    
-    init(session: ISession, params?: any):Promise<void>;
+    init?(session: ISession, params?: any):Promise<void>;
 };
 export interface ISession{
     params?: any;
