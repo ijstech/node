@@ -10,12 +10,17 @@ export interface IPlugins{
     message?: IMessagePlugin;
     wallet?: IWalletPlugin;
 }
-export declare abstract class IRouterPlugin {
+export declare abstract class IPlugin {
+    init?(session: ISession, params?: any): Promise<void>;
+}
+export interface ISession {
+    params?: any;
+    plugins: IPlugins;
+}
+export declare abstract class IRouterPlugin extends IPlugin {
     route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;
 }
-export declare abstract class IWorkerPlugin {
-    init?: (params?: any)=>Promise<boolean>;
-    message?: (session: ISession, channel: string, msg: string)=>void;
+export declare abstract class IWorkerPlugin extends IPlugin {
     process(session: ISession, data: any): Promise<any>;
 }
 export interface IRouterRequest{
@@ -35,7 +40,7 @@ export interface IRouterRequest{
 export type ResponseType = 'application/json'|'image/gif'|'image/jpeg'|'image/png'|'image/svg+xml'|'text/plain'|'text/html'
 export interface IRouterResponse{
     statusCode: number;
-    cookie: (name:string, value:string, option: any)=>void;
+    cookie: (name:string, value:string, optio?: any)=>void;
     end: (value: any, contentType?: ResponseType)=>void;
     header: (name:string, value: string)=>void;
 }
