@@ -69,15 +69,8 @@ async function runWorker(filePath: string, data?: any): Promise<any>{
     };
     WorkerConfig.scriptPath = scriptPath(filePath);
     WorkerConfig.script = null;    
-    WorkerConfig.script = await PluginScript(WorkerConfig);    
     let worker = new Worker(WorkerConfig);
     return await worker.process(data);
-    // let script = await getScript(filePath);
-    // if (script){
-    //     WorkerConfig.script = script;
-    //     let worker = new Worker(WorkerConfig);
-    //     return await worker.process(data);
-    // }
 }
 describe('Wallet', function(){
     this.timeout(60000);    
