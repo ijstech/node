@@ -294,13 +294,11 @@ async function PluginScript(plugin) {
             await compiler.addFile(resolveFilePath([RootPath], plugin.scriptPath, true));
     }
     else {
-        let path = '';
-        console.dir(plugin.scriptPath)
+        let path = '';        
         if (plugin.scriptPath.startsWith('/'))
             path = plugin.scriptPath;
         else
-            path = await getPackageScriptDir(plugin.scriptPath);
-        console.dir(path)
+            path = await getPackageScriptDir(plugin.scriptPath);        
         if (path)
             compiler.addDirectory(path);
         else
