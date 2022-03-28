@@ -4,12 +4,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 define("crypto", ["require", "exports", "crypto"], function (require, exports, crypto_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.verifyPassword = exports.hashPassword = exports.PASSWORD_KEY_SIZE = exports.DIGEST = exports.HMAC_KEY_SIZE = exports.ITERATIONS = void 0;
+    exports.verifyPassword = exports.hashPassword = exports.randomBytes = exports.PASSWORD_KEY_SIZE = exports.DIGEST = exports.HMAC_KEY_SIZE = exports.ITERATIONS = void 0;
     crypto_1 = __importDefault(crypto_1);
-    exports.ITERATIONS = 200000;
+    exports.ITERATIONS = 20000;
     exports.HMAC_KEY_SIZE = 32;
     exports.DIGEST = 'sha512';
     exports.PASSWORD_KEY_SIZE = 32;
+    ;
+    async function randomBytes(length, encoding) {
+        return crypto_1.default.randomBytes(length || 16).toString(encoding || 'hex');
+    }
+    exports.randomBytes = randomBytes;
     ;
     function hashPassword(password, salt, iterations, keylen, digest) {
         return new Promise((resolve, reject) => {
@@ -58,7 +63,7 @@ define("crypto", ["require", "exports", "crypto"], function (require, exports, c
 define("plugin", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.verifyPassword = exports.hashPassword = void 0;
+    exports.randomBytes = exports.verifyPassword = exports.hashPassword = void 0;
     async function hashPassword(password, salt, iterations, keylen, digest) {
         const Crypto = global['$$crypto_plugin'];
         let result = await Crypto.hashPassword(password, salt, iterations, keylen, digest);
@@ -72,8 +77,15 @@ define("plugin", ["require", "exports"], function (require, exports) {
     }
     exports.verifyPassword = verifyPassword;
     ;
+    async function randomBytes(length, encoding) {
+        const Crypto = global['$$crypto_plugin'];
+        return await Crypto.randomBytes(length, encoding);
+    }
+    exports.randomBytes = randomBytes;
+    ;
     exports.default = {
         hashPassword,
+        randomBytes,
         verifyPassword
     };
 });

@@ -1,6 +1,6 @@
 import Types from '@ijstech/types';
-import {IHashedData, hashPassword, verifyPassword} from './crypto';
-export {IHashedData, hashPassword, verifyPassword};
+import {IHashedData, hashPassword, randomBytes, verifyPassword} from './crypto';
+export {IHashedData, hashPassword, randomBytes, verifyPassword};
 
 export function loadPlugin(worker: Types.IWorker, options: any): any{
     const plugin = {
@@ -10,6 +10,9 @@ export function loadPlugin(worker: Types.IWorker, options: any): any{
         },
         async verifyPassword(password: string, hash: IHashedData): Promise<boolean>{    
             return await verifyPassword(password, hash);
+        },
+        async randomBytes(length?: number, encoding?: 'hex'|'base64'): Promise<string>{    
+            return await randomBytes(length, encoding);
         }
     };
     if (worker.vm){
