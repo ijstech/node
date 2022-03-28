@@ -47,6 +47,7 @@ declare class Plugin {
     protected options: Types.IPluginOptions;
     protected plugin: any;
     protected _session: ISession;
+    protected pluginType: string;
     vm: VM;
     data: any;
     constructor(options: Types.IPluginOptions);

@@ -237,8 +237,9 @@ class RouterPluginVM extends PluginVM implements IRouterPlugin{
     async setup(): Promise<boolean>{        
         await super.setup();
         this.vm.injectGlobalScript(`
-            let module = global._$$modules['index'];            
-            global.$$router = new module.default();
+            let module = global._$$modules['index'];   
+            let fn = module.default['router'] || module.default;
+            global.$$router = new fn();
         `);
         this.vm.script = `
             try{
@@ -292,7 +293,8 @@ class WorkerPluginVM extends PluginVM implements IWorkerPlugin{
         await super.setup();
         this.vm.injectGlobalScript(`
             let module = global._$$modules['index'];            
-            global.$$worker = new module.default();
+            let fn = module.default['worker'] || module.default;
+            global.$$worker = new fn();
         `);
         this.vm.script = `
             try{
@@ -357,6 +359,7 @@ class Plugin{
     protected options: Types.IPluginOptions;
     protected plugin: any;
     protected _session: ISession;
+    protected pluginType: string;
     public vm: VM;
     public data: any;
 
@@ -433,7 +436,7 @@ class Plugin{
             let module = loadModule(script);
             if (module){
                 if (module.default)
-                    module = module.default;
+                    module = module.default[this.pluginType] || module.default;
                 return new module(this.options);
             };   
         };
@@ -484,6 +487,7 @@ export class Router extends Plugin{
     protected options: Types.IRouterPluginOptions;    
     constructor(options: Types.IRouterPluginOptions){
         super(options);
+        this.pluginType = 'worker';
     };
     async createVM(): Promise<RouterPluginVM>{        
         super.createVM();
@@ -509,6 +513,7 @@ export class Worker extends Plugin{
     protected options: Types.IWorkerPluginOptions;    
     constructor(options: Types.IWorkerPluginOptions){
         super(options);
+        this.pluginType = 'worker';
     };
     async createVM(): Promise<WorkerPluginVM>{
         super.createVM();

@@ -246,8 +246,9 @@ class RouterPluginVM extends PluginVM {
     async setup() {
         await super.setup();
         this.vm.injectGlobalScript(`
-            let module = global._$$modules['index'];            
-            global.$$router = new module.default();
+            let module = global._$$modules['index'];   
+            let fn = module.default['router'] || module.default;
+            global.$$router = new fn();
         `);
         this.vm.script = `
             try{
@@ -306,7 +307,8 @@ class WorkerPluginVM extends PluginVM {
         await super.setup();
         this.vm.injectGlobalScript(`
             let module = global._$$modules['index'];            
-            global.$$worker = new module.default();
+            let fn = module.default['worker'] || module.default;
+            global.$$worker = new fn();
         `);
         this.vm.script = `
             try{
@@ -456,7 +458,7 @@ class Plugin {
             let module = loadModule(script);
             if (module) {
                 if (module.default)
-                    module = module.default;
+                    module = module.default[this.pluginType] || module.default;
                 return new module(this.options);
             }
             ;
@@ -515,6 +517,7 @@ class Plugin {
 class Router extends Plugin {
     constructor(options) {
         super(options);
+        this.pluginType = 'worker';
     }
     ;
     async createVM() {
@@ -543,6 +546,7 @@ exports.Router = Router;
 class Worker extends Plugin {
     constructor(options) {
         super(options);
+        this.pluginType = 'worker';
     }
     ;
     async createVM() {
