@@ -296,5 +296,7 @@ export async function PluginScript(plugin: IPluginOptions): Promise<string>{
             compiler.addDirectory(plugin.scriptPath);
     };
     let result = await compiler.compile();
+    if (result.errors.length > 0)
+        console.dir(result.errors);
     return result.script;
 };

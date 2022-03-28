@@ -306,6 +306,8 @@ async function PluginScript(plugin) {
     }
     ;
     let result = await compiler.compile();
+    if (result.errors.length > 0)
+        console.dir(result.errors);
     return result.script;
 }
 exports.PluginScript = PluginScript;
