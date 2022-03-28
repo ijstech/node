@@ -150,7 +150,7 @@ class Compiler {
         else
             this.packages[packName] = pack;
         if (pack.path)
-            this.addDirectory(pack.path, '', packName);
+            await this.addDirectory(pack.path, '', packName);
         for (let n in pack.dts) {
             this.packageFiles[packName + '/' + n] = pack.dts[n];
         }
@@ -300,9 +300,9 @@ async function PluginScript(plugin) {
         else
             path = await getPackageScriptDir(plugin.scriptPath);
         if (path)
-            compiler.addDirectory(path);
+            await compiler.addDirectory(path);
         else
-            compiler.addDirectory(plugin.scriptPath);
+            await compiler.addDirectory(plugin.scriptPath);
     }
     ;
     let result = await compiler.compile();
