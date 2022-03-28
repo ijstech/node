@@ -285,7 +285,11 @@ export async function PluginScript(plugin: IPluginOptions): Promise<string>{
             await compiler.addFile(resolveFilePath([RootPath], plugin.scriptPath, true));
     }
     else{
-        let path = await getPackageScriptDir(plugin.scriptPath);
+        let path = '';        
+        if (plugin.scriptPath.startsWith('/'))
+            path = plugin.scriptPath;
+        else
+            path = await getPackageScriptDir(plugin.scriptPath);
         if (path)
             compiler.addDirectory(path);
         else
