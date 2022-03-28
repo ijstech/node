@@ -123,44 +123,46 @@ async function getRemoteScript(config, moduleId) {
 async function route(ctx, options) {
     let baseUrl = options.baseUrl;
     if (ctx.url == baseUrl) {
-        let module = await getModule(options, options.package);
-        let pack = JSON.parse(module.code);
-        let data = await getRemoteScript(options);
-        ctx.body = html(options.baseUrl, JSON.stringify(data));
-    }
-    else if (ctx.url == path_1.default.join(baseUrl, ApiPath)) {
-        let data = ctx.request.body;
-        if (data && data.fileName) {
-            let module = await getModule(options, options.package);
-            let pack = JSON.parse(module.code);
-            let fileName = data.fileName.toLowerCase();
-            let form;
-            let moduleId;
-            for (let v in pack.modules) {
-                let f = v.toLowerCase();
-                if (f[0] != '/')
-                    f = '/' + f;
-                if (f == fileName) {
-                    moduleId = pack.modules[v];
-                    form = await getModule(options, moduleId);
-                    break;
+        if (ctx.method == 'POST' && ctx.url == ApiPath) {
+            let data = ctx.request.body;
+            if (data && data.fileName) {
+                let module = await getModule(options, options.package);
+                let pack = JSON.parse(module.code);
+                let fileName = data.fileName.toLowerCase();
+                let form;
+                let moduleId;
+                for (let v in pack.modules) {
+                    let f = v.toLowerCase();
+                    if (f[0] != '/')
+                        f = '/' + f;
+                    if (f == fileName) {
+                        moduleId = pack.modules[v].id;
+                        form = await getModule(options, moduleId);
+                        break;
+                    }
+                }
+                if (form) {
+                    let result = {
+                        data: {
+                            file: {
+                                id: moduleId
+                            },
+                            reference: [],
+                            moduleName: form.moduleName,
+                            className: form.className,
+                            script: form.es6 || form.compiledScript || form.script,
+                            form: form.form
+                        }
+                    };
+                    ctx.body = result;
                 }
             }
-            if (form) {
-                let result = {
-                    data: {
-                        file: {
-                            id: moduleId
-                        },
-                        reference: [],
-                        moduleName: form.moduleName,
-                        className: form.className,
-                        script: form.es6 || form.compiledScript || form.script,
-                        form: form.form
-                    }
-                };
-                ctx.body = result;
-            }
+        }
+        else {
+            let module = await getModule(options, options.package);
+            let pack = JSON.parse(module.code);
+            let data = await getRemoteScript(options);
+            ctx.body = html(options.baseUrl, JSON.stringify(data));
         }
     }
     else {
