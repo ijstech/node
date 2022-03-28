@@ -20,9 +20,21 @@ export interface ISession{
     plugins: IPlugins;
 }
 export type ResponseType = 'application/json'|'image/gif'|'image/jpeg'|'image/png'|'image/svg+xml'|'text/plain'|'text/html'
+export interface IRouterCookieOptions {        
+    maxAge?: number | undefined;
+    expires?: Date | undefined;
+    path?: string | undefined;
+    domain?: string | undefined;
+    secure?: boolean | undefined;
+    secureProxy?: boolean | undefined;
+    httpOnly?: boolean | undefined;
+    sameSite?: 'strict' | 'lax' | 'none' | boolean | undefined;
+    signed?: boolean | undefined;
+    overwrite?: boolean | undefined;
+}
 export interface IRouterResponse{
     statusCode: number;
-    cookie: (name:string, value:string, option: any)=>void;
+    cookie: (name:string, value:string, option?: IRouterCookieOptions)=>void;
     end: (value: any, contentType?: ResponseType)=>void;
     header: (name:string, value: string)=>void;
 }
