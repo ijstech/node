@@ -9,7 +9,7 @@ CREATE TABLE `customers` (
   `guid` char(36) NOT NULL,
   `salesRepEmployeeGuid` char(36) DEFAULT NULL,
   `customerNumber` int(11) DEFAULT NULL,
-  `customerName` varchar(50) DEFAULT NULL,
+  `customer_name` varchar(50) DEFAULT NULL,
   `contactLastName` varchar(50) DEFAULT NULL,
   `contactFirstName` varchar(50) DEFAULT NULL,
   `phone` varchar(50) DEFAULT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE `customers` (
 
 -- Dumping data for table classicmodels.customers: ~122 rows (approximately)
 /*!40000 ALTER TABLE `customers` DISABLE KEYS */;
-INSERT INTO `customers` (`guid`, `salesRepEmployeeGuid`, `customerNumber`, `customerName`, `contactLastName`, `contactFirstName`, `phone`, `addressLine1`, `addressLine2`, `city`, `state`, `postalCode`, `country`, `creditLimit`) VALUES
+INSERT INTO `customers` (`guid`, `salesRepEmployeeGuid`, `customerNumber`, `customer_name`, `contactLastName`, `contactFirstName`, `phone`, `addressLine1`, `addressLine2`, `city`, `state`, `postalCode`, `country`, `creditLimit`) VALUES
 	('611214e4-7d92-11ec-be40-0242ac120004', '7a30ddff-7d92-11ec-be40-0242ac120004', 103, 'Atelier graphique', 'Schmitt', 'Carine ', '40.32.2555', '54, rue Royale', '', 'Nantes', NULL, '44000', 'France', 21000.00),
 	('6112226f-7d92-11ec-be40-0242ac120004', '7a30dd42-7d92-11ec-be40-0242ac120004', 112, 'Signal Gift Stores', 'King', 'Jean', '7025551838', '8489 Strong St.', '', 'Las Vegas', 'NV', '83030', 'USA', 71800.00),
 	('611222f2-7d92-11ec-be40-0242ac120004', '7a30de75-7d92-11ec-be40-0242ac120004', 114, 'Australian Collectors, Co.', 'Ferguson', 'Peter', '03 9520 4555', '636 St Kilda Road', 'Level 3', 'Melbourne', 'Victoria', '3004', 'Australia', 117300.00),

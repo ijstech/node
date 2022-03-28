@@ -71,6 +71,11 @@ describe('PDM', function() {
         context.customer.query.where('customerName', '=', name2);
         await context.fetch();
         assert.strictEqual(context.customer.first.customerName, name2);
+
+        context = new Context(client);
+        context.customer.query.where('customerName', '=', name2);
+        let rs = await context.customer.fetch();        
+        assert.strictEqual(rs[0].customerName, name2);
         //delete record
         context.customer.delete(context.customer.first);
         assert.strictEqual(context.customer.first, undefined);
@@ -91,11 +96,11 @@ describe('PDM', function() {
             'customerNumber': 8888,
             'country': 'China'
         });
-        await context.save();
+        await context.save();        
         context.customer.query.where('customerName', '=', custName);
         await context.fetch();
         let cust = context.customer.first;
-        assert.strictEqual(cust.customerName, custName);
+        assert.strictEqual(cust.customerName, custName);        
         //update
         let newCustName = '$m' + custName;
         context.customer.applyUpdate({

@@ -7,7 +7,7 @@ class Customer extends PDM.TRecord{
     salesRep: Promise<Employee>;
     @PDM.IntegerField()
     customerNumber: number;
-    @PDM.StringField()
+    @PDM.StringField({field: 'customer_name'})
     customerName: string;
     @PDM.StringField()
     contactLastName: string;

@@ -319,6 +319,14 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
         }
         ;
         applyInsert(data, options) {
+            for (let prop in this.fields) {
+                let field = this._fields[prop];
+                if (field.field && prop != field.field) {
+                    if (typeof (data[prop]) != 'undefined' && typeof (data[field.field]) == 'undefined')
+                        data[field.field] = data[prop];
+                }
+            }
+            ;
             if (this.keyField && typeof (data[this.keyField.field]) == 'undefined')
                 data[this.keyField.field] = generateUUID();
             this.context.applyInsert(this, data);
@@ -333,6 +341,14 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
         ;
         applyUpdate(data) {
             let qry = [];
+            for (let prop in this.fields) {
+                let field = this._fields[prop];
+                if (field.field && prop != field.field) {
+                    if (typeof (data[prop]) != 'undefined' && typeof (data[field.field]) == 'undefined')
+                        data[field.field] = data[prop];
+                }
+            }
+            ;
             this.context.applyUpdate(this, data, qry);
             let result = new TQuery(qry);
             return result;
@@ -389,7 +405,8 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
             let keyField = this.keyField;
             let result = [];
             if (keyField) {
-                records.forEach((record) => {
+                for (let i = 0; i < records.length; i++) {
+                    let record = records[i];
                     let kv = record[keyField.field];
                     if (kv) {
                         if (!this._recordsIdx[kv]) {
@@ -399,9 +416,11 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
                         else if (this._recordsIdx[kv]['$$record']) {
                             this._recordsIdx[kv]['$$record'] = record;
                         }
-                        result.push(this._recordsIdx[kv]);
+                        result.push(this.proxy(this._recordsIdx[kv]));
                     }
-                });
+                    ;
+                }
+                ;
             }
             else {
                 this._records = this._records.concat(records);

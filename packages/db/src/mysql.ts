@@ -74,6 +74,7 @@ export class MySQLClient implements Types.IDBClient{
             return result;
         }
         catch(err){
+            console.error(err)
             throw err
         };
     };
@@ -179,20 +180,24 @@ export class MySQLClient implements Types.IDBClient{
     };
     private getFields(fields: Types.IFields, data?: Types.IQueryData, params?: any[]): string{
         let result = '';
+        let idx = {};
         for (let prop in fields){
             let field = fields[prop];
             let fieldName = field.field;
             if (!field.details){
                 if (!data || typeof(data[fieldName]) != 'undefined'){
-                    if (result){
-                        result += ',';
-                        result += this.escape(fieldName)
-                    }
-                    else
-                        result = this.escape(fieldName);
-                    if (data){
-                        result += '=?';
-                        params.push(data[fieldName])
+                    if (!idx[fieldName]){
+                        idx[fieldName] = true;
+                        if (result){
+                            result += ',';
+                            result += this.escape(fieldName)
+                        }
+                        else
+                            result = this.escape(fieldName);
+                        if (data){
+                            result += '=?';
+                            params.push(data[fieldName])
+                        };
                     };
                 };
             };
@@ -384,52 +389,56 @@ export class MySQLClient implements Types.IDBClient{
                 let pkName: string;
                 const columnBuilder = [];
                 const columnBuilderParams = [];
+                let newFields = {};
                 for(const prop in fields) {
                     const field = fields[prop];
                     const fieldName = field.field;
-                    switch(field.dataType) {
-                        case 'key':
-                            pkName = fieldName;
-                            columnBuilder.push(`${this.escape(fieldName)} CHAR(36) NOT NULL`);
-                            break;
-                        case 'ref':
-                            columnBuilder.push(`${this.escape(fieldName)} CHAR(36) NULL`);
-                        case '1toM':
-                            break;
-                        case 'char':
-                            columnBuilder.push(`${this.escape(fieldName)} CHAR(?) NULL`);
-                            columnBuilderParams.push(field.size);
-                            break;
-                        case 'varchar':
-                            columnBuilder.push(`${this.escape(fieldName)} VARCHAR(?) NULL`);
-                            columnBuilderParams.push(field.size);
-                            break;
-                        case 'boolean':
-                            columnBuilder.push(`${this.escape(fieldName)} TINYINT(1) NULL`);
-                            break;
-                        case 'integer':
-                            columnBuilder.push(`${this.escape(fieldName)} INT(?) NULL`);
-                            columnBuilderParams.push((<Types.IIntegerField> field).digits || 11);
-                            break;
-                        case 'decimal':
-                            columnBuilder.push(`${this.escape(fieldName)} DECIMAL(?, ?) NULL`);
-                            columnBuilderParams.push((<Types.IDecimalField> field).digits || 11, (<Types.IDecimalField> field).decimals || 2);
-                            break;
-                        case 'date':
-                            columnBuilder.push(`${this.escape(fieldName)} DATE NULL`);
-                            break;
-                        case 'blob':
-                            columnBuilder.push(`${this.escape(fieldName)} MEDIUMBLOB`);
-                            break;
-                        case 'text':
-                            columnBuilder.push(`${this.escape(fieldName)} TEXT`);
-                            break;
-                        case 'mediumText':
-                            columnBuilder.push(`${this.escape(fieldName)} MEDIUMTEXT`);
-                            break;
-                        case 'longText':
-                            columnBuilder.push(`${this.escape(fieldName)} LONGTEXT`);
-                            break;
+                    if (!newFields[fieldName.toLowerCase()]){
+                        newFields[fieldName.toLowerCase()] = true;
+                        switch(field.dataType) {
+                            case 'key':
+                                pkName = fieldName;
+                                columnBuilder.push(`${this.escape(fieldName)} CHAR(36) NOT NULL`);
+                                break;
+                            case 'ref':
+                                columnBuilder.push(`${this.escape(fieldName)} CHAR(36) NULL`);
+                            case '1toM':
+                                break;
+                            case 'char':
+                                columnBuilder.push(`${this.escape(fieldName)} CHAR(?) NULL`);
+                                columnBuilderParams.push(field.size);
+                                break;
+                            case 'varchar':
+                                columnBuilder.push(`${this.escape(fieldName)} VARCHAR(?) NULL`);
+                                columnBuilderParams.push(field.size);
+                                break;
+                            case 'boolean':
+                                columnBuilder.push(`${this.escape(fieldName)} TINYINT(1) NULL`);
+                                break;
+                            case 'integer':
+                                columnBuilder.push(`${this.escape(fieldName)} INT(?) NULL`);
+                                columnBuilderParams.push((<Types.IIntegerField> field).digits || 11);
+                                break;
+                            case 'decimal':
+                                columnBuilder.push(`${this.escape(fieldName)} DECIMAL(?, ?) NULL`);
+                                columnBuilderParams.push((<Types.IDecimalField> field).digits || 11, (<Types.IDecimalField> field).decimals || 2);
+                                break;
+                            case 'date':
+                                columnBuilder.push(`${this.escape(fieldName)} DATE NULL`);
+                                break;
+                            case 'blob':
+                                columnBuilder.push(`${this.escape(fieldName)} MEDIUMBLOB`);
+                                break;
+                            case 'text':
+                                columnBuilder.push(`${this.escape(fieldName)} TEXT`);
+                                break;
+                            case 'mediumText':
+                                columnBuilder.push(`${this.escape(fieldName)} MEDIUMTEXT`);
+                                break;
+                            case 'longText':
+                                columnBuilder.push(`${this.escape(fieldName)} LONGTEXT`);
+                                break;
+                        }
                     }
                 }
                 if(pkName) {

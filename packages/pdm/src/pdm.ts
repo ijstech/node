@@ -336,20 +336,34 @@ export class TRecordSet<T>{
         return this.proxy(<any>result);
     };
     applyInsert<TB extends keyof T>(data: {[C in TB]?: T[C]}, options?: InsertOptions): void{
+        for (let prop in this.fields){
+            let field = this._fields[prop];
+            if (field.field && prop != field.field){                
+                if (typeof(data[prop]) != 'undefined' && typeof(data[field.field]) == 'undefined')
+                    data[field.field] = data[prop]
+            }
+        };
         if (this.keyField && typeof(data[this.keyField.field]) == 'undefined')
             data[this.keyField.field] = generateUUID();
         this.context.applyInsert(<any>this, data);
     };
     applyDelete(): TQuery<T>{
-        let qry = [];
+        let qry = [];        
         this.context.applyDelete(<any>this, qry);
         let result = new TQuery<T>(qry);
         return result;
     };
-    applyUpdate<TB extends keyof T>(data?: {
+    applyUpdate<TB extends keyof T>(data: {
         [C in TB]: T[C]
     }): TQuery<T>{
         let qry = [];
+        for (let prop in this.fields){
+            let field = this._fields[prop];
+            if (field.field && prop != field.field){                
+                if (typeof(data[prop]) != 'undefined' && typeof(data[field.field]) == 'undefined')
+                    data[field.field] = data[prop]
+            }
+        };
         this.context.applyUpdate(<any>this, data, qry);
         let result = new TQuery<T>(qry);
         return result;
@@ -400,7 +414,8 @@ export class TRecordSet<T>{
         let keyField = this.keyField;
         let result = [];
         if (keyField){
-            records.forEach((record)=>{
+            for (let i = 0; i < records.length; i ++){
+                let record = records[i];
                 let kv = record[keyField.field];
                 if (kv){
                     if (!this._recordsIdx[kv]){
@@ -410,9 +425,10 @@ export class TRecordSet<T>{
                     else if (this._recordsIdx[kv]['$$record']){
                         this._recordsIdx[kv]['$$record'] = record;
                     }
-                    result.push(this._recordsIdx[kv]);
-                }
-            })
+                    // result.push(this._recordsIdx[kv]);
+                    result.push(this.proxy(this._recordsIdx[kv]));
+                };
+            };
         }
         else{
             this._records = this._records.concat(records);

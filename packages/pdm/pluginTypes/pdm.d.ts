@@ -104,7 +104,7 @@ export declare class TRecordSet<T> {
         [C in TB]?: T[C];
     }, options?: InsertOptions): void;
     applyDelete(): TQuery<T>;
-    applyUpdate<TB extends keyof T>(data?: {
+    applyUpdate<TB extends keyof T>(data: {
         [C in TB]: T[C];
     }): TQuery<T>;
     get context(): IContext;
