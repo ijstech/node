@@ -8,6 +8,8 @@ class Worker implements IWorkerPlugin{
         }
         else if (data.password)
             return await Crypto.hashPassword(data.password);
+        else if (data.uuid)
+            return await Crypto.randomUUID();
     }
 }
 export default Worker;

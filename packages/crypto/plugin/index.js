@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 define("crypto", ["require", "exports", "crypto"], function (require, exports, crypto_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.verifyPassword = exports.hashPassword = exports.randomBytes = exports.PASSWORD_KEY_SIZE = exports.DIGEST = exports.HMAC_KEY_SIZE = exports.ITERATIONS = void 0;
+    exports.verifyPassword = exports.hashPassword = exports.randomUUID = exports.randomBytes = exports.PASSWORD_KEY_SIZE = exports.DIGEST = exports.HMAC_KEY_SIZE = exports.ITERATIONS = void 0;
     crypto_1 = __importDefault(crypto_1);
     exports.ITERATIONS = 20000;
     exports.HMAC_KEY_SIZE = 32;
@@ -15,6 +15,11 @@ define("crypto", ["require", "exports", "crypto"], function (require, exports, c
         return crypto_1.default.randomBytes(length || 16).toString(encoding || 'hex');
     }
     exports.randomBytes = randomBytes;
+    ;
+    async function randomUUID() {
+        return crypto_1.default.randomUUID();
+    }
+    exports.randomUUID = randomUUID;
     ;
     function hashPassword(password, salt, iterations, keylen, digest) {
         return new Promise((resolve, reject) => {
@@ -63,7 +68,7 @@ define("crypto", ["require", "exports", "crypto"], function (require, exports, c
 define("plugin", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.randomBytes = exports.verifyPassword = exports.hashPassword = void 0;
+    exports.randomUUID = exports.randomBytes = exports.verifyPassword = exports.hashPassword = void 0;
     async function hashPassword(password, salt, iterations, keylen, digest) {
         const Crypto = global['$$crypto_plugin'];
         let result = await Crypto.hashPassword(password, salt, iterations, keylen, digest);
@@ -83,9 +88,16 @@ define("plugin", ["require", "exports"], function (require, exports) {
     }
     exports.randomBytes = randomBytes;
     ;
+    async function randomUUID() {
+        const Crypto = global['$$crypto_plugin'];
+        return await Crypto.randomUUID();
+    }
+    exports.randomUUID = randomUUID;
+    ;
     exports.default = {
         hashPassword,
         randomBytes,
+        randomUUID,
         verifyPassword
     };
 });

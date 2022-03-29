@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyPassword = exports.hashPassword = exports.randomBytes = exports.PASSWORD_KEY_SIZE = exports.DIGEST = exports.HMAC_KEY_SIZE = exports.ITERATIONS = void 0;
+exports.verifyPassword = exports.hashPassword = exports.randomUUID = exports.randomBytes = exports.PASSWORD_KEY_SIZE = exports.DIGEST = exports.HMAC_KEY_SIZE = exports.ITERATIONS = void 0;
 const crypto_1 = __importDefault(require("crypto"));
 exports.ITERATIONS = 20000;
 exports.HMAC_KEY_SIZE = 32;
@@ -14,6 +14,11 @@ async function randomBytes(length, encoding) {
     return crypto_1.default.randomBytes(length || 16).toString(encoding || 'hex');
 }
 exports.randomBytes = randomBytes;
+;
+async function randomUUID() {
+    return crypto_1.default.randomUUID();
+}
+exports.randomUUID = randomUUID;
 ;
 function hashPassword(password, salt, iterations, keylen, digest) {
     return new Promise((resolve, reject) => {

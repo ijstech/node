@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loadPlugin = exports.verifyPassword = exports.randomBytes = exports.hashPassword = void 0;
+exports.loadPlugin = exports.verifyPassword = exports.randomUUID = exports.randomBytes = exports.hashPassword = void 0;
 const crypto_1 = require("./crypto");
 Object.defineProperty(exports, "hashPassword", { enumerable: true, get: function () { return crypto_1.hashPassword; } });
 Object.defineProperty(exports, "randomBytes", { enumerable: true, get: function () { return crypto_1.randomBytes; } });
+Object.defineProperty(exports, "randomUUID", { enumerable: true, get: function () { return crypto_1.randomUUID; } });
 Object.defineProperty(exports, "verifyPassword", { enumerable: true, get: function () { return crypto_1.verifyPassword; } });
 function loadPlugin(worker, options) {
     const plugin = {
@@ -16,6 +17,9 @@ function loadPlugin(worker, options) {
         },
         async randomBytes(length, encoding) {
             return await crypto_1.randomBytes(length, encoding);
+        },
+        async randomUUID() {
+            return await crypto_1.randomUUID();
         }
     };
     if (worker.vm) {

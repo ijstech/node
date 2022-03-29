@@ -14,6 +14,9 @@ export interface IHashedData{
 export async function randomBytes(length?: number, encoding?: 'hex'|'base64'): Promise<string>{
     return Crypto.randomBytes(length || 16).toString(encoding || 'hex');
 };
+export async function randomUUID(): Promise<string>{
+    return Crypto.randomUUID();
+};
 export function hashPassword(password: string, salt?: string, iterations?: number, keylen?: number, digest?: string): Promise<IHashedData>{
     return new Promise((resolve, reject)=>{
         try{

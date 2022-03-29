@@ -24,4 +24,10 @@ describe('Wallet', function(){
         let result = await worker.process({password: '123', hash: hash});
         assert.strictEqual(result, true);
     });
+    it('Random UUID', async function(){
+        let worker = new Worker(WorkerConfig);
+        let result = await worker.process({uuid: true});
+        assert.strictEqual(typeof(result), 'string');
+        assert.strictEqual(result.length, 36);
+    })
 })

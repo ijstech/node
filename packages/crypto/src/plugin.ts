@@ -13,8 +13,13 @@ export async function randomBytes(length?: number, encoding?: 'hex'|'base64'): P
     const Crypto = global['$$crypto_plugin'];
     return await Crypto.randomBytes(length, encoding);
 };
+export async function randomUUID(): Promise<string>{
+    const Crypto = global['$$crypto_plugin'];
+    return await Crypto.randomUUID();
+};
 export default {
     hashPassword,
     randomBytes,
+    randomUUID,
     verifyPassword
 }
