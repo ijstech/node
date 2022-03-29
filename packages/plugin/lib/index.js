@@ -219,21 +219,23 @@ class PluginVM {
         return;
     }
     ;
+    async loadPackage(name, pack) {
+        let script = await getPackageScript(name, pack);
+        if (script)
+            this.vm.injectGlobalPackage(name, script);
+    }
     async loadDependencies() {
-        if (this.options.plugins && this.options.plugins.db) {
-            let script = await getPackageScript('@ijstech/pdm');
-            if (script)
-                this.vm.injectGlobalPackage('@ijstech/pdm', script);
+        if (this.options.plugins && this.options.plugins.db)
+            await this.loadPackage('@ijstech/pdm');
+        if (this.options.plugins && this.options.plugins.wallet) {
+            await this.loadPackage('bignumber.js');
+            await this.loadPackage('@ijstech/wallet');
         }
         ;
         if (this.options.dependencies) {
             for (let packname in this.options.dependencies) {
                 let pack = this.options.dependencies[packname];
-                let script = await getPackageScript(packname, pack);
-                if (script) {
-                    this.vm.injectGlobalPackage(packname, script);
-                }
-                ;
+                await this.loadPackage(packname, pack);
             }
             ;
         }

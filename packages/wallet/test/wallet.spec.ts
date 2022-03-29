@@ -76,11 +76,11 @@ describe('Wallet', function(){
     this.timeout(60000);    
     let wallet = new Wallet(Provider);
     let accounts: string[];
-    let ercAddress: string;    
+    let tokenAddress: string;    
+    let tokenAbi: any;
 
     before(async function(){
         accounts = await wallet.accounts;
-        
     });
     it('Accounts', async function(){
         let result = await runWorker('accounts.ts')
@@ -120,6 +120,12 @@ describe('Wallet', function(){
         assert.strictEqual(result.balance, 1000)
         assert.strictEqual(result.balanceOf, 1000)
     });
+    it('ETH Balance Import', async function(){
+        let result = await runWorker('ethBalanceImport.ts', {account: accounts[0]})
+        assert.strictEqual(result.account, accounts[0]);
+        assert.strictEqual(result.balance, 1000)
+        assert.strictEqual(result.balanceOf, 1000)
+    });
     it('Deploy ERC20', async function(){
         let result = await runWorker('deploy.ts', {
             account: accounts[0],
@@ -129,21 +135,22 @@ describe('Wallet', function(){
             initialSupply: 100,
             cap: 10000000
         })
-        ercAddress = result.address;
+        tokenAbi = result.abi;
+        tokenAddress = result.address;
         assert.strictEqual(typeof(result.address), 'string');
     });
     it('Token Info', async function(){
         let result = await runWorker('tokenInfo.ts', {            
-            contract: ercAddress
-        })
+            contract: tokenAddress
+        });        
         assert.strictEqual(result.name, 'USDT Token');
-        assert.strictEqual(result.symbol, 'USDT');
-        assert.strictEqual(result.cap, 10000000);
-        assert.strictEqual(result.totalSupply, 100);
+        assert.strictEqual(result.symbol, 'USDT');        
+        assert.strictEqual(result.decimals, 18);
+        assert.strictEqual(result.totalSupply.toNumber(), 100);
     });
     it('Mint Token', async function(){
         let result = await runWorker('mint.ts', {            
-            contract: ercAddress, 
+            contract: tokenAddress, 
             account: accounts[0],
             to: accounts[1],
             amount: 99
@@ -153,7 +160,7 @@ describe('Wallet', function(){
     });
     it('Token Balance', async function(){
         let result = await runWorker('tokenBalance.ts', {            
-            contract: ercAddress, 
+            contract: tokenAddress, 
             account: accounts[1]
         })
         assert.strictEqual(result, 99);
@@ -162,13 +169,28 @@ describe('Wallet', function(){
         let result:number = await runWorker('blockNumber.ts')
         assert.strictEqual(result, 2);
     });
+    it('Block Number Import', async function(){
+        let result:number = await runWorker('blockNumberImport.ts')
+        assert.strictEqual(result, 2);
+    });
+    it('Scan Events', async function(){
+        let result: Types.IWalletEvent[] = await runWorker('scanEvents.ts', {fromBlock:2,toBlock:2})
+        assert.strictEqual(typeof(result[0].data), 'string')
+    });
+    it('Scan Events with ABI', async function(){
+        let result: Types.IWalletEvent[] = await runWorker('scanEvents.ts', {fromBlock:2,toBlock:2,abi:tokenAbi,address:tokenAddress})
+        assert.strictEqual(result[0].data.from, '0x0000000000000000000000000000000000000000')
+        assert.strictEqual(result[0].data.to, accounts[1]);
+        assert.strictEqual(result[0].data.value, '99');
+        assert.strictEqual(result[0].data.handled, true);
+    });
     it('Block Timestamp', async function(){
         let result:number = await runWorker('blockTimestamp.ts')
         assert.strictEqual(typeof(result), 'number');
     });
     it('Token Events', async function(){
         let result: Types.IWalletEvent[] = await runWorker('tokenEvents.ts', {
-            contract: ercAddress, 
+            contract: tokenAddress, 
             fromBlock: 1,
             toBlock: 2,
             events: []
@@ -184,7 +206,7 @@ describe('Wallet', function(){
         assert.strictEqual(result.transactions.length, 1);
         let trx = result.transactions[0];
         assert.strictEqual(trx.from, accounts[0]);
-        assert.strictEqual(trx.to, ercAddress);
+        assert.strictEqual(trx.to, tokenAddress);
     });
     it('Send ETH', async function(){
         let result: Types.IWalletTransactionReceipt = await runWorker('sendEth.ts', {

@@ -14,7 +14,8 @@ class Worker implements IWorkerPlugin {
             symbol: data.symbol
         });
         return {
-            address: address
+            address: address,
+            abi: erc20._abi
         };
     };
 };

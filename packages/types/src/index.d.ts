@@ -224,6 +224,12 @@ export interface IWalletEvent {
     data: any;
     rawData: any;
 }
+export interface IWalletTokenInfo{
+    name: string;
+    symbol: string;
+    totalSupply: BigNumber;
+    decimals: number;	
+}
 export interface IWalletPlugin {
     account: IWalletAccount;
     accounts: Promise<string[]>;
@@ -242,11 +248,10 @@ export interface IWalletPlugin {
     getBlockNumber(): Promise<number>;
     getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
     getChainId(): Promise<number>;
-    getContractAbi(address: string);
-    getContractAbiEvents(address: string);		
+    getContractAbi(address: string): any;
+    getContractAbiEvents(address: string): any;
     methods(...args: any): Promise<any>;
-    privateKey: string;
-    provider: any;
+    set privateKey(value: string);
     recoverSigner(msg: string, signature: string): Promise<string>;		
     registerAbi(abi: any[] | string, address?: string|string[], handler?: any): string;
     registerAbiContracts(abiHash: string, address: string|string[], handler?: any): any;
@@ -254,6 +259,7 @@ export interface IWalletPlugin {
     scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<IWalletEvent[]>;		
     signMessage(msg: string): Promise<string>;
     signTransaction(tx: any, privateKey?: string): Promise<string>;
+    tokenInfo(address: string): Promise<IWalletTokenInfo>;
     utils: IWalletUtils;
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;		
 }

@@ -30,6 +30,7 @@ declare class PluginVM {
     vm: VM;
     constructor(options: Types.IPluginOptions);
     setup(): Promise<boolean>;
+    private loadPackage;
     loadDependencies(): Promise<void>;
 }
 declare class RouterPluginVM extends PluginVM implements IRouterPlugin {

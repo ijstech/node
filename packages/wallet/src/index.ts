@@ -1,5 +1,9 @@
-import {Wallet, IAccount} from '@ijstech/eth-wallet';
+import {IWallet, Wallet, IAccount} from '@ijstech/eth-wallet';
 import * as Types from '@ijstech/types';
+function getWalletPlugin(): IWallet{
+    return global.$$wallet_plugin;
+}
+export default getWalletPlugin();
 
 export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequiredPluginOptions): string | Types.IWalletPlugin{
     worker.data = worker.data || {};
@@ -20,6 +24,9 @@ export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequired
             },
             decode(abi:any, event:Types.IWalletEventLog, raw?:{data: string,topics: string[]}): string{
                 return JSON.stringify(wallet.decode(abi, event, raw))
+            },
+            async decodeEventData(data: Types.IWalletLog, events?: any): Promise<string>{
+                return JSON.stringify(await wallet.decodeEventData(data, events))
             },
             decodeLog(inputs: any, hexString: string, topics: any): string{
                 return JSON.stringify(wallet.decodeLog(inputs, hexString, topics));
@@ -50,18 +57,24 @@ export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequired
             },
             async methods(...args: any[]): Promise<string>{
                 return JSON.stringify(await wallet.methods.apply(wallet, args));
+            },            
+            async getBlockNumber(): Promise<number>{
+                return await wallet.getBlockNumber();
+            },
+            async getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>{
+                return await wallet.getBlockTimestamp(blockHashOrBlockNumber)
             },
             getChainId(){   
                 return wallet.chainId
             },
-            async getBlockNumber(): Promise<number>{
-                return await wallet.getBlockNumber();
-            },
-            async getBlockTimestamp(): Promise<number>{
-                return await wallet.getBlockTimestamp()
+            set privateKey(value: string){
+                wallet.privateKey = value;
             },
             async recoverSigner(msg: string, signature: string): Promise<string>{
                 return await wallet.recoverSigner(msg, signature);
+            },
+            registerAbi(abi: any[] | string, address?: string|string[]): string{
+                return wallet.registerAbi(abi, address);
             },
             setChainId(value: number){
                 let network = options.networks[value];
@@ -85,6 +98,18 @@ export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequired
             async signMessage(msg: string): Promise<string>{
                 return await wallet.signMessage(msg)
             },
+            async signTransaction(tx: any, privateKey?: string): Promise<string>{
+                return await wallet.signTransaction(tx, privateKey);
+            },
+            async tokenInfo(address: string): Promise<string>{
+                let result = await wallet.tokenInfo(address);
+                return JSON.stringify({
+                    name: result.name,
+                    symbol: result.symbol,
+                    decimals: result.decimals,
+                    totalSupply: result.totalSupply.toString()
+                });
+            },
             utils_fromWei(value: any, unit?: any): string{
                 return wallet.utils.fromWei(value, unit);
             },
@@ -102,108 +127,8 @@ export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequired
             }     
         });
         return `
-        let BigNumber = global._$$modules['bignumber.js'];
-        global.$$session.plugins.wallet = {
-            get account(){
-                return {
-                    address: global.$$wallet_plugin.getAddress()
-                }
-            },
-            set account(value){
-                global.$$wallet_plugin.setAccount(value);
-            },
-            get accounts(){
-                return new Promise(async (resolve)=>{
-                    let result = await global.$$wallet_plugin.getAccounts()                   
-                    resolve(JSON.parse(result));
-                });
-            },
-            get address(){
-                return global.$$wallet_plugin.getAddress();
-            },
-            get balance(){
-                return new Promise(async (resolve)=>{
-                    let result = await global.$$wallet_plugin.getBalance();                    
-                    resolve(new BigNumber(result));
-                })
-            },
-            balanceOf(address){
-                return new Promise(async (resolve)=>{
-                    let result = await global.$$wallet_plugin.balanceOf(address)
-                    resolve(new BigNumber(result));
-                })
-            },
-            get chainId(){                
-                return global.$$wallet_plugin.getChainId();
-            },
-            set chainId(value){
-                global.$$wallet_plugin.setChainId(value);
-            },
-            createAccount(){                
-                let result = global.$$wallet_plugin.createAccount()
-                return JSON.parse(result);
-            },
-            decode(abi, event, raw){
-                return JSON.parse(global.$$wallet_plugin.decode(abi, event, raw))
-            },
-            decodeLog(inputs, hexString, topics){
-                return JSON.parse(global.$$wallet_plugin.decodeLog(inputs, hexString, topics));
-            },
-            get defaultAccount(){
-                return global.$$wallet_plugin.getDefaultAccount();
-            },
-            set defaultAccount(value){
-                return global.$$wallet_plugin.setDefaultAccount(value);
-            },
-            getAbiEvents(abi){
-                return JSON.parse(global.$$wallet_plugin.getAbiEvents(abi));
-            },
-            getAbiTopics(abi, eventNames){
-                return JSON.parse(global.$$wallet_plugin.getAbiTopics(abi, eventNames));
-            },
-            async getBlock(...args){
-                return JSON.parse(await global.$$wallet_plugin.getBlock.apply(this, args));
-            },
-            async getBlockNumber(){
-                return await global.$$wallet_plugin.getBlockNumber();
-            },
-            async getBlockTimestamp(){
-                return await global.$$wallet_plugin.getBlockTimestamp();
-            },
-            async methods(...args){
-                return JSON.parse(await global.$$wallet_plugin.methods.apply(this, args));
-            },
-            async recoverSigner(...args){
-                return await global.$$wallet_plugin.recoverSigner.apply(this, args);
-            },
-            async send(to, amount){
-                return JSON.parse(await global.$$wallet_plugin.send(to, amount));
-            },
-            async scanEvents(...args){
-                let result = await global.$$wallet_plugin.scanEvents.apply(this, args);
-                return JSON.parse(result);
-            },
-            async signMessage(msg){
-                return await global.$$wallet_plugin.signMessage(msg);
-            },
-            utils: {
-                fromWei(value, unit){
-                    return global.$$wallet_plugin.utils_fromWei(value, unit);
-                },
-                hexToUtf8(value){
-                    return global.$$wallet_plugin.utils.hexToUtf8(value);
-                },
-                toUtf8(value){
-                    return global.$$wallet_plugin.utils.toUtf8(value);
-                },
-                toWei(value, unit){
-                    return global.$$wallet_plugin.utils.toWei(value, unit);
-                }
-            },
-            async verifyMessage(...args){
-                return JSON.parse(await global.$$wallet_plugin.verifyMessage.apply(this, args));
-            }
-        }`
+            global.$$session.plugins.wallet = global._$$modules['@ijstech/wallet'].default;
+        `
     }
     else
         return wallet;

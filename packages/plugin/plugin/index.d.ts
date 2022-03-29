@@ -159,6 +159,12 @@ export interface IWalletUtils{
     toUtf8(value: any): string;		
     toWei(value: string, unit?: string): string;
 }
+export interface IWalletTokenInfo{
+    name: string;
+    symbol: string;
+    totalSupply: BigNumber;
+    decimals: number;	
+}
 export interface IWalletPlugin {
     account: IWalletAccount;
     accounts: Promise<string[]>;
@@ -189,6 +195,7 @@ export interface IWalletPlugin {
     scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<IWalletEvent[]>;		
     signMessage(msg: string): Promise<string>;
     signTransaction(tx: any, privateKey?: string): Promise<string>;
+    tokenInfo(address: string): Promise<IWalletTokenInfo>;
     utils: IWalletUtils;
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;		
 }

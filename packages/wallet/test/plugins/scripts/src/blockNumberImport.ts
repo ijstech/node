@@ -1,9 +1,9 @@
 import {IWorkerPlugin, ISession} from '@ijstech/plugin';
+import Wallet from '@ijstech/wallet';
 
 class Worker implements IWorkerPlugin {
     async process(session: ISession, data: any): Promise<any> {
-        let wallet = session.plugins.wallet;
-        return await wallet.tokenInfo(data.contract);
+        return await Wallet.getBlockNumber();  
     };
 };
 export default Worker;
