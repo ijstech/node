@@ -230,6 +230,7 @@ class PluginVM {
         if (this.options.plugins && this.options.plugins.wallet) {
             await this.loadPackage('bignumber.js');
             await this.loadPackage('@ijstech/wallet');
+            await this.loadPackage('@ijstech/eth-contract');
         }
         ;
         if (this.options.dependencies) {

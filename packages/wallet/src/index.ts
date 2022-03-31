@@ -76,6 +76,9 @@ export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequired
             registerAbi(abi: any[] | string, address?: string|string[]): string{
                 return wallet.registerAbi(abi, address);
             },
+            registerAbiContracts(abiHash: string, address: string|string[]){
+                wallet.registerAbiContracts(abiHash, address)
+            },
             setChainId(value: number){
                 let network = options.networks[value];
                 if (network){

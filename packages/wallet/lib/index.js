@@ -77,6 +77,9 @@ function loadPlugin(worker, options) {
             registerAbi(abi, address) {
                 return wallet.registerAbi(abi, address);
             },
+            registerAbiContracts(abiHash, address) {
+                wallet.registerAbiContracts(abiHash, address);
+            },
             setChainId(value) {
                 let network = options.networks[value];
                 if (network) {

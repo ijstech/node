@@ -58,9 +58,12 @@ export class TContext {
         this.initRecordsets();
         this._client = client;
     };
+    _getRecordSetId(): number{
+        return this._recordSetIdxCount++;
+    };
     private getApplyQueries(recordSet: IRecordSet): any[]{
-        if (!recordSet._id)
-            recordSet._id = this._recordSetIdxCount++;
+        // if (!recordSet._id)
+        //     recordSet._id = this._recordSetIdxCount++;
         let id = recordSet._id;
         if (!this._applyQueries[id])
             this._applyQueries[id] = {
@@ -114,10 +117,10 @@ export class TContext {
         function getQueries(){
             if (recordSet._queries.length > 0){
                 let id = recordSet._id;
-                if (!id){
-                    id = self._recordSetIdxCount++;
-                    recordSet._id = id
-                }
+                // if (!id){
+                //     id = self._recordSetIdxCount++;
+                //     recordSet._id = id
+                // }
                 self._recordSets[id] = recordSet;
                 let fields = recordSet.fields;
                 let qry = {
@@ -320,6 +323,7 @@ export class TRecordSet<T>{
     protected _tableName: string;
     protected _fetchAll: boolean;
     constructor(context: TContext, record: any, tableName: string, master?: IRecord, masterField?: string){
+        this._id = context._getRecordSetId();
         this._context = <any>context;
         this._recordType = record;
         this._tableName = tableName;

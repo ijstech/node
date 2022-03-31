@@ -123,7 +123,7 @@ const Wallet: IWalletPlugin = {
         return hash;
     },
     registerAbiContracts(abiHash: string, address: string|string[], handler?: any){
-        global.$$wallet_plugin.registerAbi(abiHash, address);
+        global.$$wallet_plugin.registerAbiContracts(abiHash, address);
         if (address && handler)
             _registerAbiContracts(abiHash, address, handler);
     },

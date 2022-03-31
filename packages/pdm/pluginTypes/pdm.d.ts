@@ -34,6 +34,7 @@ export declare class TContext {
     private _deletedRecords;
     private _graphql;
     constructor(client?: Types.IDBClient);
+    _getRecordSetId(): number;
     private getApplyQueries;
     private applyDelete;
     private applyInsert;

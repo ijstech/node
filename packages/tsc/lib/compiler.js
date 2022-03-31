@@ -275,8 +275,10 @@ async function PluginScript(plugin) {
     if (plugin.plugins) {
         if (plugin.plugins.db)
             await compiler.addPackage('@ijstech/pdm');
-        if (plugin.plugins.wallet)
+        if (plugin.plugins.wallet) {
             await compiler.addPackage('@ijstech/wallet');
+            await compiler.addPackage('@ijstech/eth-contract');
+        }
     }
     ;
     if (plugin.dependencies) {

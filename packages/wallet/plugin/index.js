@@ -127,7 +127,7 @@ define("plugin", ["require", "exports", "bignumber.js"], function (require, expo
             return hash;
         },
         registerAbiContracts(abiHash, address, handler) {
-            global.$$wallet_plugin.registerAbi(abiHash, address);
+            global.$$wallet_plugin.registerAbiContracts(abiHash, address);
             if (address && handler)
                 _registerAbiContracts(abiHash, address, handler);
         },
