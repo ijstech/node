@@ -21,6 +21,7 @@ class HttpServer {
     constructor(options) {
         this.ssl = {};
         this.app = new koa_1.default();
+        this.app.use(koa_bodyparser_1.default());
         this.options = options;
         this.ciphers = options.ciphers || [
             "ECDHE-RSA-AES256-SHA384",
@@ -140,7 +141,6 @@ class HttpServer {
             return;
         this.running = true;
         if (this.options.port || this.options.securePort) {
-            this.app.use(koa_bodyparser_1.default());
             this.ssl = {};
             let self = this;
             if (this.options.port) {
