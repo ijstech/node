@@ -41,6 +41,7 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
     ;
     ;
     ;
+    ;
     class TContext {
         constructor(client) {
             this._recordSets = {};
@@ -57,6 +58,14 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
             return this._recordSetIdxCount++;
         }
         ;
+        _getSchema() {
+            let result = {};
+            for (let tableName in this.$$records) {
+                let fields = this[tableName]['fields'];
+                result[tableName] = fields;
+            }
+            return result;
+        }
         getApplyQueries(recordSet) {
             let id = recordSet._id;
             if (!this._applyQueries[id])
@@ -105,10 +114,29 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
             ;
         }
         ;
-        get graphql() {
-            if (!this._graphql)
-                this._graphql = new TGraphQL(this, this.$$records, this._client);
-            return this._graphql;
+        async graphQuery(query) {
+            if (global['$$pdm_plugin']) {
+                let result = await global['$$pdm_plugin'].graphQuery(this._getSchema(), query);
+                return JSON.parse(result);
+            }
+            else {
+                console.dir(this._client);
+                if (!this._graphql)
+                    this._graphql = new TGraphQL(this._getSchema(), this._client);
+                return await this._graphql.query(query);
+            }
+        }
+        ;
+        graphIntrospection() {
+            if (global['$$pdm_plugin']) {
+                let result = global['$$pdm_plugin'].graphIntrospection(this._getSchema());
+                return JSON.parse(result);
+            }
+            else {
+                if (!this._graphql)
+                    this._graphql = new TGraphQL(this._getSchema(), this._client);
+                return this._graphql.introspection;
+            }
         }
         ;
         async fetch(recordSet) {
@@ -566,17 +594,15 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
     exports.TRecordSet = TRecordSet;
     ;
     class TGraphQL {
-        constructor(context, records, client) {
-            this._context = context;
-            this.$$records = records;
+        constructor(schema, client) {
             this._client = client;
-            this._schema = this.buildSchema();
+            this._schema = this.buildSchema(schema);
         }
         ;
-        buildSchema() {
+        buildSchema(schema) {
             const rootQueryTypeFields = {};
-            for (const tableName in this.$$records) {
-                const fields = this._context[tableName]['fields'];
+            for (const tableName in schema) {
+                const fields = schema[tableName];
                 const fieldObject = {};
                 const criteria = {};
                 for (const prop in fields) {

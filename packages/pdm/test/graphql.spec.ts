@@ -29,7 +29,7 @@ describe('GraphQL', function() {
     })
     it('GraphQL query by columns', async function(){
         let context = new Context(client);
-        const data = await context.graphql.query(`
+        const data = await context.graphQuery(`
         {
             demo {
                 guid
@@ -62,7 +62,7 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by key field', async function() {
         let context = new Context(client);
-        const data = await context.graphql.query(`
+        const data = await context.graphQuery(`
         {
             demo(guid: "e41bf3e9-93bf-11ec-9918-0242ac120002") {
                 guid
@@ -93,7 +93,7 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by integer field', async function() {
         let context = new Context(client);
-        const data = await context.graphql.query(`
+        const data = await context.graphQuery(`
         {
             demo(integer: 2) {
                 guid
@@ -115,7 +115,7 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by decimal field', async function() {
         let context = new Context(client);
-        const data = await context.graphql.query(`
+        const data = await context.graphQuery(`
         {
             demo(decimal: 1.5) {
                 guid
@@ -137,7 +137,7 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by boolean field', async function() {
         let context = new Context(client);
-        const data = await context.graphql.query(`
+        const data = await context.graphQuery(`
         {
             demo(boolean: true) {
                 guid
@@ -159,7 +159,7 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by date field', async function() {
         let context = new Context(client);
-        const data = await context.graphql.query(`
+        const data = await context.graphQuery(`
         {
             demo(date: "2022-02-25") {
                 guid
@@ -181,7 +181,7 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by text field', async function() {
         let context = new Context(client);
-        const data = await context.graphql.query(`
+        const data = await context.graphQuery(`
         {
             demo(text: "Test") {
                 guid
@@ -205,7 +205,7 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by multiple fields', async function() {
         let context = new Context(client);
-        const data = await context.graphql.query(`
+        const data = await context.graphQuery(`
         {
             demo(text: "Test", size: "13") {
                 guid
@@ -228,7 +228,7 @@ describe('GraphQL', function() {
     });
     it('Validate GraphQL introspection query', async function() {
         let context = new Context(client);
-        const introspection = context.graphql.introspection;
+        const introspection = context.graphIntrospection();
         const types = introspection.__schema.types;
         const tables = context['$$records'];
         const tableNames = Object.keys(context['$$records']);

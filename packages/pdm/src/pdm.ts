@@ -1,4 +1,5 @@
 import * as Types from '@ijstech/types';
+import { resolveObjectURL } from 'buffer';
 import * as GraphQL from "graphql";
 
 function generateUUID() { // Public Domain/MIT
@@ -25,6 +26,8 @@ export interface IRecordSet{
     mergeRecords(data: any): any[];
     reset(): void;
 };
+export interface ISchema {[tableName: string]: Types.IFields};
+
 interface IRecord {
     $$record: any;
     $$proxy: any;
@@ -55,12 +58,20 @@ export class TContext {
     private _deletedRecords = {};
     private _graphql: TGraphQL;
     constructor(client?: Types.IDBClient){
-        this.initRecordsets();
+        this.initRecordsets();        
         this._client = client;
     };
     _getRecordSetId(): number{
         return this._recordSetIdxCount++;
     };
+    _getSchema(): ISchema{
+        let result = {};
+        for(let tableName in this.$$records) {
+            let fields = this[tableName]['fields'];
+            result[tableName] = fields;
+        }
+        return result;
+    }
     private getApplyQueries(recordSet: IRecordSet): any[]{
         // if (!recordSet._id)
         //     recordSet._id = this._recordSetIdxCount++;
@@ -106,10 +117,27 @@ export class TContext {
             t.recordSet = this[n];
         };
     };
-    get graphql(): TGraphQL{
-        if (!this._graphql)
-            this._graphql = new TGraphQL(this, this.$$records, this._client);
-        return this._graphql;
+    async graphQuery(query: string): Promise<any>{        
+        if (global['$$pdm_plugin']){
+            let result = await global['$$pdm_plugin'].graphQuery(this._getSchema(), query);
+            return JSON.parse(result);
+        }
+        else{
+            if (!this._graphql)
+                this._graphql = new TGraphQL(this._getSchema(), this._client);
+            return await this._graphql.query(query);
+        }
+    };
+    graphIntrospection(): any{
+        if (global['$$pdm_plugin']){
+            let result = global['$$pdm_plugin'].graphIntrospection(this._getSchema());
+            return JSON.parse(result);
+        }
+        else{
+            if (!this._graphql)
+                this._graphql = new TGraphQL(this._getSchema(), this._client);
+            return this._graphql.introspection;
+        }
     };
     async fetch(recordSet?: IRecordSet): Promise<any>{
         let queries = [];
@@ -565,25 +593,17 @@ export class TRecordSet<T>{
 };
 export class TGraphQL {
     private _schema: GraphQL.GraphQLSchema;
-    private _introspection: any;
-    private _context: TContext;
+    private _introspection: any;    
     private _client: Types.IDBClient;
-    private $$records: {[name: string]: {
-            tableName: string,
-            recordType: typeof TRecord,
-            recordSetType: typeof TRecordSet,
-            recordSet?: IRecordSet
-        }}
-    constructor(context: TContext, records, client: Types.IDBClient) {
-        this._context = context;
-        this.$$records = records;
+    
+    constructor(schema: ISchema, client: Types.IDBClient) {        
         this._client = client;
-        this._schema = this.buildSchema();
+        this._schema = this.buildSchema(schema);
     };
-    private buildSchema(): GraphQL.GraphQLSchema {
+    private buildSchema(schema: ISchema): GraphQL.GraphQLSchema {
         const rootQueryTypeFields = {};
-        for(const tableName in this.$$records) {
-            const fields = this._context[tableName]['fields'];
+        for(const tableName in schema) {
+            const fields = schema[tableName];
             const fieldObject = {};
             const criteria = {};
             for(const prop in fields) {

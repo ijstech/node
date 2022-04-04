@@ -8,6 +8,9 @@ export interface IRecordSet {
     mergeRecords(data: any): any[];
     reset(): void;
 }
+export interface ISchema {
+    [tableName: string]: Types.IFields;
+}
 interface IRecord {
     $$record: any;
     $$proxy: any;
@@ -35,12 +38,14 @@ export declare class TContext {
     private _graphql;
     constructor(client?: Types.IDBClient);
     _getRecordSetId(): number;
+    _getSchema(): ISchema;
     private getApplyQueries;
     private applyDelete;
     private applyInsert;
     private applyUpdate;
     private initRecordsets;
-    get graphql(): TGraphQL;
+    graphQuery(query: string): Promise<any>;
+    graphIntrospection(): any;
     fetch(recordSet?: IRecordSet): Promise<any>;
     private modifyRecord;
     reset(): void;
@@ -130,10 +135,8 @@ export declare class TRecordSet<T> {
 export declare class TGraphQL {
     private _schema;
     private _introspection;
-    private _context;
     private _client;
-    private $$records;
-    constructor(context: TContext, records: any, client: Types.IDBClient);
+    constructor(schema: ISchema, client: Types.IDBClient);
     private buildSchema;
     query(source: string): Promise<any>;
     get introspection(): any;

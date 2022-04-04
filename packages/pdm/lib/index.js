@@ -25,25 +25,28 @@ const DB = __importStar(require("@ijstech/db"));
 exports.default = PDM;
 function loadPlugin(worker, options) {
     let client;
+    let graphql;
+    if (!client)
+        client = DB.getClient(options[Object.keys(options)[0]]);
+    const plugin = {
+        async applyQueries(queries) {
+            let result = await client.applyQueries(queries);
+            return JSON.stringify(result);
+        },
+        async graphQuery(schema, query) {
+            let graphql = new PDM.TGraphQL(schema, client);
+            return JSON.stringify(await graphql.query(query));
+        },
+        graphIntrospection(schema) {
+            let graphql = new PDM.TGraphQL(schema, client);
+            return JSON.stringify(graphql.introspection);
+        }
+    };
     if (worker.vm) {
-        if (!client)
-            client = DB.getClient(options[Object.keys(options)[0]]);
-        worker.vm.injectGlobalObject('$$pdm_plugin', {
-            async applyQueries(queries) {
-                let result = await client.applyQueries(queries);
-                return JSON.stringify(result);
-            }
-        });
+        worker.vm.injectGlobalObject('$$pdm_plugin', plugin);
     }
     else {
-        if (!client)
-            client = DB.getClient(options[Object.keys(options)[0]]);
-        global['$$pdm_plugin'] = {
-            async applyQueries(queries) {
-                let result = await client.applyQueries(queries);
-                return result;
-            }
-        };
+        global['$$pdm_plugin'] = plugin;
     }
     ;
 }

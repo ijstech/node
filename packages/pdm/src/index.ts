@@ -5,24 +5,27 @@ export default PDM;
 
 export function loadPlugin(worker: Types.IWorker, options: any): any{    
     let client: DB.IClient;
+    let graphql: PDM.TGraphQL;
+    if (!client)
+        client = DB.getClient(options[Object.keys(options)[0]]);
+    const plugin = {
+        async applyQueries(queries: any): Promise<any>{    
+            let result = await client.applyQueries(queries);
+            return JSON.stringify(result);
+        },
+        async graphQuery(schema: PDM.ISchema, query: string): Promise<any>{
+            let graphql = new PDM.TGraphQL(schema, client);
+            return JSON.stringify(await graphql.query(query));
+        },
+        graphIntrospection(schema: PDM.ISchema): any{
+            let graphql = new PDM.TGraphQL(schema, client);
+            return JSON.stringify(graphql.introspection);
+        }
+    }
     if (worker.vm){
-        if (!client)
-            client = DB.getClient(options[Object.keys(options)[0]]);
-        worker.vm.injectGlobalObject('$$pdm_plugin', {
-            async applyQueries(queries: any): Promise<any>{    
-                let result = await client.applyQueries(queries);
-                return JSON.stringify(result);
-            }
-        });
+        worker.vm.injectGlobalObject('$$pdm_plugin', plugin);
     }
     else{
-        if (!client)
-            client = DB.getClient(options[Object.keys(options)[0]]);
-        global['$$pdm_plugin'] = {
-            async applyQueries(queries: any): Promise<any>{
-                let result = await client.applyQueries(queries);
-                return result;
-            }
-        };
+        global['$$pdm_plugin'] = plugin;
     };
 };
