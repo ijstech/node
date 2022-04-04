@@ -1,8 +1,8 @@
 import Types from '@ijstech/types';
 import {IHashedData, hashPassword, randomBytes, randomUUID, verifyPassword} from './crypto';
-export {IHashedData, hashPassword, randomBytes, randomUUID, verifyPassword};
+export default {hashPassword, randomBytes, randomUUID, verifyPassword};
 
-export function loadPlugin(worker: Types.IWorker, options: any): any{
+export function loadPlugin(worker: Types.IWorker, options: any): any{    
     const plugin = {
         async hashPassword(password: string, salt?: string, iterations?: number, keylen?: number, digest?: string): Promise<string>{    
             let result = await hashPassword(password, salt, iterations, keylen, digest);            
