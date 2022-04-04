@@ -1,6 +1,6 @@
-import { IHttpServerOptions } from '@ijstech/http';
-import { ISchedulerOptions } from '@ijstech/schedule';
-import { IQueueOptions } from '@ijstech/queue';
+import { IHttpServerOptions, HttpServer } from '@ijstech/http';
+import { ISchedulerOptions, Scheduler } from '@ijstech/schedule';
+import { IQueueOptions, Queue } from '@ijstech/queue';
 export interface IPlugin {
     scriptPath?: string;
     baseUrl?: string;
@@ -15,10 +15,10 @@ export interface IAppServerOptions {
 }
 export declare class AppServer {
     private options;
-    private httpServer;
-    private scheduler;
-    private queue;
-    private running;
+    httpServer: HttpServer;
+    scheduler: Scheduler;
+    queue: Queue;
+    running: boolean;
     constructor(options: IAppServerOptions);
     start(): Promise<void>;
 }
