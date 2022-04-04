@@ -16,29 +16,32 @@ export interface IAppServerOptions{
 };
 export class AppServer {    
     private options: IAppServerOptions;        
-    private httpServer: HttpServer;    
-    private scheduler: Scheduler;
-    private queue: Queue;
-    private running: boolean;
+    public httpServer: HttpServer;    
+    public scheduler: Scheduler;
+    public queue: Queue;
+    public running: boolean;
 
     constructor(options: IAppServerOptions){
         this.options = options;
+        if (this.options.http && (this.options.http.port || this.options.http.securePort)){
+            this.httpServer = new HttpServer(this.options.http);
+        };
+        if (this.options.schedule){
+            this.scheduler = new Scheduler(this.options.schedule);
+        };
+        if (this.options.queue){
+            this.queue = new Queue(this.options.queue);
+        };
     }
     async start(){
         if (this.running)
             return;                    
-        if (this.options.http && (this.options.http.port || this.options.http.securePort)){
-            this.httpServer = new HttpServer(this.options.http);
+        if (this.options.http && (this.options.http.port || this.options.http.securePort))
             this.httpServer.start();
-        };
-        if (this.options.schedule){
-            this.scheduler = new Scheduler(this.options.schedule);
+        if (this.options.schedule)         
             this.scheduler.start();
-        }
-        if (this.options.queue){
-            this.queue = new Queue(this.options.queue);
+        if (this.options.queue)
             this.queue.start();
-        }
         this.running = true;                
     };
 };
