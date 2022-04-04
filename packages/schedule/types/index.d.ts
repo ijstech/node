@@ -17,7 +17,8 @@ export declare class Scheduler {
     private started;
     private jobs;
     constructor(options: ISchedulerOptions);
+    addJob(job: ISchdeulePluginOptions): void;
     start(): void;
-    private runJOb;
+    private runJob;
     private processJobs;
 }

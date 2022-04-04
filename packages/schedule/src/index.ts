@@ -18,44 +18,51 @@ export class Scheduler {
     private started: boolean;
     private jobs: IScheduleJobOptions[];
     constructor(options: ISchedulerOptions){
+        this.jobs = [];
         this.options = options;     
         this.options.jobs = this.options.jobs || [];   
+        for (let i = 0; i < this.options.jobs.length; i ++)
+            this.addJob(this.options.jobs[i]);
     }
+    addJob(job: ISchdeulePluginOptions){        
+        this.jobs.push(job);
+    };
     start(){
         if (this.started)
-            return;
-        this.started = true;                
-        this.jobs = [];
-        this.options.jobs.forEach((job: IScheduleJobOptions)=>{
-            if (!job.disabled)
-                this.jobs.push(job);
-        })
+            return;        
+        
         if (this.jobs.length == 0)
             return;
+        this.started = true; 
         this.timer = setInterval(()=>{
             this.processJobs();
         }, 500)
     }
-    private async runJOb(job: IScheduleJobOptions){
+    private async runJob(job: IScheduleJobOptions){
         if (!job.next){
             job.next = CronParser.parseExpression(job.cron).next();
-            console.log('Scheduled: ' + job.next.toString() + ' ' + job.scriptPath)
+            console.log('Next Schedule: ' + job.next.toString() + ' ' + job.scriptPath)
         }                
         if (job.next.getTime() < new Date().getTime()){
             job.processing = true;
-            if (!job.plugin){
-                job.plugin = new Worker(job);                    
-                await job.plugin.init(job.params);
+            try{
+                if (!job.plugin){
+                    job.plugin = new Worker(job);                    
+                    await job.plugin.init(job.params);
+                }
+                await job.plugin.process(job.params)
+                job.next = CronParser.parseExpression(job.cron).next();
+                console.log('Next Schedule: ' + job.next.toString() + ' ' + job.scriptPath)
             }
-            await job.plugin.process()
-            job.next = CronParser.parseExpression(job.cron).next();
-            console.log('Scheduled: ' + job.next.toString() + ' ' + job.scriptPath)
+            finally{
+                job.processing = false;
+            }
         }
     }
     private processJobs(){
         this.jobs.forEach(async (job: IScheduleJobOptions)=>{
             if (!job.disabled && !job.processing){     
-                this.runJOb(job);
+                this.runJob(job);
             }
         })        
     }
