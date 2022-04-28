@@ -7,7 +7,7 @@ exports.default = loadModule;
 ;
 function vmConsole(vm) {
     return {
-        log: function (args) {
+        log: function (...args) {
             try {
                 if (Array.isArray(args))
                     console.log.apply(null, args);
