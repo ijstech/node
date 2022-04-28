@@ -5,7 +5,7 @@ export default function loadModule(vm: IVM){
 };
 function vmConsole(vm: IVM){    
     return {
-        log: function(args: any) {            
+        log: function(...args: any[]) {            
             try{
                 if (Array.isArray(args))
                     console.log.apply(null, args) //JSON.parse(args));
