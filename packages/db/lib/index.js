@@ -53,7 +53,12 @@ function getPluginClient(vm, db, client) {
 function loadPlugin(plugin, options, vm) {
     return {
         getConnection(name) {
-            let opt = options[name];
+            let opt;
+            if (name)
+                opt = options[name];
+            else {
+                opt = options[Object.keys(options)[0]];
+            }
             if (vm) {
                 let client = getClient(opt);
                 return getPluginClient(vm, name, client);

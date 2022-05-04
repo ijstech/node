@@ -52,8 +52,13 @@ function getPluginClient(vm: VM, db: string, client: Types.IDBClient): Types.IDB
 }
 export function loadPlugin(plugin: Worker, options: Types.IDBRequiredPluginOptions, vm?: VM): Types.IDBPlugin {
     return {         
-        getConnection(name: string): Types.IDBClient{            
-            let opt = options[name];
+        getConnection(name?: string): Types.IDBClient{            
+            let opt: any;
+            if (name)
+                opt = options[name]
+            else{
+                opt = options[Object.keys(options)[0]]
+            }
             if (vm){                
                 let client = getClient(opt);
                 return getPluginClient(vm, name, client);
