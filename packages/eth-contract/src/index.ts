@@ -61,14 +61,14 @@ export interface TransactionReceipt {
     blockNumber: number;
     from: string;
     to: string;
-    contractAddress: string;
+    contractAddress?: string;
     cumulativeGasUsed: number;
     gasUsed: number;
-    logs ? : Array <Log>;
-    events ? : {
-        [eventName: string]: EventLog | EventLog[]
+    logs?: Array<Log>;
+    events?: {
+        [eventName: string]: EventLog | EventLog[];
     };
-    status: string;
+    status: boolean;
 }
 export interface Transaction{
     to: string;
