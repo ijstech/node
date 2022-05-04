@@ -253,5 +253,5 @@ export interface IDBClient{
     rollback(): Promise<boolean>;
 }
 export interface IDBPlugin{
-    getConnection(name: string): IDBClient;
+    getConnection(name?: string): IDBClient;
 }
