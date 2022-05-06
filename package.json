@@ -19,7 +19,7 @@
         "@ijstech/crypto": "file:./packages/crypto",
         "@ijstech/db": "file:./packages/db",
         "@ijstech/eth-contract": "git+https://github.com/ijstech/eth-contract.git",
-        "@ijstech/eth-wallet": "git+https://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:x-oauth-basic@github.com/ijstech/eth-wallet.git",
+        "@ijstech/eth-wallet": "git+https://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:x-oauth-basic@github.com/ijstech/eth-wallet.git",
         "@ijstech/form": "file:./packages/form",
         "@ijstech/http": "file:./packages/http",
         "@ijstech/message": "file:./packages/message",
