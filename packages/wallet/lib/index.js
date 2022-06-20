@@ -128,6 +128,9 @@ function loadPlugin(worker, options) {
             },
             async verifyMessage(account, msg, signature) {
                 return await wallet.verifyMessage(account, msg, signature);
+            },
+            soliditySha3(...val) {
+                return wallet.soliditySha3(...val);
             }
         });
         return `

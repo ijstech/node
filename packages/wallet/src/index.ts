@@ -116,7 +116,7 @@ export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequired
             utils_fromWei(value: any, unit?: any): string{
                 return wallet.utils.fromWei(value, unit);
             },
-            utils_hexToUtf8(value: string): string{
+            utils_hexToUtf8(value: string): string{          
                 return wallet.utils.hexToUtf8(value);
             },
             utils_toUtf8(value: any): string{
@@ -127,7 +127,10 @@ export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequired
             },
             async verifyMessage(account: string, msg: string, signature: string): Promise<boolean>{
                 return await wallet.verifyMessage(account, msg, signature);
-            }     
+            }, 
+            soliditySha3(...val: any[]): string{
+                return wallet.soliditySha3(...val);
+            }                
         });
         return `
             global.$$session.plugins.wallet = global._$$modules['@ijstech/wallet'].default;
