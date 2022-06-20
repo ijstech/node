@@ -156,14 +156,14 @@ export interface IWalletTransactionReceipt{
     blockNumber: number;
     from: string;
     to: string;
-    contractAddress: string;
+    contractAddress?: string;
     cumulativeGasUsed: number;
     gasUsed: number;
     logs ? : Array <IWalletLog>;
     events ? : {
         [eventName: string]: IWalletEventLog | IWalletEventLog[]
     };
-    status: string;
+    status: boolean;
 }
 export interface IWalletEvent{
     name: string;
