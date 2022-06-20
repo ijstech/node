@@ -261,7 +261,8 @@ export interface IWalletPlugin {
     signTransaction(tx: any, privateKey?: string): Promise<string>;
     tokenInfo(address: string): Promise<IWalletTokenInfo>;
     utils: IWalletUtils;
-    verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;		
+    verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
+    soliditySha3(...val: any[]): string;	
 }
 //Queue Plugin
 export interface IQueuePluginOptions extends IWorkerPluginOptions{

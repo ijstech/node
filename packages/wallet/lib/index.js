@@ -17,7 +17,6 @@ function loadPlugin(worker, options) {
             async balanceOf(address) {
                 let result = await wallet.balanceOf(address);
                 return result.toString();
-                wallet.provider;
             },
             createAccount() {
                 let result = wallet.createAccount();

@@ -16,7 +16,6 @@ export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequired
             async balanceOf(address: string): Promise<string>{
                 let result = await wallet.balanceOf(address);
                 return result.toString();
-                wallet.provider
             },
             createAccount(): string{
                 let result = wallet.createAccount();

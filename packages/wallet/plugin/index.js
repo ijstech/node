@@ -174,6 +174,9 @@ define("plugin", ["require", "exports", "bignumber.js"], function (require, expo
         },
         async verifyMessage(account, msg, signature) {
             return await global.$$wallet_plugin.verifyMessage(account, msg, signature);
+        },
+        soliditySha3(...val) {
+            return global.$$wallet_plugin.soliditySha3(...val);
         }
     };
     exports.default = Wallet;
