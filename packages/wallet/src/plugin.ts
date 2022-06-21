@@ -170,6 +170,9 @@ const Wallet: IWalletPlugin = {
     },
     async verifyMessage(account: string, msg: string, signature: string): Promise<boolean>{
         return await global.$$wallet_plugin.verifyMessage(account, msg, signature);
+    },
+    soliditySha3(...val: any[]): string{
+        return global.$$wallet_plugin.soliditySha3(...val);
     }
 };
 export default Wallet;
