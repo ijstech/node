@@ -10,8 +10,8 @@ const path_1 = __importDefault(require("path"));
 const Libs = {};
 const RootPath = path_1.default.dirname(require.main.filename);
 async function getPackageScriptDir(filePath) {
+    let path = resolveFilePath([RootPath], filePath, true);
     try {
-        let path = resolveFilePath([RootPath], filePath, true);
         let text = await fs_1.default.promises.readFile(path + '/package.json', 'utf8');
         if (text) {
             let pack = JSON.parse(text);
@@ -20,6 +20,7 @@ async function getPackageScriptDir(filePath) {
         }
     }
     catch (err) { }
+    return path;
 }
 ;
 function resolveFilePath(rootPaths, filePath, allowsOutsideRootPath) {

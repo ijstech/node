@@ -6,16 +6,17 @@ import Path, { resolve } from 'path';
 const Libs = {};
 const RootPath = Path.dirname(require.main.filename);
 async function getPackageScriptDir(filePath: string): Promise<any>{
-    try{
-        let path = resolveFilePath([RootPath], filePath, true);
+    let path = resolveFilePath([RootPath], filePath, true);
+    try{        
         let text = await Fs.promises.readFile(path + '/package.json', 'utf8');
         if (text){
             let pack = JSON.parse(text);
             if (pack.directories.bin)
-                return resolveFilePath([path], pack.directories.bin);
+                return resolveFilePath([path], pack.directories.bin);            
         }
     }
     catch(err){}
+    return path;
 };
 export function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string{    
     let rootPath = Path.resolve(...rootPaths);    
