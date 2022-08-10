@@ -1,0 +1,26 @@
+<html>
+    <head>
+        <script src="../src/ipfs.js"></script>
+    </head>
+    <body>
+        <script>
+            async function test(){
+                try{
+                    let cid = await IPFSUtils.hashContent('Hello World!', 0);
+                    console.log(cid, 'Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy', cid=='Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy');
+                    if (cid!='Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy')
+                        alert('failed')
+                    cid = await IPFSUtils.hashContent('Hello World!', 1);
+                    console.log(cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne', cid=='bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
+                    if (cid!='bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne')
+                        alert('failed')
+                }
+                catch(err){
+                    console.dir(err)
+                    alert('failed')
+                }
+            };
+            test();
+        </script>
+    </body>
+</html>

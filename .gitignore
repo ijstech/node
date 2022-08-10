@@ -1,4 +1,5 @@
 package-lock.json
+script/script.json
 *.tsbuildinfo
 node_modules
 config.js

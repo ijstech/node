@@ -1,0 +1,11 @@
+{
+    "name": "@ijstech/ipfs-utils",
+    "version": "0.1.0",
+    "main": "./lib/index.js",
+    "types": "./types/index.d.ts",
+    "scripts": {
+        "build": "npm run clean && tsc && node tools/bundle",
+        "clean": "rm -f tsconfig.tsbuildinfo && rm -rf lib && rm -rf dist && rm -rf types",
+        "test": "mocha --exit --require ts-node/register test/*.spec.ts"
+    }
+}
