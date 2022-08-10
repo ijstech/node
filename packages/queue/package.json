@@ -3,11 +3,9 @@
     "description": "Job Queue plugin",
     "version": "0.1.0",
     "main": "./lib/index.js",
-    "types": "./types/index.d.ts",    
-    "dependencies": {
-        "bee-queue": "1.4.0"
-    },
+    "types": "./types/index.d.ts",
     "scripts": {
-        "build": "rm -rf lib && rm -rf types && rm -f tsconfig.tsbuildinfo && tsc"
+        "build": "rm -rf lib && rm -rf types && rm -f tsconfig.tsbuildinfo && tsc && node tools/bundle.js",
+        "test": "mocha --exit --require ts-node/register test/*.spec.ts"
     }
 }

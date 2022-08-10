@@ -1,10 +1,15 @@
 "use strict";
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getJobQueue = exports.JobQueue = void 0;
-const bee_queue_1 = __importDefault(require("bee-queue"));
+const bee_queue_1 = __importDefault(require("./bee-queue"));
 ;
 let Queues = {};
 ;
@@ -17,7 +22,6 @@ class JobQueue {
     async createJob(data, waitForResult, timeout, retries) {
         return new Promise(async (resolve) => {
             let job = this._queue.createJob(data).retries(retries || 5);
-            let result = await job.save();
             if (waitForResult) {
                 job.on('succeeded', (result) => {
                     resolve({
@@ -35,7 +39,9 @@ class JobQueue {
                     });
                 });
             }
-            else
+            ;
+            let result = await job.save();
+            if (!waitForResult)
                 resolve({
                     id: result.id,
                     progress: result.progress,

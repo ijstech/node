@@ -1,4 +1,10 @@
-import Queue from 'bee-queue';
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+
+import Queue from './bee-queue';
 import * as Types from '@ijstech/types';
 
 type Job = Queue.Job<any>;
@@ -16,6 +22,7 @@ export interface IJob{
     status: string;
     result?: any;
 };
+type DoneCallback<T> = (error: Error | null, result?: T) => void;
 export class JobQueue{    
     private _options: any;
     private _queue: Queue;
@@ -26,7 +33,6 @@ export class JobQueue{
     async createJob(data: any, waitForResult?: boolean, timeout?: number, retries?: number): Promise<IJob>{        
         return new Promise(async (resolve)=>{
             let job = this._queue.createJob(data).retries(retries || 5);
-            let result = await job.save();            
             if (waitForResult){
                 job.on('succeeded', (result)=>{                    
                     resolve({
@@ -43,8 +49,9 @@ export class JobQueue{
                         status: 'failed'
                     })
                 });
-            }
-            else
+            };
+            let result = await job.save();            
+            if (!waitForResult)                
                 resolve({
                     id: result.id,
                     progress: result.progress,
@@ -52,7 +59,7 @@ export class JobQueue{
                 })
         });
     };
-    processJob(handler: (job: Queue.Job<any>)=>Promise<any>){        
+    processJob(handler: (job: Queue.Job<any>)=>Promise<any>){
         this._queue.process(handler);
     };
 };

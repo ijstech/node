@@ -1,9 +1,15 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 import { Worker } from '@ijstech/plugin';
 import { Message } from '@ijstech/message';
 import { VM } from '@ijstech/vm';
-import { JobQueue } from './jobQueue';
+import { getJobQueue, JobQueue } from './jobQueue';
 import * as Types from '@ijstech/types';
 export { IQueueOptions } from '@ijstech/types';
+export { getJobQueue };
 interface IQueueWorkerOptions extends Types.IQueuePluginOptions {
     plugin?: Worker;
     queue?: JobQueue;

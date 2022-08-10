@@ -1,9 +1,15 @@
 "use strict";
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loadPlugin = exports.Queue = void 0;
+exports.loadPlugin = exports.Queue = exports.getJobQueue = void 0;
 const plugin_1 = require("@ijstech/plugin");
 const message_1 = require("@ijstech/message");
 const jobQueue_1 = require("./jobQueue");
+Object.defineProperty(exports, "getJobQueue", { enumerable: true, get: function () { return jobQueue_1.getJobQueue; } });
 class Queue {
     constructor(options) {
         this.options = options;
