@@ -1,5 +1,4 @@
 import {Worker} from '../src';
-import Types from '@ijstech/types';
 import assert from "assert";
 
 let script = `define("index", ["require", "exports", "bignumber.js"], function (require, exports, bignumber) {
@@ -8,13 +7,13 @@ let script = `define("index", ["require", "exports", "bignumber.js"], function (
     class Worker {             
         async process(session, data) {
             let BigNumber = bignumber.BigNumber;  
-            return new BigNumber('123').toNumber();
+            return new BigNumber(data.v1).plus(data.v2).toNumber();
         }
     }
     exports.default = Worker;
 });
-`
-let opt = Types.IWorkerPlugin;
+`;
+
 describe('Worker', function() {    
     it('Process', async function(){
         let worker = new Worker({
@@ -23,7 +22,7 @@ describe('Worker', function() {
                 'bignumber.js': {}
             }
         })        
-        let result = await worker.process();
-        assert.strictEqual(result, 123);
+        let result = await worker.process({v1: 1, v2: 2});
+        assert.strictEqual(result, 3);
     })
 })
