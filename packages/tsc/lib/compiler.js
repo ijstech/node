@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PluginScript = exports.WalletPluginCompiler = exports.PluginCompiler = exports.Compiler = exports.resolveFilePath = void 0;
+exports.PluginScript = exports.WalletPluginCompiler = exports.PluginCompiler = exports.Compiler = exports.resolveAbsolutePath = exports.resolveFilePath = void 0;
 const fs_1 = __importDefault(require("fs"));
 const typescript_1 = __importDefault(require("typescript"));
 const path_1 = __importDefault(require("path"));
@@ -52,6 +52,7 @@ function getPackageDir(pack) {
     else
         return getPackageDir(dir);
 }
+;
 async function getPackageInfo(packName) {
     try {
         let path = getPackageDir(packName);
@@ -73,6 +74,25 @@ async function getPackageInfo(packName) {
         dts: { "index.d.ts": 'declare const m: any; export default m;' }
     };
 }
+;
+function resolveAbsolutePath(baseFilePath, relativeFilePath) {
+    let basePath = baseFilePath.split('/').slice(0, -1).join('/');
+    if (basePath)
+        basePath += '/';
+    let fullPath = basePath + relativeFilePath;
+    return fullPath.split('/')
+        .reduce((result, value) => {
+        if (value === '.') { }
+        else if (value === '..')
+            result.pop();
+        else
+            result.push(value);
+        return result;
+    }, [])
+        .join('/');
+}
+exports.resolveAbsolutePath = resolveAbsolutePath;
+;
 class Compiler {
     constructor() {
         this.packages = {};
@@ -134,9 +154,56 @@ class Compiler {
         this.addFileContent(fileName || 'index.ts', content);
     }
     ;
-    addFileContent(fileName, content) {
+    async importDependencies(fileName, content, fileImporter, result) {
+        if (!content)
+            return;
+        let ast = typescript_1.default.createSourceFile(fileName, content, typescript_1.default.ScriptTarget.ES2017, true);
+        result = result || [];
+        for (let i = 0; i < ast.statements.length; i++) {
+            let node = ast.statements[i];
+            if (node.kind == typescript_1.default.SyntaxKind.ImportDeclaration || node.kind == typescript_1.default.SyntaxKind.ExportDeclaration) {
+                if (node.moduleSpecifier) {
+                    let module = node.moduleSpecifier.text;
+                    if (module.startsWith('.')) {
+                        let filePath = resolveAbsolutePath(fileName, module);
+                        if (this.files[filePath] == undefined && this.files[filePath + '.ts'] == undefined && this.files[filePath + '.tsx'] == undefined) {
+                            let file = await fileImporter(filePath);
+                            if (file) {
+                                result.push(file.fileName);
+                                this.files[file.fileName] = file.content;
+                                this.fileNames.push(file.fileName);
+                                await this.importDependencies(file.fileName, file.content, fileImporter, result);
+                            }
+                        }
+                    }
+                    else if (!this.packages[module]) {
+                        let file = await fileImporter(module);
+                        if (file) {
+                            result.push(module);
+                            let pack = {
+                                dts: {
+                                    [file.fileName]: file.content
+                                },
+                                version: ''
+                            };
+                            this.addPackage(module, pack);
+                        }
+                        ;
+                    }
+                    ;
+                }
+            }
+        }
+        ;
+        return result;
+    }
+    async addFileContent(fileName, content, dependenciesImporter) {
         this.files[fileName] = content;
         this.fileNames.push(fileName);
+        if (dependenciesImporter)
+            return await this.importDependencies(fileName, content, dependenciesImporter);
+        else
+            return this.fileNames;
     }
     ;
     async addPackage(packName, pack) {

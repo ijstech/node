@@ -58,7 +58,7 @@ function getPackageDir(pack: string): string{
         return dir
     else
         return getPackageDir(dir);
-}
+};
 async function getPackageInfo(packName: string): Promise<IPackage>{
     try{
         let path = getPackageDir(packName);
@@ -78,7 +78,24 @@ async function getPackageInfo(packName: string): Promise<IPackage>{
         version: '*',
         dts: {"index.d.ts": 'declare const m: any; export default m;'}
     };
-}
+};
+export function resolveAbsolutePath(baseFilePath: string, relativeFilePath: string): string{    
+    let basePath = baseFilePath.split('/').slice(0,-1).join('/');    
+    if (basePath)
+        basePath += '/';
+    let fullPath = basePath + relativeFilePath;    
+    return fullPath.split('/')
+        .reduce((result: string[], value: string) => {
+            if (value === '.'){}
+            else if (value === '..') 
+                result.pop()
+            else 
+                result.push(value);
+            return result;
+        }, [])
+        .join('/');
+};
+export type FileImporter = (fileName: string) => Promise<{fileName: string, content: string}|null>;
 export class Compiler {
     private scriptOptions: TS.CompilerOptions;
     private dtsOptions: TS.CompilerOptions;
@@ -142,9 +159,58 @@ export class Compiler {
         let content = await Fs.promises.readFile(filePath, 'utf8');        
         this.addFileContent(fileName || 'index.ts', content);
     };
-    addFileContent(fileName: string, content: string) {
+    private async importDependencies(fileName: string, content: string, fileImporter: FileImporter, result?: string[]): Promise<string[]>{
+        if (!content)
+            return;
+        let ast = TS.createSourceFile(
+            fileName,
+            content,
+            TS.ScriptTarget.ES2017,
+            true
+        );
+        result = result || [];
+        for (let i = 0; i < ast.statements.length; i ++){
+            let node = ast.statements[i];                        
+            if (node.kind == TS.SyntaxKind.ImportDeclaration || node.kind == TS.SyntaxKind.ExportDeclaration){
+                if ((node as any).moduleSpecifier){
+                    let module = (<TS.LiteralLikeNode>(node as any).moduleSpecifier).text;
+                    if (module.startsWith('.')){                    
+                        let filePath = resolveAbsolutePath(fileName, module);
+                        if (this.files[filePath] == undefined && this.files[filePath + '.ts'] == undefined && this.files[filePath + '.tsx'] == undefined){                        
+                            let file = await fileImporter(filePath);
+                            if (file){
+                                result.push(file.fileName);
+                                this.files[file.fileName] = file.content;
+                                this.fileNames.push(file.fileName);
+                                await this.importDependencies(file.fileName, file.content, fileImporter, result);
+                            }                        
+                        }
+                    }
+                    else if (!this.packages[module]){
+                        let file = await fileImporter(module);
+                        if (file){
+                            result.push(module);
+                            let pack: IPackage = {
+                                dts: {
+                                    [file.fileName]: file.content
+                                },
+                                version: ''
+                            };
+                            this.addPackage(module, pack);
+                        };
+                    }; 
+                } 
+            }            
+        };
+        return result;
+    }
+    async addFileContent(fileName: string, content: string, dependenciesImporter?: FileImporter): Promise<string[]> {
         this.files[fileName] = content;
         this.fileNames.push(fileName);
+        if (dependenciesImporter)
+            return await this.importDependencies(fileName, content, dependenciesImporter)
+        else
+            return this.fileNames;
     };   
     async addPackage(packName: string, pack?: IPackage): Promise<IPackage> {
         if (!pack){                        

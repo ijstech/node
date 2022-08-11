@@ -23,6 +23,11 @@ interface IPackage {
     };
     version: string;
 }
+export declare function resolveAbsolutePath(baseFilePath: string, relativeFilePath: string): string;
+export declare type FileImporter = (fileName: string) => Promise<{
+    fileName: string;
+    content: string;
+} | null>;
 export declare class Compiler {
     private scriptOptions;
     private dtsOptions;
@@ -33,7 +38,8 @@ export declare class Compiler {
     constructor();
     addDirectory(dir: string, parentDir?: string, packName?: string): Promise<{}>;
     addFile(filePath: string, fileName?: string): Promise<void>;
-    addFileContent(fileName: string, content: string): void;
+    private importDependencies;
+    addFileContent(fileName: string, content: string, dependenciesImporter?: FileImporter): Promise<string[]>;
     addPackage(packName: string, pack?: IPackage): Promise<IPackage>;
     compile(emitDeclaration?: boolean): Promise<ICompilerResult>;
     fileExists(fileName: string): boolean;
