@@ -4,12 +4,10 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 
-import {Worker, IWorkerPluginOptions} from '@ijstech/plugin';
+import {Worker} from '@ijstech/plugin';
 import {Message} from '@ijstech/message';
-import {VM} from '@ijstech/vm';
 import {getJobQueue, JobQueue} from './jobQueue';
 import * as Types from '@ijstech/types';
-export {IQueueOptions} from '@ijstech/types';
 export {getJobQueue};
 
 interface IQueueWorkerOptions extends Types.IQueuePluginOptions{
@@ -50,7 +48,7 @@ export class Queue {
         };
     };
 }
-export function loadPlugin(plugin: Worker, options: Types.IQueueRequiredPluginOptions, vm?: VM): Types.IQueuePlugin{
+export function loadPlugin(plugin: Worker, options: Types.IQueueRequiredPluginOptions, vm?: Types.VM): Types.IQueuePlugin{
     return {
         createJob: async function (queue: string|number, data: any, waitForResult?:boolean, timeout?: number, retries?: number): Promise<Types.IQueueJob>{            
             if (typeof (queue) == 'number')
