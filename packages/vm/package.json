@@ -3,10 +3,7 @@
     "version": "0.1.0",
     "description": "Virtual Machine plugin",
     "main": "./lib/index.js",
-    "types": "./types/index.d.ts",
-    "dependencies": {
-        "isolated-vm": "4.3.6"
-    },
+    "types": "./types/index.d.ts",    
     "scripts": {
         "build": "rm -f tsconfig.tsbuildinfo && rm -rf lib && rm -rf types && tsc"
     }
