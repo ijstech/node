@@ -1,3 +1,8 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 import * as PDM from './pdm';
 import * as Types from '@ijstech/types';
 import * as DB from '@ijstech/db';
