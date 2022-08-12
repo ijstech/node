@@ -3,6 +3,7 @@ import {IPluginOptions} from '@ijstech/types';
 import Fs from 'fs';
 import TS from "typescript";
 import Path, { resolve } from 'path';
+import { inherits } from 'util';
 const Libs = {};
 const RootPath = Path.dirname(require.main.filename);
 async function getPackageScriptDir(filePath: string): Promise<any>{
@@ -43,11 +44,12 @@ export interface ICompilerError {
 export interface ICompilerResult {
     errors: ICompilerError[];
     script: string;
-    dts: {[file: string]: string};
+    dts: string;//{[file: string]: string};
 };
 interface IPackage{
     path?: string;
-    dts: {[file: string]: string},
+    dts?: string;//{[file: string]: string},
+    script?: string;
     version: string,
 }
 function getPackageDir(pack: string): string{
@@ -67,7 +69,7 @@ async function getPackageInfo(packName: string): Promise<IPackage>{
         return {
             version: pack.version,
             path: Path.dirname(Path.join(path, pack.pluginTypes || pack.types)),
-            dts: {"index.d.ts": content}
+            dts: content//{"index.d.ts": content}
         };
     }
     catch(err){
@@ -76,7 +78,7 @@ async function getPackageInfo(packName: string): Promise<IPackage>{
     };
     return {
         version: '*',
-        dts: {"index.d.ts": 'declare const m: any; export default m;'}
+        dts: 'declare const m: any; export default m;'//{"index.d.ts": 'declare const m: any; export default m;'}
     };
 };
 export function resolveAbsolutePath(baseFilePath: string, relativeFilePath: string): string{    
@@ -95,14 +97,14 @@ export function resolveAbsolutePath(baseFilePath: string, relativeFilePath: stri
         }, [])
         .join('/');
 };
-export type FileImporter = (fileName: string) => Promise<{fileName: string, content: string}|null>;
+export type FileImporter = (fileName: string, isPackage?: boolean) => Promise<{fileName: string, script: string, dts?: string}|null>;
 export class Compiler {
     private scriptOptions: TS.CompilerOptions;
     private dtsOptions: TS.CompilerOptions;
     private files: { [name: string]: string };
     private packageFiles: {[name: string]: string};
     private fileNames: string[];
-    private packages: {[index: string]: IPackage} = {};
+    private packages: {[index: string]: IPackage} ;
 
     constructor() {
         this.scriptOptions = {            
@@ -122,14 +124,13 @@ export class Compiler {
             declaration: true,       
             emitDeclarationOnly: true,
             experimentalDecorators: true,     
-            resolveJsonModule: false,            
-            module: TS.ModuleKind.CommonJS,
+            resolveJsonModule: false,  
+            outFile: 'index.js',
+            module: TS.ModuleKind.AMD,
             noEmitOnError: true,
-            target: TS.ScriptTarget.ES2017
+            target: TS.ScriptTarget.ES5
         };
-        this.files = {};
-        this.packageFiles = {};
-        this.fileNames = [];
+        this.reset();
     };
     async addDirectory(dir: string, parentDir?: string, packName?: string){  
         packName = packName || '';
@@ -180,20 +181,21 @@ export class Compiler {
                             let file = await fileImporter(filePath);
                             if (file){
                                 result.push(file.fileName);
-                                this.files[file.fileName] = file.content;
+                                this.files[file.fileName] = file.script;
                                 this.fileNames.push(file.fileName);
-                                await this.importDependencies(file.fileName, file.content, fileImporter, result);
-                            }                        
+                                await this.importDependencies(file.fileName, file.script, fileImporter, result);
+                            }
                         }
                     }
                     else if (!this.packages[module]){
-                        let file = await fileImporter(module);
+                        let file = await fileImporter(module, true);
                         if (file){
                             result.push(module);
                             let pack: IPackage = {
-                                dts: {
+                                script: file.script,
+                                dts: file.dts,/*{
                                     [file.fileName]: file.content
-                                },
+                                },*/
                                 version: ''
                             };
                             this.addPackage(module, pack);
@@ -204,8 +206,11 @@ export class Compiler {
         };
         return result;
     }
-    async addFileContent(fileName: string, content: string, dependenciesImporter?: FileImporter): Promise<string[]> {
-        this.files[fileName] = content;
+    async addFileContent(fileName: string, content: string, packageName?: string, dependenciesImporter?: FileImporter): Promise<string[]> {
+        if (packageName)
+            this.files[fileName] = `///<amd-module name='${packageName}'/> \n` + content
+        else
+            this.files[fileName] = content;
         this.fileNames.push(fileName);
         if (dependenciesImporter)
             return await this.importDependencies(fileName, content, dependenciesImporter)
@@ -213,6 +218,9 @@ export class Compiler {
             return this.fileNames;
     };   
     async addPackage(packName: string, pack?: IPackage): Promise<IPackage> {
+        if (this.packages[packName])
+            return this.packages[packName];
+            
         if (!pack){                        
             pack = this.packages[packName];
             if (!pack){
@@ -224,23 +232,24 @@ export class Compiler {
             this.packages[packName] = pack;
         if (pack.path)
             await this.addDirectory(pack.path, '', packName);
-        for (let n in pack.dts){
-            this.packageFiles[packName + '/' + n] = pack.dts[n];
-        }
+        this.packageFiles[packName + '/index.d.ts'] = pack.dts;
+        // for (let n in pack.dts){
+        //     this.packageFiles[packName + '/' + n] = pack.dts[n];
+        // }
         return this.packages[packName];
     };
     async compile(emitDeclaration?: boolean): Promise<ICompilerResult> {
         let result: ICompilerResult = {
             errors: [],
             script: null,
-            dts: {},
+            dts: '',
         }
         const host = {
             getSourceFile: this.getSourceFile.bind(this),
             getDefaultLibFileName: () => "lib.d.ts",
             writeFile: (fileName: string, content: string) => {
                 if (fileName.endsWith('d.ts'))
-                    result.dts[fileName] = content;
+                    result.dts = content;
                 else
                     result.script = content;
             },
@@ -291,6 +300,12 @@ export class Compiler {
     readFile(fileName: string): string | undefined {
         return;
     };
+    reset(){
+        this.files = {};
+        this.packageFiles = {};
+        this.fileNames = [];
+        this.packages = {};
+    };
     resolveModuleNames(moduleNames: string[], containingFile: string): TS.ResolvedModule[] {
         let resolvedModules: TS.ResolvedModule[] = [];
         for (const moduleName of moduleNames) {
@@ -314,18 +329,35 @@ export class Compiler {
     };
 };
 export class PluginCompiler extends Compiler{
-    async compile(emitDeclaration?: boolean): Promise<ICompilerResult>{        
+    static async instance(){
+        let self = new this();
+        await self.init();
+        return self;
+    }
+    async init(){
         await this.addPackage('@ijstech/plugin');
         await this.addPackage('@ijstech/types');
         await this.addPackage('bignumber.js')
+    }
+    async compile(emitDeclaration?: boolean): Promise<ICompilerResult>{        
+        await this.init();
         return super.compile(emitDeclaration);
     }
 };
 export class WalletPluginCompiler extends PluginCompiler{
-    async compile(emitDeclaration?: boolean): Promise<ICompilerResult>{
+    static async instance(){
+        let self = new this();
+        await self.init();
+        return self;
+    };
+    async init(){
+        await super.init();
         await this.addPackage('@ijstech/eth-contract');
+    };
+    async compile(emitDeclaration?: boolean): Promise<ICompilerResult>{        
+        await this.init();
         return super.compile(emitDeclaration);
-    }
+    };
 };
 export async function PluginScript(plugin: IPluginOptions): Promise<string>{
     if (plugin.script)

@@ -61,7 +61,7 @@ async function getPackageInfo(packName) {
         return {
             version: pack.version,
             path: path_1.default.dirname(path_1.default.join(path, pack.pluginTypes || pack.types)),
-            dts: { "index.d.ts": content }
+            dts: content
         };
     }
     catch (err) {
@@ -71,7 +71,7 @@ async function getPackageInfo(packName) {
     ;
     return {
         version: '*',
-        dts: { "index.d.ts": 'declare const m: any; export default m;' }
+        dts: 'declare const m: any; export default m;'
     };
 }
 ;
@@ -95,7 +95,6 @@ exports.resolveAbsolutePath = resolveAbsolutePath;
 ;
 class Compiler {
     constructor() {
-        this.packages = {};
         this.scriptOptions = {
             allowJs: false,
             alwaysStrict: true,
@@ -114,13 +113,12 @@ class Compiler {
             emitDeclarationOnly: true,
             experimentalDecorators: true,
             resolveJsonModule: false,
-            module: typescript_1.default.ModuleKind.CommonJS,
+            outFile: 'index.js',
+            module: typescript_1.default.ModuleKind.AMD,
             noEmitOnError: true,
-            target: typescript_1.default.ScriptTarget.ES2017
+            target: typescript_1.default.ScriptTarget.ES5
         };
-        this.files = {};
-        this.packageFiles = {};
-        this.fileNames = [];
+        this.reset();
     }
     ;
     async addDirectory(dir, parentDir, packName) {
@@ -170,20 +168,19 @@ class Compiler {
                             let file = await fileImporter(filePath);
                             if (file) {
                                 result.push(file.fileName);
-                                this.files[file.fileName] = file.content;
+                                this.files[file.fileName] = file.script;
                                 this.fileNames.push(file.fileName);
-                                await this.importDependencies(file.fileName, file.content, fileImporter, result);
+                                await this.importDependencies(file.fileName, file.script, fileImporter, result);
                             }
                         }
                     }
                     else if (!this.packages[module]) {
-                        let file = await fileImporter(module);
+                        let file = await fileImporter(module, true);
                         if (file) {
                             result.push(module);
                             let pack = {
-                                dts: {
-                                    [file.fileName]: file.content
-                                },
+                                script: file.script,
+                                dts: file.dts,
                                 version: ''
                             };
                             this.addPackage(module, pack);
@@ -197,8 +194,11 @@ class Compiler {
         ;
         return result;
     }
-    async addFileContent(fileName, content, dependenciesImporter) {
-        this.files[fileName] = content;
+    async addFileContent(fileName, content, packageName, dependenciesImporter) {
+        if (packageName)
+            this.files[fileName] = `///<amd-module name='${packageName}'/> \n` + content;
+        else
+            this.files[fileName] = content;
         this.fileNames.push(fileName);
         if (dependenciesImporter)
             return await this.importDependencies(fileName, content, dependenciesImporter);
@@ -207,6 +207,8 @@ class Compiler {
     }
     ;
     async addPackage(packName, pack) {
+        if (this.packages[packName])
+            return this.packages[packName];
         if (!pack) {
             pack = this.packages[packName];
             if (!pack) {
@@ -219,9 +221,7 @@ class Compiler {
             this.packages[packName] = pack;
         if (pack.path)
             await this.addDirectory(pack.path, '', packName);
-        for (let n in pack.dts) {
-            this.packageFiles[packName + '/' + n] = pack.dts[n];
-        }
+        this.packageFiles[packName + '/index.d.ts'] = pack.dts;
         return this.packages[packName];
     }
     ;
@@ -229,14 +229,14 @@ class Compiler {
         let result = {
             errors: [],
             script: null,
-            dts: {},
+            dts: '',
         };
         const host = {
             getSourceFile: this.getSourceFile.bind(this),
             getDefaultLibFileName: () => "lib.d.ts",
             writeFile: (fileName, content) => {
                 if (fileName.endsWith('d.ts'))
-                    result.dts[fileName] = content;
+                    result.dts = content;
                 else
                     result.script = content;
             },
@@ -291,6 +291,13 @@ class Compiler {
         return;
     }
     ;
+    reset() {
+        this.files = {};
+        this.packageFiles = {};
+        this.fileNames = [];
+        this.packages = {};
+    }
+    ;
     resolveModuleNames(moduleNames, containingFile) {
         let resolvedModules = [];
         for (const moduleName of moduleNames) {
@@ -319,20 +326,40 @@ class Compiler {
 exports.Compiler = Compiler;
 ;
 class PluginCompiler extends Compiler {
-    async compile(emitDeclaration) {
+    static async instance() {
+        let self = new this();
+        await self.init();
+        return self;
+    }
+    async init() {
         await this.addPackage('@ijstech/plugin');
         await this.addPackage('@ijstech/types');
         await this.addPackage('bignumber.js');
+    }
+    async compile(emitDeclaration) {
+        await this.init();
         return super.compile(emitDeclaration);
     }
 }
 exports.PluginCompiler = PluginCompiler;
 ;
 class WalletPluginCompiler extends PluginCompiler {
-    async compile(emitDeclaration) {
+    static async instance() {
+        let self = new this();
+        await self.init();
+        return self;
+    }
+    ;
+    async init() {
+        await super.init();
         await this.addPackage('@ijstech/eth-contract');
+    }
+    ;
+    async compile(emitDeclaration) {
+        await this.init();
         return super.compile(emitDeclaration);
     }
+    ;
 }
 exports.WalletPluginCompiler = WalletPluginCompiler;
 ;
