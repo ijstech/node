@@ -6,7 +6,6 @@ import * as Types from '@ijstech/types';
 export {BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions} from '@ijstech/types';
 import Github from './github';
 import {PluginCompiler, PluginScript} from '@ijstech/tsc';
-import { throws } from 'assert';
 
 const RootPath = Path.dirname(require.main.filename);
 let Modules = {};

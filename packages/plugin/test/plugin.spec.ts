@@ -1,28 +1,63 @@
 import {Worker} from '../src';
 import assert from "assert";
+import {Compiler, PluginCompiler, PluginScript} from '@ijstech/tsc';
+import Path from 'path';
+import {promises as Fs} from 'fs';
+import { stringify } from 'querystring';
+async function getScript(rootPath: string, fileName: string): Promise<string>{
+    try{
+        let filePath = Path.resolve(__dirname, rootPath, fileName);
+        return await Fs.readFile(filePath, 'utf8');
+    }
+    catch(err){}
+};
 
-let script = `define("index", ["require", "exports", "bignumber.js"], function (require, exports, bignumber) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class Worker {             
-        async process(session, data) {
-            let BigNumber = bignumber.BigNumber;  
-            return new BigNumber(data.v1).plus(data.v2).toNumber();
+async function packImporter(fileName: string, isPackage?: boolean): Promise<{fileName: string, script: string, dts?: string}>{
+    if (isPackage){
+        let compiler = new Compiler();
+        let script = await getScript('packs/pack1', 'index.ts');
+        await compiler.addFileContent('index.ts', script, fileName, packImporter);
+        let result = await compiler.compile(true);
+        return {
+            fileName: fileName,
+            script: result.script,
+            dts: result.dts
         }
     }
-    exports.default = Worker;
-});
-`;
-
+    else{
+        let script = await getScript('packs/pack1', fileName + '.ts');
+        return {
+            fileName: fileName + '.ts',
+            script: script
+        }
+    }
+};
 describe('Worker', function() {    
-    it('Process', async function(){
+    it('Worker 1', async function(){              
+        let compiler = await PluginCompiler.instance();
+        let script = await getScript('scripts', 'worker1.ts');                
+        let packs:{fileName:string,script:string}[] = [];
+        await compiler.addFileContent('index.ts', script, '', async function(fileName: string, isPackage: boolean): Promise<any>{
+            let pack = await packImporter(fileName, isPackage);
+            packs.push(pack);
+            return pack;
+        });        
+        let prog = await compiler.compile(false);        
+        let deps = {
+            'bignumber.js':{}
+        };
+        for (let i = 0; i < packs.length; i++){
+            let pack = packs[i];
+            deps[pack.fileName] = {script: pack.script};
+        };
         let worker = new Worker({
-            script: script, 
-            dependencies:{
-                'bignumber.js': {}
-            }
-        })        
-        let result = await worker.process({v1: 1, v2: 2});
-        assert.strictEqual(result, 3);
+            isolated: true,
+            script: prog.script,
+            dependencies: deps
+        });
+        let result = await worker.process({v1:1,v2:2});        
+        assert.deepStrictEqual(result, {test: 'pack1 test result', value:3});        
+        result = await worker.process({v1:1,v2:3});        
+        assert.deepStrictEqual(result, {test: 'pack1 test result', value:4});        
     })
 })
