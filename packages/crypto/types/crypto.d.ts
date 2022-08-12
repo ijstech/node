@@ -1,3 +1,8 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 export declare const ITERATIONS = 20000;
 export declare const HMAC_KEY_SIZE = 32;
 export declare const DIGEST = "sha512";

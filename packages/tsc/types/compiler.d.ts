@@ -1,3 +1,8 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 import { IPluginOptions } from '@ijstech/types';
 import TS from "typescript";
 export declare function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string;
@@ -12,21 +17,19 @@ export interface ICompilerError {
 export interface ICompilerResult {
     errors: ICompilerError[];
     script: string;
-    dts: {
-        [file: string]: string;
-    };
+    dts: string;
 }
 interface IPackage {
     path?: string;
-    dts: {
-        [file: string]: string;
-    };
+    dts?: string;
+    script?: string;
     version: string;
 }
 export declare function resolveAbsolutePath(baseFilePath: string, relativeFilePath: string): string;
-export declare type FileImporter = (fileName: string) => Promise<{
+export declare type FileImporter = (fileName: string, isPackage?: boolean) => Promise<{
     fileName: string;
-    content: string;
+    script: string;
+    dts?: string;
 } | null>;
 export declare class Compiler {
     private scriptOptions;
@@ -39,18 +42,23 @@ export declare class Compiler {
     addDirectory(dir: string, parentDir?: string, packName?: string): Promise<{}>;
     addFile(filePath: string, fileName?: string): Promise<void>;
     private importDependencies;
-    addFileContent(fileName: string, content: string, dependenciesImporter?: FileImporter): Promise<string[]>;
+    addFileContent(fileName: string, content: string, packageName?: string, dependenciesImporter?: FileImporter): Promise<string[]>;
     addPackage(packName: string, pack?: IPackage): Promise<IPackage>;
     compile(emitDeclaration?: boolean): Promise<ICompilerResult>;
     fileExists(fileName: string): boolean;
     getSourceFile(fileName: string, languageVersion: TS.ScriptTarget, onError?: (message: string) => void): TS.SourceFile;
     readFile(fileName: string): string | undefined;
+    reset(): void;
     resolveModuleNames(moduleNames: string[], containingFile: string): TS.ResolvedModule[];
 }
 export declare class PluginCompiler extends Compiler {
+    static instance(): Promise<PluginCompiler>;
+    init(): Promise<void>;
     compile(emitDeclaration?: boolean): Promise<ICompilerResult>;
 }
 export declare class WalletPluginCompiler extends PluginCompiler {
+    static instance(): Promise<WalletPluginCompiler>;
+    init(): Promise<void>;
     compile(emitDeclaration?: boolean): Promise<ICompilerResult>;
 }
 export declare function PluginScript(plugin: IPluginOptions): Promise<string>;

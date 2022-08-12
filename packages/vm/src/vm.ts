@@ -1,3 +1,9 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+
 import Ivm from 'isolated-vm';
 import vmConsole from './vmConsole';
 import vmGlobal from './vmGlobal';

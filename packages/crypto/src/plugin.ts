@@ -1,3 +1,9 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+
 import {IHashedData, DIGEST, HMAC_KEY_SIZE, ITERATIONS, PASSWORD_KEY_SIZE} from './crypto';
 
 export async function hashPassword(password: string, salt?: string, iterations?: number, keylen?: number, digest?: string): Promise<IHashedData>{

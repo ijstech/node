@@ -1,3 +1,9 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+
 import Https from 'https';
 import Http from 'http';
 import Url from 'url';

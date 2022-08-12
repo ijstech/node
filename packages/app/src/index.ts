@@ -1,3 +1,9 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+
 import {IHttpServerOptions, HttpServer} from '@ijstech/http';
 import {ISchedulerOptions, Scheduler} from '@ijstech/schedule';
 import {IQueueOptions, Queue} from '@ijstech/queue';

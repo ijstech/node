@@ -1,4 +1,9 @@
 "use strict";
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RedisCache = void 0;
 const redis_1 = require("redis");

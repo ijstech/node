@@ -1,3 +1,9 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+
 // const TS = require("./lib/typescriptServices.js");
 import {IPluginOptions} from '@ijstech/types';
 import Fs from 'fs';

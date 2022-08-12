@@ -1,3 +1,8 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 import { IRedisConnection, ICachePlugin } from '@ijstech/types';
 export declare class RedisCache implements ICachePlugin {
     private redisClient;

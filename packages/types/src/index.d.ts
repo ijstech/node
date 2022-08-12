@@ -43,7 +43,7 @@ export declare abstract class IRouterPlugin {
     route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;
 }
 export declare abstract class IWorkerPlugin {
-    init(params?: any):Promise<void>;
+    init?:(params?: any)=>Promise<void>;
     // message?: (session: ISession, channel: string, msg: string)=>void;
     process(session: ISession, data?: any): Promise<any>;
 }
@@ -392,9 +392,9 @@ export interface IMessageConnection{
 export type IPackageScript = {
     version?: string,
     script?: string,
-    dts?: {
+    dts?: string;/*{
         [file: string]: string;
-    };
+    };*/
 };
 export interface IDependencies {
     [packageName: string]: IPackageScript;

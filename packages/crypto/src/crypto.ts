@@ -1,3 +1,9 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+
 import Crypto from 'crypto';
 export const ITERATIONS = 20000;
 export const HMAC_KEY_SIZE = 32;

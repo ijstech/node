@@ -1,3 +1,9 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+
 import {IWallet, Wallet, IAccount} from '@ijstech/eth-wallet';
 import * as Types from '@ijstech/types';
 function getWalletPlugin(): IWallet{

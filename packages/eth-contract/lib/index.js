@@ -1,3 +1,8 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 define("index", ["require", "exports", "bignumber.js"], function (require, exports, bignumber_js_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });

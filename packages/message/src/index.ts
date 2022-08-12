@@ -1,3 +1,9 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+
 import * as Types from '@ijstech/types';
 import {Worker} from '@ijstech/plugin';
 import {RedisClient} from 'redis';

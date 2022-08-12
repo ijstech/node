@@ -1,3 +1,8 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 import * as Types from '@ijstech/types';
 import * as MySQL from 'mysql';
 export declare class MySQLClient implements Types.IDBClient {

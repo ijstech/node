@@ -1,3 +1,9 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+
 import {IWorkerPluginOptions, Worker} from '@ijstech/plugin';
 import CronParser from 'cron-parser';
 

@@ -5,7 +5,6 @@
 *-----------------------------------------------------------*/
 import { Worker } from '@ijstech/plugin';
 import { Message } from '@ijstech/message';
-import { VM } from '@ijstech/vm';
 import { getJobQueue, JobQueue } from './jobQueue';
 import * as Types from '@ijstech/types';
 export { IQueueOptions } from '@ijstech/types';
@@ -22,5 +21,5 @@ export declare class Queue {
     runWorker(worker: IQueueWorkerOptions): void;
     start(): void;
 }
-export declare function loadPlugin(plugin: Worker, options: Types.IQueueRequiredPluginOptions, vm?: VM): Types.IQueuePlugin;
+export declare function loadPlugin(plugin: Worker, options: Types.IQueueRequiredPluginOptions, vm?: Types.VM): Types.IQueuePlugin;
 export default loadPlugin;

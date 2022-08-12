@@ -1,6 +1,11 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 define("crypto", ["require", "exports", "crypto"], function (require, exports, crypto_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -65,6 +70,11 @@ define("crypto", ["require", "exports", "crypto"], function (require, exports, c
         verifyPassword
     };
 });
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 define("plugin", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });

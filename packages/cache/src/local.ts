@@ -1,3 +1,9 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+
 import {ICachePlugin} from '@ijstech/types';
 
 const DefaultExpires = 3600;// 3600 seconds;

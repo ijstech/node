@@ -1,3 +1,8 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 import Koa from 'koa';
 import { VM } from '@ijstech/vm';
 import * as Types from '@ijstech/types';
