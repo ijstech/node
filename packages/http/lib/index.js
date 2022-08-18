@@ -1,4 +1,9 @@
 "use strict";
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -13,7 +18,7 @@ const http_1 = __importDefault(require("http"));
 const https_1 = __importDefault(require("https"));
 const _404_1 = __importDefault(require("./templates/404"));
 const plugin_1 = require("@ijstech/plugin");
-const RootPath = path_1.default.dirname(require.main.filename);
+const RootPath = process.cwd();
 ;
 ;
 ;
@@ -41,6 +46,12 @@ class HttpServer {
             "!SRP",
             "!CAMELLIA"
         ].join(':');
+    }
+    ;
+    addDomainRouter(domain, routes) {
+        this.options.multiDomains = true;
+        this.options.router.domains = this.options.router.domains || {};
+        this.options.router.domains[domain] = routes;
     }
     ;
     getCert(domain) {
@@ -95,43 +106,51 @@ class HttpServer {
         });
     }
     ;
-    getRouter(url) {
+    getRouter(ctx) {
+        let url = ctx.url;
         if (this.options.router && this.options.router.routes) {
-            let matched;
-            let matchedUrl;
-            let matchedLength = 0;
-            for (let i = 0; i < this.options.router.routes.length; i++) {
-                let router = this.options.router.routes[i];
-                if (Array.isArray(router.baseUrl)) {
-                    for (let i = 0; i < router.baseUrl.length; i++) {
-                        let baseUrl = router.baseUrl[i];
-                        if ((url + '/').startsWith(baseUrl + '/') || (url + '?').startsWith(baseUrl + '?')) {
-                            if (!matched || baseUrl.split('/').length > matchedLength) {
-                                matched = router;
-                                matchedUrl = baseUrl;
-                                matchedLength = baseUrl.split('/').length;
+            let routes;
+            if (this.options.multiDomains)
+                routes = this.options.router[ctx.hostname];
+            else
+                routes = this.options.router.routes;
+            if (routes) {
+                let matched;
+                let matchedUrl;
+                let matchedLength = 0;
+                for (let i = 0; i < routes.length; i++) {
+                    let router = routes[i];
+                    if (Array.isArray(router.baseUrl)) {
+                        for (let i = 0; i < router.baseUrl.length; i++) {
+                            let baseUrl = router.baseUrl[i];
+                            if ((url + '/').startsWith(baseUrl + '/') || (url + '?').startsWith(baseUrl + '?')) {
+                                if (!matched || baseUrl.split('/').length > matchedLength) {
+                                    matched = router;
+                                    matchedUrl = baseUrl;
+                                    matchedLength = baseUrl.split('/').length;
+                                }
+                                ;
                             }
                             ;
                         }
                         ;
                     }
-                    ;
-                }
-                else if ((url + '/').startsWith(router.baseUrl + '/') || (url + '?').startsWith(router.baseUrl + '?')) {
-                    if (!matched || router.baseUrl.split('/').length > matchedLength) {
-                        matched = router;
-                        matchedUrl = router.baseUrl;
-                        matchedLength = router.baseUrl.split('/').length;
+                    else if ((url + '/').startsWith(router.baseUrl + '/') || (url + '?').startsWith(router.baseUrl + '?')) {
+                        if (!matched || router.baseUrl.split('/').length > matchedLength) {
+                            matched = router;
+                            matchedUrl = router.baseUrl;
+                            matchedLength = router.baseUrl.split('/').length;
+                        }
+                        ;
                     }
                     ;
                 }
                 ;
+                return {
+                    router: matched,
+                    baseUrl: matchedUrl
+                };
             }
-            ;
-            return {
-                router: matched,
-                baseUrl: matchedUrl
-            };
         }
         ;
     }
@@ -160,43 +179,24 @@ class HttpServer {
             }
             ;
             this.app.use(async (ctx) => {
-                let matched = this.getRouter(ctx.url);
+                let matched = this.getRouter(ctx);
                 if (matched.router) {
                     let router = matched.router;
                     let baseUrl = matched.baseUrl;
-                    if (router.form) {
-                        let pack = require('@ijstech/form');
-                        if (pack.default) {
-                            let config = {
-                                baseUrl: baseUrl,
-                                host: router.form.host,
-                                token: router.form.token,
-                                package: router.form.package,
-                                mainForm: router.form.mainForm,
-                                params: router.params
-                            };
-                            await pack.default(ctx, config);
-                            return true;
+                    try {
+                        if (!router._plugin) {
+                            router._plugin = new plugin_1.Router(router);
+                            await router._plugin.init(router.params);
                         }
                         ;
-                    }
-                    else {
-                        try {
-                            if (!router._plugin) {
-                                router._plugin = new plugin_1.Router(router);
-                                await router._plugin.init(router.params);
-                            }
-                            ;
-                            let result = await router._plugin.route(ctx, baseUrl);
-                            if (result)
-                                return;
-                        }
-                        catch (err) {
-                            ctx.status = 500;
+                        let result = await router._plugin.route(ctx, baseUrl);
+                        if (result)
                             return;
-                        }
                     }
-                    ;
+                    catch (err) {
+                        ctx.status = 500;
+                        return;
+                    }
                 }
                 ;
                 ctx.status = 404;

@@ -16,8 +16,7 @@
         "outDir": "lib",
         "composite": true,
         "paths": {
-            "@ijstech/*": ["./packages/*/src"],
-            "@ijstech/node": ["./src"]
+            "@ijstech/*": ["*","./packages/*/src"]
         }
     },
     "exclude": ["node_modules", "dist", "lib"]

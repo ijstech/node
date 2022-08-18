@@ -119,7 +119,6 @@ class TContext {
             return JSON.parse(result);
         }
         else {
-            console.dir(this._client);
             if (!this._graphql)
                 this._graphql = new TGraphQL(this._getSchema(), this._client);
             return await this._graphql.query(query);

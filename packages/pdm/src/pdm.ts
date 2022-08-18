@@ -21,16 +21,29 @@ function generateUUID() { // Public Domain/MIT
         return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
     });
 };
+export interface IField{
+    prop?: string;
+    field?: string;
+    record?: string;
+    size?: number;
+    details?: any;
+    table?: string;
+    dataType?: 'key'|'ref'|'1toM'|'char'|'varchar'|'boolean'|'integer'|'decimal'|'date'|'blob'|'text'|'mediumText'|'longText';
+}
+export interface IFields{[name: string]: IField}
+export interface IRefField extends IField{
+    record: string;
+}
 export interface IRecordSet{
     _id: number;
     _queries: any[];
-    fields: Types.IFields;
-    keyField: Types.IField;
+    fields: IFields;
+    keyField: IField;
     tableName: string;
     mergeRecords(data: any): any[];
     reset(): void;
 };
-export interface ISchema {[tableName: string]: Types.IFields};
+export interface ISchema {[tableName: string]: IFields};
 
 interface IRecord {
     $$record: any;
@@ -692,24 +705,24 @@ export class TGraphQL {
         return this._introspection;
     }
 };
-export interface IRefField extends Types.IField{
+export interface IRefField extends IField{
     record: string;
 };
-export interface IStringField extends Types.IField{
+export interface IStringField extends IField{
     dataType?: 'char'|'varchar'|'text'|'mediumText'|'longText'
 };
-export interface IBooleanField extends Types.IField{
+export interface IBooleanField extends IField{
 
 };
-export interface IDecimalField extends Types.IField{
+export interface IDecimalField extends IField{
     digits ?: number;
     decimals?: number;
 };
-export interface IIntegerField extends Types.IField{
+export interface IIntegerField extends IField{
     digits ?: number;
     decimals?: number;
 };
-export interface IDateField extends Types.IField{
+export interface IDateField extends IField{
 
 };
 export function RecordSet(tableName: string, recordType: typeof TRecord, recordSetType?: any){
@@ -722,7 +735,7 @@ export function RecordSet(tableName: string, recordType: typeof TRecord, recordS
         };
     };
 };
-export function KeyField(fieldType?: Types.IField){
+export function KeyField(fieldType?: IField){
     return function (target: TRecord, propName: string) {
         fieldType = fieldType || {};
         fieldType.field = fieldType.field || propName;
@@ -800,7 +813,7 @@ export function DateField(fieldType?: IDateField){
         target['$$fields'][propName] = fieldType;
     };
 };
-export function BlobField(fieldType?: Types.IField){
+export function BlobField(fieldType?: IField){
     return function (target: TRecord, propName: string) {
         fieldType = fieldType || {};
         fieldType.field = fieldType.field || propName;

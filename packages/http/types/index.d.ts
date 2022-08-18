@@ -1,4 +1,10 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 /// <reference types="node" />
+import Koa from 'koa';
 import Tls from 'tls';
 import { IRouterPluginOptions } from '@ijstech/plugin';
 export interface IPlugin {
@@ -8,15 +14,20 @@ export interface IPlugin {
 export interface IPlugins {
     [name: string]: IPlugin;
 }
+export interface IDomainRouter {
+    [domain: string]: IRouterPluginOptions[];
+}
 export interface IRouterOptions {
-    routes: IRouterPluginOptions[];
+    domains?: IDomainRouter;
+    routes?: IRouterPluginOptions[];
 }
 export interface IHttpServerOptions {
+    multiDomains?: boolean;
     ciphers?: string;
     certPath?: string;
     port?: number;
     securePort?: number;
-    router: IRouterOptions;
+    router?: IRouterOptions;
 }
 export declare class HttpServer {
     private app;
@@ -27,8 +38,9 @@ export declare class HttpServer {
     private http;
     private https;
     constructor(options: IHttpServerOptions);
+    addDomainRouter(domain: string, routes: IRouterPluginOptions[]): void;
     getCert(domain: string): Promise<Tls.SecureContext>;
-    getRouter(url: string): {
+    getRouter(ctx: Koa.Context): {
         router: IRouterPluginOptions;
         baseUrl: string;
     };

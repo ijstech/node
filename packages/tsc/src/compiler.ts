@@ -9,9 +9,9 @@ import {IPluginOptions} from '@ijstech/types';
 import Fs from 'fs';
 import TS from "typescript";
 import Path, { resolve } from 'path';
-import { inherits } from 'util';
 const Libs = {};
-const RootPath = Path.dirname(require.main.filename);
+const RootPath = process.cwd();
+
 async function getPackageScriptDir(filePath: string): Promise<any>{
     let path = resolveFilePath([RootPath], filePath, true);
     try{        

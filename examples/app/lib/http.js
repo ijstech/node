@@ -15,18 +15,12 @@ async function main() {
                         baseUrl: '/app',
                         isolated: false,
                         methods: ['GET', 'POST'],
-                        form: config_js_1.default.form,
                         params: {}
                     },
                     {
                         baseUrl: '/demo1',
                         isolated: false,
                         methods: ['GET'],
-                        github: {
-                            org: 'yc-wong',
-                            repo: 'demo1',
-                            token: ''
-                        },
                         params: {}
                     },
                     {
@@ -124,6 +118,24 @@ async function main() {
             ]
         }
     };
+    let app2 = new app_1.AppServer({
+        http: {
+            port: 8004
+        }
+    });
+    app2.httpServer.addDomainRouter('localhost', [
+        {
+            baseUrl: '',
+            script: '',
+            methods: ['GET']
+        },
+        {
+            baseUrl: '',
+            methods: ['GET'],
+            script: ''
+        }
+    ]);
+    app2.start();
     let app = new app_1.AppServer(Options);
     app.start();
 }

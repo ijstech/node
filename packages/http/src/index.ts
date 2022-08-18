@@ -1,3 +1,9 @@
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+
 import Koa from 'koa';
 import BodyParser from 'koa-bodyparser';
 import Fs from 'fs';
@@ -7,8 +13,7 @@ import Http from 'http';
 import Https from 'https';
 import Templates from './templates/404';
 import {IRouterPluginOptions, Router} from '@ijstech/plugin';
-
-const RootPath = Path.dirname(require.main.filename);
+const RootPath = process.cwd();
 
 export interface IPlugin{
     scriptPath?: string;
@@ -17,15 +22,20 @@ export interface IPlugin{
 export interface IPlugins{
     [name: string]: IPlugin;
 };
+export interface IDomainRouter{
+    [domain: string]: IRouterPluginOptions[]
+}
 export interface IRouterOptions {
-    routes: IRouterPluginOptions[];
+    domains?: IDomainRouter;
+    routes?: IRouterPluginOptions[];
 }
 export interface IHttpServerOptions{
+    multiDomains?: boolean;
     ciphers?: string;
     certPath?: string;
     port?: number;
     securePort?: number;
-    router: IRouterOptions;
+    router?: IRouterOptions;
 };
 export class HttpServer {
     private app: Koa;
@@ -58,6 +68,11 @@ export class HttpServer {
             "!SRP",
             "!CAMELLIA"
         ].join(':');  
+    };
+    addDomainRouter(domain: string, routes: IRouterPluginOptions[]){
+        this.options.multiDomains = true;
+        this.options.router.domains = this.options.router.domains || {};
+        this.options.router.domains[domain] = routes;
     };
     getCert(domain: string): Promise<Tls.SecureContext>{            
         let self = this;
@@ -107,37 +122,45 @@ export class HttpServer {
             };
         });
     };
-    getRouter(url: string): {router: IRouterPluginOptions, baseUrl: string}{
+    getRouter(ctx: Koa.Context): {router: IRouterPluginOptions, baseUrl: string}{
+        let url = ctx.url;
         if (this.options.router && this.options.router.routes){
-            let matched: IRouterPluginOptions;
-            let matchedUrl: string;
-            let matchedLength = 0;
-            for (let i = 0; i < this.options.router.routes.length; i++){
-                let router = this.options.router.routes[i];
-                if (Array.isArray(router.baseUrl)){
-                    for (let i = 0; i < router.baseUrl.length; i ++){
-                        let baseUrl = router.baseUrl[i];
-                        if ((url + '/').startsWith(baseUrl + '/') || (url + '?').startsWith(baseUrl + '?')){
-                            if (!matched || baseUrl.split('/').length > matchedLength){
-                                matched = router;
-                                matchedUrl = baseUrl;
-                                matchedLength = baseUrl.split('/').length;
+            let routes: IRouterPluginOptions[];
+            if (this.options.multiDomains)
+                routes = this.options.router[ctx.hostname]
+            else
+                routes = this.options.router.routes;
+            if (routes){
+                let matched: IRouterPluginOptions;
+                let matchedUrl: string;
+                let matchedLength = 0;
+                for (let i = 0; i < routes.length; i++){
+                    let router = routes[i];
+                    if (Array.isArray(router.baseUrl)){
+                        for (let i = 0; i < router.baseUrl.length; i ++){
+                            let baseUrl = router.baseUrl[i];
+                            if ((url + '/').startsWith(baseUrl + '/') || (url + '?').startsWith(baseUrl + '?')){
+                                if (!matched || baseUrl.split('/').length > matchedLength){
+                                    matched = router;
+                                    matchedUrl = baseUrl;
+                                    matchedLength = baseUrl.split('/').length;
+                                };
                             };
                         };
-                    };
-                }
-                else if ((url + '/').startsWith(router.baseUrl + '/') || (url + '?').startsWith(router.baseUrl + '?')){
-                    if (!matched || router.baseUrl.split('/').length > matchedLength){
-                        matched = router;
-                        matchedUrl = router.baseUrl;
-                        matchedLength = router.baseUrl.split('/').length;
+                    }
+                    else if ((url + '/').startsWith(router.baseUrl + '/') || (url + '?').startsWith(router.baseUrl + '?')){
+                        if (!matched || router.baseUrl.split('/').length > matchedLength){
+                            matched = router;
+                            matchedUrl = router.baseUrl;
+                            matchedLength = router.baseUrl.split('/').length;
+                        };
                     };
                 };
-            };
-            return {
-                router: matched,
-                baseUrl: matchedUrl
-            };
+                return {
+                    router: matched,
+                    baseUrl: matchedUrl
+                };
+            }
         };
     };
     async start(){        
@@ -162,26 +185,26 @@ export class HttpServer {
                 console.log(`https server is running at ${this.options.securePort}`);
             };
             this.app.use(async (ctx: Koa.Context)=>{                                
-                let matched = this.getRouter(ctx.url);
+                let matched = this.getRouter(ctx);
                 if (matched.router){
                     let router = matched.router;
                     let baseUrl = matched.baseUrl;
-                    if (router.form){
-                        let pack = require('@ijstech/form');
-                        if (pack.default){
-                            let config = {
-                                baseUrl: baseUrl,
-                                host: router.form.host,
-                                token: router.form.token,
-                                package: router.form.package,
-                                mainForm: router.form.mainForm,
-                                params: router.params
-                            }
-                            await pack.default(ctx, config);
-                            return true;
-                        };
-                    }
-                    else{
+                    // if (router.form){
+                    //     let pack = require('@ijstech/form');
+                    //     if (pack.default){
+                    //         let config = {
+                    //             baseUrl: baseUrl,
+                    //             host: router.form.host,
+                    //             token: router.form.token,
+                    //             package: router.form.package,
+                    //             mainForm: router.form.mainForm,
+                    //             params: router.params
+                    //         }
+                    //         await pack.default(ctx, config);
+                    //         return true;
+                    //     };
+                    // }
+                    // else{
                         try{
                             if (!(<any>router)._plugin){
                                 (<any>router)._plugin = new Router(router); 
@@ -195,7 +218,7 @@ export class HttpServer {
                             ctx.status = 500;
                             return;
                         }
-                    };
+                    // };
                 };
                 ctx.status = 404;
                 ctx.body = Templates.page404;

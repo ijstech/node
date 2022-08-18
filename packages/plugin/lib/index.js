@@ -14,9 +14,8 @@ const path_1 = __importDefault(require("path"));
 const vm_1 = require("@ijstech/vm");
 var types_1 = require("@ijstech/types");
 Object.defineProperty(exports, "BigNumber", { enumerable: true, get: function () { return types_1.BigNumber; } });
-const github_1 = __importDefault(require("./github"));
 const tsc_1 = require("@ijstech/tsc");
-const RootPath = path_1.default.dirname(require.main.filename);
+const RootPath = process.cwd();
 let Modules = {};
 let LoadingPackageName = '';
 global.define = function (id, deps, callback) {
@@ -396,15 +395,7 @@ class Plugin {
     async createPlugin() {
         if (!this.plugin) {
             if (!this.options.script && this.options.scriptPath) {
-                if (this.options.github) {
-                    this.options.script = await github_1.default.getFile({
-                        org: this.options.github.org,
-                        repo: this.options.github.repo,
-                        token: this.options.github.token,
-                        filePath: 'lib/index.js'
-                    });
-                }
-                else if (this.options.scriptPath.endsWith('.js'))
+                if (this.options.scriptPath.endsWith('.js'))
                     this.options.script = await getScript(this.options.scriptPath);
                 else
                     this.options.script = await tsc_1.PluginScript(this.options);

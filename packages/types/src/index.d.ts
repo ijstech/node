@@ -86,17 +86,17 @@ export interface IWorkerPluginOptions extends IPluginOptions{
 }
 export type IRouterPluginMethod = 'GET'|'POST'|'PUT'|'DELETE';
 export interface IRouterPluginOptions extends IPluginOptions {
-    form?: {
-        host: string,
-        token: string,
-        package?: string,
-        mainForm?: string
-    },
-    github?: {
-        org: string,
-        repo: string,
-        token: string
-    },
+    // form?: {
+    //     host: string,
+    //     token: string,
+    //     package?: string,
+    //     mainForm?: string
+    // },
+    // github?: {
+    //     org: string,
+    //     repo: string,
+    //     token: string
+    // },
     baseUrl: string|string[];
     methods: IRouterPluginMethod[];
 }

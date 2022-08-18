@@ -13,7 +13,7 @@ const fs_1 = __importDefault(require("fs"));
 const typescript_1 = __importDefault(require("typescript"));
 const path_1 = __importDefault(require("path"));
 const Libs = {};
-const RootPath = path_1.default.dirname(require.main.filename);
+const RootPath = process.cwd();
 async function getPackageScriptDir(filePath) {
     let path = resolveFilePath([RootPath], filePath, true);
     try {

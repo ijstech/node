@@ -10,10 +10,10 @@ import Koa from 'koa';
 import {VM} from '@ijstech/vm';
 import * as Types from '@ijstech/types';
 export {BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions} from '@ijstech/types';
-import Github from './github';
+// import Github from './github';
 import {PluginCompiler, PluginScript} from '@ijstech/tsc';
 
-const RootPath = Path.dirname(require.main.filename);
+const RootPath = process.cwd();
 let Modules = {};
 let LoadingPackageName: string = '';
 global.define = function(id: string, deps: string[], callback: Function){
@@ -385,15 +385,16 @@ class Plugin{
     async createPlugin(){        
         if (!this.plugin){
             if (!this.options.script && this.options.scriptPath){
-                if (this.options.github){
-                    this.options.script = await Github.getFile({
-                        org: this.options.github.org,
-                        repo: this.options.github.repo,
-                        token: this.options.github.token,
-                        filePath: 'lib/index.js'
-                    })                
-                }
-                else if (this.options.scriptPath.endsWith('.js'))
+                // if (this.options.github){
+                //     this.options.script = await Github.getFile({
+                //         org: this.options.github.org,
+                //         repo: this.options.github.repo,
+                //         token: this.options.github.token,
+                //         filePath: 'lib/index.js'
+                //     })                
+                // }
+                // else 
+                if (this.options.scriptPath.endsWith('.js'))
                     this.options.script = await getScript(this.options.scriptPath);
                 else
                     this.options.script = await PluginScript(this.options);

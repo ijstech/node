@@ -1,15 +1,30 @@
 import * as Types from '@ijstech/types';
+export interface IField {
+    prop?: string;
+    field?: string;
+    record?: string;
+    size?: number;
+    details?: any;
+    table?: string;
+    dataType?: 'key' | 'ref' | '1toM' | 'char' | 'varchar' | 'boolean' | 'integer' | 'decimal' | 'date' | 'blob' | 'text' | 'mediumText' | 'longText';
+}
+export interface IFields {
+    [name: string]: IField;
+}
+export interface IRefField extends IField {
+    record: string;
+}
 export interface IRecordSet {
     _id: number;
     _queries: any[];
-    fields: Types.IFields;
-    keyField: Types.IField;
+    fields: IFields;
+    keyField: IField;
     tableName: string;
     mergeRecords(data: any): any[];
     reset(): void;
 }
 export interface ISchema {
-    [tableName: string]: Types.IFields;
+    [tableName: string]: IFields;
 }
 interface IRecord {
     $$record: any;
@@ -141,32 +156,32 @@ export declare class TGraphQL {
     query(source: string): Promise<any>;
     get introspection(): any;
 }
-export interface IRefField extends Types.IField {
+export interface IRefField extends IField {
     record: string;
 }
-export interface IStringField extends Types.IField {
+export interface IStringField extends IField {
     dataType?: 'char' | 'varchar' | 'text' | 'mediumText' | 'longText';
 }
-export interface IBooleanField extends Types.IField {
+export interface IBooleanField extends IField {
 }
-export interface IDecimalField extends Types.IField {
+export interface IDecimalField extends IField {
     digits?: number;
     decimals?: number;
 }
-export interface IIntegerField extends Types.IField {
+export interface IIntegerField extends IField {
     digits?: number;
     decimals?: number;
 }
-export interface IDateField extends Types.IField {
+export interface IDateField extends IField {
 }
 export declare function RecordSet(tableName: string, recordType: typeof TRecord, recordSetType?: any): (target: TContext, propName: string, params?: any) => void;
-export declare function KeyField(fieldType?: Types.IField): (target: TRecord, propName: string) => void;
+export declare function KeyField(fieldType?: IField): (target: TRecord, propName: string) => void;
 export declare function RefTo<T extends TContext>(record: keyof T, field?: string): (target: TRecord, propName: string) => void;
 export declare function StringField(fieldType?: IStringField): (target: TRecord, propName: string) => void;
 export declare function DecimalField(fieldType?: IDecimalField): (target: TRecord, propName: string) => void;
 export declare function IntegerField(fieldType?: IIntegerField): (target: TRecord, propName: string) => void;
 export declare function BooleanField(fieldType?: IBooleanField): (target: TRecord, propName: string) => void;
 export declare function DateField(fieldType?: IDateField): (target: TRecord, propName: string) => void;
-export declare function BlobField(fieldType?: Types.IField): (target: TRecord, propName: string) => void;
+export declare function BlobField(fieldType?: IField): (target: TRecord, propName: string) => void;
 export declare function OneToMany<T>(record: typeof TRecord, prop: keyof T, tableName: string, fieldName: string): (target: TRecord, propName: string) => void;
 export {};
