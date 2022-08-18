@@ -52,8 +52,6 @@
         "typescript": "4.3.5"
     },
     "scripts": {
-        "preinstall": "sh ./scripts/preinstall.sh",
-        "postinstall": "sh ./scripts/postinstall.sh",
         "build": "npm run build:modules && npm run build:node && npm run build:examples",
         "build:examples": "npm run build:example:app",
         "build:example:app": "cd examples/app && npm run build && cd ../../",
