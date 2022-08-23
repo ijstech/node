@@ -14,15 +14,11 @@ export interface IPlugin {
 export interface IPlugins {
     [name: string]: IPlugin;
 }
-export interface IDomainRouter {
-    [domain: string]: IRouterPluginOptions[];
-}
 export interface IRouterOptions {
-    domains?: IDomainRouter;
+    module?: string;
     routes?: IRouterPluginOptions[];
 }
 export interface IHttpServerOptions {
-    multiDomains?: boolean;
     ciphers?: string;
     certPath?: string;
     port?: number;
@@ -38,7 +34,6 @@ export declare class HttpServer {
     private http;
     private https;
     constructor(options: IHttpServerOptions);
-    addDomainRouter(domain: string, routes: IRouterPluginOptions[]): void;
     getCert(domain: string): Promise<Tls.SecureContext>;
     getRouter(ctx: Koa.Context): {
         router: IRouterPluginOptions;

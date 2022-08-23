@@ -1,4 +1,4 @@
-import {IWorkerPlugin, ISession} from '@ijstech/types';
+import {IWorkerPlugin, ISession} from '@ijstech/plugin';
 import {BigNumber} from 'bignumber.js';
 import test from '@ijs/pack1'; //../packs/pack1/index.ts
 

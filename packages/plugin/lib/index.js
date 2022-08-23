@@ -8,10 +8,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Worker = exports.Router = exports.loadModule = exports.getPackageScript = exports.resolveFilePath = exports.BigNumber = void 0;
+exports.Worker = exports.Router = exports.loadModule = exports.getPackageScript = exports.resolveFilePath = exports.BigNumber = exports.PluginCompiler = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const vm_1 = require("@ijstech/vm");
+var compiler_1 = require("./compiler");
+Object.defineProperty(exports, "PluginCompiler", { enumerable: true, get: function () { return compiler_1.PluginCompiler; } });
 var types_1 = require("@ijstech/types");
 Object.defineProperty(exports, "BigNumber", { enumerable: true, get: function () { return types_1.BigNumber; } });
 const tsc_1 = require("@ijstech/tsc");
@@ -56,9 +58,11 @@ function resolveFilePath(rootPaths, filePath, allowsOutsideRootPath) {
 }
 exports.resolveFilePath = resolveFilePath;
 ;
-function getScript(filePath) {
+function getScript(filePath, modulePath) {
     return new Promise(async (resolve) => {
         try {
+            if (modulePath)
+                filePath = path_1.default.join(modulePath, filePath);
             if (!filePath.startsWith('/'))
                 filePath = resolveFilePath([RootPath], filePath, true);
             let isDir = (await fs_1.default.promises.lstat(filePath)).isDirectory();
@@ -396,7 +400,7 @@ class Plugin {
         if (!this.plugin) {
             if (!this.options.script && this.options.scriptPath) {
                 if (this.options.scriptPath.endsWith('.js'))
-                    this.options.script = await getScript(this.options.scriptPath);
+                    this.options.script = await getScript(this.options.scriptPath, this.options.modulePath);
                 else
                     this.options.script = await tsc_1.PluginScript(this.options);
             }

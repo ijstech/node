@@ -6,10 +6,10 @@
 
 import {Worker} from '@ijstech/plugin';
 import {Message} from '@ijstech/message';
-import {getJobQueue, JobQueue} from './jobQueue';
+import {getJobQueue, JobQueue, IJobQueueOptions} from './jobQueue';
 import * as Types from '@ijstech/types';
 export {IQueueOptions} from '@ijstech/types';
-export {getJobQueue};
+export {getJobQueue, JobQueue, IJobQueueOptions};
 
 interface IQueueWorkerOptions extends Types.IQueuePluginOptions{
     plugin?: Worker;

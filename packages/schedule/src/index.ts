@@ -12,6 +12,7 @@ export interface ISchdeulePluginOptions extends IWorkerPluginOptions{
     disabled?: boolean;
 }
 export interface ISchedulerOptions {
+    module?: string;
     jobs?: ISchdeulePluginOptions[]
 }
 export interface IScheduleJobOptions extends ISchdeulePluginOptions{
@@ -25,12 +26,14 @@ export class Scheduler {
     private jobs: IScheduleJobOptions[];
     constructor(options: ISchedulerOptions){
         this.jobs = [];
-        this.options = options;     
+        this.options = options || {};            
         this.options.jobs = this.options.jobs || [];   
         for (let i = 0; i < this.options.jobs.length; i ++)
-            this.addJob(this.options.jobs[i]);
+            this.addJob(this.options.jobs[i], this.options.module);
     }
-    addJob(job: ISchdeulePluginOptions){        
+    addJob(job: ISchdeulePluginOptions, module?: string){        
+        if (module)
+            job.modulePath = module;
         this.jobs.push(job);
     };
     start(){

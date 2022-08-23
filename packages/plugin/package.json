@@ -5,7 +5,7 @@
     "pluginTypes": "plugin/index.d.ts",
     "types": "types/index.d.ts",    
     "scripts": {
-        "build": "rm -rf lib && rm -rf types && rm -f tsconfig.tsbuildinfo && tsc",
+        "build": "rm -rf lib && rm -rf types && rm -f tsconfig.tsbuildinfo && tsc && cp -rf src/lib lib",
         "test": "mocha --exit --require ts-node/register test/*.spec.ts"
     }
 }

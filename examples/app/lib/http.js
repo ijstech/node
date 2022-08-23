@@ -12,18 +12,6 @@ async function main() {
             router: {
                 routes: [
                     {
-                        baseUrl: '/app',
-                        isolated: false,
-                        methods: ['GET', 'POST'],
-                        params: {}
-                    },
-                    {
-                        baseUrl: '/demo1',
-                        isolated: false,
-                        methods: ['GET'],
-                        params: {}
-                    },
-                    {
                         baseUrl: '/hello',
                         methods: ['GET'],
                         scriptPath: './plugins/hello/index.js',
@@ -118,24 +106,6 @@ async function main() {
             ]
         }
     };
-    let app2 = new app_1.AppServer({
-        http: {
-            port: 8004
-        }
-    });
-    app2.httpServer.addDomainRouter('localhost', [
-        {
-            baseUrl: '',
-            script: '',
-            methods: ['GET']
-        },
-        {
-            baseUrl: '',
-            methods: ['GET'],
-            script: ''
-        }
-    ]);
-    app2.start();
     let app = new app_1.AppServer(Options);
     app.start();
 }

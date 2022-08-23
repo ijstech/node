@@ -1,5 +1,4 @@
 import {AppServer, IAppServerOptions} from "@ijstech/app";
-import { memoryUsage } from "process";
 import Config from '../data/config.js';
 
 async function main(){
@@ -8,28 +7,6 @@ async function main(){
             port: 8088,
             router: {
                 routes: [
-                    {
-                        baseUrl: '/app',
-                        isolated: false,
-                        methods:['GET','POST'],
-                        // form: Config.form,
-                        params: {
-                            
-                        }
-                    },
-                    {
-                        baseUrl: '/demo1',
-                        isolated: false,
-                        methods:['GET'],
-                        // github: {
-                        //     org: 'yc-wong',
-                        //     repo: 'demo1',
-                        //     token: ''
-                        // },
-                        params: {
-                            
-                        }
-                    },
                     {   
                         baseUrl: '/hello',
                         methods: ['GET'],
@@ -127,24 +104,6 @@ async function main(){
             ]
         }
     };
-    let app2 = new AppServer({
-        http: {
-            port: 8004
-        }
-    });
-    app2.httpServer.addDomainRouter('localhost', [
-        {
-            baseUrl: '',
-            script: '',
-            methods: ['GET']
-        },
-        {
-            baseUrl: '',
-            methods: ['GET'],
-            script: ''
-        }
-    ])
-    app2.start();
     let app = new AppServer(Options);
     app.start();
 };

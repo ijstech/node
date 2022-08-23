@@ -9,6 +9,8 @@ import Path from 'path';
 import Koa from 'koa';
 import {VM} from '@ijstech/vm';
 import * as Types from '@ijstech/types';
+export {ResponseType} from '@ijstech/types';
+export {PluginCompiler} from './compiler';
 export {BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions} from '@ijstech/types';
 // import Github from './github';
 import {PluginCompiler, PluginScript} from '@ijstech/tsc';
@@ -52,9 +54,11 @@ export function resolveFilePath(rootPaths: string[], filePath: string, allowsOut
         return result;
     return result.startsWith(rootPath) ? result : undefined;
 };
-function getScript(filePath: string): Promise<string>{
+function getScript(filePath: string, modulePath?: string): Promise<string>{
     return new Promise(async (resolve)=>{
         try{
+            if (modulePath)
+                filePath = Path.join(modulePath, filePath);
             if (!filePath.startsWith('/'))
                 filePath = resolveFilePath([RootPath], filePath, true);
             let isDir = (await Fs.promises.lstat(filePath)).isDirectory();
@@ -395,7 +399,7 @@ class Plugin{
                 // }
                 // else 
                 if (this.options.scriptPath.endsWith('.js'))
-                    this.options.script = await getScript(this.options.scriptPath);
+                    this.options.script = await getScript(this.options.scriptPath, this.options.modulePath);
                 else
                     this.options.script = await PluginScript(this.options);
             }

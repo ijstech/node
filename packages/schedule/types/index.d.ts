@@ -10,6 +10,7 @@ export interface ISchdeulePluginOptions extends IWorkerPluginOptions {
     disabled?: boolean;
 }
 export interface ISchedulerOptions {
+    module?: string;
     jobs?: ISchdeulePluginOptions[];
 }
 export interface IScheduleJobOptions extends ISchdeulePluginOptions {
@@ -22,7 +23,7 @@ export declare class Scheduler {
     private started;
     private jobs;
     constructor(options: ISchedulerOptions);
-    addJob(job: ISchdeulePluginOptions): void;
+    addJob(job: ISchdeulePluginOptions, module?: string): void;
     start(): void;
     private runJob;
     private processJobs;

@@ -14,12 +14,14 @@ const cron_parser_1 = __importDefault(require("cron-parser"));
 class Scheduler {
     constructor(options) {
         this.jobs = [];
-        this.options = options;
+        this.options = options || {};
         this.options.jobs = this.options.jobs || [];
         for (let i = 0; i < this.options.jobs.length; i++)
-            this.addJob(this.options.jobs[i]);
+            this.addJob(this.options.jobs[i], this.options.module);
     }
-    addJob(job) {
+    addJob(job, module) {
+        if (module)
+            job.modulePath = module;
         this.jobs.push(job);
     }
     ;

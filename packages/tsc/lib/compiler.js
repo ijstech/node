@@ -392,6 +392,8 @@ async function PluginScript(plugin) {
     if (plugin.scriptPath.endsWith('.ts')) {
         if (plugin.scriptPath.startsWith('/'))
             await compiler.addFile(plugin.scriptPath);
+        else if (plugin.modulePath)
+            await compiler.addFile(resolveFilePath([RootPath, plugin.modulePath], plugin.scriptPath, true));
         else
             await compiler.addFile(resolveFilePath([RootPath], plugin.scriptPath, true));
     }

@@ -1,6 +1,7 @@
 import {Worker} from '../src';
 import assert from "assert";
-import {Compiler, PluginCompiler, PluginScript} from '@ijstech/tsc';
+import {Compiler} from '@ijstech/tsc';
+import {PluginCompiler} from '../src/compiler';
 import Path from 'path';
 import {promises as Fs} from 'fs';
 import { stringify } from 'querystring';
@@ -32,17 +33,18 @@ async function packImporter(fileName: string, isPackage?: boolean): Promise<{fil
         }
     }
 };
-describe('Worker', function() {    
-    it('Worker 1', async function(){              
+describe('Plugins', function() {    
+    it('Worker Plugin', async function(){              
         let compiler = await PluginCompiler.instance();
-        let script = await getScript('scripts', 'worker1.ts');                
-        let packs:{fileName:string,script:string}[] = [];
+        let script = await getScript('scripts', 'worker.ts');                
+        let packs:{fileName:string,script:string}[] = [];        
         await compiler.addFileContent('index.ts', script, '', async function(fileName: string, isPackage: boolean): Promise<any>{
             let pack = await packImporter(fileName, isPackage);
             packs.push(pack);
             return pack;
-        });        
-        let prog = await compiler.compile(false);        
+        });    
+        
+        let prog = await compiler.compile(false);           
         let deps = {
             'bignumber.js':{}
         };
@@ -55,9 +57,18 @@ describe('Worker', function() {
             script: prog.script,
             dependencies: deps
         });
-        let result = await worker.process({v1:1,v2:2});        
+        let result = await worker.process({v1:1,v2:2});                
         assert.deepStrictEqual(result, {test: 'pack1 test result', value:3});        
         result = await worker.process({v1:1,v2:3});        
         assert.deepStrictEqual(result, {test: 'pack1 test result', value:4});        
+    });    
+    it('Router Plugin', async function(){              
+        let compiler = await PluginCompiler.instance();
+        let script = await getScript('scripts', 'router.ts');                
+        let packs:{fileName:string,script:string}[] = [];
+        await compiler.addFileContent('index.ts', script);        
+        let prog = await compiler.compile(false);        
+        assert.strictEqual(prog.errors.length, 0);
+        assert.strictEqual(typeof(prog.script), 'string');
     })
 })

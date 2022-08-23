@@ -39,7 +39,7 @@ export interface IRouterResponse{
     header: (name:string, value: string)=>void;
 }
 export declare abstract class IRouterPlugin {
-    init(params?: any):Promise<void>;
+    init?:{(params?: any):Promise<void>};
     route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;
 }
 export declare abstract class IWorkerPlugin {
@@ -76,6 +76,7 @@ export interface IPluginOptions {
     timeLimit?: number;
     isolated?: boolean;
     script?: string;
+    modulePath?: string;
     scriptPath?: string;
     params?: any;
     dependencies?: IDependencies;
@@ -86,17 +87,6 @@ export interface IWorkerPluginOptions extends IPluginOptions{
 }
 export type IRouterPluginMethod = 'GET'|'POST'|'PUT'|'DELETE';
 export interface IRouterPluginOptions extends IPluginOptions {
-    // form?: {
-    //     host: string,
-    //     token: string,
-    //     package?: string,
-    //     mainForm?: string
-    // },
-    // github?: {
-    //     org: string,
-    //     repo: string,
-    //     token: string
-    // },
     baseUrl: string|string[];
     methods: IRouterPluginMethod[];
 }

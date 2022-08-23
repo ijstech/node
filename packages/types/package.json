@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/types",    
     "version": "0.1.0",
-    "main": "index.js",
+    "main": "index.js",    
     "types": "src/index.d.ts"
 }

@@ -1,0 +1,13 @@
+{    
+    "routes": [{
+            "baseUrl": "/hello",
+            "scriptPath": "router.ts"
+        }
+    ],
+    "jobs": [
+        {
+            "cron": "*/4 * * * * *",
+            "scriptPath": "worker.ts"
+        }
+    ]
+}

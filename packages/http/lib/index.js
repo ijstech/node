@@ -48,12 +48,6 @@ class HttpServer {
         ].join(':');
     }
     ;
-    addDomainRouter(domain, routes) {
-        this.options.multiDomains = true;
-        this.options.router.domains = this.options.router.domains || {};
-        this.options.router.domains[domain] = routes;
-    }
-    ;
     getCert(domain) {
         let self = this;
         let SSL = this.ssl;
@@ -110,10 +104,7 @@ class HttpServer {
         let url = ctx.url;
         if (this.options.router && this.options.router.routes) {
             let routes;
-            if (this.options.multiDomains)
-                routes = this.options.router[ctx.hostname];
-            else
-                routes = this.options.router.routes;
+            routes = this.options.router.routes;
             if (routes) {
                 let matched;
                 let matchedUrl;
@@ -183,6 +174,8 @@ class HttpServer {
                 if (matched.router) {
                     let router = matched.router;
                     let baseUrl = matched.baseUrl;
+                    if (this.options.router.module)
+                        router.modulePath = this.options.router.module;
                     try {
                         if (!router._plugin) {
                             router._plugin = new plugin_1.Router(router);
