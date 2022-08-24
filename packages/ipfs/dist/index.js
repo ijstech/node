@@ -2152,12 +2152,12 @@
     return encodeNode(pbn)
   }
 
-  const hashDir = async (data, version) => {
+  const hashItems = async (items, version) => {
     if (version == undefined)
         version = 1;
     let Links = [];
-    for (let i = 0; i < data.links.length; i ++){
-        let item = data.links[i];
+    for (let i = 0; i < items.length; i ++){
+        let item = items[i];
         Links.push({
             Name: item.name,
             Hash: parse(item.cid),
@@ -2176,11 +2176,14 @@
       const hash = await s_sha256.digest(bytes);
       const dagPB_code = 0x70;
       const cid = CID.create(version, dagPB_code, hash);
-      return cid.toString();
+      return {
+        size: bytes.length + Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0),
+        cid: cid.toString()
+      }
     } catch (e) {
       throw e;
     }
-  }
+  };
   const hashContent = async (value, version) => {
     try {
       if (version == undefined)
@@ -2216,14 +2219,14 @@
   };
   // AMD
   if (typeof define == 'function' && define.amd) 
-    define('@ijstech/ipfs-utils', function () { return {parse,hashDir,hashContent};})
+    define('@ijstech/ipfs-utils', function () { return {parse,hashItems,hashContent};})
   // Node.js
   else if (typeof module != 'undefined' && module.exports)
-    module.exports = {parse,hashDir,hashContent}
+    module.exports = {parse,hashItems,hashContent}
   // Browser
   else {
     if (!globalObject) 
       globalObject = typeof self != 'undefined' && self ? self : window;
-    globalObject.IPFSUtils = {parse,hashDir,hashContent};
+    globalObject.IPFSUtils = {parse,hashItems,hashContent};
   };
 })(this);

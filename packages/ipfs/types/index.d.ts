@@ -17,6 +17,10 @@ export declare function parse(cid: string): {
     };
     bytes: Uint8Array;
 };
-export declare function hashDir(data: ICidInfo, version?: number): Promise<string>;
+export declare function hashItems(items?: ICidInfo[], version?: number): Promise<ICidInfo>;
+export declare function hashDir(dirPath: string, version?: number): Promise<ICidInfo>;
 export declare function hashContent(content: string | Buffer, version?: number): Promise<string>;
-export declare function hashFile(filePath: string, version?: number): Promise<string>;
+export declare function hashFile(filePath: string, version?: number): Promise<{
+    cid: string;
+    size: number;
+}>;

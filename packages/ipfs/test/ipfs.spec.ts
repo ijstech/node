@@ -1,10 +1,10 @@
-import {ICidInfo, hashDir, hashContent, hashFile} from '../src/index';
+import {ICidInfo, hashDir, hashItems, hashContent, hashFile} from '../src/index';
 import assert from 'assert';
 import Path from 'path';
-// import {promises as Fs} from 'fs';
+import { assertType } from 'graphql';
 
 describe('IPFS', function () {
-  it('hash directory', async function(){
+  it('hash items', async function(){
     let data: ICidInfo = {
       cid: 'bafybeif7dzvyk6phpxj3xdizloewkjpoossa4whipfwuadvmqsqapacc4q',
       name: '',
@@ -71,17 +71,55 @@ describe('IPFS', function () {
           type: 'dir'
         }]
     }
-    let result = await hashDir(data);
-    assert.strictEqual(result, data.cid);
+    let result = await hashItems(data.links);
+    assert.strictEqual(result.cid, data.cid);
+    assert.strictEqual(result.size, data.size);
   });
-  // it('cid', async ()=>{
-  //   const CID = require('cids')
-  //   const multihashing = require('multihashing-async')
-  //   let bytes = await Fs.readFile(Path.resolve(__dirname, './file.txt'));
-  //   const hash = await multihashing(bytes, 'sha2-256')
-  //   const cid = new CID(1, 'raw', hash)    
-  //   assert.strictEqual(cid.toString(), 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
-  // })
+  it('hash directory', async function(){
+    let path = Path.join(__dirname, './dir');
+    let result = await hashDir(path);
+    //https://ipfs.io/ipfs/bafybeiejzqyjx5o22l7izdwoeshzvtcjlu7w7y3mv7324gzxml2mt5lyzm
+    assert.deepStrictEqual(result, {
+      "cid": "bafybeiejzqyjx5o22l7izdwoeshzvtcjlu7w7y3mv7324gzxml2mt5lyzm",
+      "name": "",
+      "size": 267,
+      "type": "dir",
+      "links": [
+          {
+              "cid": "bafkreifk34zhzathycow776ypiniblj4pgcgt7ztfn5fpopiybc5i2zk64",
+              "name": "file1.txt",
+              "size": 8,
+              "type": "file"
+          },
+          {
+              "cid": "bafybeihapeavy7ekzx62ut2k4hzvvsdury3wehcota5f7b7mpazegj6avu",
+              "name": "subdir",
+              "size": 151,
+              "type": "dir",
+              "links": [
+                  {
+                      "cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+                      "name": "2.txt",
+                      "size": 0,
+                      "type": "file"
+                  },
+                  {
+                      "cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+                      "name": "3.txt",
+                      "size": 0,
+                      "type": "file"
+                  },
+                  {
+                      "cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+                      "name": "4.txt",
+                      "size": 0,
+                      "type": "file"
+                  }
+              ]
+          }
+      ]
+    })
+  });
   it('hash content V0', async ()=>{
     let cid = await hashContent('Hello World!', 0);
     assert.strictEqual(cid, 'Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy');
@@ -91,23 +129,23 @@ describe('IPFS', function () {
     assert.strictEqual(cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
   });
   it('hash text file v0', async ()=>{
-    //https://gateway.pinata.cloud/ipfs/Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy
-    let cid = await hashFile(Path.resolve(__dirname, './file.txt'), 0);
+    //https://ipfs.io/ipfs/Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy
+    let {cid} = await hashFile(Path.resolve(__dirname, './file.txt'), 0);
     assert.strictEqual(cid, 'Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy');
   });
   it('hash text file v1', async ()=>{
-    //https://dweb.link/ipfs/bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne?filename=hello.txt
-    let cid = await hashFile(Path.resolve(__dirname, './file.txt'), 1);
+    //https://ipfs.io/ipfs/bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne?filename=hello.txt
+    let {cid} = await hashFile(Path.resolve(__dirname, './file.txt'), 1);
     assert.strictEqual(cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
   });  
   it('hash image file v0', async ()=>{
-    //https://gateway.pinata.cloud/ipfs/QmSbQLR1hdDRwf81ZJ2Ndhm5BoKJLH7cfH8mmA2jeCunmy
-    let cid = await hashFile(Path.resolve(__dirname, './sclogo.png'), 0);
+    //https://ipfs.io/ipfs/QmSbQLR1hdDRwf81ZJ2Ndhm5BoKJLH7cfH8mmA2jeCunmy
+    let {cid} = await hashFile(Path.resolve(__dirname, './sclogo.png'), 0);
     assert.strictEqual(cid, 'QmSbQLR1hdDRwf81ZJ2Ndhm5BoKJLH7cfH8mmA2jeCunmy');
   });
   it('hash image file v1', async ()=>{
-    //https://bafkreidoephzortbdteu2iskujwdmb2xy6t6shonqdgbsn3v4w5ory5eui.ipfs.dweb.link/?filename=sclogo.png
-    let cid = await hashFile(Path.resolve(__dirname, './sclogo.png'), 1);    
+    //https://ipfs.io/ipfs/bafkreidoephzortbdteu2iskujwdmb2xy6t6shonqdgbsn3v4w5ory5eui
+    let {cid} = await hashFile(Path.resolve(__dirname, './sclogo.png'), 1);    
     assert.strictEqual(cid, 'bafkreidoephzortbdteu2iskujwdmb2xy6t6shonqdgbsn3v4w5ory5eui');
   });
 });

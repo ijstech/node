@@ -1,26 +1,92 @@
 <html>
-    <head>
-        <script src="../src/ipfs.js"></script>
-    </head>
-    <body>
-        <script>
-            async function test(){
-                try{
-                    let cid = await IPFSUtils.hashContent('Hello World!', 0);
-                    console.log(cid, 'Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy', cid=='Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy');
-                    if (cid!='Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy')
-                        alert('failed')
-                    cid = await IPFSUtils.hashContent('Hello World!', 1);
-                    console.log(cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne', cid=='bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
-                    if (cid!='bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne')
-                        alert('failed')
-                }
-                catch(err){
-                    console.dir(err)
+
+<head>
+    <script src="../src/ipfs.js"></script>
+</head>
+
+<body>
+    <script>
+        async function test() {
+            try {
+                let cid = await IPFSUtils.hashContent('Hello World!', 0);
+                console.log(cid, 'Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy', cid == 'Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy');
+                if (cid != 'Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy')
                     alert('failed')
-                }
-            };
-            test();
-        </script>
-    </body>
+                cid = await IPFSUtils.hashContent('Hello World!', 1);
+                console.log(cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne', cid == 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
+                if (cid != 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne')
+                    alert('failed')
+                let result = await IPFSUtils.hashItems([{
+                    cid: 'bafybeibvtgpxeen4tcdfgtorheknc45lj5masx3kmj26k36r6mp2sdgrue',
+                    name: '.gitbook',
+                    size: 33162398,
+                    type: 'dir'
+                },
+                {
+                    cid: 'bafkreif2jyyaf7b65jk7kbvlrfycn5p42nbsaahzobkto24crfqcv5cejy',
+                    name: '.gitbook.yaml',
+                    size: 417,
+                    type: 'file'
+                },
+                {
+                    cid: 'bafkreifn3dkj6qif7jozh4pfwf7lfz6pyql7gkjqi6p4uachamkngjxaym',
+                    name: 'README.md',
+                    size: 6222,
+                    type: 'file'
+                },
+                {
+                    cid: 'bafkreib7vebod5cdghmofrof3gxapvyucordpluqm7jb4bz3zv7agzrjke',
+                    name: 'SUMMARY.md',
+                    size: 6696,
+                    type: 'file'
+                },
+                {
+                    cid: 'bafkreihf2ymtsjc5jn6btmam5ehy2vgyvrpwkokapse7qdx5sqvxm5m6iy',
+                    name: 'buy-store-and-stake-pokt.md',
+                    size: 7129,
+                    type: 'file'
+                },
+                {
+                    cid: 'bafybeid6kahmwhlvvw4kqqkyclv6z3xxnvxit524qkpccpyyogpnvr2g4u',
+                    name: 'paths',
+                    size: 113673,
+                    type: 'dir'
+                },
+                {
+                    cid: 'bafybeibkryq5w5kuufnljz3svtxoierzwdab4ijdn6vpndabskh6dk7boy',
+                    name: 'pokt-accounts-and-transactions',
+                    size: 9091,
+                    type: 'dir'
+                },
+                {
+                    cid: 'bafybeiddpxabrm2s33cbaoczomqy3xlr73paakiwticy2fis627bxevygm',
+                    name: 'resources',
+                    size: 77343,
+                    type: 'dir'
+                },
+                {
+                    cid: 'bafybeidodumq3tyigy26apyos24lu7ajm3weomqmdlxo3dfujgqzrbctki',
+                    name: 'v0',
+                    size: 69792,
+                    type: 'dir'
+                },
+                {
+                    cid: 'bafybeic3jq2uf7yglu37cff5gcffs6pyrecr4q6qrgmmuaqdejlkxcp2uy',
+                    name: 'v1',
+                    size: 41394,
+                    type: 'dir'
+                }])
+                console.log(result.cid, 'bafybeif7dzvyk6phpxj3xdizloewkjpoossa4whipfwuadvmqsqapacc4q', result.cid == 'bafybeif7dzvyk6phpxj3xdizloewkjpoossa4whipfwuadvmqsqapacc4q');
+                if (result.cid != 'bafybeif7dzvyk6phpxj3xdizloewkjpoossa4whipfwuadvmqsqapacc4q')
+                    alert('fail')
+            }
+            catch (err) {
+                console.dir(err)
+                alert('failed')
+            }
+        };
+        test();
+    </script>
+</body>
+
 </html>
