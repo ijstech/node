@@ -37,5 +37,5 @@ npm run build
 
 ## Step 4: Run demo server
 ```sh
-npm run example:http
+npm run test
 ```
