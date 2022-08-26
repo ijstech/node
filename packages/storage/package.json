@@ -1,0 +1,11 @@
+{
+    "name": "@ijstech/storage",
+    "description": "Storage Plugin",
+    "version": "0.1.0",
+    "main": "./lib/index.js",
+    "types": "./types/index.d.ts",
+    "scripts": {
+        "build": "rm -rf lib && rm -rf types && rm -f tsconfig.tsbuildinfo && tsc",
+        "test": "mocha --exit --require ts-node/register test/*.spec.ts"
+    }
+}
