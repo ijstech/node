@@ -2206,7 +2206,10 @@
       }
       else{
         const hash = await s_sha256.digest(value);
-        cid = CID.create(version, RAW_CODE, hash);
+        if (value.length <= 1048576) //1MB
+          cid = CID.create(version, RAW_CODE, hash)
+        else
+          cid = CID.create(version, DAG_PB_CODE, hash)
       }
       return cid.toString();
     }

@@ -127,7 +127,7 @@ describe('IPFS', function () {
   it('hash content V1', async ()=>{
     let cid = await hashContent('Hello World!', 1);
     assert.strictEqual(cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
-  });
+  });  
   it('hash text file v0', async ()=>{
     //https://ipfs.io/ipfs/Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy
     let {cid} = await hashFile(Path.resolve(__dirname, './file.txt'), 0);
@@ -137,6 +137,21 @@ describe('IPFS', function () {
     //https://ipfs.io/ipfs/bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne?filename=hello.txt
     let {cid} = await hashFile(Path.resolve(__dirname, './file.txt'), 1);
     assert.strictEqual(cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
+  });    
+  it('hash text file v1 size 1048575', async ()=>{
+    //https://dweb.link/ipfs/bafkreigkp3imjkhgps64iyoezmgsq3jpvo6z6dcbu72cwzs7olv2vcxmky?filename=1048575.bin
+    let {cid} = await hashFile(Path.resolve(__dirname, './1048575.bin'), 1);
+    assert.strictEqual(cid, 'bafkreigkp3imjkhgps64iyoezmgsq3jpvo6z6dcbu72cwzs7olv2vcxmky');
+  });
+  it('hash text file v1 size 1048576', async ()=>{
+    // https://dweb.link/ipfs/bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla?filename=1048576.bin
+    let {cid} = await hashFile(Path.resolve(__dirname, './1048576.bin'), 1);
+    assert.strictEqual(cid, 'bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla');
+  });  
+  it('hash text file v1 size 1048577', async ()=>{
+    //https://dweb.link/ipfs/bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq?filename=1048577.bin
+    let {cid} = await hashFile(Path.resolve(__dirname, './1048577.bin'), 1);
+    assert.strictEqual(cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
   });  
   it('hash image file v0', async ()=>{
     //https://ipfs.io/ipfs/QmSbQLR1hdDRwf81ZJ2Ndhm5BoKJLH7cfH8mmA2jeCunmy
