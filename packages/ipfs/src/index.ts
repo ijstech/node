@@ -73,7 +73,6 @@ export async function hashFile(filePath: string, version?: number): Promise<{ ci
 };
 
 // test start from here
-
-export async function hashFile1(content1, options?) {
-    return IPFS.hashFile1(content1, options);
+export async function hashFile1(content1, version?) {
+    return IPFS.hashFile1(content1, version);
 }

@@ -7,10 +7,15 @@ import fs from 'fs';
 import Hash from 'ipfs-only-hash';
 
 describe('IPFS (Non zero dependency)', function () {
-  it('hash items by new lib >1MB', async () => {
+  it('hash text file v0 size 1048577', async () => {
     let stream = fs.createReadStream(Path.resolve(__dirname, './1048577.bin'));
-    let c = await Hash.of(stream);
+    let c = await Hash.of(stream, {cidVersion: 0});
     assert.strictEqual(c, 'Qmeb988ZjF9Ui6AVPR8Sjg5sAv1B6DauS5rUjCoNs7ftZ1');
+  });
+  it('hash text file v1 size 1048577', async () => {
+    let stream = fs.createReadStream(Path.resolve(__dirname, './1048577.bin'));
+    let c = await Hash.of(stream, {cidVersion: 1});
+    assert.strictEqual(c, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
   });
 });
 describe('IPFS (Zero dependency)', function () {
@@ -163,9 +168,14 @@ describe('IPFS (Zero dependency)', function () {
     let { cid } = await hashFile(Path.resolve(__dirname, './1048577.bin'), 1);
     assert.strictEqual(cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
   });
-  it('hash text file v0 size 1048577', async () => {
+  it('hash text file v1 size 1048577 (using new lib)', async () => {
     let stream = fs.createReadStream(Path.resolve(__dirname, './1048577.bin'));
-    let c = await hashFile1(stream);
+    let c = await hashFile1(stream, 1);
+    assert.strictEqual(c, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
+  });
+  it('hash text file v0 size 1048577 (using new lib)', async () => {
+    let stream = fs.createReadStream(Path.resolve(__dirname, './1048577.bin'));
+    let c = await hashFile1(stream, 0);
     assert.strictEqual(c, 'Qmeb988ZjF9Ui6AVPR8Sjg5sAv1B6DauS5rUjCoNs7ftZ1');
   });
   it('hash image file v0', async () => {
