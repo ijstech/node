@@ -3166,9 +3166,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     'poseidon-bls12_381-a2-fc1-sc': 0xb402
   })
 
-  /**
-   * Expose multihash itself, to avoid silly double requires.
-   */
   const mh_codes = /** @type {import('./types').CodeNameMap} */({})
   for (const key in mh_names) {
     const name = /** @type {HashName} */(key)
@@ -3223,13 +3220,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   const encodeText = (text) => textEncoder.encode(text)
 
   class Base {
-    /**
-     * @param {BaseName} name
-     * @param {BaseCode} code
-     * @param {CodecFactory} factory
-     * @param {string} alphabet
-     * 
-     */
     constructor(name, code, factory, alphabet) {
       this.name = name
       this.code = code
@@ -3252,17 +3242,9 @@ const { convertCompilerOptionsFromJson } = require('typescript');
 
   const rfc4648_1 = (bitsPerChar) => (alphabet) => {
     return {
-      /**
-       * @param {Uint8Array} input
-       * @returns {string}
-       */
       encode(input) {
         return _encode(input, alphabet, bitsPerChar)
       },
-      /**
-       * @param {string} input
-       * @returns {Uint8Array}
-       */
       decode(input) {
         return _decode(input, alphabet, bitsPerChar)
       }
@@ -3356,8 +3338,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       data = decodeText(data)
     }
     const prefix = data[0]
-
-    // Make all encodings case-insensitive except the ones that include upper and lower chars in the alphabet
     if (['f', 'F', 'v', 'V', 't', 'T', 'b', 'B', 'c', 'C', 'h', 'k', 'K'].includes(prefix)) {
       data = data.toLowerCase()
     }
@@ -3417,8 +3397,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     if (!digest || code === undefined) {
       throw new Error('multihash encode requires at least two args: digest, code')
     }
-
-    // ensure it's a hashfunction code.
     const hashfn = mh_coerceCode(code)
 
     if (!(digest instanceof Uint8Array)) {
@@ -3453,7 +3431,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       throw new Error(`Hash function code should be a number. Got: ${code}`)
     }
 
-    // @ts-ignore
     if (mh_codes[code] === undefined && !mh_isAppCode(code)) {
       throw new Error(`Unrecognized function code: ${code}`)
     }
@@ -3466,7 +3443,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   function mh_validate(multihash) {
-    mh_decode(multihash) // throws if bad.
+    mh_decode(multihash)
   }
 
   function mh_prefix(multihash) {
@@ -3505,35 +3482,21 @@ const { convertCompilerOptionsFromJson } = require('typescript');
 
   Multihashing.multihash = multihash
 
-  /**
-   * @param {Uint8Array} bytes - The value to hash.
-   * @param {HashName} alg - The algorithm to use eg 'sha1'
-   * @param {number} [length] - Optionally trim the result to this length.
-   * @returns {Promise<Uint8Array>}
-   */
   Multihashing.digest = async (bytes, alg, length) => {
     const hash = Multihashing.createHash(alg)
     const digest = await hash(bytes)
     return length ? digest.slice(0, length) : digest
   }
 
-  /**
-   * Creates a function that hashes with the given algorithm
-   *
-   * @param {HashName} alg - The algorithm to use eg 'sha1'
-   * @returns {Digest} - The hash function corresponding to `alg`
-   */
   Multihashing.createHash = function (alg) {
     if (!alg) {
       const e = errcode(new Error('hash algorithm must be specified'), 'ERR_HASH_ALGORITHM_NOT_SPECIFIED')
       throw e
     }
-
     const code = multihash.mh_coerceCode(alg)
     if (!Multihashing.functions[code]) {
       throw errcode(new Error(`multihash function '${alg}' not yet supported`), 'ERR_HASH_ALGORITHM_NOT_SUPPORTED')
     }
-
     return Multihashing.functions[code]
   }
 
@@ -3555,54 +3518,13 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   const { factory: sha } = {
-    /**
-     * @param {HashName} alg
-     * @returns {Digest}
-     */
     factory: (alg) => async (data) => {
       return digest(data, alg)
     },
     digest,
-    /**
-     * @param {Uint8Array} buf
-     * @param {HashName} alg
-     * @param {number} [length]
-     */
     multihashing: async (buf, alg, length) => {
       const h = await digest(buf, alg)
       return multihash.encode(h, alg, length)
-    }
-  }
-
-  const blake = require('blakejs')
-
-  const minB = 0xb201
-  const minS = 0xb241
-
-  const blake2b = {
-    init: blake.blake2bInit,
-    update: blake.blake2bUpdate,
-    digest: blake.blake2bFinal
-  }
-
-  const blake2s = {
-    init: blake.blake2sInit,
-    update: blake.blake2sUpdate,
-    digest: blake.blake2sFinal
-  }
-
-  const makeB2Hash = (size, hf) => async (data) => {
-    const ctx = hf.init(size, null)
-    hf.update(ctx, data)
-    return hf.digest(ctx)
-  }
-
-  const blake_1 = (table) => {
-    for (let i = 0; i < 64; i++) {
-      table[minB + i] = makeB2Hash(i + 1, blake2b)
-    }
-    for (let i = 0; i < 32; i++) {
-      table[minS + i] = makeB2Hash(i + 1, blake2s)
     }
   }
 
@@ -3624,7 +3546,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     // keccak512: hash('keccak-512'),
     // murmur3128: hash('murmur3-128'),
     // murmur332: hash('murmur3-32'),
-    addBlake: blake_1
+    // addBlake: blake_1
   }
   Multihashing.functions = {
     // // identity
@@ -3663,14 +3585,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     0x56: crypto.dblSha2256
   }
 
-  // add blake functions
-  crypto.addBlake(Multihashing.functions)
-
-  /**
-   * @param {Uint8Array} bytes
-   * @param {Uint8Array} hash
-   * @returns {Promise<boolean>}
-   */
   Multihashing.validate = async (bytes, hash) => {
     const newHash = await Multihashing(bytes, multihash.decode(hash).name)
 
@@ -3678,14 +3592,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   const CIDUtil = {
-    /**
-     * Test if the given input is a valid CID object.
-     * Returns an error message if it is not.
-     * Returns undefined if it is a valid CID.
-     *
-     * @param {any} other
-     * @returns {string|undefined}
-     */
     checkCIDComponents: function (other) {
       if (other == null) {
         return 'null values are not valid CIDs'
@@ -3726,74 +3632,17 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   class CID_1 {
-    /**
-     * Create a new CID.
-     *
-     * The algorithm for argument input is roughly:
-     * ```
-     * if (cid)
-     *   -> create a copy
-     * else if (str)
-     *   if (1st char is on multibase table) -> CID String
-     *   else -> bs58 encoded multihash
-     * else if (Uint8Array)
-     *   if (1st byte is 0 or 1) -> CID
-     *   else -> multihash
-     * else if (Number)
-     *   -> construct CID by parts
-     * ```
-     *
-     * @param {CIDVersion | string | Uint8Array | CID} version
-     * @param {string|number} [codec]
-     * @param {Uint8Array} [multihash]
-     * @param {string} [multibaseName]
-     *
-     * @example
-     * new CID(<version>, <codec>, <multihash>, <multibaseName>)
-     * new CID(<cidStr>)
-     * new CID(<cid.bytes>)
-     * new CID(<multihash>)
-     * new CID(<bs58 encoded multihash>)
-     * new CID(<cid>)
-     */
     constructor(version, codec, multihash, multibaseName) {
-      // We have below three blank field accessors only because
-      // otherwise TS will not pick them up if done after assignemnts
-
-      /**
-       * The version of the CID.
-       *
-       * @type {CIDVersion}
-       */
-      // eslint-disable-next-line no-unused-expressions
       this.version
-
-      /**
-       * The codec of the CID.
-       *
-       * @deprecated
-       * @type {CodecName}
-       */
-      // eslint-disable-next-line no-unused-expressions
       this.codec
-
-      /**
-       * The multihash of the CID.
-       *
-       * @type {Uint8Array}
-       */
-      // eslint-disable-next-line no-unused-expressions
       this.multihash
 
       Object.defineProperty(this, symbol, { value: true })
       if (CID_1.isCID(version)) {
-        // version is an exising CID instance
         const cid = /** @type {CID_1} */(version)
         this.version = cid.version
         this.codec = cid.codec
         this.multihash = cid.multihash
-        // Default guard for when a CID < 0.7 is passed with no multibaseName
-        // @ts-ignore
         this.multibaseName = cid.multibaseName || (cid.version === 0 ? 'base58btc' : 'base32')
         return
       }
@@ -3845,33 +3694,17 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       this.version = version
 
       if (typeof codec === 'number') {
-        // @ts-ignore
         codec = codecInts[codec]
       }
 
       this.codec = /** @type {CodecName} */ (codec)
-
       this.multihash = /** @type {Uint8Array} */ (multihash)
-
-      /**
-       * Multibase name as string.
-       *
-       * @deprecated
-       * @type {string}
-       */
       this.multibaseName = multibaseName || (version === 0 ? 'base58btc' : 'base32')
 
       CID_1.validateCID(this)
     }
 
-    /**
-     * The CID as a `Uint8Array`
-     *
-     * @returns {Uint8Array}
-     *
-     */
     get bytes() {
-      // @ts-ignore
       let bytes = this._bytes
 
       if (!bytes) {
@@ -3885,19 +3718,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
         } else {
           throw new Error('unsupported version')
         }
-
-        // Cache this Uint8Array so it doesn't have to be recreated
         Object.defineProperty(this, '_bytes', { value: bytes })
       }
 
       return bytes
     }
 
-    /**
-     * The prefix of the CID.
-     *
-     * @returns {Uint8Array}
-     */
     get prefix() {
       const codec = multicodec.getCodeVarint(this.codec)
       const multihash = mh.prefix(this.multihash)
@@ -3908,20 +3734,10 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       return prefix
     }
 
-    /**
-     * The codec of the CID in its number form.
-     *
-     * @returns {CodecCode}
-     */
     get code() {
       return codecs[this.codec]
     }
 
-    /**
-     * Convert to a CID of version `0`.
-     *
-     * @returns {CID_1}
-     */
     toV0() {
       if (this.codec !== 'dag-pb') {
         throw new Error('Cannot convert a non dag-pb CID to CIDv0')
@@ -3940,25 +3756,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       return new CID_1(0, this.codec, this.multihash)
     }
 
-    /**
-     * Convert to a CID of version `1`.
-     *
-     * @returns {CID_1}
-     */
     toV1() {
       return new CID_1(1, this.codec, this.multihash, this.multibaseName)
     }
 
-    /**
-     * Encode the CID into a string.
-     *
-     * @param {BaseNameOrCode} [base=this.multibaseName] - Base encoding to use.
-     * @returns {string}
-     */
     toBaseEncodedString(base = this.multibaseName) {
-      // @ts-ignore non enumerable cache property
       if (this.string && this.string.length !== 0 && base === this.multibaseName) {
-        // @ts-ignore non enumerable cache property
         return this.string
       }
       let str
@@ -3979,30 +3782,14 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       return str
     }
 
-    /**
-     * CID(QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n)
-     *
-     * @returns {string}
-     */
     [Symbol.for('nodejs.util.inspect.custom')]() {
       return 'CID_1(' + this.toString() + ')'
     }
 
-    /**
-     * Encode the CID into a string.
-     *
-     * @param {BaseNameOrCode} [base=this.multibaseName] - Base encoding to use.
-     * @returns {string}
-     */
     toString(base) {
       return this.toBaseEncodedString(base)
     }
 
-    /**
-     * Serialize to a plain object.
-     *
-     * @returns {SerializedCID}
-     */
     toJSON() {
       return {
         codec: this.codec,
@@ -4011,25 +3798,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       }
     }
 
-    /**
-     * Compare equality with another CID.
-     *
-     * @param {CID_1} other
-     * @returns {boolean}
-     */
     equals(other) {
       return this.codec === other.codec &&
         this.version === other.version &&
         uint8ArrayEquals(this.multihash, other.multihash)
     }
 
-    /**
-     * Test if the given input is a valid CID object.
-     * Throws if it is not.
-     *
-     * @param {any} other - The other CID.
-     * @returns {void}
-     */
     static validateCID(other) {
       const errorMsg = CIDUtil.checkCIDComponents(other)
       if (errorMsg) {
@@ -4037,12 +3811,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       }
     }
 
-    /**
-     * Check if object is a CID instance
-     *
-     * @param {any} value
-     * @returns {value is CID_1}
-     */
     static isCID(value) {
       return value instanceof CID_1 || Boolean(value && value[symbol])
     }
@@ -4064,15 +3832,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     if (options.hashAlg !== 'sha2-256') {
       options.cidVersion = 1
     }
-    // const mh = Multihashing
+
     const multihash = await Multihashing(buffer, options.hashAlg) // buffer is [Uint8Array]
     const cid = new CID_1(options.cidVersion, options.codec, multihash)
-    // console.log('my cid', cid, options.onlyHash)
 
     if (!options.onlyHash) {
-      // @ts-ignore block api takes uint8arrays or blocks but is missing from typedefs
       await block.put(buffer, {
-        // @ts-ignore pin option is missing from block api typedefs
         pin: options.pin,
         preload: options.preload,
         timeout: options.timeout,
@@ -4088,16 +3853,10 @@ const { convertCompilerOptionsFromJson } = require('typescript');
         return String(a).localeCompare(b)
       };
     }
-
-    // Short-circuit when there's nothing to sort.
     var len = arr.length;
     if (len <= 1) {
       return arr
     }
-
-    // Rather than dividing input, simply iterate chunks of 1, 2, 4, 8, etc.
-    // Chunks are the size of the left or right hand in merge sort.
-    // Stop when the left-hand covers all of the array.
     var buffer = new Array(len);
     for (var chk = 1; chk < len; chk *= 2) {
       pass(arr, comp, chk, buffer);
@@ -4217,10 +3976,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       if (!cid) {
         throw new Error('A link requires a cid to point to')
       }
-
-      // assert(size, 'A link requires a size')
-      //  note - links should include size, but this assert is disabled
-      //  for now to maintain consistency with go-ipfs pinset
       this.Name = name || ''
       this.Tsize = size
       this.Hash = new CID_1(cid)

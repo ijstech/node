@@ -24,3 +24,4 @@ export declare function hashFile(filePath: string, version?: number): Promise<{
     cid: string;
     size: number;
 }>;
+export declare function hashFile1(content1: any, options?: any): Promise<any>;

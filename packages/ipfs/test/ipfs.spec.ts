@@ -13,11 +13,11 @@ describe('IPFS', function () {
   //   let { cid } = await hashFile(Path.resolve(__dirname, './1048577.bin'), 0);
   //   assert.strictEqual(cid, 'Qmeb988ZjF9Ui6AVPR8Sjg5sAv1B6DauS5rUjCoNs7ftZ1');
   // });
-  it('hash items by new lib >1MB', async () => {
-    let stream = fs.createReadStream(Path.resolve(__dirname, './1048577.bin'));
-    let c = await Hash.of(stream);
-    assert.strictEqual(c, 'Qmeb988ZjF9Ui6AVPR8Sjg5sAv1B6DauS5rUjCoNs7ftZ1');
-  });
+  // it('hash items by new lib >1MB', async () => {
+  //   let stream = fs.createReadStream(Path.resolve(__dirname, './1048577.bin'));
+  //   let c = await Hash.of(stream);
+  //   assert.strictEqual(c, 'Qmeb988ZjF9Ui6AVPR8Sjg5sAv1B6DauS5rUjCoNs7ftZ1');
+  // });
   it('hash items by self-made lib >1MB', async () => {
     let stream = fs.createReadStream(Path.resolve(__dirname, './1048577.bin'));
     let c = await hashFile1(stream);

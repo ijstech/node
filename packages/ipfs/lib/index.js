@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hashFile = exports.hashContent = exports.hashDir = exports.hashItems = exports.parse = void 0;
+exports.hashFile1 = exports.hashFile = exports.hashContent = exports.hashDir = exports.hashItems = exports.parse = void 0;
 const ipfs_js_1 = __importDefault(require("./ipfs.js"));
 const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
@@ -57,6 +57,7 @@ async function hashContent(content, version) {
 exports.hashContent = hashContent;
 async function hashFile(filePath, version) {
     let content = await fs_1.promises.readFile(filePath);
+    console.log('Content of old version', content);
     return {
         cid: await hashContent(content, version),
         size: content.length
@@ -64,3 +65,7 @@ async function hashFile(filePath, version) {
 }
 exports.hashFile = hashFile;
 ;
+async function hashFile1(content1, options) {
+    return ipfs_js_1.default.hashFile1(content1, options);
+}
+exports.hashFile1 = hashFile1;
