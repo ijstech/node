@@ -57,7 +57,6 @@ async function hashContent(content, version) {
 exports.hashContent = hashContent;
 async function hashFile(filePath, version) {
     let content = await fs_1.promises.readFile(filePath);
-    console.log('Content of old version', content);
     return {
         cid: await hashContent(content, version),
         size: content.length

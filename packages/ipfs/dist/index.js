@@ -14,45 +14,45 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   *--------------------------------------------------------------------------------------------*/
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/hashes/digest.js#L66
 
-  class Digest {
-    constructor(code, size, digest, bytes) {
-      this.code = code;
-      this.size = size;
-      this.digest = digest;
-      this.bytes = bytes;
-    }
-  }
+  // class Digest {
+  //   constructor(code, size, digest, bytes) {
+  //     this.code = code;
+  //     this.size = size;
+  //     this.digest = digest;
+  //     this.bytes = bytes;
+  //   }
+  // }
 
-  const readonly = { writable: false, configurable: false, enumerable: true }
-  const hidden = { writable: false, enumerable: false, configurable: false }
+  // const readonly = { writable: false, configurable: false, enumerable: true }
+  // const hidden = { writable: false, enumerable: false, configurable: false }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L135
-  class ComposedDecoder {
+  // class ComposedDecoder {
 
-    constructor(decoders) {
-      this.decoders = decoders
-    }
+  //   constructor(decoders) {
+  //     this.decoders = decoders
+  //   }
 
-    or(decoder) {
-      return or(this, decoder)
-    }
+  //   or(decoder) {
+  //     return or(this, decoder)
+  //   }
 
-    decode(input) {
-      const prefix = /** @type {Prefix} */ (input[0])
-      const decoder = this.decoders[prefix]
-      if (decoder) {
-        return decoder.decode(input)
-      } else {
-        throw RangeError(`Unable to decode multibase string ${JSON.stringify(input)}, only inputs prefixed with ${Object.keys(this.decoders)} are supported`)
-      }
-    }
-  }
+  //   decode(input) {
+  //     const prefix = /** @type {Prefix} */ (input[0])
+  //     const decoder = this.decoders[prefix]
+  //     if (decoder) {
+  //       return decoder.decode(input)
+  //     } else {
+  //       throw RangeError(`Unable to decode multibase string ${JSON.stringify(input)}, only inputs prefixed with ${Object.keys(this.decoders)} are supported`)
+  //     }
+  //   }
+  // }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L174
-  const or = (left, right) => new ComposedDecoder(/** @type {Decoders<L|R>} */({
-    ...(left.decoders || { [/** @type UnibaseDecoder<L> */(left).prefix]: left }),
-    ...(right.decoders || { [/** @type UnibaseDecoder<R> */(right).prefix]: right })
-  }))
+  // const or = (left, right) => new ComposedDecoder(/** @type {Decoders<L|R>} */({
+  //   ...(left.decoders || { [/** @type UnibaseDecoder<L> */(left).prefix]: left }),
+  //   ...(right.decoders || { [/** @type UnibaseDecoder<R> */(right).prefix]: right })
+  // }))
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L78
   class Decoder {
@@ -257,81 +257,83 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L321
-  const _encode = (data, alphabet, bitsPerChar) => {
-    const pad = alphabet[alphabet.length - 1] === '='
-    const mask = (1 << bitsPerChar) - 1
-    let out = ''
+  // const _encode = (data, alphabet, bitsPerChar) => {
+  //   console.log('const _encode')
+  //   const pad = alphabet[alphabet.length - 1] === '='
+  //   const mask = (1 << bitsPerChar) - 1
+  //   let out = ''
 
-    let bits = 0 // Number of bits currently in the buffer
-    let buffer = 0 // Bits waiting to be written out, MSB first
-    for (let i = 0; i < data.length; ++i) {
-      // Slurp data into the buffer:
-      buffer = (buffer << 8) | data[i]
-      bits += 8
+  //   let bits = 0 // Number of bits currently in the buffer
+  //   let buffer = 0 // Bits waiting to be written out, MSB first
+  //   for (let i = 0; i < data.length; ++i) {
+  //     // Slurp data into the buffer:
+  //     buffer = (buffer << 8) | data[i]
+  //     bits += 8
 
-      // Write out as much as we can:
-      while (bits > bitsPerChar) {
-        bits -= bitsPerChar
-        out += alphabet[mask & (buffer >> bits)]
-      }
-    }
+  //     // Write out as much as we can:
+  //     while (bits > bitsPerChar) {
+  //       bits -= bitsPerChar
+  //       out += alphabet[mask & (buffer >> bits)]
+  //     }
+  //   }
 
-    // Partial character:
-    if (bits) {
-      out += alphabet[mask & (buffer << (bitsPerChar - bits))]
-    }
+  //   // Partial character:
+  //   if (bits) {
+  //     out += alphabet[mask & (buffer << (bitsPerChar - bits))]
+  //   }
 
-    // Add padding characters until we hit a byte boundary:
-    if (pad) {
-      while ((out.length * bitsPerChar) & 7) {
-        out += '='
-      }
-    }
+  //   // Add padding characters until we hit a byte boundary:
+  //   if (pad) {
+  //     while ((out.length * bitsPerChar) & 7) {
+  //       out += '='
+  //     }
+  //   }
 
-    return out
-  }
+  //   return out
+  // }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L268
-  const _decode = (string, alphabet, bitsPerChar, name) => {
-    // Build the character lookup table:
-    /** @type {Record<string, number>} */
-    const codes = {}
-    for (let i = 0; i < alphabet.length; ++i) {
-      codes[alphabet[i]] = i
-    }
+  // const _decode = (string, alphabet, bitsPerChar, name) => {
+  //   console.log('const _decode')
+  //   // Build the character lookup table:
+  //   /** @type {Record<string, number>} */
+  //   const codes = {}
+  //   for (let i = 0; i < alphabet.length; ++i) {
+  //     codes[alphabet[i]] = i
+  //   }
 
-    // Count the padding bytes:
-    let end = string.length
-    while (string[end - 1] === '=') {
-      --end
-    }
+  //   // Count the padding bytes:
+  //   let end = string.length
+  //   while (string[end - 1] === '=') {
+  //     --end
+  //   }
 
-    const out = new Uint8Array((end * bitsPerChar / 8) | 0)
+  //   const out = new Uint8Array((end * bitsPerChar / 8) | 0)
 
-    let bits = 0
-    let buffer = 0
-    let written = 0
-    for (let i = 0; i < end; ++i) {
-      const value = codes[string[i]]
-      if (value === undefined) {
-        throw new SyntaxError(`Non-${name} character`)
-      }
+  //   let bits = 0
+  //   let buffer = 0
+  //   let written = 0
+  //   for (let i = 0; i < end; ++i) {
+  //     const value = codes[string[i]]
+  //     if (value === undefined) {
+  //       throw new SyntaxError(`Non-${name} character`)
+  //     }
 
-      buffer = (buffer << bitsPerChar) | value
-      bits += bitsPerChar
+  //     buffer = (buffer << bitsPerChar) | value
+  //     bits += bitsPerChar
 
-      if (bits >= 8) {
-        bits -= 8
-        out[written++] = 0xff & (buffer >> bits)
-      }
-    }
+  //     if (bits >= 8) {
+  //       bits -= 8
+  //       out[written++] = 0xff & (buffer >> bits)
+  //     }
+  //   }
 
-    if (bits >= bitsPerChar || 0xff & (buffer << (8 - bits))) {
-      throw new SyntaxError('Unexpected end of data')
-    }
+  //   if (bits >= bitsPerChar || 0xff & (buffer << (8 - bits))) {
+  //     throw new SyntaxError('Unexpected end of data')
+  //   }
 
-    return out
-  }
+  //   return out
+  // }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L366
   const rfc4648 = ({ name, prefix, bitsPerChar, alphabet }) => {
@@ -366,31 +368,31 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   const RAW_CODE = 0x55
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/vendor/varint.js#L58
-  var N1 = Math.pow(2, 7);
-  var N2 = Math.pow(2, 14);
-  var N3 = Math.pow(2, 21);
-  var N4 = Math.pow(2, 28);
-  var N5 = Math.pow(2, 35);
-  var N6 = Math.pow(2, 42);
-  var N7 = Math.pow(2, 49);
-  var N8 = Math.pow(2, 56);
-  var N9 = Math.pow(2, 63);
+  // var N1 = Math.pow(2, 7);
+  // var N2 = Math.pow(2, 14);
+  // var N3 = Math.pow(2, 21);
+  // var N4 = Math.pow(2, 28);
+  // var N5 = Math.pow(2, 35);
+  // var N6 = Math.pow(2, 42);
+  // var N7 = Math.pow(2, 49);
+  // var N8 = Math.pow(2, 56);
+  // var N9 = Math.pow(2, 63);
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/vendor/varint.js#L68
-  var encodingLength_2 = function (value) {
-    return (
-      value < N1 ? 1
-        : value < N2 ? 2
-          : value < N3 ? 3
-            : value < N4 ? 4
-              : value < N5 ? 5
-                : value < N6 ? 6
-                  : value < N7 ? 7
-                    : value < N8 ? 8
-                      : value < N9 ? 9
-                        : 10
-    )
-  };
+  // var encodingLength_2 = function (value) {
+  //   return (
+  //     value < N1 ? 1
+  //       : value < N2 ? 2
+  //         : value < N3 ? 3
+  //           : value < N4 ? 4
+  //             : value < N5 ? 5
+  //               : value < N6 ? 6
+  //                 : value < N7 ? 7
+  //                   : value < N8 ? 8
+  //                     : value < N9 ? 9
+  //                       : 10
+  //   )
+  // };
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/vendor/varint.js#L30
   var MSB$1 = 0x80
@@ -425,10 +427,10 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/varint.js#L7
-  const decode_1 = (data) => {
-    const code = decode_2(data)
-    return [code, decode_2.bytes]
-  }
+  // const decode_1 = (data) => {
+  //   const code = decode_2(data)
+  //   return [code, decode_2.bytes]
+  // }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/vendor/varint.js#L8
   function encode_2(num, out, offset) {
@@ -452,219 +454,219 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/varint.js#L17
-  const encodeTo_1 = (int, target, offset = 0) => {
-    encode_2(int, target, offset)
-    return target
-  }
+  // const encodeTo_1 = (int, target, offset = 0) => {
+  //   encode_2(int, target, offset)
+  //   return target
+  // }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/varint.js#L26
-  const encodingLength_1 = (int) => {
-    return encodingLength_2(int)
-  }
+  // const encodingLength_1 = (int) => {
+  //   return encodingLength_2(int)
+  // }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/cid.js#L382
-  const parseCIDtoBytes = (source, base) => {
-    switch (source[0]) {
-      case 'Q': {
-        const decoder = base || base58btc
-        return [base58btc.prefix, decoder.decode(`${base58btc.prefix}${source}`)]
-      }
-      case base58btc.prefix: {
-        const decoder = base || base58btc
-        return [base58btc.prefix, decoder.decode(source)]
-      }
-      case base32.prefix: {
-        const decoder = base || base32
-        return [base32.prefix, decoder.decode(source)]
-      }
-      default: {
-        if (base == null) {
-          throw Error('To parse non base32 or base58btc encoded CID multibase decoder must be provided')
-        }
-        return [source[0], base.decode(source)]
-      }
-    }
-  }
+  // const parseCIDtoBytes = (source, base) => {
+  //   switch (source[0]) {
+  //     case 'Q': {
+  //       const decoder = base || base58btc
+  //       return [base58btc.prefix, decoder.decode(`${base58btc.prefix}${source}`)]
+  //     }
+  //     case base58btc.prefix: {
+  //       const decoder = base || base58btc
+  //       return [base58btc.prefix, decoder.decode(source)]
+  //     }
+  //     case base32.prefix: {
+  //       const decoder = base || base32
+  //       return [base32.prefix, decoder.decode(source)]
+  //     }
+  //     default: {
+  //       if (base == null) {
+  //         throw Error('To parse non base32 or base58btc encoded CID multibase decoder must be provided')
+  //       }
+  //       return [source[0], base.decode(source)]
+  //     }
+  //   }
+  // }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/cid.js#L412
-  const toStringV0 = (bytes, cache, base) => {
-    const { prefix } = base
-    if (prefix !== base58btc.prefix) {
-      throw Error(`Cannot string encode V0 in ${base.name} encoding`)
-    }
+  // const toStringV0 = (bytes, cache, base) => {
+  //   const { prefix } = base
+  //   if (prefix !== base58btc.prefix) {
+  //     throw Error(`Cannot string encode V0 in ${base.name} encoding`)
+  //   }
 
-    const cid = cache.get(prefix)
-    if (cid == null) {
-      const cid = base.encode(bytes).slice(1)
-      cache.set(prefix, cid)
-      return cid
-    } else {
-      return cid
-    }
-  }
+  //   const cid = cache.get(prefix)
+  //   if (cid == null) {
+  //     const cid = base.encode(bytes).slice(1)
+  //     cache.set(prefix, cid)
+  //     return cid
+  //   } else {
+  //     return cid
+  //   }
+  // }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/cid.js#L434
-  const toStringV1 = (bytes, cache, base) => {
-    const { prefix } = base
-    const cid = cache.get(prefix)
-    if (cid == null) {
-      const cid = base.encode(bytes)
-      cache.set(prefix, cid)
-      return cid
-    } else {
-      return cid
-    }
-  }
+  // const toStringV1 = (bytes, cache, base) => {
+  //   const { prefix } = base
+  //   const cid = cache.get(prefix)
+  //   if (cid == null) {
+  //     const cid = base.encode(bytes)
+  //     cache.set(prefix, cid)
+  //     return cid
+  //   } else {
+  //     return cid
+  //   }
+  // }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/cid.js#L455
-  const encodeCID = (version, code, multihash) => {
-    const codeOffset = encodingLength_1(version)
-    const hashOffset = codeOffset + encodingLength_1(code)
-    const bytes = new Uint8Array(hashOffset + multihash.byteLength)
-    encodeTo_1(version, bytes, 0)
-    encodeTo_1(code, bytes, codeOffset)
-    bytes.set(multihash, hashOffset)
-    return bytes
-  }
+  // const encodeCID = (version, code, multihash) => {
+  //   const codeOffset = encodingLength_1(version)
+  //   const hashOffset = codeOffset + encodingLength_1(code)
+  //   const bytes = new Uint8Array(hashOffset + multihash.byteLength)
+  //   encodeTo_1(version, bytes, 0)
+  //   encodeTo_1(code, bytes, codeOffset)
+  //   bytes.set(multihash, hashOffset)
+  //   return bytes
+  // }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bytes.js#L39
-  const coerce = o => {
-    if (o instanceof Uint8Array && o.constructor.name === 'Uint8Array') return o
-    if (o instanceof ArrayBuffer) return new Uint8Array(o)
-    if (ArrayBuffer.isView(o)) {
-      return new Uint8Array(o.buffer, o.byteOffset, o.byteLength)
-    }
-    throw new Error('Unknown type, must be binary type')
-  }
+  // const coerce = o => {
+  //   if (o instanceof Uint8Array && o.constructor.name === 'Uint8Array') return o
+  //   if (o instanceof ArrayBuffer) return new Uint8Array(o)
+  //   if (ArrayBuffer.isView(o)) {
+  //     return new Uint8Array(o.buffer, o.byteOffset, o.byteLength)
+  //   }
+  //   throw new Error('Unknown type, must be binary type')
+  // }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/cid.js#L22
-  class CID {
+  // class CID {
 
-    constructor(version, code, multihash, bytes) {
-      this.code = code
-      this.version = version
-      this.multihash = multihash
-      this.bytes = bytes
-      this.byteOffset = bytes.byteOffset
-      this.byteLength = bytes.byteLength
-      this.asCID = this
-      this._baseCache = new Map()
+  //   constructor(version, code, multihash, bytes) {
+  //     this.code = code
+  //     this.version = version
+  //     this.multihash = multihash
+  //     this.bytes = bytes
+  //     this.byteOffset = bytes.byteOffset
+  //     this.byteLength = bytes.byteLength
+  //     this.asCID = this
+  //     this._baseCache = new Map()
 
-      Object.defineProperties(this, {
-        byteOffset: hidden,
-        byteLength: hidden,
+  //     Object.defineProperties(this, {
+  //       byteOffset: hidden,
+  //       byteLength: hidden,
 
-        code: readonly,
-        version: readonly,
-        multihash: readonly,
-        bytes: readonly,
+  //       code: readonly,
+  //       version: readonly,
+  //       multihash: readonly,
+  //       bytes: readonly,
 
-        _baseCache: hidden,
-        asCID: hidden
-      })
-    }
+  //       _baseCache: hidden,
+  //       asCID: hidden
+  //     })
+  //   }
 
-    toString(base) {
-      const { bytes, version, _baseCache } = this
-      switch (version) {
-        case 0:
-          return toStringV0(bytes, _baseCache, base || base58btc.encoder)
-        default:
-          return toStringV1(bytes, _baseCache, base || base32.encoder)
-      }
-    }
+  //   toString(base) {
+  //     const { bytes, version, _baseCache } = this
+  //     switch (version) {
+  //       case 0:
+  //         return toStringV0(bytes, _baseCache, base || base58btc.encoder)
+  //       default:
+  //         return toStringV1(bytes, _baseCache, base || base32.encoder)
+  //     }
+  //   }
 
-    static create(version, code, digest) {
-      if (typeof code !== 'number') {
-        throw new Error('String codecs are no longer supported')
-      }
+  //   static create(version, code, digest) {
+  //     if (typeof code !== 'number') {
+  //       throw new Error('String codecs are no longer supported')
+  //     }
 
-      switch (version) {
-        case 0: {
-          if (code !== DAG_PB_CODE) {
-            throw new Error(`Version 0 CID must use dag-pb (code: ${DAG_PB_CODE}) block encoding`)
-          } else {
-            return new CID(version, code, digest, digest.bytes)
-          }
-        }
-        case 1: {
-          const bytes = encodeCID(version, code, digest.bytes)
-          return new CID(version, code, digest, bytes)
-        }
-        default: {
-          throw new Error('Invalid version')
-        }
-      }
-    }
+  //     switch (version) {
+  //       case 0: {
+  //         if (code !== DAG_PB_CODE) {
+  //           throw new Error(`Version 0 CID must use dag-pb (code: ${DAG_PB_CODE}) block encoding`)
+  //         } else {
+  //           return new CID(version, code, digest, digest.bytes)
+  //         }
+  //       }
+  //       case 1: {
+  //         const bytes = encodeCID(version, code, digest.bytes)
+  //         return new CID(version, code, digest, bytes)
+  //       }
+  //       default: {
+  //         throw new Error('Invalid version')
+  //       }
+  //     }
+  //   }
 
-    static parse(source, base) {
-      const [prefix, bytes] = parseCIDtoBytes(source, base)
+  //   static parse(source, base) {
+  //     const [prefix, bytes] = parseCIDtoBytes(source, base)
 
-      const cid = CID.decode(bytes)
-      cid._baseCache.set(prefix, source)
+  //     const cid = CID.decode(bytes)
+  //     cid._baseCache.set(prefix, source)
 
-      return cid
-    }
+  //     return cid
+  //   }
 
-    static decode(bytes) {
-      const [cid, remainder] = CID.decodeFirst(bytes)
-      if (remainder.length) {
-        throw new Error('Incorrect length')
-      }
-      return cid
-    }
+  //   static decode(bytes) {
+  //     const [cid, remainder] = CID.decodeFirst(bytes)
+  //     if (remainder.length) {
+  //       throw new Error('Incorrect length')
+  //     }
+  //     return cid
+  //   }
 
-    static decodeFirst(bytes) {
-      const specs = CID.inspectBytes(bytes)
-      const prefixSize = specs.size - specs.multihashSize
-      const multihashBytes = coerce(bytes.subarray(prefixSize, prefixSize + specs.multihashSize))
-      if (multihashBytes.byteLength !== specs.multihashSize) {
-        throw new Error('Incorrect length')
-      }
-      const digestBytes = multihashBytes.subarray(specs.multihashSize - specs.digestSize)
-      const digest = new Digest(specs.multihashCode, specs.digestSize, digestBytes, multihashBytes)
-      const cid = specs.version === 0 ? CID.createV0(digest) : CID.createV1(specs.codec, digest)
-      return [cid, bytes.subarray(specs.size)]
-    }
+  //   static decodeFirst(bytes) {
+  //     const specs = CID.inspectBytes(bytes)
+  //     const prefixSize = specs.size - specs.multihashSize
+  //     const multihashBytes = coerce(bytes.subarray(prefixSize, prefixSize + specs.multihashSize))
+  //     if (multihashBytes.byteLength !== specs.multihashSize) {
+  //       throw new Error('Incorrect length')
+  //     }
+  //     const digestBytes = multihashBytes.subarray(specs.multihashSize - specs.digestSize)
+  //     const digest = new Digest(specs.multihashCode, specs.digestSize, digestBytes, multihashBytes)
+  //     const cid = specs.version === 0 ? CID.createV0(digest) : CID.createV1(specs.codec, digest)
+  //     return [cid, bytes.subarray(specs.size)]
+  //   }
 
-    static inspectBytes(initialBytes) {
-      let offset = 0
-      const next = () => {
-        const [i, length] = decode_1(initialBytes.subarray(offset))
-        offset += length
-        return i
-      }
+  //   static inspectBytes(initialBytes) {
+  //     let offset = 0
+  //     const next = () => {
+  //       const [i, length] = decode_1(initialBytes.subarray(offset))
+  //       offset += length
+  //       return i
+  //     }
 
-      let version = next()
-      let codec = DAG_PB_CODE
-      if (version === 18) { // CIDv0
-        version = 0
-        offset = 0
-      } else if (version === 1) {
-        codec = next()
-      }
+  //     let version = next()
+  //     let codec = DAG_PB_CODE
+  //     if (version === 18) { // CIDv0
+  //       version = 0
+  //       offset = 0
+  //     } else if (version === 1) {
+  //       codec = next()
+  //     }
 
-      if (version !== 0 && version !== 1) {
-        throw new RangeError(`Invalid CID version ${version}`)
-      }
+  //     if (version !== 0 && version !== 1) {
+  //       throw new RangeError(`Invalid CID version ${version}`)
+  //     }
 
-      const prefixSize = offset
-      const multihashCode = next()
-      const digestSize = next()
-      const size = offset + digestSize
-      const multihashSize = size - prefixSize
+  //     const prefixSize = offset
+  //     const multihashCode = next()
+  //     const digestSize = next()
+  //     const size = offset + digestSize
+  //     const multihashSize = size - prefixSize
 
-      return { version, codec, multihashCode, digestSize, multihashSize, size }
-    }
+  //     return { version, codec, multihashCode, digestSize, multihashSize, size }
+  //   }
 
-    static createV0(digest) {
-      return CID.create(0, DAG_PB_CODE, digest)
-    }
+  //   static createV0(digest) {
+  //     return CID.create(0, DAG_PB_CODE, digest)
+  //   }
 
-    static createV1(code, digest) {
-      return CID.create(1, code, digest)
-    }
-  }
+  //   static createV1(code, digest) {
+  //     return CID.create(1, code, digest)
+  //   }
+  // }
   /*---------------------------------------------------------------------------------------------
   *  Copyright (c) 2016, Daniel Wirtz  All rights reserved.
   *  https://github.com/protobufjs/protobuf.js/blob/master/LICENSE
@@ -1052,20 +1054,20 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   *--------------------------------------------------------------------------------------------*/
 
   //https://github.com/feross/buffer/blob/795bbb5bda1b39f1370ebd784bea6107b087e3a7/index.js#L98
-  function Buffer(arg, encodingOrOffset, length) {
-    if (typeof arg === 'number') {
-      if (typeof encodingOrOffset === 'string') {
-        throw new TypeError(
-          'The "string" argument must be of type string. Received type number'
-        )
-      }
-      return allocUnsafe(arg)
-    }
-    return from(arg, encodingOrOffset, length)
-  }
+  // function Buffer(arg, encodingOrOffset, length) {
+  //   if (typeof arg === 'number') {
+  //     if (typeof encodingOrOffset === 'string') {
+  //       throw new TypeError(
+  //         'The "string" argument must be of type string. Received type number'
+  //       )
+  //     }
+  //     return allocUnsafe(arg)
+  //   }
+  //   return from(arg, encodingOrOffset, length)
+  // }
 
-  Object.setPrototypeOf(Buffer.prototype, Uint8Array.prototype)
-  Object.setPrototypeOf(Buffer, Uint8Array)
+  // Object.setPrototypeOf(Buffer.prototype, Uint8Array.prototype)
+  // Object.setPrototypeOf(Buffer, Uint8Array)
 
   const K_MAX_LENGTH = 0x7fffffff
 
@@ -1319,17 +1321,17 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   })();
 
   // Retrieve and modify from https://github.com/IndigoUnited/js-err-code/blob/8dd437663a48e833ab70223f8a58a888985d1e3a/index.js#L15
-  function assign(obj, props) {
-    for (const key in props) {
-      Object.defineProperty(obj, key, {
-        value: props[key],
-        enumerable: true,
-        configurable: true,
-      });
-    }
+  // function assign(obj, props) {
+  //   for (const key in props) {
+  //     Object.defineProperty(obj, key, {
+  //       value: props[key],
+  //       enumerable: true,
+  //       configurable: true,
+  //     });
+  //   }
 
-    return obj;
-  }
+  //   return obj;
+  // }
 
   // Retrieve and modify from https://github.com/IndigoUnited/js-err-code/blob/8dd437663a48e833ab70223f8a58a888985d1e3a/index.js#L34
   function createError(err, code, props) {
@@ -3166,9 +3168,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     'poseidon-bls12_381-a2-fc1-sc': 0xb402
   })
 
-  /**
-   * Expose multihash itself, to avoid silly double requires.
-   */
   const mh_codes = /** @type {import('./types').CodeNameMap} */({})
   for (const key in mh_names) {
     const name = /** @type {HashName} */(key)
@@ -3206,7 +3205,17 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     // binary: ascii,
     // ...basics.bases
   };
-  const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
+
+  function uint8ArrayToString(array, encoding = 'utf8') {
+    const base = bases[encoding];
+    if (!base) {
+      throw new Error(`Unsupported encoding "${encoding}"`);
+    }
+    if ((encoding === 'utf8' || encoding === 'utf-8') && globalThis.Buffer != null && globalThis.Buffer.from != null) {
+      return globalThis.Buffer.from(array.buffer, array.byteOffset, array.byteLength).toString('utf8');
+    }
+    return base.encoder.encode(array).substring(1);
+  }
 
   function mh_toHexString(hash) {
     if (!(hash instanceof Uint8Array)) {
@@ -3223,13 +3232,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   const encodeText = (text) => textEncoder.encode(text)
 
   class Base {
-    /**
-     * @param {BaseName} name
-     * @param {BaseCode} code
-     * @param {CodecFactory} factory
-     * @param {string} alphabet
-     * 
-     */
     constructor(name, code, factory, alphabet) {
       this.name = name
       this.code = code
@@ -3252,17 +3254,9 @@ const { convertCompilerOptionsFromJson } = require('typescript');
 
   const rfc4648_1 = (bitsPerChar) => (alphabet) => {
     return {
-      /**
-       * @param {Uint8Array} input
-       * @returns {string}
-       */
       encode(input) {
         return _encode(input, alphabet, bitsPerChar)
       },
-      /**
-       * @param {string} input
-       * @returns {Uint8Array}
-       */
       decode(input) {
         return _decode(input, alphabet, bitsPerChar)
       }
@@ -3356,8 +3350,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       data = decodeText(data)
     }
     const prefix = data[0]
-
-    // Make all encodings case-insensitive except the ones that include upper and lower chars in the alphabet
     if (['f', 'F', 'v', 'V', 't', 'T', 'b', 'B', 'c', 'C', 'h', 'k', 'K'].includes(prefix)) {
       data = data.toLowerCase()
     }
@@ -3417,8 +3409,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     if (!digest || code === undefined) {
       throw new Error('multihash encode requires at least two args: digest, code')
     }
-
-    // ensure it's a hashfunction code.
     const hashfn = mh_coerceCode(code)
 
     if (!(digest instanceof Uint8Array)) {
@@ -3433,9 +3423,27 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       throw new Error('digest length should be equal to specified length.')
     }
 
+    function alloc_allocUnsafe(size = 0) {
+      if (globalThis.Buffer != null && globalThis.Buffer.allocUnsafe != null) {
+        return globalThis.Buffer.allocUnsafe(size);
+      }
+      return new Uint8Array(size);
+    }
+
     const hash = encode_2(hashfn)
     const len = encode_2(length)
-    const { concat: uint8ArrayConcat } = require('uint8arrays/concat')
+    function uint8ArrayConcat(arrays, length) {
+      if (!length) {
+        length = arrays.reduce((acc, curr) => acc + curr.length, 0);
+      }
+      const output = alloc_allocUnsafe(length);
+      let offset = 0;
+      for (const arr of arrays) {
+        output.set(arr, offset);
+        offset += arr.length;
+      }
+      return output;
+    }
     return uint8ArrayConcat([hash, len, digest], hash.length + len.length + digest.length)
   }
 
@@ -3453,7 +3461,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       throw new Error(`Hash function code should be a number. Got: ${code}`)
     }
 
-    // @ts-ignore
     if (mh_codes[code] === undefined && !mh_isAppCode(code)) {
       throw new Error(`Unrecognized function code: ${code}`)
     }
@@ -3466,7 +3473,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   function mh_validate(multihash) {
-    mh_decode(multihash) // throws if bad.
+    mh_decode(multihash)
   }
 
   function mh_prefix(multihash) {
@@ -3505,35 +3512,21 @@ const { convertCompilerOptionsFromJson } = require('typescript');
 
   Multihashing.multihash = multihash
 
-  /**
-   * @param {Uint8Array} bytes - The value to hash.
-   * @param {HashName} alg - The algorithm to use eg 'sha1'
-   * @param {number} [length] - Optionally trim the result to this length.
-   * @returns {Promise<Uint8Array>}
-   */
   Multihashing.digest = async (bytes, alg, length) => {
     const hash = Multihashing.createHash(alg)
     const digest = await hash(bytes)
     return length ? digest.slice(0, length) : digest
   }
 
-  /**
-   * Creates a function that hashes with the given algorithm
-   *
-   * @param {HashName} alg - The algorithm to use eg 'sha1'
-   * @returns {Digest} - The hash function corresponding to `alg`
-   */
   Multihashing.createHash = function (alg) {
     if (!alg) {
       const e = errcode(new Error('hash algorithm must be specified'), 'ERR_HASH_ALGORITHM_NOT_SPECIFIED')
       throw e
     }
-
     const code = multihash.mh_coerceCode(alg)
     if (!Multihashing.functions[code]) {
       throw errcode(new Error(`multihash function '${alg}' not yet supported`), 'ERR_HASH_ALGORITHM_NOT_SUPPORTED')
     }
-
     return Multihashing.functions[code]
   }
 
@@ -3555,54 +3548,13 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   const { factory: sha } = {
-    /**
-     * @param {HashName} alg
-     * @returns {Digest}
-     */
     factory: (alg) => async (data) => {
       return digest(data, alg)
     },
     digest,
-    /**
-     * @param {Uint8Array} buf
-     * @param {HashName} alg
-     * @param {number} [length]
-     */
     multihashing: async (buf, alg, length) => {
       const h = await digest(buf, alg)
       return multihash.encode(h, alg, length)
-    }
-  }
-
-  const blake = require('blakejs')
-
-  const minB = 0xb201
-  const minS = 0xb241
-
-  const blake2b = {
-    init: blake.blake2bInit,
-    update: blake.blake2bUpdate,
-    digest: blake.blake2bFinal
-  }
-
-  const blake2s = {
-    init: blake.blake2sInit,
-    update: blake.blake2sUpdate,
-    digest: blake.blake2sFinal
-  }
-
-  const makeB2Hash = (size, hf) => async (data) => {
-    const ctx = hf.init(size, null)
-    hf.update(ctx, data)
-    return hf.digest(ctx)
-  }
-
-  const blake_1 = (table) => {
-    for (let i = 0; i < 64; i++) {
-      table[minB + i] = makeB2Hash(i + 1, blake2b)
-    }
-    for (let i = 0; i < 32; i++) {
-      table[minS + i] = makeB2Hash(i + 1, blake2s)
     }
   }
 
@@ -3624,7 +3576,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     // keccak512: hash('keccak-512'),
     // murmur3128: hash('murmur3-128'),
     // murmur332: hash('murmur3-32'),
-    addBlake: blake_1
+    // addBlake: blake_1
   }
   Multihashing.functions = {
     // // identity
@@ -3663,14 +3615,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     0x56: crypto.dblSha2256
   }
 
-  // add blake functions
-  crypto.addBlake(Multihashing.functions)
-
-  /**
-   * @param {Uint8Array} bytes
-   * @param {Uint8Array} hash
-   * @returns {Promise<boolean>}
-   */
   Multihashing.validate = async (bytes, hash) => {
     const newHash = await Multihashing(bytes, multihash.decode(hash).name)
 
@@ -3678,14 +3622,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   const CIDUtil = {
-    /**
-     * Test if the given input is a valid CID object.
-     * Returns an error message if it is not.
-     * Returns undefined if it is a valid CID.
-     *
-     * @param {any} other
-     * @returns {string|undefined}
-     */
     checkCIDComponents: function (other) {
       if (other == null) {
         return 'null values are not valid CIDs'
@@ -3726,74 +3662,17 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   class CID_1 {
-    /**
-     * Create a new CID.
-     *
-     * The algorithm for argument input is roughly:
-     * ```
-     * if (cid)
-     *   -> create a copy
-     * else if (str)
-     *   if (1st char is on multibase table) -> CID String
-     *   else -> bs58 encoded multihash
-     * else if (Uint8Array)
-     *   if (1st byte is 0 or 1) -> CID
-     *   else -> multihash
-     * else if (Number)
-     *   -> construct CID by parts
-     * ```
-     *
-     * @param {CIDVersion | string | Uint8Array | CID} version
-     * @param {string|number} [codec]
-     * @param {Uint8Array} [multihash]
-     * @param {string} [multibaseName]
-     *
-     * @example
-     * new CID(<version>, <codec>, <multihash>, <multibaseName>)
-     * new CID(<cidStr>)
-     * new CID(<cid.bytes>)
-     * new CID(<multihash>)
-     * new CID(<bs58 encoded multihash>)
-     * new CID(<cid>)
-     */
     constructor(version, codec, multihash, multibaseName) {
-      // We have below three blank field accessors only because
-      // otherwise TS will not pick them up if done after assignemnts
-
-      /**
-       * The version of the CID.
-       *
-       * @type {CIDVersion}
-       */
-      // eslint-disable-next-line no-unused-expressions
       this.version
-
-      /**
-       * The codec of the CID.
-       *
-       * @deprecated
-       * @type {CodecName}
-       */
-      // eslint-disable-next-line no-unused-expressions
       this.codec
-
-      /**
-       * The multihash of the CID.
-       *
-       * @type {Uint8Array}
-       */
-      // eslint-disable-next-line no-unused-expressions
       this.multihash
 
       Object.defineProperty(this, symbol, { value: true })
       if (CID_1.isCID(version)) {
-        // version is an exising CID instance
         const cid = /** @type {CID_1} */(version)
         this.version = cid.version
         this.codec = cid.codec
         this.multihash = cid.multihash
-        // Default guard for when a CID < 0.7 is passed with no multibaseName
-        // @ts-ignore
         this.multibaseName = cid.multibaseName || (cid.version === 0 ? 'base58btc' : 'base32')
         return
       }
@@ -3845,33 +3724,17 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       this.version = version
 
       if (typeof codec === 'number') {
-        // @ts-ignore
         codec = codecInts[codec]
       }
 
       this.codec = /** @type {CodecName} */ (codec)
-
       this.multihash = /** @type {Uint8Array} */ (multihash)
-
-      /**
-       * Multibase name as string.
-       *
-       * @deprecated
-       * @type {string}
-       */
       this.multibaseName = multibaseName || (version === 0 ? 'base58btc' : 'base32')
 
       CID_1.validateCID(this)
     }
 
-    /**
-     * The CID as a `Uint8Array`
-     *
-     * @returns {Uint8Array}
-     *
-     */
     get bytes() {
-      // @ts-ignore
       let bytes = this._bytes
 
       if (!bytes) {
@@ -3885,19 +3748,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
         } else {
           throw new Error('unsupported version')
         }
-
-        // Cache this Uint8Array so it doesn't have to be recreated
         Object.defineProperty(this, '_bytes', { value: bytes })
       }
 
       return bytes
     }
 
-    /**
-     * The prefix of the CID.
-     *
-     * @returns {Uint8Array}
-     */
     get prefix() {
       const codec = multicodec.getCodeVarint(this.codec)
       const multihash = mh.prefix(this.multihash)
@@ -3908,20 +3764,10 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       return prefix
     }
 
-    /**
-     * The codec of the CID in its number form.
-     *
-     * @returns {CodecCode}
-     */
     get code() {
       return codecs[this.codec]
     }
 
-    /**
-     * Convert to a CID of version `0`.
-     *
-     * @returns {CID_1}
-     */
     toV0() {
       if (this.codec !== 'dag-pb') {
         throw new Error('Cannot convert a non dag-pb CID to CIDv0')
@@ -3940,25 +3786,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       return new CID_1(0, this.codec, this.multihash)
     }
 
-    /**
-     * Convert to a CID of version `1`.
-     *
-     * @returns {CID_1}
-     */
     toV1() {
       return new CID_1(1, this.codec, this.multihash, this.multibaseName)
     }
 
-    /**
-     * Encode the CID into a string.
-     *
-     * @param {BaseNameOrCode} [base=this.multibaseName] - Base encoding to use.
-     * @returns {string}
-     */
     toBaseEncodedString(base = this.multibaseName) {
-      // @ts-ignore non enumerable cache property
       if (this.string && this.string.length !== 0 && base === this.multibaseName) {
-        // @ts-ignore non enumerable cache property
         return this.string
       }
       let str
@@ -3979,30 +3812,14 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       return str
     }
 
-    /**
-     * CID(QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n)
-     *
-     * @returns {string}
-     */
     [Symbol.for('nodejs.util.inspect.custom')]() {
       return 'CID_1(' + this.toString() + ')'
     }
 
-    /**
-     * Encode the CID into a string.
-     *
-     * @param {BaseNameOrCode} [base=this.multibaseName] - Base encoding to use.
-     * @returns {string}
-     */
     toString(base) {
       return this.toBaseEncodedString(base)
     }
 
-    /**
-     * Serialize to a plain object.
-     *
-     * @returns {SerializedCID}
-     */
     toJSON() {
       return {
         codec: this.codec,
@@ -4011,25 +3828,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       }
     }
 
-    /**
-     * Compare equality with another CID.
-     *
-     * @param {CID_1} other
-     * @returns {boolean}
-     */
     equals(other) {
       return this.codec === other.codec &&
         this.version === other.version &&
         uint8ArrayEquals(this.multihash, other.multihash)
     }
 
-    /**
-     * Test if the given input is a valid CID object.
-     * Throws if it is not.
-     *
-     * @param {any} other - The other CID.
-     * @returns {void}
-     */
     static validateCID(other) {
       const errorMsg = CIDUtil.checkCIDComponents(other)
       if (errorMsg) {
@@ -4037,12 +3841,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       }
     }
 
-    /**
-     * Check if object is a CID instance
-     *
-     * @param {any} value
-     * @returns {value is CID_1}
-     */
     static isCID(value) {
       return value instanceof CID_1 || Boolean(value && value[symbol])
     }
@@ -4064,15 +3862,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     if (options.hashAlg !== 'sha2-256') {
       options.cidVersion = 1
     }
-    // const mh = Multihashing
+
     const multihash = await Multihashing(buffer, options.hashAlg) // buffer is [Uint8Array]
     const cid = new CID_1(options.cidVersion, options.codec, multihash)
-    // console.log('my cid', cid, options.onlyHash)
 
     if (!options.onlyHash) {
-      // @ts-ignore block api takes uint8arrays or blocks but is missing from typedefs
       await block.put(buffer, {
-        // @ts-ignore pin option is missing from block api typedefs
         pin: options.pin,
         preload: options.preload,
         timeout: options.timeout,
@@ -4088,16 +3883,10 @@ const { convertCompilerOptionsFromJson } = require('typescript');
         return String(a).localeCompare(b)
       };
     }
-
-    // Short-circuit when there's nothing to sort.
     var len = arr.length;
     if (len <= 1) {
       return arr
     }
-
-    // Rather than dividing input, simply iterate chunks of 1, 2, 4, 8, etc.
-    // Chunks are the size of the left or right hand in merge sort.
-    // Stop when the left-hand covers all of the array.
     var buffer = new Array(len);
     for (var chk = 1; chk < len; chk *= 2) {
       pass(arr, comp, chk, buffer);
@@ -4217,10 +4006,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       if (!cid) {
         throw new Error('A link requires a cid to point to')
       }
-
-      // assert(size, 'A link requires a size')
-      //  note - links should include size, but this assert is disabled
-      //  for now to maintain consistency with go-ipfs pinset
       this.Name = name || ''
       this.Tsize = size
       this.Hash = new CID_1(cid)
