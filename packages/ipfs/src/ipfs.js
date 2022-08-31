@@ -3203,7 +3203,17 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     // binary: ascii,
     // ...basics.bases
   };
-  const { toString: uint8ArrayToString } = require('uint8arrays/to-string')
+
+  function uint8ArrayToString(array, encoding = 'utf8') {
+    const base = bases[encoding];
+    if (!base) {
+      throw new Error(`Unsupported encoding "${ encoding }"`);
+    }
+    if ((encoding === 'utf8' || encoding === 'utf-8') && globalThis.Buffer != null && globalThis.Buffer.from != null) {
+      return globalThis.Buffer.from(array.buffer, array.byteOffset, array.byteLength).toString('utf8');
+    }
+    return base.encoder.encode(array).substring(1);
+  }
 
   function mh_toHexString(hash) {
     if (!(hash instanceof Uint8Array)) {
@@ -3411,9 +3421,27 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       throw new Error('digest length should be equal to specified length.')
     }
 
+    function alloc_allocUnsafe(size = 0) {
+      if (globalThis.Buffer != null && globalThis.Buffer.allocUnsafe != null) {
+        return globalThis.Buffer.allocUnsafe(size);
+      }
+      return new Uint8Array(size);
+    }
+
     const hash = encode_2(hashfn)
     const len = encode_2(length)
-    const { concat: uint8ArrayConcat } = require('uint8arrays/concat')
+    function uint8ArrayConcat(arrays, length) {
+      if (!length) {
+        length = arrays.reduce((acc, curr) => acc + curr.length, 0);
+      }
+      const output = alloc_allocUnsafe(length);
+      let offset = 0;
+      for (const arr of arrays) {
+        output.set(arr, offset);
+        offset += arr.length;
+      }
+      return output;
+    }
     return uint8ArrayConcat([hash, len, digest], hash.length + len.length + digest.length)
   }
 
