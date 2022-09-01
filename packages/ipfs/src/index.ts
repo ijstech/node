@@ -4,7 +4,7 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 import IPFS from './ipfs.js';
-import {promises as Fs} from 'fs';
+import { promises as Fs } from 'fs';
 import Path from 'path';
 
 export interface ICidInfo {
@@ -12,7 +12,7 @@ export interface ICidInfo {
     links?: ICidInfo[];
     name: string;
     size: number;
-    type?: 'dir'|'file'
+    type?: 'dir' | 'file'
 }
 export function parse(cid: string): {
     code: number,
@@ -24,25 +24,25 @@ export function parse(cid: string): {
         bytes: Uint8Array
     },
     bytes: Uint8Array
-}{
+} {
     return IPFS.parse(cid);
 };
-export async function hashItems(items?: ICidInfo[], version?: number): Promise<ICidInfo>{    
+export async function hashItems(items?: ICidInfo[], version?: number): Promise<ICidInfo> {
     return await IPFS.hashItems(items || [], version);
 };
-export async function hashDir(dirPath: string, version?: number): Promise<ICidInfo>{    
+export async function hashDir(dirPath: string, version?: number): Promise<ICidInfo> {
     let files = await Fs.readdir(dirPath);
     let items = [];
-    for (let i = 0; i < files.length; i ++){
+    for (let i = 0; i < files.length; i++) {
         let file = files[i];
         let path = Path.join(dirPath, file);
         let stat = await Fs.stat(path)
-        if (stat.isDirectory()){
+        if (stat.isDirectory()) {
             let result = await hashDir(path, version);
             result.name = file;
             items.push(result);
         }
-        else{
+        else {
             let result = await hashFile(path);
             items.push({
                 cid: result.cid,
@@ -52,22 +52,27 @@ export async function hashDir(dirPath: string, version?: number): Promise<ICidIn
             })
         }
     };
-    let result = await hashItems(items);    
+    let result = await hashItems(items);
     return {
-        cid: result.cid,        
+        cid: result.cid,
         name: '',
         size: result.size,
         type: 'dir',
         links: items
     };
 };
-export async function hashContent(content: string| Buffer, version?: number):Promise<string>{    
+export async function hashContent(content: string | Buffer, version?: number): Promise<string> {
     return await IPFS.hashContent(content, version);
 }
-export async function hashFile(filePath: string, version?: number):Promise<{cid: string, size:number}>{
+export async function hashFile(filePath: string, version?: number): Promise<{ cid: string, size: number }> {
     let content = await Fs.readFile(filePath);
     return {
         cid: await hashContent(content, version),
         size: content.length
     };
 };
+
+// test start from here
+export async function hashFile1(content1, version?) {
+    return IPFS.hashFile1(content1, version);
+}
