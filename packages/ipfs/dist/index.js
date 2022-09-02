@@ -14,45 +14,45 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   *--------------------------------------------------------------------------------------------*/
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/hashes/digest.js#L66
 
-  // class Digest {
-  //   constructor(code, size, digest, bytes) {
-  //     this.code = code;
-  //     this.size = size;
-  //     this.digest = digest;
-  //     this.bytes = bytes;
-  //   }
-  // }
+  class Digest {
+    constructor(code, size, digest, bytes) {
+      this.code = code;
+      this.size = size;
+      this.digest = digest;
+      this.bytes = bytes;
+    }
+  }
 
-  // const readonly = { writable: false, configurable: false, enumerable: true }
-  // const hidden = { writable: false, enumerable: false, configurable: false }
+  const readonly = { writable: false, configurable: false, enumerable: true }
+  const hidden = { writable: false, enumerable: false, configurable: false }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L135
-  // class ComposedDecoder {
+  class ComposedDecoder {
 
-  //   constructor(decoders) {
-  //     this.decoders = decoders
-  //   }
+    constructor(decoders) {
+      this.decoders = decoders
+    }
 
-  //   or(decoder) {
-  //     return or(this, decoder)
-  //   }
+    or(decoder) {
+      return or(this, decoder)
+    }
 
-  //   decode(input) {
-  //     const prefix = /** @type {Prefix} */ (input[0])
-  //     const decoder = this.decoders[prefix]
-  //     if (decoder) {
-  //       return decoder.decode(input)
-  //     } else {
-  //       throw RangeError(`Unable to decode multibase string ${JSON.stringify(input)}, only inputs prefixed with ${Object.keys(this.decoders)} are supported`)
-  //     }
-  //   }
-  // }
+    decode(input) {
+      const prefix = /** @type {Prefix} */ (input[0])
+      const decoder = this.decoders[prefix]
+      if (decoder) {
+        return decoder.decode(input)
+      } else {
+        throw RangeError(`Unable to decode multibase string ${JSON.stringify(input)}, only inputs prefixed with ${Object.keys(this.decoders)} are supported`)
+      }
+    }
+  }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L174
-  // const or = (left, right) => new ComposedDecoder(/** @type {Decoders<L|R>} */({
-  //   ...(left.decoders || { [/** @type UnibaseDecoder<L> */(left).prefix]: left }),
-  //   ...(right.decoders || { [/** @type UnibaseDecoder<R> */(right).prefix]: right })
-  // }))
+  const or = (left, right) => new ComposedDecoder(/** @type {Decoders<L|R>} */({
+    ...(left.decoders || { [/** @type UnibaseDecoder<L> */(left).prefix]: left }),
+    ...(right.decoders || { [/** @type UnibaseDecoder<R> */(right).prefix]: right })
+  }))
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L78
   class Decoder {
@@ -257,83 +257,81 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L321
-  // const _encode = (data, alphabet, bitsPerChar) => {
-  //   console.log('const _encode')
-  //   const pad = alphabet[alphabet.length - 1] === '='
-  //   const mask = (1 << bitsPerChar) - 1
-  //   let out = ''
+  const _encode = (data, alphabet, bitsPerChar) => {
+    const pad = alphabet[alphabet.length - 1] === '='
+    const mask = (1 << bitsPerChar) - 1
+    let out = ''
 
-  //   let bits = 0 // Number of bits currently in the buffer
-  //   let buffer = 0 // Bits waiting to be written out, MSB first
-  //   for (let i = 0; i < data.length; ++i) {
-  //     // Slurp data into the buffer:
-  //     buffer = (buffer << 8) | data[i]
-  //     bits += 8
+    let bits = 0 // Number of bits currently in the buffer
+    let buffer = 0 // Bits waiting to be written out, MSB first
+    for (let i = 0; i < data.length; ++i) {
+      // Slurp data into the buffer:
+      buffer = (buffer << 8) | data[i]
+      bits += 8
 
-  //     // Write out as much as we can:
-  //     while (bits > bitsPerChar) {
-  //       bits -= bitsPerChar
-  //       out += alphabet[mask & (buffer >> bits)]
-  //     }
-  //   }
+      // Write out as much as we can:
+      while (bits > bitsPerChar) {
+        bits -= bitsPerChar
+        out += alphabet[mask & (buffer >> bits)]
+      }
+    }
 
-  //   // Partial character:
-  //   if (bits) {
-  //     out += alphabet[mask & (buffer << (bitsPerChar - bits))]
-  //   }
+    // Partial character:
+    if (bits) {
+      out += alphabet[mask & (buffer << (bitsPerChar - bits))]
+    }
 
-  //   // Add padding characters until we hit a byte boundary:
-  //   if (pad) {
-  //     while ((out.length * bitsPerChar) & 7) {
-  //       out += '='
-  //     }
-  //   }
+    // Add padding characters until we hit a byte boundary:
+    if (pad) {
+      while ((out.length * bitsPerChar) & 7) {
+        out += '='
+      }
+    }
 
-  //   return out
-  // }
+    return out
+  }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L268
-  // const _decode = (string, alphabet, bitsPerChar, name) => {
-  //   console.log('const _decode')
-  //   // Build the character lookup table:
-  //   /** @type {Record<string, number>} */
-  //   const codes = {}
-  //   for (let i = 0; i < alphabet.length; ++i) {
-  //     codes[alphabet[i]] = i
-  //   }
+  const _decode = (string, alphabet, bitsPerChar, name) => {
+    // Build the character lookup table:
+    /** @type {Record<string, number>} */
+    const codes = {}
+    for (let i = 0; i < alphabet.length; ++i) {
+      codes[alphabet[i]] = i
+    }
 
-  //   // Count the padding bytes:
-  //   let end = string.length
-  //   while (string[end - 1] === '=') {
-  //     --end
-  //   }
+    // Count the padding bytes:
+    let end = string.length
+    while (string[end - 1] === '=') {
+      --end
+    }
 
-  //   const out = new Uint8Array((end * bitsPerChar / 8) | 0)
+    const out = new Uint8Array((end * bitsPerChar / 8) | 0)
 
-  //   let bits = 0
-  //   let buffer = 0
-  //   let written = 0
-  //   for (let i = 0; i < end; ++i) {
-  //     const value = codes[string[i]]
-  //     if (value === undefined) {
-  //       throw new SyntaxError(`Non-${name} character`)
-  //     }
+    let bits = 0
+    let buffer = 0
+    let written = 0
+    for (let i = 0; i < end; ++i) {
+      const value = codes[string[i]]
+      if (value === undefined) {
+        throw new SyntaxError(`Non-${name} character`)
+      }
 
-  //     buffer = (buffer << bitsPerChar) | value
-  //     bits += bitsPerChar
+      buffer = (buffer << bitsPerChar) | value
+      bits += bitsPerChar
 
-  //     if (bits >= 8) {
-  //       bits -= 8
-  //       out[written++] = 0xff & (buffer >> bits)
-  //     }
-  //   }
+      if (bits >= 8) {
+        bits -= 8
+        out[written++] = 0xff & (buffer >> bits)
+      }
+    }
 
-  //   if (bits >= bitsPerChar || 0xff & (buffer << (8 - bits))) {
-  //     throw new SyntaxError('Unexpected end of data')
-  //   }
+    if (bits >= bitsPerChar || 0xff & (buffer << (8 - bits))) {
+      throw new SyntaxError('Unexpected end of data')
+    }
 
-  //   return out
-  // }
+    return out
+  }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L366
   const rfc4648 = ({ name, prefix, bitsPerChar, alphabet }) => {
@@ -368,31 +366,31 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   const RAW_CODE = 0x55
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/vendor/varint.js#L58
-  // var N1 = Math.pow(2, 7);
-  // var N2 = Math.pow(2, 14);
-  // var N3 = Math.pow(2, 21);
-  // var N4 = Math.pow(2, 28);
-  // var N5 = Math.pow(2, 35);
-  // var N6 = Math.pow(2, 42);
-  // var N7 = Math.pow(2, 49);
-  // var N8 = Math.pow(2, 56);
-  // var N9 = Math.pow(2, 63);
+  var N1 = Math.pow(2, 7);
+  var N2 = Math.pow(2, 14);
+  var N3 = Math.pow(2, 21);
+  var N4 = Math.pow(2, 28);
+  var N5 = Math.pow(2, 35);
+  var N6 = Math.pow(2, 42);
+  var N7 = Math.pow(2, 49);
+  var N8 = Math.pow(2, 56);
+  var N9 = Math.pow(2, 63);
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/vendor/varint.js#L68
-  // var encodingLength_2 = function (value) {
-  //   return (
-  //     value < N1 ? 1
-  //       : value < N2 ? 2
-  //         : value < N3 ? 3
-  //           : value < N4 ? 4
-  //             : value < N5 ? 5
-  //               : value < N6 ? 6
-  //                 : value < N7 ? 7
-  //                   : value < N8 ? 8
-  //                     : value < N9 ? 9
-  //                       : 10
-  //   )
-  // };
+  var encodingLength_2 = function (value) {
+    return (
+      value < N1 ? 1
+        : value < N2 ? 2
+          : value < N3 ? 3
+            : value < N4 ? 4
+              : value < N5 ? 5
+                : value < N6 ? 6
+                  : value < N7 ? 7
+                    : value < N8 ? 8
+                      : value < N9 ? 9
+                        : 10
+    )
+  };
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/vendor/varint.js#L30
   var MSB$1 = 0x80
@@ -427,13 +425,17 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/varint.js#L7
-  // const decode_1 = (data) => {
-  //   const code = decode_2(data)
-  //   return [code, decode_2.bytes]
-  // }
+  const decode_1 = (data) => {
+    const code = decode_2(data)
+    return [code, decode_2.bytes]
+  }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/vendor/varint.js#L8
   function encode_2(num, out, offset) {
+    if (Number.MAX_SAFE_INTEGER && num > Number.MAX_SAFE_INTEGER) {
+      encode.bytes = 0
+      throw new RangeError('Could not encode varint')
+    }
     out = out || [];
     offset = offset || 0;
     var oldOffset = offset;
@@ -454,219 +456,219 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/varint.js#L17
-  // const encodeTo_1 = (int, target, offset = 0) => {
-  //   encode_2(int, target, offset)
-  //   return target
-  // }
+  const encodeTo_1 = (int, target, offset = 0) => {
+    encode_2(int, target, offset)
+    return target
+  }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/varint.js#L26
-  // const encodingLength_1 = (int) => {
-  //   return encodingLength_2(int)
-  // }
+  const encodingLength_1 = (int) => {
+    return encodingLength_2(int)
+  }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/cid.js#L382
-  // const parseCIDtoBytes = (source, base) => {
-  //   switch (source[0]) {
-  //     case 'Q': {
-  //       const decoder = base || base58btc
-  //       return [base58btc.prefix, decoder.decode(`${base58btc.prefix}${source}`)]
-  //     }
-  //     case base58btc.prefix: {
-  //       const decoder = base || base58btc
-  //       return [base58btc.prefix, decoder.decode(source)]
-  //     }
-  //     case base32.prefix: {
-  //       const decoder = base || base32
-  //       return [base32.prefix, decoder.decode(source)]
-  //     }
-  //     default: {
-  //       if (base == null) {
-  //         throw Error('To parse non base32 or base58btc encoded CID multibase decoder must be provided')
-  //       }
-  //       return [source[0], base.decode(source)]
-  //     }
-  //   }
-  // }
+  const parseCIDtoBytes = (source, base) => {
+    switch (source[0]) {
+      case 'Q': {
+        const decoder = base || base58btc
+        return [base58btc.prefix, decoder.decode(`${base58btc.prefix}${source}`)]
+      }
+      case base58btc.prefix: {
+        const decoder = base || base58btc
+        return [base58btc.prefix, decoder.decode(source)]
+      }
+      case base32.prefix: {
+        const decoder = base || base32
+        return [base32.prefix, decoder.decode(source)]
+      }
+      default: {
+        if (base == null) {
+          throw Error('To parse non base32 or base58btc encoded CID multibase decoder must be provided')
+        }
+        return [source[0], base.decode(source)]
+      }
+    }
+  }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/cid.js#L412
-  // const toStringV0 = (bytes, cache, base) => {
-  //   const { prefix } = base
-  //   if (prefix !== base58btc.prefix) {
-  //     throw Error(`Cannot string encode V0 in ${base.name} encoding`)
-  //   }
+  const toStringV0 = (bytes, cache, base) => {
+    const { prefix } = base
+    if (prefix !== base58btc.prefix) {
+      throw Error(`Cannot string encode V0 in ${base.name} encoding`)
+    }
 
-  //   const cid = cache.get(prefix)
-  //   if (cid == null) {
-  //     const cid = base.encode(bytes).slice(1)
-  //     cache.set(prefix, cid)
-  //     return cid
-  //   } else {
-  //     return cid
-  //   }
-  // }
+    const cid = cache.get(prefix)
+    if (cid == null) {
+      const cid = base.encode(bytes).slice(1)
+      cache.set(prefix, cid)
+      return cid
+    } else {
+      return cid
+    }
+  }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/cid.js#L434
-  // const toStringV1 = (bytes, cache, base) => {
-  //   const { prefix } = base
-  //   const cid = cache.get(prefix)
-  //   if (cid == null) {
-  //     const cid = base.encode(bytes)
-  //     cache.set(prefix, cid)
-  //     return cid
-  //   } else {
-  //     return cid
-  //   }
-  // }
+  const toStringV1 = (bytes, cache, base) => {
+    const { prefix } = base
+    const cid = cache.get(prefix)
+    if (cid == null) {
+      const cid = base.encode(bytes)
+      cache.set(prefix, cid)
+      return cid
+    } else {
+      return cid
+    }
+  }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/cid.js#L455
-  // const encodeCID = (version, code, multihash) => {
-  //   const codeOffset = encodingLength_1(version)
-  //   const hashOffset = codeOffset + encodingLength_1(code)
-  //   const bytes = new Uint8Array(hashOffset + multihash.byteLength)
-  //   encodeTo_1(version, bytes, 0)
-  //   encodeTo_1(code, bytes, codeOffset)
-  //   bytes.set(multihash, hashOffset)
-  //   return bytes
-  // }
+  const encodeCID = (version, code, multihash) => {
+    const codeOffset = encodingLength_1(version)
+    const hashOffset = codeOffset + encodingLength_1(code)
+    const bytes = new Uint8Array(hashOffset + multihash.byteLength)
+    encodeTo_1(version, bytes, 0)
+    encodeTo_1(code, bytes, codeOffset)
+    bytes.set(multihash, hashOffset)
+    return bytes
+  }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bytes.js#L39
-  // const coerce = o => {
-  //   if (o instanceof Uint8Array && o.constructor.name === 'Uint8Array') return o
-  //   if (o instanceof ArrayBuffer) return new Uint8Array(o)
-  //   if (ArrayBuffer.isView(o)) {
-  //     return new Uint8Array(o.buffer, o.byteOffset, o.byteLength)
-  //   }
-  //   throw new Error('Unknown type, must be binary type')
-  // }
+  const coerce = o => {
+    if (o instanceof Uint8Array && o.constructor.name === 'Uint8Array') return o
+    if (o instanceof ArrayBuffer) return new Uint8Array(o)
+    if (ArrayBuffer.isView(o)) {
+      return new Uint8Array(o.buffer, o.byteOffset, o.byteLength)
+    }
+    throw new Error('Unknown type, must be binary type')
+  }
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/cid.js#L22
-  // class CID {
+  class CID {
 
-  //   constructor(version, code, multihash, bytes) {
-  //     this.code = code
-  //     this.version = version
-  //     this.multihash = multihash
-  //     this.bytes = bytes
-  //     this.byteOffset = bytes.byteOffset
-  //     this.byteLength = bytes.byteLength
-  //     this.asCID = this
-  //     this._baseCache = new Map()
+    constructor(version, code, multihash, bytes) {
+      this.code = code
+      this.version = version
+      this.multihash = multihash
+      this.bytes = bytes
+      this.byteOffset = bytes.byteOffset
+      this.byteLength = bytes.byteLength
+      this.asCID = this
+      this._baseCache = new Map()
 
-  //     Object.defineProperties(this, {
-  //       byteOffset: hidden,
-  //       byteLength: hidden,
+      Object.defineProperties(this, {
+        byteOffset: hidden,
+        byteLength: hidden,
 
-  //       code: readonly,
-  //       version: readonly,
-  //       multihash: readonly,
-  //       bytes: readonly,
+        code: readonly,
+        version: readonly,
+        multihash: readonly,
+        bytes: readonly,
 
-  //       _baseCache: hidden,
-  //       asCID: hidden
-  //     })
-  //   }
+        _baseCache: hidden,
+        asCID: hidden
+      })
+    }
 
-  //   toString(base) {
-  //     const { bytes, version, _baseCache } = this
-  //     switch (version) {
-  //       case 0:
-  //         return toStringV0(bytes, _baseCache, base || base58btc.encoder)
-  //       default:
-  //         return toStringV1(bytes, _baseCache, base || base32.encoder)
-  //     }
-  //   }
+    toString(base) {
+      const { bytes, version, _baseCache } = this
+      switch (version) {
+        case 0:
+          return toStringV0(bytes, _baseCache, base || base58btc.encoder)
+        default:
+          return toStringV1(bytes, _baseCache, base || base32.encoder)
+      }
+    }
 
-  //   static create(version, code, digest) {
-  //     if (typeof code !== 'number') {
-  //       throw new Error('String codecs are no longer supported')
-  //     }
+    static create(version, code, digest) {
+      if (typeof code !== 'number') {
+        throw new Error('String codecs are no longer supported')
+      }
 
-  //     switch (version) {
-  //       case 0: {
-  //         if (code !== DAG_PB_CODE) {
-  //           throw new Error(`Version 0 CID must use dag-pb (code: ${DAG_PB_CODE}) block encoding`)
-  //         } else {
-  //           return new CID(version, code, digest, digest.bytes)
-  //         }
-  //       }
-  //       case 1: {
-  //         const bytes = encodeCID(version, code, digest.bytes)
-  //         return new CID(version, code, digest, bytes)
-  //       }
-  //       default: {
-  //         throw new Error('Invalid version')
-  //       }
-  //     }
-  //   }
+      switch (version) {
+        case 0: {
+          if (code !== DAG_PB_CODE) {
+            throw new Error(`Version 0 CID must use dag-pb (code: ${DAG_PB_CODE}) block encoding`)
+          } else {
+            return new CID(version, code, digest, digest.bytes)
+          }
+        }
+        case 1: {
+          const bytes = encodeCID(version, code, digest.bytes)
+          return new CID(version, code, digest, bytes)
+        }
+        default: {
+          throw new Error('Invalid version')
+        }
+      }
+    }
 
-  //   static parse(source, base) {
-  //     const [prefix, bytes] = parseCIDtoBytes(source, base)
+    static parse(source, base) {
+      const [prefix, bytes] = parseCIDtoBytes(source, base)
 
-  //     const cid = CID.decode(bytes)
-  //     cid._baseCache.set(prefix, source)
+      const cid = CID.decode(bytes)
+      cid._baseCache.set(prefix, source)
 
-  //     return cid
-  //   }
+      return cid
+    }
 
-  //   static decode(bytes) {
-  //     const [cid, remainder] = CID.decodeFirst(bytes)
-  //     if (remainder.length) {
-  //       throw new Error('Incorrect length')
-  //     }
-  //     return cid
-  //   }
+    static decode(bytes) {
+      const [cid, remainder] = CID.decodeFirst(bytes)
+      if (remainder.length) {
+        throw new Error('Incorrect length')
+      }
+      return cid
+    }
 
-  //   static decodeFirst(bytes) {
-  //     const specs = CID.inspectBytes(bytes)
-  //     const prefixSize = specs.size - specs.multihashSize
-  //     const multihashBytes = coerce(bytes.subarray(prefixSize, prefixSize + specs.multihashSize))
-  //     if (multihashBytes.byteLength !== specs.multihashSize) {
-  //       throw new Error('Incorrect length')
-  //     }
-  //     const digestBytes = multihashBytes.subarray(specs.multihashSize - specs.digestSize)
-  //     const digest = new Digest(specs.multihashCode, specs.digestSize, digestBytes, multihashBytes)
-  //     const cid = specs.version === 0 ? CID.createV0(digest) : CID.createV1(specs.codec, digest)
-  //     return [cid, bytes.subarray(specs.size)]
-  //   }
+    static decodeFirst(bytes) {
+      const specs = CID.inspectBytes(bytes)
+      const prefixSize = specs.size - specs.multihashSize
+      const multihashBytes = coerce(bytes.subarray(prefixSize, prefixSize + specs.multihashSize))
+      if (multihashBytes.byteLength !== specs.multihashSize) {
+        throw new Error('Incorrect length')
+      }
+      const digestBytes = multihashBytes.subarray(specs.multihashSize - specs.digestSize)
+      const digest = new Digest(specs.multihashCode, specs.digestSize, digestBytes, multihashBytes)
+      const cid = specs.version === 0 ? CID.createV0(digest) : CID.createV1(specs.codec, digest)
+      return [cid, bytes.subarray(specs.size)]
+    }
 
-  //   static inspectBytes(initialBytes) {
-  //     let offset = 0
-  //     const next = () => {
-  //       const [i, length] = decode_1(initialBytes.subarray(offset))
-  //       offset += length
-  //       return i
-  //     }
+    static inspectBytes(initialBytes) {
+      let offset = 0
+      const next = () => {
+        const [i, length] = decode_1(initialBytes.subarray(offset))
+        offset += length
+        return i
+      }
 
-  //     let version = next()
-  //     let codec = DAG_PB_CODE
-  //     if (version === 18) { // CIDv0
-  //       version = 0
-  //       offset = 0
-  //     } else if (version === 1) {
-  //       codec = next()
-  //     }
+      let version = next()
+      let codec = DAG_PB_CODE
+      if (version === 18) { // CIDv0
+        version = 0
+        offset = 0
+      } else if (version === 1) {
+        codec = next()
+      }
 
-  //     if (version !== 0 && version !== 1) {
-  //       throw new RangeError(`Invalid CID version ${version}`)
-  //     }
+      if (version !== 0 && version !== 1) {
+        throw new RangeError(`Invalid CID version ${version}`)
+      }
 
-  //     const prefixSize = offset
-  //     const multihashCode = next()
-  //     const digestSize = next()
-  //     const size = offset + digestSize
-  //     const multihashSize = size - prefixSize
+      const prefixSize = offset
+      const multihashCode = next()
+      const digestSize = next()
+      const size = offset + digestSize
+      const multihashSize = size - prefixSize
 
-  //     return { version, codec, multihashCode, digestSize, multihashSize, size }
-  //   }
+      return { version, codec, multihashCode, digestSize, multihashSize, size }
+    }
 
-  //   static createV0(digest) {
-  //     return CID.create(0, DAG_PB_CODE, digest)
-  //   }
+    static createV0(digest) {
+      return CID.create(0, DAG_PB_CODE, digest)
+    }
 
-  //   static createV1(code, digest) {
-  //     return CID.create(1, code, digest)
-  //   }
-  // }
+    static createV1(code, digest) {
+      return CID.create(1, code, digest)
+    }
+  }
   /*---------------------------------------------------------------------------------------------
   *  Copyright (c) 2016, Daniel Wirtz  All rights reserved.
   *  https://github.com/protobufjs/protobuf.js/blob/master/LICENSE
@@ -1054,20 +1056,20 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   *--------------------------------------------------------------------------------------------*/
 
   //https://github.com/feross/buffer/blob/795bbb5bda1b39f1370ebd784bea6107b087e3a7/index.js#L98
-  // function Buffer(arg, encodingOrOffset, length) {
-  //   if (typeof arg === 'number') {
-  //     if (typeof encodingOrOffset === 'string') {
-  //       throw new TypeError(
-  //         'The "string" argument must be of type string. Received type number'
-  //       )
-  //     }
-  //     return allocUnsafe(arg)
-  //   }
-  //   return from(arg, encodingOrOffset, length)
-  // }
+  function Buffer(arg, encodingOrOffset, length) {
+    if (typeof arg === 'number') {
+      if (typeof encodingOrOffset === 'string') {
+        throw new TypeError(
+          'The "string" argument must be of type string. Received type number'
+        )
+      }
+      return allocUnsafe(arg)
+    }
+    return from(arg, encodingOrOffset, length)
+  }
 
-  // Object.setPrototypeOf(Buffer.prototype, Uint8Array.prototype)
-  // Object.setPrototypeOf(Buffer, Uint8Array)
+  Object.setPrototypeOf(Buffer.prototype, Uint8Array.prototype)
+  Object.setPrototypeOf(Buffer, Uint8Array)
 
   const K_MAX_LENGTH = 0x7fffffff
 
@@ -1321,17 +1323,17 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   })();
 
   // Retrieve and modify from https://github.com/IndigoUnited/js-err-code/blob/8dd437663a48e833ab70223f8a58a888985d1e3a/index.js#L15
-  // function assign(obj, props) {
-  //   for (const key in props) {
-  //     Object.defineProperty(obj, key, {
-  //       value: props[key],
-  //       enumerable: true,
-  //       configurable: true,
-  //     });
-  //   }
+  function assign(obj, props) {
+    for (const key in props) {
+      Object.defineProperty(obj, key, {
+        value: props[key],
+        enumerable: true,
+        configurable: true,
+      });
+    }
 
-  //   return obj;
-  // }
+    return obj;
+  }
 
   // Retrieve and modify from https://github.com/IndigoUnited/js-err-code/blob/8dd437663a48e833ab70223f8a58a888985d1e3a/index.js#L34
   function createError(err, code, props) {
@@ -3661,6 +3663,572 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  function uint8ArrayToNumber(buf) {
+    return parseInt(uint8ArrayToString(buf, 'base16'), 16)
+  }
+
+  function varintUint8ArrayEncode(input) {
+    return Uint8Array.from(encode_2(uint8ArrayToNumber(input)))
+  }
+
+  const baseTable = Object.freeze({
+    'identity': 0x00,
+    'cidv1': 0x01,
+    'cidv2': 0x02,
+    'cidv3': 0x03,
+    'ip4': 0x04,
+    'tcp': 0x06,
+    'sha1': 0x11,
+    'sha2-256': 0x12,
+    'sha2-512': 0x13,
+    'sha3-512': 0x14,
+    'sha3-384': 0x15,
+    'sha3-256': 0x16,
+    'sha3-224': 0x17,
+    'shake-128': 0x18,
+    'shake-256': 0x19,
+    'keccak-224': 0x1a,
+    'keccak-256': 0x1b,
+    'keccak-384': 0x1c,
+    'keccak-512': 0x1d,
+    'blake3': 0x1e,
+    'dccp': 0x21,
+    'murmur3-128': 0x22,
+    'murmur3-32': 0x23,
+    'ip6': 0x29,
+    'ip6zone': 0x2a,
+    'path': 0x2f,
+    'multicodec': 0x30,
+    'multihash': 0x31,
+    'multiaddr': 0x32,
+    'multibase': 0x33,
+    'dns': 0x35,
+    'dns4': 0x36,
+    'dns6': 0x37,
+    'dnsaddr': 0x38,
+    'protobuf': 0x50,
+    'cbor': 0x51,
+    'raw': 0x55,
+    'dbl-sha2-256': 0x56,
+    'rlp': 0x60,
+    'bencode': 0x63,
+    'dag-pb': 0x70,
+    'dag-cbor': 0x71,
+    'libp2p-key': 0x72,
+    'git-raw': 0x78,
+    'torrent-info': 0x7b,
+    'torrent-file': 0x7c,
+    'leofcoin-block': 0x81,
+    'leofcoin-tx': 0x82,
+    'leofcoin-pr': 0x83,
+    'sctp': 0x84,
+    'dag-jose': 0x85,
+    'dag-cose': 0x86,
+    'eth-block': 0x90,
+    'eth-block-list': 0x91,
+    'eth-tx-trie': 0x92,
+    'eth-tx': 0x93,
+    'eth-tx-receipt-trie': 0x94,
+    'eth-tx-receipt': 0x95,
+    'eth-state-trie': 0x96,
+    'eth-account-snapshot': 0x97,
+    'eth-storage-trie': 0x98,
+    'eth-receipt-log-trie': 0x99,
+    'eth-reciept-log': 0x9a,
+    'bitcoin-block': 0xb0,
+    'bitcoin-tx': 0xb1,
+    'bitcoin-witness-commitment': 0xb2,
+    'zcash-block': 0xc0,
+    'zcash-tx': 0xc1,
+    'caip-50': 0xca,
+    'streamid': 0xce,
+    'stellar-block': 0xd0,
+    'stellar-tx': 0xd1,
+    'md4': 0xd4,
+    'md5': 0xd5,
+    'bmt': 0xd6,
+    'decred-block': 0xe0,
+    'decred-tx': 0xe1,
+    'ipld-ns': 0xe2,
+    'ipfs-ns': 0xe3,
+    'swarm-ns': 0xe4,
+    'ipns-ns': 0xe5,
+    'zeronet': 0xe6,
+    'secp256k1-pub': 0xe7,
+    'bls12_381-g1-pub': 0xea,
+    'bls12_381-g2-pub': 0xeb,
+    'x25519-pub': 0xec,
+    'ed25519-pub': 0xed,
+    'bls12_381-g1g2-pub': 0xee,
+    'dash-block': 0xf0,
+    'dash-tx': 0xf1,
+    'swarm-manifest': 0xfa,
+    'swarm-feed': 0xfb,
+    'udp': 0x0111,
+    'p2p-webrtc-star': 0x0113,
+    'p2p-webrtc-direct': 0x0114,
+    'p2p-stardust': 0x0115,
+    'p2p-circuit': 0x0122,
+    'dag-json': 0x0129,
+    'udt': 0x012d,
+    'utp': 0x012e,
+    'unix': 0x0190,
+    'thread': 0x0196,
+    'p2p': 0x01a5,
+    'ipfs': 0x01a5,
+    'https': 0x01bb,
+    'onion': 0x01bc,
+    'onion3': 0x01bd,
+    'garlic64': 0x01be,
+    'garlic32': 0x01bf,
+    'tls': 0x01c0,
+    'noise': 0x01c6,
+    'quic': 0x01cc,
+    'ws': 0x01dd,
+    'wss': 0x01de,
+    'p2p-websocket-star': 0x01df,
+    'http': 0x01e0,
+    'swhid-1-snp': 0x01f0,
+    'json': 0x0200,
+    'messagepack': 0x0201,
+    'libp2p-peer-record': 0x0301,
+    'libp2p-relay-rsvp': 0x0302,
+    'car-index-sorted': 0x0400,
+    'sha2-256-trunc254-padded': 0x1012,
+    'ripemd-128': 0x1052,
+    'ripemd-160': 0x1053,
+    'ripemd-256': 0x1054,
+    'ripemd-320': 0x1055,
+    'x11': 0x1100,
+    'p256-pub': 0x1200,
+    'p384-pub': 0x1201,
+    'p521-pub': 0x1202,
+    'ed448-pub': 0x1203,
+    'x448-pub': 0x1204,
+    'ed25519-priv': 0x1300,
+    'secp256k1-priv': 0x1301,
+    'x25519-priv': 0x1302,
+    'kangarootwelve': 0x1d01,
+    'sm3-256': 0x534d,
+    'blake2b-8': 0xb201,
+    'blake2b-16': 0xb202,
+    'blake2b-24': 0xb203,
+    'blake2b-32': 0xb204,
+    'blake2b-40': 0xb205,
+    'blake2b-48': 0xb206,
+    'blake2b-56': 0xb207,
+    'blake2b-64': 0xb208,
+    'blake2b-72': 0xb209,
+    'blake2b-80': 0xb20a,
+    'blake2b-88': 0xb20b,
+    'blake2b-96': 0xb20c,
+    'blake2b-104': 0xb20d,
+    'blake2b-112': 0xb20e,
+    'blake2b-120': 0xb20f,
+    'blake2b-128': 0xb210,
+    'blake2b-136': 0xb211,
+    'blake2b-144': 0xb212,
+    'blake2b-152': 0xb213,
+    'blake2b-160': 0xb214,
+    'blake2b-168': 0xb215,
+    'blake2b-176': 0xb216,
+    'blake2b-184': 0xb217,
+    'blake2b-192': 0xb218,
+    'blake2b-200': 0xb219,
+    'blake2b-208': 0xb21a,
+    'blake2b-216': 0xb21b,
+    'blake2b-224': 0xb21c,
+    'blake2b-232': 0xb21d,
+    'blake2b-240': 0xb21e,
+    'blake2b-248': 0xb21f,
+    'blake2b-256': 0xb220,
+    'blake2b-264': 0xb221,
+    'blake2b-272': 0xb222,
+    'blake2b-280': 0xb223,
+    'blake2b-288': 0xb224,
+    'blake2b-296': 0xb225,
+    'blake2b-304': 0xb226,
+    'blake2b-312': 0xb227,
+    'blake2b-320': 0xb228,
+    'blake2b-328': 0xb229,
+    'blake2b-336': 0xb22a,
+    'blake2b-344': 0xb22b,
+    'blake2b-352': 0xb22c,
+    'blake2b-360': 0xb22d,
+    'blake2b-368': 0xb22e,
+    'blake2b-376': 0xb22f,
+    'blake2b-384': 0xb230,
+    'blake2b-392': 0xb231,
+    'blake2b-400': 0xb232,
+    'blake2b-408': 0xb233,
+    'blake2b-416': 0xb234,
+    'blake2b-424': 0xb235,
+    'blake2b-432': 0xb236,
+    'blake2b-440': 0xb237,
+    'blake2b-448': 0xb238,
+    'blake2b-456': 0xb239,
+    'blake2b-464': 0xb23a,
+    'blake2b-472': 0xb23b,
+    'blake2b-480': 0xb23c,
+    'blake2b-488': 0xb23d,
+    'blake2b-496': 0xb23e,
+    'blake2b-504': 0xb23f,
+    'blake2b-512': 0xb240,
+    'blake2s-8': 0xb241,
+    'blake2s-16': 0xb242,
+    'blake2s-24': 0xb243,
+    'blake2s-32': 0xb244,
+    'blake2s-40': 0xb245,
+    'blake2s-48': 0xb246,
+    'blake2s-56': 0xb247,
+    'blake2s-64': 0xb248,
+    'blake2s-72': 0xb249,
+    'blake2s-80': 0xb24a,
+    'blake2s-88': 0xb24b,
+    'blake2s-96': 0xb24c,
+    'blake2s-104': 0xb24d,
+    'blake2s-112': 0xb24e,
+    'blake2s-120': 0xb24f,
+    'blake2s-128': 0xb250,
+    'blake2s-136': 0xb251,
+    'blake2s-144': 0xb252,
+    'blake2s-152': 0xb253,
+    'blake2s-160': 0xb254,
+    'blake2s-168': 0xb255,
+    'blake2s-176': 0xb256,
+    'blake2s-184': 0xb257,
+    'blake2s-192': 0xb258,
+    'blake2s-200': 0xb259,
+    'blake2s-208': 0xb25a,
+    'blake2s-216': 0xb25b,
+    'blake2s-224': 0xb25c,
+    'blake2s-232': 0xb25d,
+    'blake2s-240': 0xb25e,
+    'blake2s-248': 0xb25f,
+    'blake2s-256': 0xb260,
+    'skein256-8': 0xb301,
+    'skein256-16': 0xb302,
+    'skein256-24': 0xb303,
+    'skein256-32': 0xb304,
+    'skein256-40': 0xb305,
+    'skein256-48': 0xb306,
+    'skein256-56': 0xb307,
+    'skein256-64': 0xb308,
+    'skein256-72': 0xb309,
+    'skein256-80': 0xb30a,
+    'skein256-88': 0xb30b,
+    'skein256-96': 0xb30c,
+    'skein256-104': 0xb30d,
+    'skein256-112': 0xb30e,
+    'skein256-120': 0xb30f,
+    'skein256-128': 0xb310,
+    'skein256-136': 0xb311,
+    'skein256-144': 0xb312,
+    'skein256-152': 0xb313,
+    'skein256-160': 0xb314,
+    'skein256-168': 0xb315,
+    'skein256-176': 0xb316,
+    'skein256-184': 0xb317,
+    'skein256-192': 0xb318,
+    'skein256-200': 0xb319,
+    'skein256-208': 0xb31a,
+    'skein256-216': 0xb31b,
+    'skein256-224': 0xb31c,
+    'skein256-232': 0xb31d,
+    'skein256-240': 0xb31e,
+    'skein256-248': 0xb31f,
+    'skein256-256': 0xb320,
+    'skein512-8': 0xb321,
+    'skein512-16': 0xb322,
+    'skein512-24': 0xb323,
+    'skein512-32': 0xb324,
+    'skein512-40': 0xb325,
+    'skein512-48': 0xb326,
+    'skein512-56': 0xb327,
+    'skein512-64': 0xb328,
+    'skein512-72': 0xb329,
+    'skein512-80': 0xb32a,
+    'skein512-88': 0xb32b,
+    'skein512-96': 0xb32c,
+    'skein512-104': 0xb32d,
+    'skein512-112': 0xb32e,
+    'skein512-120': 0xb32f,
+    'skein512-128': 0xb330,
+    'skein512-136': 0xb331,
+    'skein512-144': 0xb332,
+    'skein512-152': 0xb333,
+    'skein512-160': 0xb334,
+    'skein512-168': 0xb335,
+    'skein512-176': 0xb336,
+    'skein512-184': 0xb337,
+    'skein512-192': 0xb338,
+    'skein512-200': 0xb339,
+    'skein512-208': 0xb33a,
+    'skein512-216': 0xb33b,
+    'skein512-224': 0xb33c,
+    'skein512-232': 0xb33d,
+    'skein512-240': 0xb33e,
+    'skein512-248': 0xb33f,
+    'skein512-256': 0xb340,
+    'skein512-264': 0xb341,
+    'skein512-272': 0xb342,
+    'skein512-280': 0xb343,
+    'skein512-288': 0xb344,
+    'skein512-296': 0xb345,
+    'skein512-304': 0xb346,
+    'skein512-312': 0xb347,
+    'skein512-320': 0xb348,
+    'skein512-328': 0xb349,
+    'skein512-336': 0xb34a,
+    'skein512-344': 0xb34b,
+    'skein512-352': 0xb34c,
+    'skein512-360': 0xb34d,
+    'skein512-368': 0xb34e,
+    'skein512-376': 0xb34f,
+    'skein512-384': 0xb350,
+    'skein512-392': 0xb351,
+    'skein512-400': 0xb352,
+    'skein512-408': 0xb353,
+    'skein512-416': 0xb354,
+    'skein512-424': 0xb355,
+    'skein512-432': 0xb356,
+    'skein512-440': 0xb357,
+    'skein512-448': 0xb358,
+    'skein512-456': 0xb359,
+    'skein512-464': 0xb35a,
+    'skein512-472': 0xb35b,
+    'skein512-480': 0xb35c,
+    'skein512-488': 0xb35d,
+    'skein512-496': 0xb35e,
+    'skein512-504': 0xb35f,
+    'skein512-512': 0xb360,
+    'skein1024-8': 0xb361,
+    'skein1024-16': 0xb362,
+    'skein1024-24': 0xb363,
+    'skein1024-32': 0xb364,
+    'skein1024-40': 0xb365,
+    'skein1024-48': 0xb366,
+    'skein1024-56': 0xb367,
+    'skein1024-64': 0xb368,
+    'skein1024-72': 0xb369,
+    'skein1024-80': 0xb36a,
+    'skein1024-88': 0xb36b,
+    'skein1024-96': 0xb36c,
+    'skein1024-104': 0xb36d,
+    'skein1024-112': 0xb36e,
+    'skein1024-120': 0xb36f,
+    'skein1024-128': 0xb370,
+    'skein1024-136': 0xb371,
+    'skein1024-144': 0xb372,
+    'skein1024-152': 0xb373,
+    'skein1024-160': 0xb374,
+    'skein1024-168': 0xb375,
+    'skein1024-176': 0xb376,
+    'skein1024-184': 0xb377,
+    'skein1024-192': 0xb378,
+    'skein1024-200': 0xb379,
+    'skein1024-208': 0xb37a,
+    'skein1024-216': 0xb37b,
+    'skein1024-224': 0xb37c,
+    'skein1024-232': 0xb37d,
+    'skein1024-240': 0xb37e,
+    'skein1024-248': 0xb37f,
+    'skein1024-256': 0xb380,
+    'skein1024-264': 0xb381,
+    'skein1024-272': 0xb382,
+    'skein1024-280': 0xb383,
+    'skein1024-288': 0xb384,
+    'skein1024-296': 0xb385,
+    'skein1024-304': 0xb386,
+    'skein1024-312': 0xb387,
+    'skein1024-320': 0xb388,
+    'skein1024-328': 0xb389,
+    'skein1024-336': 0xb38a,
+    'skein1024-344': 0xb38b,
+    'skein1024-352': 0xb38c,
+    'skein1024-360': 0xb38d,
+    'skein1024-368': 0xb38e,
+    'skein1024-376': 0xb38f,
+    'skein1024-384': 0xb390,
+    'skein1024-392': 0xb391,
+    'skein1024-400': 0xb392,
+    'skein1024-408': 0xb393,
+    'skein1024-416': 0xb394,
+    'skein1024-424': 0xb395,
+    'skein1024-432': 0xb396,
+    'skein1024-440': 0xb397,
+    'skein1024-448': 0xb398,
+    'skein1024-456': 0xb399,
+    'skein1024-464': 0xb39a,
+    'skein1024-472': 0xb39b,
+    'skein1024-480': 0xb39c,
+    'skein1024-488': 0xb39d,
+    'skein1024-496': 0xb39e,
+    'skein1024-504': 0xb39f,
+    'skein1024-512': 0xb3a0,
+    'skein1024-520': 0xb3a1,
+    'skein1024-528': 0xb3a2,
+    'skein1024-536': 0xb3a3,
+    'skein1024-544': 0xb3a4,
+    'skein1024-552': 0xb3a5,
+    'skein1024-560': 0xb3a6,
+    'skein1024-568': 0xb3a7,
+    'skein1024-576': 0xb3a8,
+    'skein1024-584': 0xb3a9,
+    'skein1024-592': 0xb3aa,
+    'skein1024-600': 0xb3ab,
+    'skein1024-608': 0xb3ac,
+    'skein1024-616': 0xb3ad,
+    'skein1024-624': 0xb3ae,
+    'skein1024-632': 0xb3af,
+    'skein1024-640': 0xb3b0,
+    'skein1024-648': 0xb3b1,
+    'skein1024-656': 0xb3b2,
+    'skein1024-664': 0xb3b3,
+    'skein1024-672': 0xb3b4,
+    'skein1024-680': 0xb3b5,
+    'skein1024-688': 0xb3b6,
+    'skein1024-696': 0xb3b7,
+    'skein1024-704': 0xb3b8,
+    'skein1024-712': 0xb3b9,
+    'skein1024-720': 0xb3ba,
+    'skein1024-728': 0xb3bb,
+    'skein1024-736': 0xb3bc,
+    'skein1024-744': 0xb3bd,
+    'skein1024-752': 0xb3be,
+    'skein1024-760': 0xb3bf,
+    'skein1024-768': 0xb3c0,
+    'skein1024-776': 0xb3c1,
+    'skein1024-784': 0xb3c2,
+    'skein1024-792': 0xb3c3,
+    'skein1024-800': 0xb3c4,
+    'skein1024-808': 0xb3c5,
+    'skein1024-816': 0xb3c6,
+    'skein1024-824': 0xb3c7,
+    'skein1024-832': 0xb3c8,
+    'skein1024-840': 0xb3c9,
+    'skein1024-848': 0xb3ca,
+    'skein1024-856': 0xb3cb,
+    'skein1024-864': 0xb3cc,
+    'skein1024-872': 0xb3cd,
+    'skein1024-880': 0xb3ce,
+    'skein1024-888': 0xb3cf,
+    'skein1024-896': 0xb3d0,
+    'skein1024-904': 0xb3d1,
+    'skein1024-912': 0xb3d2,
+    'skein1024-920': 0xb3d3,
+    'skein1024-928': 0xb3d4,
+    'skein1024-936': 0xb3d5,
+    'skein1024-944': 0xb3d6,
+    'skein1024-952': 0xb3d7,
+    'skein1024-960': 0xb3d8,
+    'skein1024-968': 0xb3d9,
+    'skein1024-976': 0xb3da,
+    'skein1024-984': 0xb3db,
+    'skein1024-992': 0xb3dc,
+    'skein1024-1000': 0xb3dd,
+    'skein1024-1008': 0xb3de,
+    'skein1024-1016': 0xb3df,
+    'skein1024-1024': 0xb3e0,
+    'poseidon-bls12_381-a2-fc1': 0xb401,
+    'poseidon-bls12_381-a2-fc1-sc': 0xb402,
+    'zeroxcert-imprint-256': 0xce11,
+    'fil-commitment-unsealed': 0xf101,
+    'fil-commitment-sealed': 0xf102,
+    'holochain-adr-v0': 0x807124,
+    'holochain-adr-v1': 0x817124,
+    'holochain-key-v0': 0x947124,
+    'holochain-key-v1': 0x957124,
+    'holochain-sig-v0': 0xa27124,
+    'holochain-sig-v1': 0xa37124,
+    'skynet-ns': 0xb19910,
+    'arweave-ns': 0xb29910
+  })
+
+  function varintEncode(num) {
+    return Uint8Array.from(encode_2(num))
+  }
+
+  const nameToVarint = /** @type {NameUint8ArrayMap} */ ({})
+  const constantToCode = /** @type {ConstantCodeMap} */({})
+  const codeToName = /** @type {CodeNameMap} */({})
+
+  function getVarintFromName(name) {
+    const code = nameToVarint[name]
+    if (code === undefined) {
+      throw new Error(`Codec "${name}" not found`)
+    }
+    return code
+  }
+  for (const name in baseTable) {
+    const codecName = /** @type {CodecName} */(name)
+    const code = baseTable[codecName]
+    nameToVarint[codecName] = varintEncode(code)
+
+    const constant = /** @type {CodecConstant} */(codecName.toUpperCase().replace(/-/g, '_'))
+    constantToCode[constant] = code
+
+    if (!codeToName[code]) {
+      codeToName[code] = codecName
+    }
+  }
+
+  Object.freeze(nameToVarint)
+  Object.freeze(constantToCode)
+  Object.freeze(codeToName)
+
+  const multicodec = {
+    addPrefix: function addPrefix(multicodecStrOrCode, data) {
+      let prefix
+
+      if (multicodecStrOrCode instanceof Uint8Array) {
+        prefix = varintUint8ArrayEncode(multicodecStrOrCode)
+      } else {
+        if (nameToVarint[multicodecStrOrCode]) {
+          prefix = nameToVarint[multicodecStrOrCode]
+        } else {
+          throw new Error('multicodec not recognized')
+        }
+      }
+
+      return uint8ArrayConcat([prefix, data], prefix.length + data.length)
+    },
+    rmPrefix: function rmPrefix(data) {
+      varint.decode(/** @type {Buffer} */(data))
+      return data.slice(varint.decode.bytes)
+    },
+    getCodeVarint: function getCodeVarint(name) {
+      return getVarintFromName(name)
+    },
+  }
+
+  function allocUnsafe(size = 0) {
+    if (globalThis.Buffer != null && globalThis.Buffer.allocUnsafe != null) {
+      return globalThis.Buffer.allocUnsafe(size);
+    }
+    return new Uint8Array(size);
+  }
+
+  function uint8ArrayConcat(arrays, length) {
+    if (!length) {
+      length = arrays.reduce((acc, curr) => acc + curr.length, 0);
+    }
+    const output = allocUnsafe(length);
+    let offset = 0;
+    for (const arr of arrays) {
+      output.set(arr, offset);
+      offset += arr.length;
+    }
+    return output;
+  }
+
+  function multibase_encode(nameOrCode, buf) {
+    const enc = encoding(nameOrCode)
+    const data = encodeText(enc.encode(buf))
+
+    return concat([enc.codeBuf, data], enc.codeBuf.length + data.length)
+  }
+
   class CID_1 {
     constructor(version, codec, multihash, multibaseName) {
       this.version
@@ -3801,7 +4369,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
         }
         str = multihash.mh_toB58String(this.multihash)
       } else if (this.version === 1) {
-        str = uint8ArrayToString(multibase.encode(base, this.bytes))
+        str = uint8ArrayToString(multibase_encode(base, this.bytes))
       } else {
         throw new Error('unsupported version')
       }
@@ -5011,7 +5579,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
-  const defaultOptions1 = {
+  const defaultOptions = {
     chunker: 'fixed',
     strategy: 'balanced', // 'flat', 'trickle'
     rawLeaves: false,
@@ -5202,13 +5770,9 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   };
 
   const mergeOptions = merge_options.bind({ ignoreUndefined: true })
-
-  defaultOptions = function (options = {}) {
-    return mergeOptions(defaultOptions1, options)
-  }
-
+  
   async function* importer(source, block, options = {}) {
-    const opts = defaultOptions(options)
+    const opts = mergeOptions(defaultOptions, options)
 
     let dagBuilder
 
@@ -5250,10 +5814,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     get: async cid => { throw new Error(`unexpected block API get for ${cid}`) },
     put: async () => { throw new Error('unexpected block API put') }
   }
-  async function hashFile1(content, options) {
-    options = options || {}
+  async function hashFile(content, version, options) {
+    
+    var options = options || {}
     options.onlyHash = true
-
+    options.cidVersion = version
+    
     if (typeof content === 'string') {
       content = new TextEncoder().encode(content)
     }
@@ -5266,14 +5832,14 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   };
   // AMD
   if (typeof define == 'function' && define.amd)
-    define('@ijstech/ipfs-utils', function () { return { parse, hashItems, hashContent, hashFile1 }; })
+    define('@ijstech/ipfs-utils', function () { return { parse, hashItems, hashContent, hashFile, mergeOptions }; })
   // Node.js
   else if (typeof module != 'undefined' && module.exports)
-    module.exports = { parse, hashItems, hashContent, hashFile1 }
+    module.exports = { parse, hashItems, hashContent, hashFile, mergeOptions }
   // Browser
   else {
     if (!globalObject)
       globalObject = typeof self != 'undefined' && self ? self : window;
-    globalObject.IPFSUtils = { parse, hashItems, hashContent, hashFile1 };
+    globalObject.IPFSUtils = { parse, hashItems, hashContent, hashFile, mergeOptions };
   };
 })(this);

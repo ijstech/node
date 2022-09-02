@@ -5579,7 +5579,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
-  const defaultOptions1 = {
+  const defaultOptions = {
     chunker: 'fixed',
     strategy: 'balanced', // 'flat', 'trickle'
     rawLeaves: false,
@@ -5770,13 +5770,9 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   };
 
   const mergeOptions = merge_options.bind({ ignoreUndefined: true })
-
-  defaultOptions = function (options = {}) {
-    return mergeOptions(defaultOptions1, options)
-  }
-
+  
   async function* importer(source, block, options = {}) {
-    const opts = defaultOptions(options)
+    const opts = mergeOptions(defaultOptions, options)
 
     let dagBuilder
 
@@ -5818,12 +5814,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     get: async cid => { throw new Error(`unexpected block API get for ${cid}`) },
     put: async () => { throw new Error('unexpected block API put') }
   }
-  async function hashFile1(content, version) {
-
+  async function hashFile(content, version, options) {
+    
     var options = options || {}
     options.onlyHash = true
     options.cidVersion = version
-
+    
     if (typeof content === 'string') {
       content = new TextEncoder().encode(content)
     }
@@ -5836,14 +5832,14 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   };
   // AMD
   if (typeof define == 'function' && define.amd)
-    define('@ijstech/ipfs-utils', function () { return { parse, hashItems, hashContent, hashFile1 }; })
+    define('@ijstech/ipfs-utils', function () { return { parse, hashItems, hashContent, hashFile, mergeOptions }; })
   // Node.js
   else if (typeof module != 'undefined' && module.exports)
-    module.exports = { parse, hashItems, hashContent, hashFile1 }
+    module.exports = { parse, hashItems, hashContent, hashFile, mergeOptions }
   // Browser
   else {
     if (!globalObject)
       globalObject = typeof self != 'undefined' && self ? self : window;
-    globalObject.IPFSUtils = { parse, hashItems, hashContent, hashFile1 };
+    globalObject.IPFSUtils = { parse, hashItems, hashContent, hashFile, mergeOptions };
   };
 })(this);
