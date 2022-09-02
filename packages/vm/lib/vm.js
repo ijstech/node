@@ -107,6 +107,7 @@ class VM {
                 if (typeof (id) == 'function') {
                     callback = id;
                     global._$$modules[global['$$currPackName']] = callback();
+                    global._$$currModule = global._$$modules[global['$$currPackName']];
                 }
                 else {
                     let result = [];
@@ -123,10 +124,14 @@ class VM {
                     }
                     if (callback)
                         callback.apply(this, result);
-                    if (global['$$currPackName'] && (id == 'index' || id == 'plugin'))
+                    if (global['$$currPackName'] && (id == 'index' || id == 'plugin')) {
                         global._$$modules[global['$$currPackName']] = exports;
-                    else
+                        global._$$currModule = exports;
+                    }
+                    else {
                         global._$$modules[id] = exports;
+                        global._$$currModule = exports;
+                    }
                 }
                 ;
             };
