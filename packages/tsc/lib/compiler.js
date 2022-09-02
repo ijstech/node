@@ -62,11 +62,20 @@ async function getPackageInfo(packName) {
     try {
         let path = getPackageDir(packName);
         let pack = JSON.parse(await fs_1.default.promises.readFile(path_1.default.join(path, 'package.json'), 'utf8'));
-        let content = await fs_1.default.promises.readFile(path_1.default.join(path, pack.pluginTypes || pack.types), 'utf8');
+        let script;
+        if (packName != '@ijstech/plugin' && packName != '@ijstech/type' && pack.main) {
+            if (!pack.main.endsWith('.js'))
+                script = await fs_1.default.promises.readFile(path_1.default.join(path, pack.main + '.js'), 'utf8');
+            else
+                script = await fs_1.default.promises.readFile(path_1.default.join(path, pack.main), 'utf8');
+        }
+        let dts = await fs_1.default.promises.readFile(path_1.default.join(path, pack.pluginTypes || pack.types), 'utf8');
         return {
             version: pack.version,
+            name: packName,
             path: path_1.default.dirname(path_1.default.join(path, pack.pluginTypes || pack.types)),
-            dts: content
+            script: script,
+            dts: dts
         };
     }
     catch (err) {
@@ -75,6 +84,7 @@ async function getPackageInfo(packName) {
     }
     ;
     return {
+        name: packName,
         version: '*',
         dts: 'declare const m: any; export default m;'
     };
@@ -179,18 +189,21 @@ class Compiler {
                             }
                         }
                     }
-                    else if (!this.packages[module]) {
-                        let file = await fileImporter(module, true);
-                        if (file) {
-                            result.push(module);
-                            let pack = {
-                                script: file.script,
-                                dts: file.dts,
-                                version: ''
-                            };
-                            this.addPackage(module, pack);
+                    else {
+                        if (!this.packages[module]) {
+                            let file = await fileImporter(module, true);
+                            if (file) {
+                                result.push(module);
+                                let pack = {
+                                    script: file.script,
+                                    dts: file.dts,
+                                    version: ''
+                                };
+                                this.addPackage(module, pack);
+                            }
+                            ;
                         }
-                        ;
+                        this.dependencies[module] = this.packages[module];
                     }
                     ;
                 }
@@ -234,6 +247,7 @@ class Compiler {
         let result = {
             errors: [],
             script: null,
+            dependencies: this.dependencies,
             dts: '',
         };
         const host = {
@@ -301,6 +315,7 @@ class Compiler {
         this.packageFiles = {};
         this.fileNames = [];
         this.packages = {};
+        this.dependencies = {};
     }
     ;
     resolveModuleNames(moduleNames, containingFile) {

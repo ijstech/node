@@ -17,13 +17,20 @@ export interface ICompilerError {
 export interface ICompilerResult {
     errors: ICompilerError[];
     script: string;
-    dts: string;
+    dependencies?: {
+        [index: string]: IPackage;
+    };
+    dts?: string;
 }
-interface IPackage {
+export interface IPackage {
     path?: string;
+    name?: string;
+    version?: string;
     dts?: string;
     script?: string;
-    version: string;
+    dependencies?: {
+        [index: string]: IPackage;
+    };
 }
 export declare function resolveAbsolutePath(baseFilePath: string, relativeFilePath: string): string;
 export declare type FileImporter = (fileName: string, isPackage?: boolean) => Promise<{
@@ -38,6 +45,7 @@ export declare class Compiler {
     private packageFiles;
     private fileNames;
     private packages;
+    private dependencies;
     constructor();
     addDirectory(dir: string, parentDir?: string, packName?: string): Promise<{}>;
     addFile(filePath: string, fileName?: string): Promise<void>;
@@ -62,4 +70,3 @@ export declare class WalletPluginCompiler extends PluginCompiler {
     compile(emitDeclaration?: boolean): Promise<ICompilerResult>;
 }
 export declare function PluginScript(plugin: IPluginOptions): Promise<string>;
-export {};

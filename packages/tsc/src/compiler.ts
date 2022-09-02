@@ -50,13 +50,16 @@ export interface ICompilerError {
 export interface ICompilerResult {
     errors: ICompilerError[];
     script: string;
-    dts: string;//{[file: string]: string};
+    dependencies?: {[index: string]: IPackage};
+    dts?: string;//{[file: string]: string};
 };
-interface IPackage{
+export interface IPackage{
     path?: string;
+    name?: string;
+    version?: string;    
     dts?: string;//{[file: string]: string},
     script?: string;
-    version: string,
+    dependencies?: {[index: string]: IPackage};
 }
 function getPackageDir(pack: string): string{
     if (pack[0] != '/')
@@ -71,11 +74,20 @@ async function getPackageInfo(packName: string): Promise<IPackage>{
     try{
         let path = getPackageDir(packName);
         let pack = JSON.parse(await Fs.promises.readFile(Path.join(path, 'package.json'), 'utf8'));                
-        let content = await Fs.promises.readFile(Path.join(path, pack.pluginTypes || pack.types), 'utf8');
+        let script: string;
+        if (packName != '@ijstech/plugin' && packName != '@ijstech/type' && pack.main){
+            if (!pack.main.endsWith('.js'))
+                script = await Fs.promises.readFile(Path.join(path, pack.main + '.js'), 'utf8');
+            else
+                script = await Fs.promises.readFile(Path.join(path, pack.main), 'utf8');
+        }
+        let dts = await Fs.promises.readFile(Path.join(path, pack.pluginTypes || pack.types), 'utf8');
         return {
             version: pack.version,
+            name: packName,
             path: Path.dirname(Path.join(path, pack.pluginTypes || pack.types)),
-            dts: content//{"index.d.ts": content}
+            script: script,
+            dts: dts//{"index.d.ts": content}
         };
     }
     catch(err){
@@ -83,6 +95,7 @@ async function getPackageInfo(packName: string): Promise<IPackage>{
             return await getPackageInfo('@types/' + packName);
     };
     return {
+        name: packName,
         version: '*',
         dts: 'declare const m: any; export default m;'//{"index.d.ts": 'declare const m: any; export default m;'}
     };
@@ -110,7 +123,8 @@ export class Compiler {
     private files: { [name: string]: string };
     private packageFiles: {[name: string]: string};
     private fileNames: string[];
-    private packages: {[index: string]: IPackage} ;
+    private packages: {[index: string]: IPackage};
+    private dependencies: {[index: string]: IPackage};
 
     constructor() {
         this.scriptOptions = {            
@@ -193,19 +207,22 @@ export class Compiler {
                             }
                         }
                     }
-                    else if (!this.packages[module]){
-                        let file = await fileImporter(module, true);
-                        if (file){
-                            result.push(module);
-                            let pack: IPackage = {
-                                script: file.script,
-                                dts: file.dts,/*{
-                                    [file.fileName]: file.content
-                                },*/
-                                version: ''
+                    else {
+                        if (!this.packages[module]){
+                            let file = await fileImporter(module, true);
+                            if (file){
+                                result.push(module);
+                                let pack: IPackage = {
+                                    script: file.script,
+                                    dts: file.dts,/*{
+                                        [file.fileName]: file.content
+                                    },*/
+                                    version: ''
+                                };
+                                this.addPackage(module, pack);
                             };
-                            this.addPackage(module, pack);
-                        };
+                        }
+                        this.dependencies[module] = this.packages[module];
                     }; 
                 } 
             }            
@@ -248,6 +265,7 @@ export class Compiler {
         let result: ICompilerResult = {
             errors: [],
             script: null,
+            dependencies: this.dependencies,
             dts: '',
         }
         const host = {
@@ -311,6 +329,7 @@ export class Compiler {
         this.packageFiles = {};
         this.fileNames = [];
         this.packages = {};
+        this.dependencies = {};
     };
     resolveModuleNames(moduleNames: string[], containingFile: string): TS.ResolvedModule[] {
         let resolvedModules: TS.ResolvedModule[] = [];

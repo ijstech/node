@@ -18,8 +18,7 @@ describe('Compiler', function() {
         await compiler.addFileContent('index.ts', `
             import * as pack1 from '@ijs/pack1';
             pack1.test();
-        `, '', async function(fileName: string): Promise<{fileName: string, script: string, dts: string}|null>{
-            console.dir(fileName)
+        `, '', async function(fileName: string): Promise<{fileName: string, script: string, dts?: string}|null>{
             return {
                 fileName: '@ijs/pack1/index.d.ts',
                 script: pack.script,

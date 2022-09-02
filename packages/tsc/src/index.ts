@@ -4,4 +4,4 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 
-export {Compiler, PluginCompiler, WalletPluginCompiler, ICompilerResult, PluginScript} from './compiler';
+export {Compiler, IPackage, PluginCompiler, WalletPluginCompiler, ICompilerResult, PluginScript} from './compiler';
