@@ -71,21 +71,21 @@ export async function hashDir(dirPath: string, version?: number): Promise<ICidIn
 export async function hashContent(content: string | Buffer, version?: number): Promise<string> {
     if (version == undefined)
         version = 1;
-    // return await IPFS.hashContent(content, version);
-    let cid: string;
+    // return await IPFS.hashContent(content, version);    
     if (content.length == 0){
         return await IPFS.hashContent('', version);  
     }
+    let result;
     if (version == 1){
-        cid = await IPFS.hashFile(content, version, { //match web3.storage default parameters, https://github.com/web3-storage/web3.storage/blob/3f6b6d38de796e4758f1dffffe8cde948d2bb4ac/packages/client/src/lib.js#L113
+        result = await IPFS.hashFile(content, version, { //match web3.storage default parameters, https://github.com/web3-storage/web3.storage/blob/3f6b6d38de796e4758f1dffffe8cde948d2bb4ac/packages/client/src/lib.js#L113
             rawLeaves: true,
             maxChunkSize: 1048576,
             maxChildrenPerNode: 1024
         })
     }
     else
-        cid = await IPFS.hashFile(content, version);
-    return cid;
+        result = await IPFS.hashFile(content, version);
+    return result.cid;
 }
 // test start from here
 export async function hashFile(filePath: string, version?: number, options?: {
@@ -102,19 +102,22 @@ export async function hashFile(filePath: string, version?: number, options?: {
     size = stat.size;    
     let file = createReadStream(filePath);
     let cid: string;
-    if (size == 0)
+    let result;
+    if (size == 0){
         cid = await IPFS.hashContent('', version);    
+        return {
+            cid,
+            size
+        };
+    }
     else if (version == 1){
-        cid = await IPFS.hashFile(file, version, IPFS.mergeOptions({ //match web3.storage default parameters, https://github.com/web3-storage/web3.storage/blob/3f6b6d38de796e4758f1dffffe8cde948d2bb4ac/packages/client/src/lib.js#L113
+        result = await IPFS.hashFile(file, version, IPFS.mergeOptions({ //match web3.storage default parameters, https://github.com/web3-storage/web3.storage/blob/3f6b6d38de796e4758f1dffffe8cde948d2bb4ac/packages/client/src/lib.js#L113
             rawLeaves: true,
             maxChunkSize: 1048576,
             maxChildrenPerNode: 1024
         }, options || {}))
     }
     else
-        cid = await IPFS.hashFile(file, version);
-    return {
-        cid: cid,
-        size: size
-    };
+        result = await IPFS.hashFile(file, version);
+    return result;
 }

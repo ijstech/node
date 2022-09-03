@@ -121,12 +121,13 @@ class Storage {
             item = JSON.parse(await this.getLocalCache(key));
             localCache = true;
         }
-        else {
+        else if (this.s3) {
             let content = await this.s3.getObject(key);
             item = JSON.parse(content);
             await this.putLocalCache(key, content);
         }
-        ;
+        else {
+        }
         let items;
         for (let i = 0; i < paths.length; i++) {
             let items = item.links;

@@ -2165,6 +2165,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   const hashItems = async (items, version) => {
+    const opts = mergeOptions(defaultOptions, {cidVersion: 1, onlyHash: true, rawLeaves: true, maxChunkSize: 1048576})
     if (version == undefined)
       version = 1;
     let Links = [];
@@ -2172,7 +2173,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       let item = items[i];
       Links.push({
         Name: item.name,
-        Hash: parse(item.cid),
+        Hash: parse(item.cid),        
         Tsize: item.size
       })
     };
@@ -2180,13 +2181,28 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     try {
       const dirUnixFS = new UnixFS({
         type: 'directory',
+        mtime: undefined,
+        mode: 493
       });
-      const bytes = d_encode({
+      const node = {
         Data: dirUnixFS.marshal(),
         Links
-      });
+      };
+      // const buffer = d_encode(node);
+
+      // const cid = await persist(buffer, {
+      //   get: async cid => { throw new Error(`unexpected block API get for ${cid}`) },
+      //   put: async () => { }
+      // }, opts);
+      // console.dir(opts);
+      // return {
+      //   size: 0,//bytes.length + Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0),
+      //   cid: cid.toString()
+      // }
+      const bytes = d_encode(node);      
       const hash = await s_sha256.digest(bytes);
       const dagPB_code = 0x70;
+      // const cid = CID.create(version, RAW_CODE, hash);
       const cid = CID.create(version, dagPB_code, hash);
       return {
         size: bytes.length + Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0),
@@ -5825,10 +5841,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
 
     let lastCid
-    for await (const { cid } of importer([{ content }], block, options)) {
-      lastCid = cid
+    let lastSize;
+    for await (const { cid,size } of importer([{ content }], block, options)) {
+      lastCid = cid;
+      lastSize = size;
     }
-    return `${lastCid}`
+    return {cid: lastCid.toString(), size: lastSize}
   };
   // AMD
   if (typeof define == 'function' && define.amd)

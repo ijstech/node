@@ -61,20 +61,20 @@ exports.hashDir = hashDir;
 async function hashContent(content, version) {
     if (version == undefined)
         version = 1;
-    let cid;
     if (content.length == 0) {
         return await ipfs_js_1.default.hashContent('', version);
     }
+    let result;
     if (version == 1) {
-        cid = await ipfs_js_1.default.hashFile(content, version, {
+        result = await ipfs_js_1.default.hashFile(content, version, {
             rawLeaves: true,
             maxChunkSize: 1048576,
             maxChildrenPerNode: 1024
         });
     }
     else
-        cid = await ipfs_js_1.default.hashFile(content, version);
-    return cid;
+        result = await ipfs_js_1.default.hashFile(content, version);
+    return result.cid;
 }
 exports.hashContent = hashContent;
 async function hashFile(filePath, version, options) {
@@ -85,17 +85,24 @@ async function hashFile(filePath, version, options) {
     size = stat.size;
     let file = fs_1.createReadStream(filePath);
     let cid;
-    if (size == 0)
+    let result;
+    if (size == 0) {
         cid = await ipfs_js_1.default.hashContent('', version);
+        return {
+            cid,
+            size
+        };
+    }
     else if (version == 1) {
-        cid = await ipfs_js_1.default.hashFile(file, version, ipfs_js_1.default.mergeOptions({
+        result = await ipfs_js_1.default.hashFile(file, version, ipfs_js_1.default.mergeOptions({
             rawLeaves: true,
             maxChunkSize: 1048576,
             maxChildrenPerNode: 1024
         }, options || {}));
     }
     else
-        cid = await ipfs_js_1.default.hashFile(file, version);
+        result = await ipfs_js_1.default.hashFile(file, version);
+    return result;
     return {
         cid: cid,
         size: size
