@@ -23,8 +23,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Storage = void 0;
-const fs_1 = __importDefault(require("fs"));
-const fs_2 = require("fs");
+const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
 const https_1 = __importDefault(require("https"));
 const crypto_1 = __importDefault(require("crypto"));
@@ -38,11 +37,11 @@ async function download(url, dest) {
     return new Promise((resolve, reject) => {
         const request = https_1.default.get(url, response => {
             if (response.statusCode === 200) {
-                const file = fs_1.default.createWriteStream(dest);
+                const file = fs_1.createWriteStream(dest);
                 file.on('finish', () => resolve(''));
                 file.on('error', err => {
                     file.close();
-                    fs_1.default.unlink(dest, () => reject(err.message));
+                    fs_1.unlink(dest, () => reject(err.message));
                 });
                 response.pipe(file);
             }
@@ -63,25 +62,30 @@ async function download(url, dest) {
 ;
 class Storage {
     constructor(options) {
-        var _a, _b;
+        var _a;
         this.options = options;
         if (this.options.s3)
             this.s3 = new s3_1.S3(this.options.s3);
-        if ((_a = this.options.localCache) === null || _a === void 0 ? void 0 : _a.path) {
-            fs_1.default.mkdirSync(path_1.default.join(this.options.localCache.path, 'stat'), { recursive: true });
-            fs_1.default.mkdirSync(path_1.default.join(this.options.localCache.path, 'ipfs'), { recursive: true });
+        if ((_a = this.options.web3Storage) === null || _a === void 0 ? void 0 : _a.token)
+            this.web3Storage = new web3_storage_1.Web3Storage({ token: this.options.web3Storage.token });
+    }
+    ;
+    async initDir() {
+        if (!this._initDir) {
+            await fs_1.promises.mkdir(path_1.default.join(this.options.localCache.path, 'stat'), { recursive: true });
+            await fs_1.promises.mkdir(path_1.default.join(this.options.localCache.path, 'ipfs'), { recursive: true });
+            this._initDir = true;
         }
         ;
-        if ((_b = this.options.web3Storage) === null || _b === void 0 ? void 0 : _b.token)
-            this.web3Storage = new web3_storage_1.Web3Storage({ token: this.options.web3Storage.token });
     }
     ;
     async localCacheExist(key) {
         var _a;
         if ((_a = this.options.localCache) === null || _a === void 0 ? void 0 : _a.path) {
+            await this.initDir();
             try {
                 let filePath = path_1.default.join(this.options.localCache.path, key);
-                await fs_2.promises.access(filePath);
+                await fs_1.promises.access(filePath);
                 return true;
             }
             catch (err) {
@@ -95,8 +99,9 @@ class Storage {
     async getLocalCache(key) {
         var _a;
         if ((_a = this.options.localCache) === null || _a === void 0 ? void 0 : _a.path) {
+            await this.initDir();
             let filePath = path_1.default.join(this.options.localCache.path, key);
-            let content = await fs_2.promises.readFile(filePath, 'utf8');
+            let content = await fs_1.promises.readFile(filePath, 'utf8');
             return content;
         }
     }
@@ -104,8 +109,9 @@ class Storage {
     async putLocalCache(key, content) {
         var _a;
         if ((_a = this.options.localCache) === null || _a === void 0 ? void 0 : _a.path) {
+            await this.initDir();
             let filePath = path_1.default.join(this.options.localCache.path, key);
-            await fs_2.promises.writeFile(filePath, content);
+            await fs_1.promises.writeFile(filePath, content);
         }
         ;
     }
@@ -125,8 +131,6 @@ class Storage {
             let content = await this.s3.getObject(key);
             item = JSON.parse(content);
             await this.putLocalCache(key, content);
-        }
-        else {
         }
         let items;
         for (let i = 0; i < paths.length; i++) {
@@ -170,7 +174,7 @@ class Storage {
         let hash = await IPFSUtils.hashDir(path, 1);
         let cid;
         if (to.ipfs && this.web3Storage) {
-            let items = await fs_2.promises.readdir(path);
+            let items = await fs_1.promises.readdir(path);
             for (let i = 0; i < items.length; i++)
                 items[i] = path + '/' + items[i];
             const files = await web3_storage_1.getFilesFromPath(items);
@@ -197,9 +201,9 @@ class Storage {
     ;
     async syncGithubTo(repo, to, sourceDir) {
         let id = crypto_1.default.randomUUID();
-        let tmpDir = await fs_2.promises.mkdtemp(path_1.default.join(os_1.default.tmpdir(), appPrefix));
+        let tmpDir = await fs_1.promises.mkdtemp(path_1.default.join(os_1.default.tmpdir(), appPrefix));
         let dir = `${tmpDir}/${id}`;
-        fs_1.default.mkdirSync(dir);
+        fs_1.mkdirSync(dir);
         try {
             let targetDir = `${dir}/dir`;
             let targetFile = `${dir}/file.zip`;
@@ -214,7 +218,12 @@ class Storage {
             return result;
         }
         finally {
-            fs_1.default.rmSync(dir, { recursive: true });
+            try {
+                fs_1.promises.rm(dir, { recursive: true });
+            }
+            catch (err) {
+                console.dir(err);
+            }
         }
     }
     ;

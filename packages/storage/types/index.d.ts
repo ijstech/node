@@ -6,11 +6,12 @@ export interface IGithubRepo {
     commit: string;
 }
 export interface IStorageOptions {
-    s3: IS3Options;
-    web3Storage: {
+    s3?: IS3Options;
+    web3Storage?: {
+        endpoint?: string;
         token: string;
     };
-    localCache: {
+    localCache?: {
         path: string;
     };
 }
@@ -18,7 +19,9 @@ export declare class Storage {
     private options;
     private s3;
     private web3Storage;
+    private _initDir;
     constructor(options: IStorageOptions);
+    private initDir;
     private localCacheExist;
     private getLocalCache;
     private putLocalCache;
