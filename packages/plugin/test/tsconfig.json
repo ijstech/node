@@ -10,6 +10,7 @@
 		"declarationDir": "types",
 		"experimentalDecorators": true,
 		"paths": {
+            "@ijs/pack1": ["packs/pack1"],
             "@ijstech/*": ["../../*"]
         }
     }

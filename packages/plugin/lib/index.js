@@ -8,12 +8,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Worker = exports.Router = exports.loadModule = exports.getPackageScript = exports.resolveFilePath = exports.BigNumber = exports.PluginCompiler = void 0;
+exports.Worker = exports.Router = exports.loadModule = exports.getPackageScript = exports.resolveFilePath = exports.BigNumber = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const vm_1 = require("@ijstech/vm");
-var compiler_1 = require("./compiler");
-Object.defineProperty(exports, "PluginCompiler", { enumerable: true, get: function () { return compiler_1.PluginCompiler; } });
 var types_1 = require("@ijstech/types");
 Object.defineProperty(exports, "BigNumber", { enumerable: true, get: function () { return types_1.BigNumber; } });
 const tsc_1 = require("@ijstech/tsc");
@@ -130,7 +128,7 @@ async function getPackageScript(packName, pack) {
             packPath = resolveFilePath([RootPath], pack.script.substring(5), true);
         else if (pack.script)
             return pack.script;
-        else
+        else if (!pack.dts)
             packPath = getPackageDir(packName);
     }
     ;
@@ -167,43 +165,92 @@ function cloneObject(value) {
         return;
 }
 ;
+;
 function RouterRequest(ctx) {
-    return {
-        method: ctx.method,
-        hostname: ctx.hostname || '',
-        path: ctx.path || '',
-        url: ctx.url || '',
-        origUrl: ctx.origUrl || '',
-        ip: ctx.ip || '',
-        type: ctx.request.type,
-        query: cloneObject(ctx.request.query),
-        params: cloneObject(ctx.params),
-        body: cloneObject(ctx.request.body),
-        cookie: function (name) {
-            return ctx.cookies.get(name);
-        },
-        header: function (name) {
-            return ctx.get(name);
-        }
-    };
+    if (isContext(ctx)) {
+        return {
+            method: ctx.method,
+            hostname: ctx.hostname || '',
+            path: ctx.path || '',
+            url: ctx.url || '',
+            origUrl: ctx.origUrl || '',
+            ip: ctx.ip || '',
+            type: ctx.request.type,
+            query: cloneObject(ctx.request.query),
+            params: cloneObject(ctx.params),
+            body: cloneObject(ctx.request.body),
+            cookie: function (name) {
+                return ctx.cookies.get(name);
+            },
+            header: function (name) {
+                return ctx.get(name);
+            }
+        };
+    }
+    else {
+        return {
+            method: ctx.method,
+            hostname: ctx.hostname || '',
+            path: ctx.path || '',
+            url: ctx.url || '',
+            origUrl: ctx.origUrl || '',
+            ip: ctx.ip || '',
+            type: ctx.type,
+            query: ctx.query,
+            params: ctx.params,
+            body: ctx.body,
+            cookie: function (name) {
+                return ctx.cookies ? ctx.cookies[name] : null;
+            },
+            header: function (name) {
+                return ctx.headers ? ctx.headers[name] : null;
+            }
+        };
+    }
 }
 ;
+function isContext(object) {
+    var _a;
+    return typeof ((_a = object.cookies) === null || _a === void 0 ? void 0 : _a.set) == 'function';
+}
 function RouterResponse(ctx) {
-    return {
-        statusCode: 200,
-        cookie: function (name, value, option) {
-            ctx.cookies.set(name, value, option);
-        },
-        end: function (value, contentType) {
-            if (!contentType && typeof (value) == 'object')
-                contentType = 'application/json';
-            ctx.response.set('Content-Type', contentType || 'text/plain');
-            ctx.body = value;
-        },
-        header: function (name, value) {
-            ctx.set(name, value);
-        }
-    };
+    if (isContext(ctx)) {
+        return {
+            statusCode: 200,
+            cookie: function (name, value, option) {
+                ctx.cookies.set(name, value, option);
+            },
+            end: function (value, contentType) {
+                if (!contentType && typeof (value) == 'object')
+                    contentType = 'application/json';
+                ctx.response.set('Content-Type', contentType || 'text/plain');
+                ctx.body = value;
+            },
+            header: function (name, value) {
+                ctx.set(name, value);
+            }
+        };
+    }
+    else {
+        return {
+            statusCode: 200,
+            cookie: function (name, value, option) {
+                ctx.cookies = ctx.cookies || {};
+                ctx.cookies[name] = {
+                    value,
+                    option
+                };
+            },
+            end: function (value, contentType) {
+                ctx.contentType = contentType || 'application/json';
+                ctx.body = value;
+            },
+            header: function (name, value) {
+                ctx.header = ctx.header || {};
+                ctx.header[name] = value;
+            }
+        };
+    }
 }
 ;
 ;
@@ -243,8 +290,10 @@ class PluginVM {
         ;
         if (this.options.dependencies) {
             for (let packname in this.options.dependencies) {
-                let pack = this.options.dependencies[packname];
-                await this.loadPackage(packname, pack);
+                if (packname != '@ijstech/plugin') {
+                    let pack = this.options.dependencies[packname];
+                    await this.loadPackage(packname, pack);
+                }
             }
             ;
         }
@@ -257,7 +306,7 @@ class RouterPluginVM extends PluginVM {
     async setup() {
         await super.setup();
         this.vm.injectGlobalScript(`
-            let module = global._$$modules['index'];   
+            let module = global._$$modules['index'] || global._$$currModule;   
             let fn = module.default['router'] || module.default;
             global.$$router = new fn();
         `);
@@ -317,7 +366,7 @@ class WorkerPluginVM extends PluginVM {
     async setup() {
         await super.setup();
         this.vm.injectGlobalScript(`
-            let module = global._$$modules['index'];            
+            let module = global._$$modules['index'] || global._$$currModule
             let fn = module.default['worker'] || module.default;
             global.$$worker = new fn();
         `);

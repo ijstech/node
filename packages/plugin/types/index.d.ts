@@ -7,12 +7,51 @@ import Koa from 'koa';
 import { VM } from '@ijstech/vm';
 import * as Types from '@ijstech/types';
 export { ResponseType } from '@ijstech/types';
-export { PluginCompiler } from './compiler';
 export { BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions } from '@ijstech/types';
 export declare function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string;
 export declare function getPackageScript(packName: string, pack?: Types.IPackageScript): Promise<string>;
 export declare type IPluginScript = any;
 export declare function loadModule(script: string, name?: string): IPluginScript;
+export interface ICookie {
+    [name: string]: {
+        value: string;
+        option: any;
+    };
+}
+export interface IHeader {
+    [name: string]: {
+        value: string;
+        option: any;
+    };
+}
+export interface ParsedUrlQuery {
+    [key: string]: string | string[];
+}
+export interface IRouterRequestData {
+    method: string;
+    hostname: string;
+    path: string;
+    url: string;
+    origUrl: string;
+    ip: string;
+    query?: ParsedUrlQuery;
+    params?: any;
+    body?: any;
+    type?: string;
+    cookies?: {
+        [key: string]: any;
+    };
+    headers?: {
+        [key: string]: any;
+    };
+}
+export interface IRouterResponseData {
+    body?: any;
+    cookies?: ICookie;
+    contentType?: string;
+    statusCode?: number;
+    header?: IHeader;
+}
 export declare type QueueName = string;
 export interface IRequiredPlugins {
     queue?: QueueName[];

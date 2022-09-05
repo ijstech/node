@@ -10,9 +10,7 @@ import Koa from 'koa';
 import {VM} from '@ijstech/vm';
 import * as Types from '@ijstech/types';
 export {ResponseType} from '@ijstech/types';
-export {PluginCompiler} from './compiler';
 export {BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions} from '@ijstech/types';
-// import Github from './github';
 import {PluginCompiler, PluginScript} from '@ijstech/tsc';
 
 const RootPath = process.cwd();
@@ -122,7 +120,7 @@ export async function getPackageScript(packName: string, pack?: Types.IPackageSc
             packPath = resolveFilePath([RootPath], pack.script.substring(5), true)
         else if (pack.script)
             return pack.script
-        else
+        else if (!pack.dts)
             packPath = getPackageDir(packName);
     };
     if (packPath){
@@ -152,43 +150,118 @@ function cloneObject(value: any): any{
     else
         return;
 };
-function RouterRequest(ctx: Koa.Context): Types.IRouterRequest{
-    return {
-        method: ctx.method,
-        hostname: ctx.hostname || '',
-        path: ctx.path || '',
-        url: ctx.url || '',
-        origUrl: ctx.origUrl || '',
-        ip: ctx.ip || '',
-        type: ctx.request.type,
-        query: cloneObject(ctx.request.query),
-        params: cloneObject(ctx.params),
-        body: cloneObject((<any>ctx.request).body),
-        cookie: function(name: string){
-            return ctx.cookies.get(name);
-        },
-        header: function(name: string){
-            return ctx.get(name);
-        }
-    };
-};
+export interface ICookie {
+    [name: string]: {value:string,option:any};
+}
+export interface IHeader {
+    [name: string]: {value:string,option:any};
+}
+export interface ParsedUrlQuery {[key: string]: string | string[]};
+export interface IRouterRequestData{
+    method: string,
+    hostname: string,
+    path: string;
+    url: string;
+    origUrl: string;
+    ip: string;
+    query?: ParsedUrlQuery;
+    params?: any;
+    body?: any;
+    type?: string;
+    cookies?: {[key: string]: any};
+    headers?: {[key: string]: any};
 
-function RouterResponse(ctx: Koa.Context): Types.IRouterResponse{
-    return {
-        statusCode: 200,
-        cookie: function(name: string, value: string, option?: any){
-            ctx.cookies.set(name, value, option)
-        },
-        end: function(value: any, contentType?: Types.ResponseType){       
-            if (!contentType && typeof(value) == 'object')
-                contentType = 'application/json';
-            ctx.response.set('Content-Type', contentType || 'text/plain');
-            ctx.body = value;
-        },
-        header: function(name: string, value: any){
-            ctx.set(name, value);
+}
+function RouterRequest(ctx: Koa.Context | IRouterRequestData): Types.IRouterRequest{
+    if (isContext(ctx)){
+        return {
+            method: ctx.method,
+            hostname: ctx.hostname || '',
+            path: ctx.path || '',
+            url: ctx.url || '',
+            origUrl: ctx.origUrl || '',
+            ip: ctx.ip || '',
+            type: ctx.request.type,
+            query: cloneObject(ctx.request.query),
+            params: cloneObject(ctx.params),
+            body: cloneObject((<any>ctx.request).body),
+            cookie: function(name: string){
+                return ctx.cookies.get(name);
+            },
+            header: function(name: string){
+                return ctx.get(name);
+            }
         }
-    };
+    }
+    else {
+        return {
+            method: ctx.method,
+            hostname: ctx.hostname || '',
+            path: ctx.path || '',
+            url: ctx.url || '',
+            origUrl: ctx.origUrl || '',
+            ip: ctx.ip || '',
+            type: ctx.type,
+            query: ctx.query,
+            params: ctx.params,
+            body: ctx.body,
+            cookie: function(name: string){
+                return ctx.cookies?ctx.cookies[name]:null;
+            },
+            header: function(name: string){
+                return ctx.headers?ctx.headers[name]:null;
+            }
+        };
+    }
+};
+export interface IRouterResponseData{
+    body?: any;
+    cookies?: ICookie;
+    contentType?: string;
+    statusCode?: number;
+    header?: IHeader;
+}
+function isContext(object: any): object is Koa.Context {
+    return typeof(object.cookies?.set) == 'function';
+}
+function RouterResponse(ctx: Koa.Context | IRouterResponseData): Types.IRouterResponse{    
+    if (isContext(ctx)){
+        return {
+            statusCode: 200,
+            cookie: function(name: string, value: string, option?: any){
+                ctx.cookies.set(name, value, option)
+            },
+            end: function(value: any, contentType?: Types.ResponseType){       
+                if (!contentType && typeof(value) == 'object')
+                    contentType = 'application/json';
+                ctx.response.set('Content-Type', contentType || 'text/plain');
+                ctx.body = value;
+            },
+            header: function(name: string, value: any){
+                ctx.set(name, value);
+            }
+        };
+    }
+    else{
+        return {
+            statusCode: 200,
+            cookie: function(name: string, value: string, option?: any){
+                ctx.cookies = ctx.cookies || {};
+                ctx.cookies[name] = {
+                    value,
+                    option
+                }
+            },
+            end: function(value: any, contentType?: Types.ResponseType){       
+                ctx.contentType = contentType || 'application/json';
+                ctx.body = value;
+            },
+            header: function(name: string, value: any){
+                ctx.header = ctx.header || {};
+                ctx.header[name] = value;
+            }
+        };
+    }
 };
 export type QueueName = string;
 export interface IRequiredPlugins{
@@ -240,8 +313,10 @@ class PluginVM{
         };         
         if (this.options.dependencies){
             for (let packname in this.options.dependencies){
-                let pack = this.options.dependencies[packname];
-                await this.loadPackage(packname, pack);
+                if (packname != '@ijstech/plugin'){
+                    let pack = this.options.dependencies[packname];
+                    await this.loadPackage(packname, pack)
+                }
             };
         };
     };
@@ -250,7 +325,7 @@ class RouterPluginVM extends PluginVM implements IRouterPlugin{
     async setup(): Promise<boolean>{        
         await super.setup();
         this.vm.injectGlobalScript(`
-            let module = global._$$modules['index'];   
+            let module = global._$$modules['index'] || global._$$currModule;   
             let fn = module.default['router'] || module.default;
             global.$$router = new fn();
         `);
@@ -305,7 +380,7 @@ class WorkerPluginVM extends PluginVM implements IWorkerPlugin{
     async setup(): Promise<boolean>{
         await super.setup();
         this.vm.injectGlobalScript(`
-            let module = global._$$modules['index'];            
+            let module = global._$$modules['index'] || global._$$currModule
             let fn = module.default['worker'] || module.default;
             global.$$worker = new fn();
         `);
