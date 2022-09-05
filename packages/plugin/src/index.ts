@@ -158,12 +158,12 @@ export interface IHeader {
 }
 export interface ParsedUrlQuery {[key: string]: string | string[]};
 export interface IRouterRequestData{
-    method: string,
-    hostname: string,
-    path: string;
-    url: string;
-    origUrl: string;
-    ip: string;
+    method?: string,
+    hostname?: string,
+    path?: string;
+    url?: string;
+    origUrl?: string;
+    ip?: string;
     query?: ParsedUrlQuery;
     params?: any;
     body?: any;
@@ -172,14 +172,14 @@ export interface IRouterRequestData{
     headers?: {[key: string]: any};
 
 }
-function RouterRequest(ctx: Koa.Context | IRouterRequestData): Types.IRouterRequest{
+export function RouterRequest(ctx: Koa.Context | IRouterRequestData): Types.IRouterRequest{
     if (isContext(ctx)){
         return {
             method: ctx.method,
             hostname: ctx.hostname || '',
-            path: ctx.path || '',
-            url: ctx.url || '',
-            origUrl: ctx.origUrl || '',
+            path: ctx.path || '/',
+            url: ctx.url || '/',
+            origUrl: ctx.origUrl || ctx.url || '/',
             ip: ctx.ip || '',
             type: ctx.request.type,
             query: cloneObject(ctx.request.query),
@@ -193,13 +193,13 @@ function RouterRequest(ctx: Koa.Context | IRouterRequestData): Types.IRouterRequ
             }
         }
     }
-    else {
+    else if (ctx){
         return {
-            method: ctx.method,
+            method: ctx.method || 'GET',
             hostname: ctx.hostname || '',
-            path: ctx.path || '',
-            url: ctx.url || '',
-            origUrl: ctx.origUrl || '',
+            path: ctx.path || '/',
+            url: ctx.url || '/',
+            origUrl: ctx.origUrl || ctx.url || '/',
             ip: ctx.ip || '',
             type: ctx.type,
             query: ctx.query,
@@ -224,10 +224,16 @@ export interface IRouterResponseData{
 function isContext(object: any): object is Koa.Context {
     return typeof(object.cookies?.set) == 'function';
 }
-function RouterResponse(ctx: Koa.Context | IRouterResponseData): Types.IRouterResponse{    
+export function RouterResponse(ctx: Koa.Context | IRouterResponseData): Types.IRouterResponse{    
     if (isContext(ctx)){
+        ctx.statusCode = 200;
         return {
-            statusCode: 200,
+            get statusCode(){
+                return ctx.statusCode
+            },
+            set statusCode(value){
+                ctx.statusCode = value
+            },
             cookie: function(name: string, value: string, option?: any){
                 ctx.cookies.set(name, value, option)
             },
@@ -242,9 +248,15 @@ function RouterResponse(ctx: Koa.Context | IRouterResponseData): Types.IRouterRe
             }
         };
     }
-    else{
-        return {
-            statusCode: 200,
+    else if (ctx){    
+        ctx.statusCode = 200;            
+        return {            
+            get statusCode(){
+                return ctx.statusCode
+            },
+            set statusCode(value){
+                ctx.statusCode = value
+            },
             cookie: function(name: string, value: string, option?: any){
                 ctx.cookies = ctx.cookies || {};
                 ctx.cookies[name] = {
@@ -584,15 +596,20 @@ export class Router extends Plugin{
         await result.setup();
         return result;
     };
-    async route(ctx: Koa.Context, baseUrl: string): Promise<boolean>{
-        ctx.origUrl = ctx.url;
-        ctx.url = ctx.url.slice(this.options.baseUrl.length);        
-        if (!ctx.url.startsWith('/'))
-            ctx.url = '/' + ctx.url;
+    async route(ctx: Koa.Context, request?: Types.IRouterRequest, response?: Types.IRouterResponse): Promise<boolean>{
+        if (ctx){
+            ctx.origUrl = ctx.url;
+            ctx.url = ctx.url.slice(this.options.baseUrl.length);        
+            if (!ctx.url.startsWith('/'))
+                ctx.url = '/' + ctx.url;
+        }
         let result: boolean;
         await this.createPlugin();
         if (this.plugin){
-            result = await this.plugin.route(this.session, RouterRequest(ctx), RouterResponse(ctx));
+            request = request || RouterRequest(ctx)
+            response = response || RouterResponse(ctx)
+            if (request && response)
+                result = await this.plugin.route(this.session, request, response);
             return result;
         }
     };

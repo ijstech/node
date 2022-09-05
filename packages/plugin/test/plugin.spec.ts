@@ -1,4 +1,4 @@
-import {Router, Worker} from '../src';
+import {Router, Worker, RouterRequest, RouterResponse} from '../src';
 import assert from "assert";
 import {PackageManager, IPackage} from '@ijstech/package';
 import Path from 'path';
@@ -39,7 +39,10 @@ describe('Plugins', function() {
             script: script.script,
             dependencies: script.dependencies
         })
-        // let result = await router.route()
-        assert.strictEqual(typeof(script.script), 'string');
+        let responseData = {};
+        let response = RouterResponse(responseData);
+        let request = RouterRequest({});
+        await router.route(null, request, response);
+        assert.deepStrictEqual(responseData, {statusCode: 200, contentType: 'application/json', body: 'hello' })        
     })
 })

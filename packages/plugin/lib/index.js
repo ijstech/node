@@ -8,7 +8,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Worker = exports.Router = exports.loadModule = exports.getPackageScript = exports.resolveFilePath = exports.BigNumber = void 0;
+exports.Worker = exports.Router = exports.RouterResponse = exports.RouterRequest = exports.loadModule = exports.getPackageScript = exports.resolveFilePath = exports.BigNumber = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const vm_1 = require("@ijstech/vm");
@@ -171,9 +171,9 @@ function RouterRequest(ctx) {
         return {
             method: ctx.method,
             hostname: ctx.hostname || '',
-            path: ctx.path || '',
-            url: ctx.url || '',
-            origUrl: ctx.origUrl || '',
+            path: ctx.path || '/',
+            url: ctx.url || '/',
+            origUrl: ctx.origUrl || ctx.url || '/',
             ip: ctx.ip || '',
             type: ctx.request.type,
             query: cloneObject(ctx.request.query),
@@ -187,13 +187,13 @@ function RouterRequest(ctx) {
             }
         };
     }
-    else {
+    else if (ctx) {
         return {
-            method: ctx.method,
+            method: ctx.method || 'GET',
             hostname: ctx.hostname || '',
-            path: ctx.path || '',
-            url: ctx.url || '',
-            origUrl: ctx.origUrl || '',
+            path: ctx.path || '/',
+            url: ctx.url || '/',
+            origUrl: ctx.origUrl || ctx.url || '/',
             ip: ctx.ip || '',
             type: ctx.type,
             query: ctx.query,
@@ -208,6 +208,7 @@ function RouterRequest(ctx) {
         };
     }
 }
+exports.RouterRequest = RouterRequest;
 ;
 function isContext(object) {
     var _a;
@@ -215,8 +216,14 @@ function isContext(object) {
 }
 function RouterResponse(ctx) {
     if (isContext(ctx)) {
+        ctx.statusCode = 200;
         return {
-            statusCode: 200,
+            get statusCode() {
+                return ctx.statusCode;
+            },
+            set statusCode(value) {
+                ctx.statusCode = value;
+            },
             cookie: function (name, value, option) {
                 ctx.cookies.set(name, value, option);
             },
@@ -231,9 +238,15 @@ function RouterResponse(ctx) {
             }
         };
     }
-    else {
+    else if (ctx) {
+        ctx.statusCode = 200;
         return {
-            statusCode: 200,
+            get statusCode() {
+                return ctx.statusCode;
+            },
+            set statusCode(value) {
+                ctx.statusCode = value;
+            },
             cookie: function (name, value, option) {
                 ctx.cookies = ctx.cookies || {};
                 ctx.cookies[name] = {
@@ -252,6 +265,7 @@ function RouterResponse(ctx) {
         };
     }
 }
+exports.RouterResponse = RouterResponse;
 ;
 ;
 ;
@@ -579,15 +593,20 @@ class Router extends Plugin {
         return result;
     }
     ;
-    async route(ctx, baseUrl) {
-        ctx.origUrl = ctx.url;
-        ctx.url = ctx.url.slice(this.options.baseUrl.length);
-        if (!ctx.url.startsWith('/'))
-            ctx.url = '/' + ctx.url;
+    async route(ctx, request, response) {
+        if (ctx) {
+            ctx.origUrl = ctx.url;
+            ctx.url = ctx.url.slice(this.options.baseUrl.length);
+            if (!ctx.url.startsWith('/'))
+                ctx.url = '/' + ctx.url;
+        }
         let result;
         await this.createPlugin();
         if (this.plugin) {
-            result = await this.plugin.route(this.session, RouterRequest(ctx), RouterResponse(ctx));
+            request = request || RouterRequest(ctx);
+            response = response || RouterResponse(ctx);
+            if (request && response)
+                result = await this.plugin.route(this.session, request, response);
             return result;
         }
     }

@@ -28,12 +28,12 @@ export interface ParsedUrlQuery {
     [key: string]: string | string[];
 }
 export interface IRouterRequestData {
-    method: string;
-    hostname: string;
-    path: string;
-    url: string;
-    origUrl: string;
-    ip: string;
+    method?: string;
+    hostname?: string;
+    path?: string;
+    url?: string;
+    origUrl?: string;
+    ip?: string;
     query?: ParsedUrlQuery;
     params?: any;
     body?: any;
@@ -45,6 +45,7 @@ export interface IRouterRequestData {
         [key: string]: any;
     };
 }
+export declare function RouterRequest(ctx: Koa.Context | IRouterRequestData): Types.IRouterRequest;
 export interface IRouterResponseData {
     body?: any;
     cookies?: ICookie;
@@ -52,6 +53,7 @@ export interface IRouterResponseData {
     statusCode?: number;
     header?: IHeader;
 }
+export declare function RouterResponse(ctx: Koa.Context | IRouterResponseData): Types.IRouterResponse;
 export declare type QueueName = string;
 export interface IRequiredPlugins {
     queue?: QueueName[];
@@ -110,7 +112,7 @@ export declare class Router extends Plugin {
     protected options: Types.IRouterPluginOptions;
     constructor(options: Types.IRouterPluginOptions);
     createVM(): Promise<RouterPluginVM>;
-    route(ctx: Koa.Context, baseUrl: string): Promise<boolean>;
+    route(ctx: Koa.Context, request?: Types.IRouterRequest, response?: Types.IRouterResponse): Promise<boolean>;
 }
 export declare class Worker extends Plugin {
     protected plugin: IWorkerPlugin;
