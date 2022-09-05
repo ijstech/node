@@ -1,0 +1,14 @@
+{
+    "type": "router",
+    "src": "src",
+    "routes": [
+
+    ],
+    "dependencies": {
+        "pack1": "*"
+    },
+    "plugins": [
+        "db",
+        "wallet"
+    ]
+}
