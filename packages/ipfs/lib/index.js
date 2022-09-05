@@ -103,9 +103,5 @@ async function hashFile(filePath, version, options) {
     else
         result = await ipfs_js_1.default.hashFile(file, version);
     return result;
-    return {
-        cid: cid,
-        size: size
-    };
 }
 exports.hashFile = hashFile;
