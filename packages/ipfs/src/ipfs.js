@@ -4,8 +4,6 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 
-const { convertCompilerOptionsFromJson } = require('typescript');
-
 ; (function (globalObject) {
   /*---------------------------------------------------------------------------------------------
   *  Copyright (c) 2020 Protocol Labs
@@ -25,34 +23,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
 
   const readonly = { writable: false, configurable: false, enumerable: true }
   const hidden = { writable: false, enumerable: false, configurable: false }
-
-  //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L135
-  class ComposedDecoder {
-
-    constructor(decoders) {
-      this.decoders = decoders
-    }
-
-    or(decoder) {
-      return or(this, decoder)
-    }
-
-    decode(input) {
-      const prefix = /** @type {Prefix} */ (input[0])
-      const decoder = this.decoders[prefix]
-      if (decoder) {
-        return decoder.decode(input)
-      } else {
-        throw RangeError(`Unable to decode multibase string ${JSON.stringify(input)}, only inputs prefixed with ${Object.keys(this.decoders)} are supported`)
-      }
-    }
-  }
-
-  //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L174
-  const or = (left, right) => new ComposedDecoder(/** @type {Decoders<L|R>} */({
-    ...(left.decoders || { [/** @type UnibaseDecoder<L> */(left).prefix]: left }),
-    ...(right.decoders || { [/** @type UnibaseDecoder<R> */(right).prefix]: right })
-  }))
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L78
   class Decoder {
@@ -2165,7 +2135,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   const hashItems = async (items, version) => {
-    const opts = mergeOptions(defaultOptions, {cidVersion: 1, onlyHash: true, rawLeaves: true, maxChunkSize: 1048576})
+    const opts = mergeOptions(defaultOptions, { cidVersion: 1, onlyHash: true, rawLeaves: true, maxChunkSize: 1048576 })
     if (version == undefined)
       version = 1;
     let Links = [];
@@ -2173,7 +2143,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       let item = items[i];
       Links.push({
         Name: item.name,
-        Hash: parse(item.cid),        
+        Hash: parse(item.cid),
         Tsize: item.size
       })
     };
@@ -2199,7 +2169,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       //   size: 0,//bytes.length + Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0),
       //   cid: cid.toString()
       // }
-      const bytes = d_encode(node);      
+      const bytes = d_encode(node);
       const hash = await s_sha256.digest(bytes);
       const dagPB_code = 0x70;
       // const cid = CID.create(version, RAW_CODE, hash);
@@ -2250,6 +2220,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   };
 
   // test start from here
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (c) 2020 Protocol Labs
+  *  Licensed under the MIT License.
+  *  https://github.com/rvagg/bl/blob/master/LICENSE.md
+  *--------------------------------------------------------------------------------------------*/
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L4
   const symbol = Symbol.for('BufferList')
   function BufferList(buf) {
     if (!(this instanceof BufferList)) {
@@ -2259,6 +2235,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     BufferList._init.call(this, buf)
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L14
   BufferList._init = function _init(buf) {
     Object.defineProperty(this, symbol, { value: true })
 
@@ -2270,10 +2247,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L25
   BufferList.prototype._new = function _new(buf) {
     return new BufferList(buf)
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L29
   BufferList.prototype._offset = function _offset(offset) {
     if (offset === 0) {
       return [0, 0]
@@ -2290,6 +2269,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L45
   BufferList.prototype._reverseOffset = function (blOffset) {
     const bufferId = blOffset[0]
     let offset = blOffset[1]
@@ -2301,6 +2281,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return offset
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L56
   BufferList.prototype.get = function get(index) {
     if (index > this.length || index < 0) {
       return undefined
@@ -2311,6 +2292,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return this._bufs[offset[0]][offset[1]]
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L66
   BufferList.prototype.slice = function slice(start, end) {
     if (typeof start === 'number' && start < 0) {
       start += this.length
@@ -2323,6 +2305,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return this.copy(null, 0, start, end)
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L78
   BufferList.prototype.copy = function copy(dst, dstStart, srcStart, srcEnd) {
     if (typeof srcStart !== 'number' || srcStart < 0) {
       srcStart = 0
@@ -2402,6 +2385,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return dst
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L157
   BufferList.prototype.shallowSlice = function shallowSlice(start, end) {
     start = start || 0
     end = typeof end !== 'number' ? this.length : end
@@ -2435,10 +2419,12 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return this._new(buffers)
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L190
   BufferList.prototype.toString = function toString(encoding, start, end) {
     return this.slice(start, end).toString(encoding)
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L194
   BufferList.prototype.consume = function consume(bytes) {
     // first, normalize the argument, in accordance with how Buffer does it
     bytes = Math.trunc(bytes)
@@ -2460,6 +2446,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return this
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L215
   BufferList.prototype.duplicate = function duplicate() {
     const copy = this._new()
 
@@ -2469,6 +2456,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
 
     return copy
   }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L225
   BufferList.prototype.append = function append(buf) {
     if (buf == null) {
       return this
@@ -2499,11 +2488,13 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return this
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L255
   BufferList.prototype._appendBuffer = function appendBuffer(buf) {
     this._bufs.push(buf)
     this.length += buf.length
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L260
   BufferList.prototype.indexOf = function (search, offset, encoding) {
     if (encoding === undefined && typeof offset === 'string') {
       encoding = offset
@@ -2578,6 +2569,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return -1
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L334
   BufferList.prototype._match = function (offset, search) {
     if (this.length - offset < search.length) {
       return false
@@ -2591,6 +2583,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return true
   }
 
+    //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L347
     ; (function () {
       const methods = {
         readDoubleBE: 8,
@@ -2628,24 +2621,19 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       }
     }())
 
-  // Used internally by the class and also as an indicator of this object being
-  // a `BufferList`. It's not possible to use `instanceof BufferList` in a browser
-  // environment because there could be multiple different copies of the
-  // BufferList class and some `BufferList`s might be `BufferList`s.
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L388
   BufferList.prototype._isBufferList = function _isBufferList(b) {
     return b instanceof BufferList || BufferList.isBufferList(b)
   }
 
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L392
   BufferList.isBufferList = function isBufferList(b) {
     return b != null && b[symbol]
   }
+
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/options.js#L8
   async function hamtHashFn(buf) {
     const hash = await multihashing(buf, 'murmur3-128')
-
-    // Multihashing inserts preamble of 2 bytes. Remove it.
-    // Also, murmur3 outputs 128 bit but, accidentally, IPFS Go's
-    // implementation only uses the first 64, so we must do the same
-    // for parity..
     const justHash = hash.slice(2, 10)
     const length = justHash.length
     const result = new Uint8Array(length)
@@ -2656,6 +2644,14 @@ const { convertCompilerOptionsFromJson } = require('typescript');
 
     return result
   }
+
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (c) 2020 Protocol Labs
+  *  Licensed under the MIT and APACHE License
+  *  https://github.com/ipfs/js-ipfs-unixfs/blob/master/LICENSE
+  *--------------------------------------------------------------------------------------------*/
+
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/chunker/rabin.js#L19
   async function* rabinChunker(source, options) {
     let min, max, avg
 
@@ -2696,6 +2692,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       yield chunk
     }
   }
+
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/chunker/rabin.js#L66
   async function* rabin(source, options) {
     const r = await create(options.bits, options.min, options.max, options.window)
     const buffers = new BufferList()
@@ -2718,6 +2716,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       yield buffers.slice(0)
     }
   }
+
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/chunker/fixed-size.js#L7
   async function* fixedSizeChunker(source, options) {
     let bl = new BufferList()
     let currentLength = 0
@@ -2753,6 +2753,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       yield bl.slice(0, currentLength)
     }
   }
+
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/dag-builder/index.js#L59
   async function* dagBuilder1(source, block, options) {
     for await (const entry of source) {
       if (entry.path) {
@@ -2777,9 +2779,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
           chunker = fixedSizeChunker
         }
 
-        /**
-         * @type {ChunkValidator}
-         */
         let chunkValidator
 
         if (typeof options.chunkValidator === 'function') {
@@ -2788,7 +2787,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
           chunkValidator = validateChunks // point 5
         }
 
-        /** @type {File} */
         const file = {
           path: entry.path,
           mtime: entry.mtime,
@@ -2810,6 +2808,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       }
     }
   }
+
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/dag-builder/validate-chunks.js#L11
   async function* validateChunks(source) {
     for await (const content of source) {
       if (content.length === undefined) {
@@ -2827,365 +2827,25 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       }
     }
   }
+
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (c) 2020 Protocol Labs
+  *  Licensed under the MIT License.
+  *  https://github.com/multiformats/js-multiformats/blob/master/LICENSE-MIT
+  *--------------------------------------------------------------------------------------------*/
+
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L21
   async function Multihashing(bytes, alg, length) {
     const digest = await Multihashing.digest(bytes, alg, length)
     return multihash.mh_encode(digest, alg, length)
   }
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/constants.js#L18
   const mh_names = Object.freeze({
-    'identity': 0x00,
-    'sha1': 0x11,
     'sha2-256': 0x12,
-    'sha2-512': 0x13,
-    'sha3-512': 0x14,
-    'sha3-384': 0x15,
-    'sha3-256': 0x16,
-    'sha3-224': 0x17,
-    'shake-128': 0x18,
-    'shake-256': 0x19,
-    'keccak-224': 0x1a,
-    'keccak-256': 0x1b,
-    'keccak-384': 0x1c,
-    'keccak-512': 0x1d,
-    'blake3': 0x1e,
-    'murmur3-128': 0x22,
-    'murmur3-32': 0x23,
-    'dbl-sha2-256': 0x56,
-    'md4': 0xd4,
-    'md5': 0xd5,
-    'bmt': 0xd6,
-    'sha2-256-trunc254-padded': 0x1012,
-    'ripemd-128': 0x1052,
-    'ripemd-160': 0x1053,
-    'ripemd-256': 0x1054,
-    'ripemd-320': 0x1055,
-    'x11': 0x1100,
-    'kangarootwelve': 0x1d01,
-    'sm3-256': 0x534d,
-    'blake2b-8': 0xb201,
-    'blake2b-16': 0xb202,
-    'blake2b-24': 0xb203,
-    'blake2b-32': 0xb204,
-    'blake2b-40': 0xb205,
-    'blake2b-48': 0xb206,
-    'blake2b-56': 0xb207,
-    'blake2b-64': 0xb208,
-    'blake2b-72': 0xb209,
-    'blake2b-80': 0xb20a,
-    'blake2b-88': 0xb20b,
-    'blake2b-96': 0xb20c,
-    'blake2b-104': 0xb20d,
-    'blake2b-112': 0xb20e,
-    'blake2b-120': 0xb20f,
-    'blake2b-128': 0xb210,
-    'blake2b-136': 0xb211,
-    'blake2b-144': 0xb212,
-    'blake2b-152': 0xb213,
-    'blake2b-160': 0xb214,
-    'blake2b-168': 0xb215,
-    'blake2b-176': 0xb216,
-    'blake2b-184': 0xb217,
-    'blake2b-192': 0xb218,
-    'blake2b-200': 0xb219,
-    'blake2b-208': 0xb21a,
-    'blake2b-216': 0xb21b,
-    'blake2b-224': 0xb21c,
-    'blake2b-232': 0xb21d,
-    'blake2b-240': 0xb21e,
-    'blake2b-248': 0xb21f,
-    'blake2b-256': 0xb220,
-    'blake2b-264': 0xb221,
-    'blake2b-272': 0xb222,
-    'blake2b-280': 0xb223,
-    'blake2b-288': 0xb224,
-    'blake2b-296': 0xb225,
-    'blake2b-304': 0xb226,
-    'blake2b-312': 0xb227,
-    'blake2b-320': 0xb228,
-    'blake2b-328': 0xb229,
-    'blake2b-336': 0xb22a,
-    'blake2b-344': 0xb22b,
-    'blake2b-352': 0xb22c,
-    'blake2b-360': 0xb22d,
-    'blake2b-368': 0xb22e,
-    'blake2b-376': 0xb22f,
-    'blake2b-384': 0xb230,
-    'blake2b-392': 0xb231,
-    'blake2b-400': 0xb232,
-    'blake2b-408': 0xb233,
-    'blake2b-416': 0xb234,
-    'blake2b-424': 0xb235,
-    'blake2b-432': 0xb236,
-    'blake2b-440': 0xb237,
-    'blake2b-448': 0xb238,
-    'blake2b-456': 0xb239,
-    'blake2b-464': 0xb23a,
-    'blake2b-472': 0xb23b,
-    'blake2b-480': 0xb23c,
-    'blake2b-488': 0xb23d,
-    'blake2b-496': 0xb23e,
-    'blake2b-504': 0xb23f,
-    'blake2b-512': 0xb240,
-    'blake2s-8': 0xb241,
-    'blake2s-16': 0xb242,
-    'blake2s-24': 0xb243,
-    'blake2s-32': 0xb244,
-    'blake2s-40': 0xb245,
-    'blake2s-48': 0xb246,
-    'blake2s-56': 0xb247,
-    'blake2s-64': 0xb248,
-    'blake2s-72': 0xb249,
-    'blake2s-80': 0xb24a,
-    'blake2s-88': 0xb24b,
-    'blake2s-96': 0xb24c,
-    'blake2s-104': 0xb24d,
-    'blake2s-112': 0xb24e,
-    'blake2s-120': 0xb24f,
-    'blake2s-128': 0xb250,
-    'blake2s-136': 0xb251,
-    'blake2s-144': 0xb252,
-    'blake2s-152': 0xb253,
-    'blake2s-160': 0xb254,
-    'blake2s-168': 0xb255,
-    'blake2s-176': 0xb256,
-    'blake2s-184': 0xb257,
-    'blake2s-192': 0xb258,
-    'blake2s-200': 0xb259,
-    'blake2s-208': 0xb25a,
-    'blake2s-216': 0xb25b,
-    'blake2s-224': 0xb25c,
-    'blake2s-232': 0xb25d,
-    'blake2s-240': 0xb25e,
-    'blake2s-248': 0xb25f,
-    'blake2s-256': 0xb260,
-    'skein256-8': 0xb301,
-    'skein256-16': 0xb302,
-    'skein256-24': 0xb303,
-    'skein256-32': 0xb304,
-    'skein256-40': 0xb305,
-    'skein256-48': 0xb306,
-    'skein256-56': 0xb307,
-    'skein256-64': 0xb308,
-    'skein256-72': 0xb309,
-    'skein256-80': 0xb30a,
-    'skein256-88': 0xb30b,
-    'skein256-96': 0xb30c,
-    'skein256-104': 0xb30d,
-    'skein256-112': 0xb30e,
-    'skein256-120': 0xb30f,
-    'skein256-128': 0xb310,
-    'skein256-136': 0xb311,
-    'skein256-144': 0xb312,
-    'skein256-152': 0xb313,
-    'skein256-160': 0xb314,
-    'skein256-168': 0xb315,
-    'skein256-176': 0xb316,
-    'skein256-184': 0xb317,
-    'skein256-192': 0xb318,
-    'skein256-200': 0xb319,
-    'skein256-208': 0xb31a,
-    'skein256-216': 0xb31b,
-    'skein256-224': 0xb31c,
-    'skein256-232': 0xb31d,
-    'skein256-240': 0xb31e,
-    'skein256-248': 0xb31f,
-    'skein256-256': 0xb320,
-    'skein512-8': 0xb321,
-    'skein512-16': 0xb322,
-    'skein512-24': 0xb323,
-    'skein512-32': 0xb324,
-    'skein512-40': 0xb325,
-    'skein512-48': 0xb326,
-    'skein512-56': 0xb327,
-    'skein512-64': 0xb328,
-    'skein512-72': 0xb329,
-    'skein512-80': 0xb32a,
-    'skein512-88': 0xb32b,
-    'skein512-96': 0xb32c,
-    'skein512-104': 0xb32d,
-    'skein512-112': 0xb32e,
-    'skein512-120': 0xb32f,
-    'skein512-128': 0xb330,
-    'skein512-136': 0xb331,
-    'skein512-144': 0xb332,
-    'skein512-152': 0xb333,
-    'skein512-160': 0xb334,
-    'skein512-168': 0xb335,
-    'skein512-176': 0xb336,
-    'skein512-184': 0xb337,
-    'skein512-192': 0xb338,
-    'skein512-200': 0xb339,
-    'skein512-208': 0xb33a,
-    'skein512-216': 0xb33b,
-    'skein512-224': 0xb33c,
-    'skein512-232': 0xb33d,
-    'skein512-240': 0xb33e,
-    'skein512-248': 0xb33f,
-    'skein512-256': 0xb340,
-    'skein512-264': 0xb341,
-    'skein512-272': 0xb342,
-    'skein512-280': 0xb343,
-    'skein512-288': 0xb344,
-    'skein512-296': 0xb345,
-    'skein512-304': 0xb346,
-    'skein512-312': 0xb347,
-    'skein512-320': 0xb348,
-    'skein512-328': 0xb349,
-    'skein512-336': 0xb34a,
-    'skein512-344': 0xb34b,
-    'skein512-352': 0xb34c,
-    'skein512-360': 0xb34d,
-    'skein512-368': 0xb34e,
-    'skein512-376': 0xb34f,
-    'skein512-384': 0xb350,
-    'skein512-392': 0xb351,
-    'skein512-400': 0xb352,
-    'skein512-408': 0xb353,
-    'skein512-416': 0xb354,
-    'skein512-424': 0xb355,
-    'skein512-432': 0xb356,
-    'skein512-440': 0xb357,
-    'skein512-448': 0xb358,
-    'skein512-456': 0xb359,
-    'skein512-464': 0xb35a,
-    'skein512-472': 0xb35b,
-    'skein512-480': 0xb35c,
-    'skein512-488': 0xb35d,
-    'skein512-496': 0xb35e,
-    'skein512-504': 0xb35f,
-    'skein512-512': 0xb360,
-    'skein1024-8': 0xb361,
-    'skein1024-16': 0xb362,
-    'skein1024-24': 0xb363,
-    'skein1024-32': 0xb364,
-    'skein1024-40': 0xb365,
-    'skein1024-48': 0xb366,
-    'skein1024-56': 0xb367,
-    'skein1024-64': 0xb368,
-    'skein1024-72': 0xb369,
-    'skein1024-80': 0xb36a,
-    'skein1024-88': 0xb36b,
-    'skein1024-96': 0xb36c,
-    'skein1024-104': 0xb36d,
-    'skein1024-112': 0xb36e,
-    'skein1024-120': 0xb36f,
-    'skein1024-128': 0xb370,
-    'skein1024-136': 0xb371,
-    'skein1024-144': 0xb372,
-    'skein1024-152': 0xb373,
-    'skein1024-160': 0xb374,
-    'skein1024-168': 0xb375,
-    'skein1024-176': 0xb376,
-    'skein1024-184': 0xb377,
-    'skein1024-192': 0xb378,
-    'skein1024-200': 0xb379,
-    'skein1024-208': 0xb37a,
-    'skein1024-216': 0xb37b,
-    'skein1024-224': 0xb37c,
-    'skein1024-232': 0xb37d,
-    'skein1024-240': 0xb37e,
-    'skein1024-248': 0xb37f,
-    'skein1024-256': 0xb380,
-    'skein1024-264': 0xb381,
-    'skein1024-272': 0xb382,
-    'skein1024-280': 0xb383,
-    'skein1024-288': 0xb384,
-    'skein1024-296': 0xb385,
-    'skein1024-304': 0xb386,
-    'skein1024-312': 0xb387,
-    'skein1024-320': 0xb388,
-    'skein1024-328': 0xb389,
-    'skein1024-336': 0xb38a,
-    'skein1024-344': 0xb38b,
-    'skein1024-352': 0xb38c,
-    'skein1024-360': 0xb38d,
-    'skein1024-368': 0xb38e,
-    'skein1024-376': 0xb38f,
-    'skein1024-384': 0xb390,
-    'skein1024-392': 0xb391,
-    'skein1024-400': 0xb392,
-    'skein1024-408': 0xb393,
-    'skein1024-416': 0xb394,
-    'skein1024-424': 0xb395,
-    'skein1024-432': 0xb396,
-    'skein1024-440': 0xb397,
-    'skein1024-448': 0xb398,
-    'skein1024-456': 0xb399,
-    'skein1024-464': 0xb39a,
-    'skein1024-472': 0xb39b,
-    'skein1024-480': 0xb39c,
-    'skein1024-488': 0xb39d,
-    'skein1024-496': 0xb39e,
-    'skein1024-504': 0xb39f,
-    'skein1024-512': 0xb3a0,
-    'skein1024-520': 0xb3a1,
-    'skein1024-528': 0xb3a2,
-    'skein1024-536': 0xb3a3,
-    'skein1024-544': 0xb3a4,
-    'skein1024-552': 0xb3a5,
-    'skein1024-560': 0xb3a6,
-    'skein1024-568': 0xb3a7,
-    'skein1024-576': 0xb3a8,
-    'skein1024-584': 0xb3a9,
-    'skein1024-592': 0xb3aa,
-    'skein1024-600': 0xb3ab,
-    'skein1024-608': 0xb3ac,
-    'skein1024-616': 0xb3ad,
-    'skein1024-624': 0xb3ae,
-    'skein1024-632': 0xb3af,
-    'skein1024-640': 0xb3b0,
-    'skein1024-648': 0xb3b1,
-    'skein1024-656': 0xb3b2,
-    'skein1024-664': 0xb3b3,
-    'skein1024-672': 0xb3b4,
-    'skein1024-680': 0xb3b5,
-    'skein1024-688': 0xb3b6,
-    'skein1024-696': 0xb3b7,
-    'skein1024-704': 0xb3b8,
-    'skein1024-712': 0xb3b9,
-    'skein1024-720': 0xb3ba,
-    'skein1024-728': 0xb3bb,
-    'skein1024-736': 0xb3bc,
-    'skein1024-744': 0xb3bd,
-    'skein1024-752': 0xb3be,
-    'skein1024-760': 0xb3bf,
-    'skein1024-768': 0xb3c0,
-    'skein1024-776': 0xb3c1,
-    'skein1024-784': 0xb3c2,
-    'skein1024-792': 0xb3c3,
-    'skein1024-800': 0xb3c4,
-    'skein1024-808': 0xb3c5,
-    'skein1024-816': 0xb3c6,
-    'skein1024-824': 0xb3c7,
-    'skein1024-832': 0xb3c8,
-    'skein1024-840': 0xb3c9,
-    'skein1024-848': 0xb3ca,
-    'skein1024-856': 0xb3cb,
-    'skein1024-864': 0xb3cc,
-    'skein1024-872': 0xb3cd,
-    'skein1024-880': 0xb3ce,
-    'skein1024-888': 0xb3cf,
-    'skein1024-896': 0xb3d0,
-    'skein1024-904': 0xb3d1,
-    'skein1024-912': 0xb3d2,
-    'skein1024-920': 0xb3d3,
-    'skein1024-928': 0xb3d4,
-    'skein1024-936': 0xb3d5,
-    'skein1024-944': 0xb3d6,
-    'skein1024-952': 0xb3d7,
-    'skein1024-960': 0xb3d8,
-    'skein1024-968': 0xb3d9,
-    'skein1024-976': 0xb3da,
-    'skein1024-984': 0xb3db,
-    'skein1024-992': 0xb3dc,
-    'skein1024-1000': 0xb3dd,
-    'skein1024-1008': 0xb3de,
-    'skein1024-1016': 0xb3df,
-    'skein1024-1024': 0xb3e0,
-    'poseidon-bls12_381-a2-fc1': 0xb401,
-    'poseidon-bls12_381-a2-fc1-sc': 0xb402
   })
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L13
   const mh_codes = /** @type {import('./types').CodeNameMap} */({})
   for (const key in mh_names) {
     const name = /** @type {HashName} */(key)
@@ -3193,6 +2853,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
   Object.freeze(mh_codes)
 
+  // No license(?)
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/util/bases.js#L15
   function createCodec(name, prefix, encode, decode) {
     return {
       name,
@@ -3206,6 +2868,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     };
   }
 
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/util/bases.js#L30
   const string = createCodec('utf8', 'u', buf => {
     const decoder = new TextDecoder('utf8');
     return 'u' + decoder.decode(buf);
@@ -3214,16 +2877,13 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return encoder.encode(str.substring(1));
   });
 
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/util/bases.js#L63
   var bases = {
     utf8: string,
     'utf-8': string,
-    // hex: basics.bases.base16,
-    // latin1: ascii,
-    // ascii: ascii,
-    // binary: ascii,
-    // ...basics.bases
   };
 
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/to-string.js#L18
   function uint8ArrayToString(array, encoding = 'utf8') {
     const base = bases[encoding];
     if (!base) {
@@ -3235,6 +2895,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return base.encoder.encode(array).substring(1);
   }
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L28
   function mh_toHexString(hash) {
     if (!(hash instanceof Uint8Array)) {
       throw new Error('must be passed a Uint8Array')
@@ -3243,12 +2904,15 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return uint8ArrayToString(hash, 'base16')
   }
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L42
   function mh_fromHexString(hash) {
     return uint8ArrayFromString(hash, 'base16')
   }
 
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/base.js#L3
   const encodeText = (text) => textEncoder.encode(text)
 
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/base.js#L13
   class Base {
     constructor(name, code, factory, alphabet) {
       this.name = name
@@ -3270,6 +2934,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/rfc4648.js#L104
   const rfc4648_1 = (bitsPerChar) => (alphabet) => {
     return {
       encode(input) {
@@ -3281,42 +2946,25 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/constants.js#L27
   const constants = [
-    // ['identity', '\x00', identity, ''],
-    ['base2', '0', rfc4648_1(1), '01'],
-    ['base8', '7', rfc4648_1(3), '01234567'],
-    ['base10', '9', _basex, '0123456789'],
-    ['base16', 'f', rfc4648_1(4), '0123456789abcdef'],
-    ['base16upper', 'F', rfc4648_1(4), '0123456789ABCDEF'],
-    ['base32hex', 'v', rfc4648_1(5), '0123456789abcdefghijklmnopqrstuv'],
-    ['base32hexupper', 'V', rfc4648_1(5), '0123456789ABCDEFGHIJKLMNOPQRSTUV'],
-    ['base32hexpad', 't', rfc4648_1(5), '0123456789abcdefghijklmnopqrstuv='],
-    ['base32hexpadupper', 'T', rfc4648_1(5), '0123456789ABCDEFGHIJKLMNOPQRSTUV='],
     ['base32', 'b', rfc4648_1(5), 'abcdefghijklmnopqrstuvwxyz234567'],
-    ['base32upper', 'B', rfc4648_1(5), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'],
-    ['base32pad', 'c', rfc4648_1(5), 'abcdefghijklmnopqrstuvwxyz234567='],
-    ['base32padupper', 'C', rfc4648_1(5), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567='],
-    ['base32z', 'h', rfc4648_1(5), 'ybndrfg8ejkmcpqxot1uwisza345h769'],
-    ['base36', 'k', _basex, '0123456789abcdefghijklmnopqrstuvwxyz'],
-    ['base36upper', 'K', _basex, '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'],
     ['base58btc', 'z', _basex, '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'],
-    ['base58flickr', 'Z', _basex, '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'],
-    ['base64', 'm', rfc4648_1(6), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'],
-    ['base64pad', 'M', rfc4648_1(6), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='],
-    ['base64url', 'u', rfc4648_1(6), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'],
-    ['base64urlpad', 'U', rfc4648_1(6), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=']
   ]
 
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/constants.js#L54
   const constants1_names = constants.reduce((prev, tupple) => {
     prev[tupple[0]] = new Base(tupple[0], tupple[1], tupple[2], tupple[3])
     return prev
   }, /** @type {Record<BaseName,Base>} */({}))
 
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/constants.js#L59
   const constants1_codes = constants.reduce((prev, tupple) => {
     prev[tupple[1]] = constants1_names[tupple[0]]
     return prev
   }, /** @type {Record<BaseCode,Base>} */({}))
 
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L115
   function encoding(nameOrCode) {
     if (Object.prototype.hasOwnProperty.call(constants1_names, /** @type {BaseName} */(nameOrCode))) {
       return constants1_names[/** @type {BaseName} */(nameOrCode)]
@@ -3327,6 +2975,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/util.js#L24
   function concat(arrs, length) {
     const output = new Uint8Array(length)
     let offset = 0
@@ -3339,13 +2988,17 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return output
   }
 
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/util.js#L3
   const textDecoder = new TextDecoder()
   const decodeText = (bytes) => textDecoder.decode(bytes)
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L103
   function validEncode(name, buf) {
     const enc = encoding(name)
     enc.decode(decodeText(buf))
   }
 
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L23
   function multibase(nameOrCode, buf) {
     if (!buf) {
       throw new Error('requires an encoded Uint8Array')
@@ -3356,6 +3009,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return concat([codeBuf, buf], codeBuf.length + buf.length)
   }
 
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L42
   function multibase_encode(nameOrCode, buf) {
     const enc = encoding(nameOrCode)
     const data = encodeText(enc.encode(buf))
@@ -3363,6 +3017,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return concat([enc.codeBuf, data], enc.codeBuf.length + data.length)
   }
 
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L58
   function multibase_decode(data) {
     if (data instanceof Uint8Array) {
       data = decodeText(data)
@@ -3375,6 +3030,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return enc.decode(data.substring(1))
   }
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L52
   function mh_toB58String(hash) {
     if (!(hash instanceof Uint8Array)) {
       throw new Error('must be passed a Uint8Array')
@@ -3382,6 +3038,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return uint8ArrayToString(multibase_encode('base58btc', hash)).slice(1)
   }
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L66
   function mh_fromB58String(hash) {
     const encoded = hash instanceof Uint8Array
       ? uint8ArrayToString(hash)
@@ -3390,6 +3047,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return multibase_decode('z' + encoded)
   }
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L80
   function mh_decode(bytes) {
     if (!(bytes instanceof Uint8Array)) {
       throw new Error('multihash must be a Uint8Array')
@@ -3423,6 +3081,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L123
   function mh_encode(digest, code, length) {
     if (!digest || code === undefined) {
       throw new Error('multihash encode requires at least two args: digest, code')
@@ -3465,6 +3124,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return uint8ArrayConcat([hash, len, digest], hash.length + len.length + digest.length)
   }
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L155
   function mh_coerceCode(name) {
     let code = name
 
@@ -3486,20 +3146,24 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return code
   }
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L183
   function mh_isAppCode(code) {
     return code > 0 && code < 0x10
   }
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L212
   function mh_validate(multihash) {
     mh_decode(multihash)
   }
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L223
   function mh_prefix(multihash) {
     mh_validate(multihash)
 
     return multihash.subarray(0, 2)
   }
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L193
   function mh_isValidCode(code) {
     if (mh_isAppCode(code)) {
       return true
@@ -3512,6 +3176,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return false
   }
 
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L229
   const multihash = {
     mh_names,
     mh_codes,
@@ -3528,14 +3193,17 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     mh_isValidCode
   }
 
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L29
   Multihashing.multihash = multihash
 
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L37
   Multihashing.digest = async (bytes, alg, length) => {
     const hash = Multihashing.createHash(alg)
     const digest = await hash(bytes)
     return length ? digest.slice(0, length) : digest
   }
 
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L49
   Multihashing.createHash = function (alg) {
     if (!alg) {
       const e = errcode(new Error('hash algorithm must be specified'), 'ERR_HASH_ALGORITHM_NOT_SPECIFIED')
@@ -3548,23 +3216,17 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return Multihashing.functions[code]
   }
 
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/sha.js#L21
   const digest = async (data, alg) => {
     switch (alg) {
-      // case 'sha1':
-      //   return crypto.createHash('sha1').update(data).digest()
       case 'sha2-256':
         return createHash('sha256').update(data).digest()
-      // case 'sha2-512':
-      //   return crypto.createHash('sha512').update(data).digest()
-      case 'dbl-sha2-256': {
-        const first = createHash('sha256').update(data).digest()
-        return createHash('sha256').update(first).digest()
-      }
       default:
         throw new Error(`${alg} is not a supported algorithm`)
     }
   }
 
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/sha.js#L38
   const { factory: sha } = {
     factory: (alg) => async (data) => {
       return digest(data, alg)
@@ -3576,69 +3238,23 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/crypto.js#L53
   var crypto = {
-    // identity,
-    // sha1: sha('sha1'),
     sha2256: sha('sha2-256'),
-    // sha2512: sha('sha2-512'),
-    // dblSha2256: sha('dbl-sha2-256'),
-    // sha3224: hash('sha3-224'),
-    // sha3256: hash('sha3-256'),
-    // sha3384: hash('sha3-384'),
-    // sha3512: hash('sha3-512'),
-    // shake128: hash('shake-128'),
-    // shake256: hash('shake-256'),
-    // keccak224: hash('keccak-224'),
-    // keccak256: hash('keccak-256'),
-    // keccak384: hash('keccak-384'),
-    // keccak512: hash('keccak-512'),
-    // murmur3128: hash('murmur3-128'),
-    // murmur332: hash('murmur3-32'),
-    // addBlake: blake_1
-  }
-  Multihashing.functions = {
-    // // identity
-    // 0x00: crypto.identity,
-    // // sha1
-    // 0x11: crypto.sha1,
-    // sha2-256
-    0x12: crypto.sha2256,
-    // sha2-512
-    // 0x13: crypto.sha2512,
-    // // sha3-512
-    // 0x14: crypto.sha3512,
-    // // sha3-384
-    // 0x15: crypto.sha3384,
-    // // sha3-256
-    // 0x16: crypto.sha3256,
-    // // sha3-224
-    // 0x17: crypto.sha3224,
-    // // shake-128
-    // 0x18: crypto.shake128,
-    // // shake-256
-    // 0x19: crypto.shake256,
-    // // keccak-224
-    // 0x1A: crypto.keccak224,
-    // // keccak-256
-    // 0x1B: crypto.keccak256,
-    // // keccak-384
-    // 0x1C: crypto.keccak384,
-    // // keccak-512
-    // 0x1D: crypto.keccak512,
-    // // murmur3-128
-    // 0x22: crypto.murmur3128,
-    // // murmur3-32
-    // 0x23: crypto.murmur332,
-    // dbl-sha2-256
-    0x56: crypto.dblSha2256
   }
 
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L69
+  Multihashing.functions = {
+    0x12: crypto.sha2256,
+  }
+
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L114
   Multihashing.validate = async (bytes, hash) => {
     const newHash = await Multihashing(bytes, multihash.decode(hash).name)
-
     return equals(hash, newHash)
   }
 
+  //https://github.com/multiformats/js-cid/blob/2ed9449c7a7d2df522485822ae46f2d8d10fbbcc/src/cid-util.js#L5
   const CIDUtil = {
     checkCIDComponents: function (other) {
       if (other == null) {
@@ -3679,496 +3295,32 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/util.js#L17
   function uint8ArrayToNumber(buf) {
     return parseInt(uint8ArrayToString(buf, 'base16'), 16)
   }
 
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/util.js#L35
   function varintUint8ArrayEncode(input) {
     return Uint8Array.from(encode_2(uint8ArrayToNumber(input)))
   }
 
   const baseTable = Object.freeze({
-    'identity': 0x00,
-    'cidv1': 0x01,
-    'cidv2': 0x02,
-    'cidv3': 0x03,
-    'ip4': 0x04,
-    'tcp': 0x06,
-    'sha1': 0x11,
-    'sha2-256': 0x12,
-    'sha2-512': 0x13,
-    'sha3-512': 0x14,
-    'sha3-384': 0x15,
-    'sha3-256': 0x16,
-    'sha3-224': 0x17,
-    'shake-128': 0x18,
-    'shake-256': 0x19,
-    'keccak-224': 0x1a,
-    'keccak-256': 0x1b,
-    'keccak-384': 0x1c,
-    'keccak-512': 0x1d,
-    'blake3': 0x1e,
-    'dccp': 0x21,
-    'murmur3-128': 0x22,
-    'murmur3-32': 0x23,
-    'ip6': 0x29,
-    'ip6zone': 0x2a,
-    'path': 0x2f,
-    'multicodec': 0x30,
-    'multihash': 0x31,
-    'multiaddr': 0x32,
-    'multibase': 0x33,
-    'dns': 0x35,
-    'dns4': 0x36,
-    'dns6': 0x37,
-    'dnsaddr': 0x38,
-    'protobuf': 0x50,
-    'cbor': 0x51,
     'raw': 0x55,
-    'dbl-sha2-256': 0x56,
-    'rlp': 0x60,
-    'bencode': 0x63,
     'dag-pb': 0x70,
-    'dag-cbor': 0x71,
-    'libp2p-key': 0x72,
-    'git-raw': 0x78,
-    'torrent-info': 0x7b,
-    'torrent-file': 0x7c,
-    'leofcoin-block': 0x81,
-    'leofcoin-tx': 0x82,
-    'leofcoin-pr': 0x83,
-    'sctp': 0x84,
-    'dag-jose': 0x85,
-    'dag-cose': 0x86,
-    'eth-block': 0x90,
-    'eth-block-list': 0x91,
-    'eth-tx-trie': 0x92,
-    'eth-tx': 0x93,
-    'eth-tx-receipt-trie': 0x94,
-    'eth-tx-receipt': 0x95,
-    'eth-state-trie': 0x96,
-    'eth-account-snapshot': 0x97,
-    'eth-storage-trie': 0x98,
-    'eth-receipt-log-trie': 0x99,
-    'eth-reciept-log': 0x9a,
-    'bitcoin-block': 0xb0,
-    'bitcoin-tx': 0xb1,
-    'bitcoin-witness-commitment': 0xb2,
-    'zcash-block': 0xc0,
-    'zcash-tx': 0xc1,
-    'caip-50': 0xca,
-    'streamid': 0xce,
-    'stellar-block': 0xd0,
-    'stellar-tx': 0xd1,
-    'md4': 0xd4,
-    'md5': 0xd5,
-    'bmt': 0xd6,
-    'decred-block': 0xe0,
-    'decred-tx': 0xe1,
-    'ipld-ns': 0xe2,
-    'ipfs-ns': 0xe3,
-    'swarm-ns': 0xe4,
-    'ipns-ns': 0xe5,
-    'zeronet': 0xe6,
-    'secp256k1-pub': 0xe7,
-    'bls12_381-g1-pub': 0xea,
-    'bls12_381-g2-pub': 0xeb,
-    'x25519-pub': 0xec,
-    'ed25519-pub': 0xed,
-    'bls12_381-g1g2-pub': 0xee,
-    'dash-block': 0xf0,
-    'dash-tx': 0xf1,
-    'swarm-manifest': 0xfa,
-    'swarm-feed': 0xfb,
-    'udp': 0x0111,
-    'p2p-webrtc-star': 0x0113,
-    'p2p-webrtc-direct': 0x0114,
-    'p2p-stardust': 0x0115,
-    'p2p-circuit': 0x0122,
-    'dag-json': 0x0129,
-    'udt': 0x012d,
-    'utp': 0x012e,
-    'unix': 0x0190,
-    'thread': 0x0196,
-    'p2p': 0x01a5,
-    'ipfs': 0x01a5,
-    'https': 0x01bb,
-    'onion': 0x01bc,
-    'onion3': 0x01bd,
-    'garlic64': 0x01be,
-    'garlic32': 0x01bf,
-    'tls': 0x01c0,
-    'noise': 0x01c6,
-    'quic': 0x01cc,
-    'ws': 0x01dd,
-    'wss': 0x01de,
-    'p2p-websocket-star': 0x01df,
-    'http': 0x01e0,
-    'swhid-1-snp': 0x01f0,
-    'json': 0x0200,
-    'messagepack': 0x0201,
-    'libp2p-peer-record': 0x0301,
-    'libp2p-relay-rsvp': 0x0302,
-    'car-index-sorted': 0x0400,
-    'sha2-256-trunc254-padded': 0x1012,
-    'ripemd-128': 0x1052,
-    'ripemd-160': 0x1053,
-    'ripemd-256': 0x1054,
-    'ripemd-320': 0x1055,
-    'x11': 0x1100,
-    'p256-pub': 0x1200,
-    'p384-pub': 0x1201,
-    'p521-pub': 0x1202,
-    'ed448-pub': 0x1203,
-    'x448-pub': 0x1204,
-    'ed25519-priv': 0x1300,
-    'secp256k1-priv': 0x1301,
-    'x25519-priv': 0x1302,
-    'kangarootwelve': 0x1d01,
-    'sm3-256': 0x534d,
-    'blake2b-8': 0xb201,
-    'blake2b-16': 0xb202,
-    'blake2b-24': 0xb203,
-    'blake2b-32': 0xb204,
-    'blake2b-40': 0xb205,
-    'blake2b-48': 0xb206,
-    'blake2b-56': 0xb207,
-    'blake2b-64': 0xb208,
-    'blake2b-72': 0xb209,
-    'blake2b-80': 0xb20a,
-    'blake2b-88': 0xb20b,
-    'blake2b-96': 0xb20c,
-    'blake2b-104': 0xb20d,
-    'blake2b-112': 0xb20e,
-    'blake2b-120': 0xb20f,
-    'blake2b-128': 0xb210,
-    'blake2b-136': 0xb211,
-    'blake2b-144': 0xb212,
-    'blake2b-152': 0xb213,
-    'blake2b-160': 0xb214,
-    'blake2b-168': 0xb215,
-    'blake2b-176': 0xb216,
-    'blake2b-184': 0xb217,
-    'blake2b-192': 0xb218,
-    'blake2b-200': 0xb219,
-    'blake2b-208': 0xb21a,
-    'blake2b-216': 0xb21b,
-    'blake2b-224': 0xb21c,
-    'blake2b-232': 0xb21d,
-    'blake2b-240': 0xb21e,
-    'blake2b-248': 0xb21f,
-    'blake2b-256': 0xb220,
-    'blake2b-264': 0xb221,
-    'blake2b-272': 0xb222,
-    'blake2b-280': 0xb223,
-    'blake2b-288': 0xb224,
-    'blake2b-296': 0xb225,
-    'blake2b-304': 0xb226,
-    'blake2b-312': 0xb227,
-    'blake2b-320': 0xb228,
-    'blake2b-328': 0xb229,
-    'blake2b-336': 0xb22a,
-    'blake2b-344': 0xb22b,
-    'blake2b-352': 0xb22c,
-    'blake2b-360': 0xb22d,
-    'blake2b-368': 0xb22e,
-    'blake2b-376': 0xb22f,
-    'blake2b-384': 0xb230,
-    'blake2b-392': 0xb231,
-    'blake2b-400': 0xb232,
-    'blake2b-408': 0xb233,
-    'blake2b-416': 0xb234,
-    'blake2b-424': 0xb235,
-    'blake2b-432': 0xb236,
-    'blake2b-440': 0xb237,
-    'blake2b-448': 0xb238,
-    'blake2b-456': 0xb239,
-    'blake2b-464': 0xb23a,
-    'blake2b-472': 0xb23b,
-    'blake2b-480': 0xb23c,
-    'blake2b-488': 0xb23d,
-    'blake2b-496': 0xb23e,
-    'blake2b-504': 0xb23f,
-    'blake2b-512': 0xb240,
-    'blake2s-8': 0xb241,
-    'blake2s-16': 0xb242,
-    'blake2s-24': 0xb243,
-    'blake2s-32': 0xb244,
-    'blake2s-40': 0xb245,
-    'blake2s-48': 0xb246,
-    'blake2s-56': 0xb247,
-    'blake2s-64': 0xb248,
-    'blake2s-72': 0xb249,
-    'blake2s-80': 0xb24a,
-    'blake2s-88': 0xb24b,
-    'blake2s-96': 0xb24c,
-    'blake2s-104': 0xb24d,
-    'blake2s-112': 0xb24e,
-    'blake2s-120': 0xb24f,
-    'blake2s-128': 0xb250,
-    'blake2s-136': 0xb251,
-    'blake2s-144': 0xb252,
-    'blake2s-152': 0xb253,
-    'blake2s-160': 0xb254,
-    'blake2s-168': 0xb255,
-    'blake2s-176': 0xb256,
-    'blake2s-184': 0xb257,
-    'blake2s-192': 0xb258,
-    'blake2s-200': 0xb259,
-    'blake2s-208': 0xb25a,
-    'blake2s-216': 0xb25b,
-    'blake2s-224': 0xb25c,
-    'blake2s-232': 0xb25d,
-    'blake2s-240': 0xb25e,
-    'blake2s-248': 0xb25f,
-    'blake2s-256': 0xb260,
-    'skein256-8': 0xb301,
-    'skein256-16': 0xb302,
-    'skein256-24': 0xb303,
-    'skein256-32': 0xb304,
-    'skein256-40': 0xb305,
-    'skein256-48': 0xb306,
-    'skein256-56': 0xb307,
-    'skein256-64': 0xb308,
-    'skein256-72': 0xb309,
-    'skein256-80': 0xb30a,
-    'skein256-88': 0xb30b,
-    'skein256-96': 0xb30c,
-    'skein256-104': 0xb30d,
-    'skein256-112': 0xb30e,
-    'skein256-120': 0xb30f,
-    'skein256-128': 0xb310,
-    'skein256-136': 0xb311,
-    'skein256-144': 0xb312,
-    'skein256-152': 0xb313,
-    'skein256-160': 0xb314,
-    'skein256-168': 0xb315,
-    'skein256-176': 0xb316,
-    'skein256-184': 0xb317,
-    'skein256-192': 0xb318,
-    'skein256-200': 0xb319,
-    'skein256-208': 0xb31a,
-    'skein256-216': 0xb31b,
-    'skein256-224': 0xb31c,
-    'skein256-232': 0xb31d,
-    'skein256-240': 0xb31e,
-    'skein256-248': 0xb31f,
-    'skein256-256': 0xb320,
-    'skein512-8': 0xb321,
-    'skein512-16': 0xb322,
-    'skein512-24': 0xb323,
-    'skein512-32': 0xb324,
-    'skein512-40': 0xb325,
-    'skein512-48': 0xb326,
-    'skein512-56': 0xb327,
-    'skein512-64': 0xb328,
-    'skein512-72': 0xb329,
-    'skein512-80': 0xb32a,
-    'skein512-88': 0xb32b,
-    'skein512-96': 0xb32c,
-    'skein512-104': 0xb32d,
-    'skein512-112': 0xb32e,
-    'skein512-120': 0xb32f,
-    'skein512-128': 0xb330,
-    'skein512-136': 0xb331,
-    'skein512-144': 0xb332,
-    'skein512-152': 0xb333,
-    'skein512-160': 0xb334,
-    'skein512-168': 0xb335,
-    'skein512-176': 0xb336,
-    'skein512-184': 0xb337,
-    'skein512-192': 0xb338,
-    'skein512-200': 0xb339,
-    'skein512-208': 0xb33a,
-    'skein512-216': 0xb33b,
-    'skein512-224': 0xb33c,
-    'skein512-232': 0xb33d,
-    'skein512-240': 0xb33e,
-    'skein512-248': 0xb33f,
-    'skein512-256': 0xb340,
-    'skein512-264': 0xb341,
-    'skein512-272': 0xb342,
-    'skein512-280': 0xb343,
-    'skein512-288': 0xb344,
-    'skein512-296': 0xb345,
-    'skein512-304': 0xb346,
-    'skein512-312': 0xb347,
-    'skein512-320': 0xb348,
-    'skein512-328': 0xb349,
-    'skein512-336': 0xb34a,
-    'skein512-344': 0xb34b,
-    'skein512-352': 0xb34c,
-    'skein512-360': 0xb34d,
-    'skein512-368': 0xb34e,
-    'skein512-376': 0xb34f,
-    'skein512-384': 0xb350,
-    'skein512-392': 0xb351,
-    'skein512-400': 0xb352,
-    'skein512-408': 0xb353,
-    'skein512-416': 0xb354,
-    'skein512-424': 0xb355,
-    'skein512-432': 0xb356,
-    'skein512-440': 0xb357,
-    'skein512-448': 0xb358,
-    'skein512-456': 0xb359,
-    'skein512-464': 0xb35a,
-    'skein512-472': 0xb35b,
-    'skein512-480': 0xb35c,
-    'skein512-488': 0xb35d,
-    'skein512-496': 0xb35e,
-    'skein512-504': 0xb35f,
-    'skein512-512': 0xb360,
-    'skein1024-8': 0xb361,
-    'skein1024-16': 0xb362,
-    'skein1024-24': 0xb363,
-    'skein1024-32': 0xb364,
-    'skein1024-40': 0xb365,
-    'skein1024-48': 0xb366,
-    'skein1024-56': 0xb367,
-    'skein1024-64': 0xb368,
-    'skein1024-72': 0xb369,
-    'skein1024-80': 0xb36a,
-    'skein1024-88': 0xb36b,
-    'skein1024-96': 0xb36c,
-    'skein1024-104': 0xb36d,
-    'skein1024-112': 0xb36e,
-    'skein1024-120': 0xb36f,
-    'skein1024-128': 0xb370,
-    'skein1024-136': 0xb371,
-    'skein1024-144': 0xb372,
-    'skein1024-152': 0xb373,
-    'skein1024-160': 0xb374,
-    'skein1024-168': 0xb375,
-    'skein1024-176': 0xb376,
-    'skein1024-184': 0xb377,
-    'skein1024-192': 0xb378,
-    'skein1024-200': 0xb379,
-    'skein1024-208': 0xb37a,
-    'skein1024-216': 0xb37b,
-    'skein1024-224': 0xb37c,
-    'skein1024-232': 0xb37d,
-    'skein1024-240': 0xb37e,
-    'skein1024-248': 0xb37f,
-    'skein1024-256': 0xb380,
-    'skein1024-264': 0xb381,
-    'skein1024-272': 0xb382,
-    'skein1024-280': 0xb383,
-    'skein1024-288': 0xb384,
-    'skein1024-296': 0xb385,
-    'skein1024-304': 0xb386,
-    'skein1024-312': 0xb387,
-    'skein1024-320': 0xb388,
-    'skein1024-328': 0xb389,
-    'skein1024-336': 0xb38a,
-    'skein1024-344': 0xb38b,
-    'skein1024-352': 0xb38c,
-    'skein1024-360': 0xb38d,
-    'skein1024-368': 0xb38e,
-    'skein1024-376': 0xb38f,
-    'skein1024-384': 0xb390,
-    'skein1024-392': 0xb391,
-    'skein1024-400': 0xb392,
-    'skein1024-408': 0xb393,
-    'skein1024-416': 0xb394,
-    'skein1024-424': 0xb395,
-    'skein1024-432': 0xb396,
-    'skein1024-440': 0xb397,
-    'skein1024-448': 0xb398,
-    'skein1024-456': 0xb399,
-    'skein1024-464': 0xb39a,
-    'skein1024-472': 0xb39b,
-    'skein1024-480': 0xb39c,
-    'skein1024-488': 0xb39d,
-    'skein1024-496': 0xb39e,
-    'skein1024-504': 0xb39f,
-    'skein1024-512': 0xb3a0,
-    'skein1024-520': 0xb3a1,
-    'skein1024-528': 0xb3a2,
-    'skein1024-536': 0xb3a3,
-    'skein1024-544': 0xb3a4,
-    'skein1024-552': 0xb3a5,
-    'skein1024-560': 0xb3a6,
-    'skein1024-568': 0xb3a7,
-    'skein1024-576': 0xb3a8,
-    'skein1024-584': 0xb3a9,
-    'skein1024-592': 0xb3aa,
-    'skein1024-600': 0xb3ab,
-    'skein1024-608': 0xb3ac,
-    'skein1024-616': 0xb3ad,
-    'skein1024-624': 0xb3ae,
-    'skein1024-632': 0xb3af,
-    'skein1024-640': 0xb3b0,
-    'skein1024-648': 0xb3b1,
-    'skein1024-656': 0xb3b2,
-    'skein1024-664': 0xb3b3,
-    'skein1024-672': 0xb3b4,
-    'skein1024-680': 0xb3b5,
-    'skein1024-688': 0xb3b6,
-    'skein1024-696': 0xb3b7,
-    'skein1024-704': 0xb3b8,
-    'skein1024-712': 0xb3b9,
-    'skein1024-720': 0xb3ba,
-    'skein1024-728': 0xb3bb,
-    'skein1024-736': 0xb3bc,
-    'skein1024-744': 0xb3bd,
-    'skein1024-752': 0xb3be,
-    'skein1024-760': 0xb3bf,
-    'skein1024-768': 0xb3c0,
-    'skein1024-776': 0xb3c1,
-    'skein1024-784': 0xb3c2,
-    'skein1024-792': 0xb3c3,
-    'skein1024-800': 0xb3c4,
-    'skein1024-808': 0xb3c5,
-    'skein1024-816': 0xb3c6,
-    'skein1024-824': 0xb3c7,
-    'skein1024-832': 0xb3c8,
-    'skein1024-840': 0xb3c9,
-    'skein1024-848': 0xb3ca,
-    'skein1024-856': 0xb3cb,
-    'skein1024-864': 0xb3cc,
-    'skein1024-872': 0xb3cd,
-    'skein1024-880': 0xb3ce,
-    'skein1024-888': 0xb3cf,
-    'skein1024-896': 0xb3d0,
-    'skein1024-904': 0xb3d1,
-    'skein1024-912': 0xb3d2,
-    'skein1024-920': 0xb3d3,
-    'skein1024-928': 0xb3d4,
-    'skein1024-936': 0xb3d5,
-    'skein1024-944': 0xb3d6,
-    'skein1024-952': 0xb3d7,
-    'skein1024-960': 0xb3d8,
-    'skein1024-968': 0xb3d9,
-    'skein1024-976': 0xb3da,
-    'skein1024-984': 0xb3db,
-    'skein1024-992': 0xb3dc,
-    'skein1024-1000': 0xb3dd,
-    'skein1024-1008': 0xb3de,
-    'skein1024-1016': 0xb3df,
-    'skein1024-1024': 0xb3e0,
-    'poseidon-bls12_381-a2-fc1': 0xb401,
-    'poseidon-bls12_381-a2-fc1-sc': 0xb402,
-    'zeroxcert-imprint-256': 0xce11,
-    'fil-commitment-unsealed': 0xf101,
-    'fil-commitment-sealed': 0xf102,
-    'holochain-adr-v0': 0x807124,
-    'holochain-adr-v1': 0x817124,
-    'holochain-key-v0': 0x947124,
-    'holochain-key-v1': 0x957124,
-    'holochain-sig-v0': 0xa27124,
-    'holochain-sig-v1': 0xa37124,
-    'skynet-ns': 0xb19910,
-    'arweave-ns': 0xb29910
   })
 
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/util.js#L42
   function varintEncode(num) {
     return Uint8Array.from(encode_2(num))
   }
 
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/maps.js#L12
   const nameToVarint = /** @type {NameUint8ArrayMap} */ ({})
   const constantToCode = /** @type {ConstantCodeMap} */({})
   const codeToName = /** @type {CodeNameMap} */({})
 
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/index.js#L111
   function getVarintFromName(name) {
     const code = nameToVarint[name]
     if (code === undefined) {
@@ -4176,6 +3328,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
     return code
   }
+
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/maps.js#L17
   for (const name in baseTable) {
     const codecName = /** @type {CodecName} */(name)
     const code = baseTable[codecName]
@@ -4189,11 +3343,13 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/maps.js#L30
   Object.freeze(nameToVarint)
   Object.freeze(constantToCode)
   Object.freeze(codeToName)
 
   const multicodec = {
+    //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/index.js#L29
     addPrefix: function addPrefix(multicodecStrOrCode, data) {
       let prefix
 
@@ -4209,15 +3365,18 @@ const { convertCompilerOptionsFromJson } = require('typescript');
 
       return uint8ArrayConcat([prefix, data], prefix.length + data.length)
     },
+    //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/index.js#L51
     rmPrefix: function rmPrefix(data) {
       varint.decode(/** @type {Buffer} */(data))
       return data.slice(varint.decode.bytes)
     },
+    //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/index.js#L77
     getCodeVarint: function getCodeVarint(name) {
       return getVarintFromName(name)
     },
   }
 
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/alloc.js#L24
   function allocUnsafe(size = 0) {
     if (globalThis.Buffer != null && globalThis.Buffer.allocUnsafe != null) {
       return globalThis.Buffer.allocUnsafe(size);
@@ -4225,6 +3384,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return new Uint8Array(size);
   }
 
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/concat.js#L9
   function uint8ArrayConcat(arrays, length) {
     if (!length) {
       length = arrays.reduce((acc, curr) => acc + curr.length, 0);
@@ -4238,13 +3398,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return output;
   }
 
-  function multibase_encode(nameOrCode, buf) {
-    const enc = encoding(nameOrCode)
-    const data = encodeText(enc.encode(buf))
-
-    return concat([enc.codeBuf, data], enc.codeBuf.length + data.length)
-  }
-
+  //https://github.com/multiformats/js-cid/blob/2ed9449c7a7d2df522485822ae46f2d8d10fbbcc/src/index.js#L38
   class CID_1 {
     constructor(version, codec, multihash, multibaseName) {
       this.version
@@ -4430,6 +3584,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/utils/persist.js#L10
   const persist = async (buffer, block, options) => {
     if (!options.codec) {
       options.codec = 'dag-pb'
@@ -4461,6 +3616,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
 
     return cid
   }
+
+  //https://github.com/Two-Screen/stable/blob/fff2be6088a96c9613e3799cb966c912c6d6fcb7/stable.js#L31
   function exec(arr, comp) {
     if (typeof (comp) !== 'function') {
       comp = function (a, b) {
@@ -4482,6 +3639,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
 
     return arr
   }
+
+  //https://github.com/Two-Screen/stable/blob/fff2be6088a96c9613e3799cb966c912c6d6fcb7/stable.js#L60
   var pass = function (arr, comp, chk, result) {
     var len = arr.length;
     var i = 0;
@@ -4528,10 +3687,14 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       }
     }
   };
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag-node/sortLinks.js#L28
   const sortLinks = (links) => {
     const sort = stable;
     sort.inplace(links, linkSort)
   }
+
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/compare.js#L7
   function uint8ArrayCompare(a, b) {
     for (let i = 0; i < a.byteLength; i++) {
       if (a[i] < b[i]) {
@@ -4553,20 +3716,24 @@ const { convertCompilerOptionsFromJson } = require('typescript');
 
     return 0
   }
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag-node/sortLinks.js#L15
   const linkSort = (a, b) => {
     const buf1 = a.nameAsBuffer
     const buf2 = b.nameAsBuffer
 
     return uint8ArrayCompare(buf1, buf2)
   }
+
+  //https://github.com/Two-Screen/stable/blob/fff2be6088a96c9613e3799cb966c912c6d6fcb7/stable.js#L13
   var stable = function (arr, comp) {
     return exec(arr.slice(), comp)
   };
+
+  //https://github.com/Two-Screen/stable/blob/fff2be6088a96c9613e3799cb966c912c6d6fcb7/stable.js#L17
   stable.inplace = function (arr, comp) {
     var result = exec(arr, comp);
 
-    // This simply copies back if the result isn't in the original array,
-    // which happens on an odd number of passes.
     if (result !== arr) {
       pass(result, null, arr.length, arr);
     }
@@ -4574,6 +3741,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return arr
   };
 
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/from-string.js#L18
   function uint8ArrayFromString(string, encoding = 'utf8') {
     const base = bases[encoding]
 
@@ -4581,10 +3749,10 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       throw new Error(`Unsupported encoding "${encoding}"`)
     }
 
-    // add multibase prefix
     return base.decoder.decode(`${base.prefix}${string}`)
   }
 
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag-link/dagLink.js#L9
   class DAGLink {
     constructor(name, size, cid) {
       if (!cid) {
@@ -4623,12 +3791,10 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       return this._nameBuf
     }
   }
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag-node/dagNode.js#L18
   class DAGNode {
-    /**
-     *@param {Uint8Array | string} [data]
-     * @param {(DAGLink | DAGLinkLike)[]} links
-     * @param {number | null} [serializedSize]
-     */
+
     constructor(data, links = [], serializedSize = null) {
       if (!data) {
         data = new Uint8Array(0)
@@ -4732,6 +3898,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       throw new Error("Can't set property: 'size' is immutable")
     }
   }
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/serialize.js#L23
   const toProtoBuf = (node) => {
     const pbn = {}
 
@@ -4756,9 +3924,13 @@ const { convertCompilerOptionsFromJson } = require('typescript');
 
     return pbn
   }
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/serialize.js#L53
   const serializeDAGNode = (node) => {
     return encode(toProtoBuf(node))
   }
+
+  //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/writer.js#L374
   Writer.prototype.bytes = function write_bytes(value) {
     var len = value.length >>> 0;
     if (!len)
@@ -4770,6 +3942,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
     return this.uint32(len)._push(writeBytes, len, value);
   };
+
+  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/lib/utf8/index.js#L15
   function utf8_length(string) {
     var len = 0,
       c = 0;
@@ -4787,18 +3961,24 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
     return len;
   };
+
+  //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/writer.js#L391
   Writer.prototype.string = function write_string(value) {
     var len = utf8_length(value);
     return len
       ? this.uint32(len)._push(utf8.write, len, value)
       : this._push(writeByte, 1, 0);
   };
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag.js#L31
   function PBLink(p) {
     if (p)
       for (var ks = Object.keys(p), i = 0; i < ks.length; ++i)
         if (p[ks[i]] != null)
           this[ks[i]] = p[ks[i]];
   }
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag.js#L71
   PBLink.encode = function encode(m, w) {
     if (!w)
       w = $Writer.create();
@@ -4811,9 +3991,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return w;
   };
 
+  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L207
   Writer.prototype.uint32 = function write_uint32(value) {
-    // here, the call to this.push has been inlined and a varint specific Op subclass is used.
-    // uint32 is by far the most frequently used operation and benefits significantly from this.
     this.len += (this.tail = this.tail.next = new VarintOp(
       (value = value >>> 0)
         < 128 ? 1
@@ -4825,6 +4004,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return this;
   };
 
+  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L59
   function State(writer) {
     this.head = writer.head;
     this.tail = writer.tail;
@@ -4832,12 +4012,15 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     this.next = writer.states;
   }
 
+  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L403
   Writer.prototype.fork = function fork() {
     this.states = new State(this);
     this.head = this.tail = new Op(noop, 0, 0);
     this.len = 0;
     return this;
   };
+
+  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L414
   Writer.prototype.reset = function reset() {
     if (this.states) {
       this.head = this.states.head;
@@ -4850,6 +4033,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
     return this;
   };
+
+  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L431
   Writer.prototype.ldelim = function ldelim() {
     var head = this.head,
       tail = this.tail,
@@ -4863,6 +4048,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return this;
   };
 
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/serialize.js#L87
   function encode(pbf) {
     const writer = Writer.create()
 
@@ -4879,6 +4065,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return writer.finish()
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/dag-builder/dir.js#L12
   const dirBuilder = async (item, block, options) => {
     const unixfs = new UnixFS({
       type: 'directory',
@@ -4898,6 +4085,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/balanced.js#L17
   async function reduceToParents(source, reduce, options) {
     const roots = []
 
@@ -4912,6 +4100,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return roots[0]
   }
 
+  //https://github.com/achingbrain/it/blob/c74ff5ff0d1b4164cd2f556f1b431d77ad47dd16/packages/it-all/index.js#L9
   const all = async (source) => {
     const arr = []
 
@@ -4923,18 +4112,19 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   }
 
   const dagBuilders = {
+    //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/flat.js#L6
     flat: async function (source, reduce) {
       return reduce(await all(source))
     },
+    //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/balanced.js#L10
     balanced: function balanced(source, reduce, options) {
       return reduceToParents(source, reduce, options)
     },
+    //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/trickle.js#L15
     trickle: async function trickleStream(source, reduce, options) {
       const root = new Root(options.layerRepeat)
       let iteration = 0
       let maxDepth = 1
-
-      /** @type {SubTree} */
       let subTree = root
 
       for await (const layer of batch(source, options.maxChildrenPerNode)) {
@@ -4963,19 +4153,14 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/trickle.js#L50
   class SubTree {
-    /**
-     * @param {number} maxDepth
-     * @param {number} layerRepeat
-     * @param {number} [iteration=0]
-     */
     constructor(maxDepth, layerRepeat, iteration = 0) {
       this.maxDepth = maxDepth
       this.layerRepeat = layerRepeat
       this.currentDepth = 1
       this.iteration = iteration
 
-      /** @type {TrickleDagNode} */
       this.root = this.node = this.parent = {
         children: [],
         depth: this.currentDepth,
@@ -4990,13 +4175,10 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       }
 
       if (this.currentDepth < this.maxDepth && this.node.maxChildren) {
-        // can descend
         this._addNextNodeToParent(this.node)
-
         return false
       }
 
-      // try to find new node from node.parent
       const distantRelative = this._findParent(this.node, this.currentDepth)
 
       if (distantRelative) {
@@ -5008,13 +4190,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       return true
     }
 
-    /**
-     * @param {TrickleDagNode} parent
-     */
     _addNextNodeToParent(parent) {
       this.parent = parent
-
-      // find site for new node
       const nextNode = {
         children: [],
         depth: parent.depth + 1,
@@ -5030,26 +4207,14 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       this.node = nextNode
     }
 
-    /**
-     *
-     * @param {InProgressImportResult[]} layer
-     */
     append(layer) {
       this.node.data = layer
     }
 
-    /**
-     * @param {Reducer} reduce
-     */
     reduce(reduce) {
       return this._reduce(this.root, reduce)
     }
 
-    /**
-     * @param {TrickleDagNode} node
-     * @param {Reducer} reduce
-     * @returns {Promise<InProgressImportResult>}
-     */
     async _reduce(node, reduce) {
       /** @type {InProgressImportResult[]} */
       let children = []
@@ -5067,11 +4232,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       return reduce((node.data || []).concat(children))
     }
 
-    /**
-     * @param {TrickleDagNode} node
-     * @param {number} depth
-     * @returns {TrickleDagNode | undefined}
-     */
     _findParent(node, depth) {
       const parent = node.parent
 
@@ -5080,7 +4240,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       }
 
       if (parent.children.length === parent.maxChildren || !parent.maxChildren) {
-        // this layer is full, may be able to traverse to a different branch
         return this._findParent(parent, depth)
       }
 
@@ -5088,10 +4247,9 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/trickle.js#L175
   class Root extends SubTree {
-    /**
-     * @param {number} layerRepeat
-     */
+
     constructor(layerRepeat) {
       super(0, layerRepeat)
 
@@ -5099,21 +4257,16 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       this.currentDepth = 1
     }
 
-    /**
-     * @param {InProgressImportResult} child
-     */
     addChild(child) {
       this.root.children.push(child)
     }
 
-    /**
-     * @param {Reducer} reduce
-     */
     reduce(reduce) {
       return reduce((this.root.data || []).concat(this.root.children))
     }
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/index.js#L198
   function fileBuilder(file, block, options) {
     const dagBuilder = dagBuilders[options.strategy]
 
@@ -5123,13 +4276,13 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return dagBuilder(buildFileBatch(file, block, options), reduce(file, block, options), options)
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/buffer-importer.js#L13
   async function* bufferImporter1(file, block, options) {
     for await (let buffer of file.content) {
       yield async () => {
         options.progress(buffer.length, file.path)
         let unixfs
 
-        /** @type {import('../../types/src').PersistOptions} */
         const opts = {
           codec: 'dag-pb',
           cidVersion: options.cidVersion,
@@ -5159,6 +4312,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/index.js#L37
   async function* buildFileBatch(file, block, options) {
     let count = -1
     let previous
@@ -5190,17 +4344,14 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/index.js#L73
   const reduce = (file, block, options) => {
-    /**
-     * @type {Reducer}
-     */
+
     async function reducer(leaves) {
       if (leaves.length === 1 && leaves[0].single && options.reduceSingleLeafToSelf) {
         const leaf = leaves[0]
 
         if (leaf.cid.codec === 'raw' && (file.mtime !== undefined || file.mode !== undefined)) {
-          // only one leaf node which is a buffer - we have metadata so convert it into a
-          // UnixFS entry otherwise we'll have nowhere to store the metadata
           let { data: buffer } = await block.get(leaf.cid, options)
 
           leaf.unixfs = new UnixFS({
@@ -5229,7 +4380,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
         }
       }
 
-      // create a parent node and add all the leaves
       const f = new UnixFS({
         type: 'file',
         mtime: file.mtime,
@@ -5250,17 +4400,14 @@ const { convertCompilerOptionsFromJson } = require('typescript');
         })
         .map((leaf) => {
           if (leaf.cid.codec === 'raw') {
-            // node is a leaf buffer
             f.addBlockSize(leaf.size)
 
             return new DAGLink('', leaf.size, leaf.cid)
           }
 
           if (!leaf.unixfs || !leaf.unixfs.data) {
-            // node is an intermediate node
             f.addBlockSize((leaf.unixfs && leaf.unixfs.fileSize()) || 0)
           } else {
-            // node is a unixfs 'file' leaf node
             f.addBlockSize(leaf.unixfs.data.length)
           }
 
@@ -5282,6 +4429,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return reducer
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/dag-builder/index.js#L36
   function contentAsAsyncIterable(content) {
     try {
       if (content instanceof Uint8Array) {
@@ -5292,7 +4440,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
         return (async function* () {
           yield* content
         }())
-      } else if (isAsyncIterable(content)) { // step 4
+      } else if (isAsyncIterable(content)) {
         return content
       }
     } catch {
@@ -5302,30 +4450,31 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     throw errCode(new Error('Content was invalid'), 'ERR_INVALID_CONTENT')
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/dag-builder/index.js#L20
   function isIterable(thing) {
     return Symbol.iterator in thing
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/dag-builder/index.js#L28
   function isAsyncIterable(thing) {
     return Symbol.asyncIterator in thing
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/utils/to-path-components.js#L1
   const toPathComponents = (path = '') => {
-    // split on / unless escaped with \
     return (path
       .trim()
       .match(/([^\\^/]|\\\/)+/g) || [])
       .filter(Boolean)
   }
 
-
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/tree-builder.js#L19
   async function addToTree(elem, tree, options) {
     const pathElems = toPathComponents(elem.path || '')
     const lastIndex = pathElems.length - 1
     let parent = tree
     let currentPath = ''
 
-    // no need to build tree, if parent = tree
     for (let i = 0; i < pathElems.length; i++) {
       const pathElem = pathElems[i]
 
@@ -5364,10 +4513,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return tree
   }
 
-  /**
-   * @param {Dir | InProgressImportResult} tree
-   * @param {BlockAPI} block
-   */
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/tree-builder.js#L68
   async function* flushAndYield(tree, block) {
     if (!(tree instanceof Dir)) {
       if (tree && tree.unixfs && tree.unixfs.isDirectory()) {
@@ -5380,8 +4526,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     yield* tree.flush(block)
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/tree-builder.js#L83
   async function* treeBuilder1(source, block, options) {
-    /** @type {Dir} */
     let tree = new DirFlat({
       root: true,
       dir: true,
@@ -5415,6 +4561,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/achingbrain/it/blob/c74ff5ff0d1b4164cd2f556f1b431d77ad47dd16/packages/it-batch/index.js#L12
   async function* batch(source, size = 1) {
     let things = []
 
@@ -5439,14 +4586,10 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
-
+  //https://github.com/achingbrain/it-parallel-batch/blob/2a7f2c29b44be057c0862d4864856fcc66466d57/packages/it-parallel-batch/index.js#L5
   async function* parallelBatch(source, size = 1) {
     for await (const tasks of batch(source, size)) {
-      /** @type {Promise<Success<T>|Failure>[]} */
       const things = tasks.map(
-        /**
-         * @param {() => Promise<T>} p
-         */
         p => {
           return p().then(value => ({ ok: true, value }), err => ({ ok: false, err }))
         })
@@ -5456,11 +4599,13 @@ const { convertCompilerOptionsFromJson } = require('typescript');
         if (result.ok) {
           yield result.value
         } else {
-          throw result.err  // always go here
+          throw result.err
         }
       }
     }
   }
+
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dir.js#L20
   class Dir {
     constructor(props, options) {
       this.options = options || {}
@@ -5487,32 +4632,21 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     async * eachChildSeries() { }
     async * flush(block) { }
   }
+
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dir-flat.js#L16
   class DirFlat extends Dir {
-    /**
-     * @param {DirProps} props
-     * @param {ImporterOptions} options
-     */
+
     constructor(props, options) {
       super(props, options)
-
-      /** @type {{ [key: string]: InProgressImportResult | Dir }} */
       this._children = {}
     }
 
-    /**
-     * @param {string} name
-     * @param {InProgressImportResult | Dir} value
-     */
     async put(name, value) {
       this.cid = undefined
       this.size = undefined
-
       this._children[name] = value
     }
 
-    /**
-     * @param {string} name
-     */
     get(name) {
       return Promise.resolve(this._children[name])
     }
@@ -5542,10 +4676,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       }
     }
 
-    /**
-     * @param {BlockAPI} block
-     * @returns {AsyncIterable<ImportResult>}
-     */
     async * flush(block) {
       const children = Object.keys(this._children)
       const links = []
@@ -5576,10 +4706,6 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       const buffer = node.serialize()
       const cid = await persist(buffer, block, this.options)
       const size = buffer.length + node.Links.reduce(
-        /**
-         * @param {number} acc
-         * @param {DAGLink} curr
-         */
         (acc, curr) => acc + curr.Tsize,
         0)
 
@@ -5595,6 +4721,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     }
   }
 
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/options.js#L26
   const defaultOptions = {
     chunker: 'fixed',
     strategy: 'balanced', // 'flat', 'trickle'
@@ -5628,6 +4755,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     hamtBucketBits: 8
   }
 
+  //https://github.com/sindresorhus/is-plain-obj/blob/68e8cc77bb1bbd0bf7d629d3574b6ca70289b2cc/index.js#L1
   const isOptionObject = value => {
     if (Object.prototype.toString.call(value) !== '[object Object]') {
       return false;
@@ -5637,8 +4765,11 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return prototype === null || prototype === Object.prototype;
   };
 
+  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L4
   const { hasOwnProperty } = Object.prototype;
   const { propertyIsEnumerable } = Object;
+
+  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L6
   const defineProperty = (object, name, value) => Object.defineProperty(object, name, {
     value,
     writable: true,
@@ -5646,12 +4777,14 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     configurable: true
   });
 
+  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L13
   const globalThis = this;
   const defaultMergeOptions = {
     concatArrays: false,
     ignoreUndefined: false
   };
 
+  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L19
   const getEnumerableOwnPropertyKeys = value => {
     const keys = [];
 
@@ -5675,6 +4808,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return keys;
   };
 
+  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L42
   function clone(value) {
     if (Array.isArray(value)) {
       return cloneArray(value);
@@ -5687,6 +4821,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return value;
   }
 
+  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L54
   function cloneArray(array) {
     const result = array.slice(0, 0);
 
@@ -5697,6 +4832,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return result;
   }
 
+  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L64
   function cloneOptionObject(object) {
     const result = Object.getPrototypeOf(object) === null ? Object.create(null) : {};
 
@@ -5707,6 +4843,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return result;
   }
 
+  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L81
   const mergeKeys = (merged, source, keys, config) => {
     keys.forEach(key => {
       if (typeof source[key] === 'undefined' && config.ignoreUndefined) {
@@ -5724,6 +4861,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return merged;
   };
 
+  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L106
   const concatArrays = (merged, source, config) => {
     let result = merged.slice(0, 0);
     let resultIndex = 0;
@@ -5754,6 +4892,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return result;
   };
 
+  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L142
   function merge(merged, source, config) {
     if (config.concatArrays && Array.isArray(merged) && Array.isArray(source)) {
       return concatArrays(merged, source, config);
@@ -5766,6 +4905,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     return mergeKeys(merged, source, getEnumerableOwnPropertyKeys(source), config);
   }
 
+  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L154
   function merge_options(...options) {
     const config = merge(clone(defaultMergeOptions), (this !== globalThis && this) || {}, defaultMergeOptions);
     let merged = { _: {} };
@@ -5786,7 +4926,8 @@ const { convertCompilerOptionsFromJson } = require('typescript');
   };
 
   const mergeOptions = merge_options.bind({ ignoreUndefined: true })
-  
+
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/index.js#L30
   async function* importer(source, block, options = {}) {
     const opts = mergeOptions(defaultOptions, options)
 
@@ -5795,7 +4936,7 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     if (typeof options.dagBuilder === 'function') {
       dagBuilder = options.dagBuilder
     } else {
-      dagBuilder = dagBuilder1 // step 2
+      dagBuilder = dagBuilder1
     }
 
     let treeBuilder
@@ -5803,21 +4944,17 @@ const { convertCompilerOptionsFromJson } = require('typescript');
     if (typeof options.treeBuilder === 'function') {
       treeBuilder = options.treeBuilder
     } else {
-      treeBuilder = treeBuilder1 // step 3
+      treeBuilder = treeBuilder1
     }
 
-    /** @type {AsyncIterable<ImportCandidate> | Iterable<ImportCandidate>} */
     let candidates
 
     if (Symbol.asyncIterator in source || Symbol.iterator in source) {
-      // @ts-ignore
-      candidates = source // step 3
+      candidates = source
     } else {
-      // @ts-ignore
       candidates = [source]
     }
     for await (const entry of treeBuilder(parallelBatch(dagBuilder(candidates, block, opts), opts.fileImportConcurrency), block, opts)) {
-      // step 5
       yield {
         cid: entry.cid,
         path: entry.path,
@@ -5826,27 +4963,31 @@ const { convertCompilerOptionsFromJson } = require('typescript');
       }
     }
   }
+
+  //https://github.com/alanshaw/ipfs-only-hash/blob/31a971c167c94ca38715a25e50fdc521c1c57ddf/index.js#L3
   const block = {
     get: async cid => { throw new Error(`unexpected block API get for ${cid}`) },
     put: async () => { throw new Error('unexpected block API put') }
   }
+
+  //https://github.com/alanshaw/ipfs-only-hash/blob/31a971c167c94ca38715a25e50fdc521c1c57ddf/index.js#L8
   async function hashFile(content, version, options) {
-    
+
     var options = options || {}
     options.onlyHash = true
     options.cidVersion = version
-    
+
     if (typeof content === 'string') {
       content = new TextEncoder().encode(content)
     }
 
     let lastCid
     let lastSize;
-    for await (const { cid,size } of importer([{ content }], block, options)) {
+    for await (const { cid, size } of importer([{ content }], block, options)) {
       lastCid = cid;
       lastSize = size;
     }
-    return {cid: lastCid.toString(), size: lastSize}
+    return { cid: lastCid.toString(), size: lastSize }
   };
   // AMD
   if (typeof define == 'function' && define.amd)
