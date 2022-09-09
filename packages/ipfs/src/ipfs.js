@@ -4724,7 +4724,6 @@
 
   /*---------------------------------------------------------------------------------------------
   *  Copyright (C) 2018 Angry Bytes and contributors.
-  *  Licensed under the MIT and Apache-2.0 License.
   *  https://github.com/Two-Screen/stable/blob/master/README.md
   *--------------------------------------------------------------------------------------------*/
 
@@ -4817,7 +4816,6 @@
 
   /*---------------------------------------------------------------------------------------------
   *  Copyright (C) 2018 Angry Bytes and contributors.
-  *  Licensed under the MIT.
   *  https://github.com/sindresorhus/is-plain-obj/blob/main/license
   *--------------------------------------------------------------------------------------------*/
 
@@ -4833,7 +4831,6 @@
 
   /*---------------------------------------------------------------------------------------------
   *  Copyright (C) 2018 Angry Bytes and contributors.
-  *  Licensed under the MIT.
   *  https://github.com/schnittstabil/merge-options/blob/master/license
   *--------------------------------------------------------------------------------------------*/
 
@@ -5001,7 +4998,6 @@
 
   /*---------------------------------------------------------------------------------------------
   *  Copyright (C) 2018 Angry Bytes and contributors.
-  *  Licensed under the MIT.
   *  https://github.com/alanshaw/ipfs-only-hash/blob/master/LICENSE
   *--------------------------------------------------------------------------------------------*/
 
