@@ -6,6 +6,7 @@
     "scripts": {
         "build": "npm run clean && tsc && node tools/bundle",
         "clean": "rm -f tsconfig.tsbuildinfo && rm -rf lib && rm -rf dist && rm -rf types",
-        "test": "mocha --exit --require ts-node/register test/*.spec.ts --timeout 10000"
+        "test": "mocha --exit --require ts-node/register test/*.spec.ts --timeout 10000",
+        "test-coverage": "nyc mocha --exit --require ts-node/register test/*.spec.ts --timeout 10000"
     }
 }

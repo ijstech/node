@@ -263,8 +263,6 @@
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/bases/base.js#L268
   const _decode = (string, alphabet, bitsPerChar, name) => {
-    // Build the character lookup table:
-    /** @type {Record<string, number>} */
     const codes = {}
     for (let i = 0; i < alphabet.length; ++i) {
       codes[alphabet[i]] = i
@@ -639,6 +637,54 @@
       return CID.create(1, code, digest)
     }
   }
+
+  //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/hashes/digest.js#L10
+  const create = (code, digest) => {
+    const size = digest.byteLength
+    const sizeOffset = encodingLength_1(code)
+    const digestOffset = sizeOffset + encodingLength_1(size)
+
+    const bytes = new Uint8Array(digestOffset + size)
+    encodeTo_1(code, bytes, 0)
+    encodeTo_1(size, bytes, sizeOffset)
+    bytes.set(digest, digestOffset)
+
+    return new Digest(code, size, digest, bytes)
+  }
+
+  //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/hashes/hasher.js#L22
+  class Hasher {
+
+    constructor(name, code, encode) {
+      this.name = name
+      this.code = code
+      this.encode = encode
+    }
+
+    digest(input) {
+      if (input instanceof Uint8Array) {
+        const result = this.encode(input)
+        return result instanceof Uint8Array
+          ? create(this.code, result)
+          : result.then((digest) => create(this.code, digest))
+      } else {
+        throw Error('Unknown type, must be binary type')
+      }
+    }
+  }
+
+  const from = ({ name, code, encode }) => new Hasher(name, code, encode)
+
+  //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/hashes/sha2.js#L7
+  s_sha256 = from({
+    name: 'sha2-256',
+    code: 18,
+    //encode: (input) => coerce(crypto__default["default"].createHash('sha256').update(input).digest())
+    encode: (input) => {
+      return coerce(createHash('sha256').update(input).digest());
+    }
+  });
+
   /*---------------------------------------------------------------------------------------------
   *  Copyright (c) 2016, Daniel Wirtz  All rights reserved.
   *  https://github.com/protobufjs/protobuf.js/blob/master/LICENSE
@@ -669,7 +715,6 @@
 
   //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/writer.js#L21
   function Op(fn, len, val) {
-
     this.fn = fn;
     this.len = len;
     this.next = undefined;
@@ -681,7 +726,6 @@
 
   //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/writer.js#L91
   function Writer() {
-
     this.len = 0;
     this.head = new Op(noop, 0, 0);
     this.tail = this.head;
@@ -943,7 +987,6 @@
 
   //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/reader.js#L22
   function Reader(buffer) {
-
     this.buf = buffer;
     this.pos = 0;
     this.len = buffer.length;
@@ -1018,6 +1061,103 @@
   function BufferWriter() {
     Writer.call(this);
   }
+
+  //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/writer.js#L374
+  Writer.prototype.bytes = function write_bytes(value) {
+    var len = value.length >>> 0;
+    if (!len)
+      return this._push(writeByte, 1, 0);
+    if (util_isString(value)) {
+      var buf = Writer.alloc(len = base64.length(value));
+      base64.decode(value, buf, 0);
+      value = buf;
+    }
+    return this.uint32(len)._push(writeBytes, len, value);
+  };
+
+  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/lib/utf8/index.js#L15
+  function utf8_length(string) {
+    var len = 0,
+      c = 0;
+    for (var i = 0; i < string.length; ++i) {
+      c = string.charCodeAt(i);
+      if (c < 128)
+        len += 1;
+      else if (c < 2048)
+        len += 2;
+      else if ((c & 0xFC00) === 0xD800 && (string.charCodeAt(i + 1) & 0xFC00) === 0xDC00) {
+        ++i;
+        len += 4;
+      } else
+        len += 3;
+    }
+    return len;
+  };
+
+  //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/writer.js#L391
+  Writer.prototype.string = function write_string(value) {
+    var len = utf8_length(value);
+    return len
+      ? this.uint32(len)._push(utf8.write, len, value)
+      : this._push(writeByte, 1, 0);
+  };
+
+  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L207
+  Writer.prototype.uint32 = function write_uint32(value) {
+    this.len += (this.tail = this.tail.next = new VarintOp(
+      (value = value >>> 0)
+        < 128 ? 1
+        : value < 16384 ? 2
+          : value < 2097152 ? 3
+            : value < 268435456 ? 4
+              : 5,
+      value)).len;
+    return this;
+  };
+
+  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L59
+  function State(writer) {
+    this.head = writer.head;
+    this.tail = writer.tail;
+    this.len = writer.len;
+    this.next = writer.states;
+  }
+
+  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L403
+  Writer.prototype.fork = function fork() {
+    this.states = new State(this);
+    this.head = this.tail = new Op(noop, 0, 0);
+    this.len = 0;
+    return this;
+  };
+
+  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L414
+  Writer.prototype.reset = function reset() {
+    if (this.states) {
+      this.head = this.states.head;
+      this.tail = this.states.tail;
+      this.len = this.states.len;
+      this.states = this.states.next;
+    } else {
+      this.head = this.tail = new Op(noop, 0, 0);
+      this.len = 0;
+    }
+    return this;
+  };
+
+  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L431
+  Writer.prototype.ldelim = function ldelim() {
+    var head = this.head,
+      tail = this.tail,
+      len = this.len;
+    this.reset().uint32(len);
+    if (len) {
+      this.tail.next = head.next; // skip noop
+      this.tail = tail;
+      this.len += len;
+    }
+    return this;
+  };
 
   /*---------------------------------------------------------------------------------------------
   *  Copyright (c) Feross Aboukhadijeh, and other contributors.
@@ -1147,6 +1287,65 @@
   var $protobuf__default = _interopDefaultLegacy($protobuf);
 
   /*---------------------------------------------------------------------------------------------
+*  Licensed under the MIT License.
+*  https://github.com/IndigoUnited/js-err-code/blob/8dd437663a48e833ab70223f8a58a888985d1e3a/README.md
+*--------------------------------------------------------------------------------------------*/
+
+  //https://github.com/IndigoUnited/js-err-code/blob/8dd437663a48e833ab70223f8a58a888985d1e3a/index.js#L15
+  function assign(obj, props) {
+    for (const key in props) {
+      Object.defineProperty(obj, key, {
+        value: props[key],
+        enumerable: true,
+        configurable: true,
+      });
+    }
+
+    return obj;
+  }
+
+  //https://github.com/IndigoUnited/js-err-code/blob/8dd437663a48e833ab70223f8a58a888985d1e3a/index.js#L34
+  function createError(err, code, props) {
+    if (!err || typeof err === 'string') {
+      throw new TypeError('Please pass an Error to err-code');
+    }
+
+    if (!props) {
+      props = {};
+    }
+
+    if (typeof code === 'object') {
+      props = code;
+      code = '';
+    }
+
+    if (code) {
+      props.code = code;
+    }
+
+    try {
+      return assign(err, props);
+    } catch (_) {
+      props.message = err.message;
+      props.stack = err.stack;
+
+      const ErrClass = function () { };
+
+      ErrClass.prototype = Object.create(Object.getPrototypeOf(err));
+
+      // @ts-ignore
+      const output = assign(new ErrClass(), props);
+
+      return output;
+    }
+  }
+
+  var errcode = createError;
+
+  function _interopDefaultLegacy(e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
+  var errcode__default = /*#__PURE__*/_interopDefaultLegacy(errcode);
+
+  /*---------------------------------------------------------------------------------------------
   *  Licensed under the MIT License.
   *  https://github.com/ipfs/js-ipfs-unixfs/blob/master/LICENSE
   *--------------------------------------------------------------------------------------------*/
@@ -1263,18 +1462,6 @@
         case 2:
           m.Type = 2;
           break;
-        case 'Metadata':
-        case 3:
-          m.Type = 3;
-          break;
-        case 'Symlink':
-        case 4:
-          m.Type = 4;
-          break;
-        case 'HAMTShard':
-        case 5:
-          m.Type = 5;
-          break;
       }
       return m;
     };
@@ -1284,67 +1471,10 @@
       values[valuesById[0] = 'Raw'] = 0;
       values[valuesById[1] = 'Directory'] = 1;
       values[valuesById[2] = 'File'] = 2;
-      values[valuesById[3] = 'Metadata'] = 3;
-      values[valuesById[4] = 'Symlink'] = 4;
-      values[valuesById[5] = 'HAMTShard'] = 5;
       return values;
     }();
     return Data;
   })();
-
-  // Retrieve and modify from https://github.com/IndigoUnited/js-err-code/blob/8dd437663a48e833ab70223f8a58a888985d1e3a/index.js#L15
-  function assign(obj, props) {
-    for (const key in props) {
-      Object.defineProperty(obj, key, {
-        value: props[key],
-        enumerable: true,
-        configurable: true,
-      });
-    }
-
-    return obj;
-  }
-
-  // Retrieve and modify from https://github.com/IndigoUnited/js-err-code/blob/8dd437663a48e833ab70223f8a58a888985d1e3a/index.js#L34
-  function createError(err, code, props) {
-    if (!err || typeof err === 'string') {
-      throw new TypeError('Please pass an Error to err-code');
-    }
-
-    if (!props) {
-      props = {};
-    }
-
-    if (typeof code === 'object') {
-      props = code;
-      code = '';
-    }
-
-    if (code) {
-      props.code = code;
-    }
-
-    try {
-      return assign(err, props);
-    } catch (_) {
-      props.message = err.message;
-      props.stack = err.stack;
-
-      const ErrClass = function () { };
-
-      ErrClass.prototype = Object.create(Object.getPrototypeOf(err));
-
-      // @ts-ignore
-      const output = assign(new ErrClass(), props);
-
-      return output;
-    }
-  }
-
-  var errcode = createError;
-
-  function _interopDefaultLegacy(e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
-  var errcode__default = /*#__PURE__*/_interopDefaultLegacy(errcode);
 
   //https://github.com/ipfs/js-ipfs-unixfs/blob/de1a7f0afc144462b374919a44d3af4fae3a49da/packages/ipfs-unixfs/src/index.js#L10
   const types = [
@@ -1461,9 +1591,6 @@
     addBlockSize(size) {
       this.blockSizes.push(size)
     }
-    removeBlockSize(index) {
-      this.blockSizes.splice(index, 1)
-    }
     fileSize() {
       if (this.isDirectory()) {
         return 0;
@@ -1542,1095 +1669,6 @@
     }
   }
 
-  /*---------------------------------------------------------------------------------------------
-  *  Copyright (c) 2020-2021 Yusuke Kawasaki
-  *  Licensed under the MIT License.
-  *  https://github.com/kawanet/sha256-uint8array/blob/main/LICENSE
-  *--------------------------------------------------------------------------------------------*/
-  //https://github.com/kawanet/sha256-uint8array/blob/52e8f1b891c84fcb436f0f2e1103527d3a6465ea/lib/sha256-uint8array.ts#L36
-  const algorithms = {
-    sha256: 1,
-  };
-
-  //https://github.com/kawanet/sha256-uint8array/blob/52e8f1b891c84fcb436f0f2e1103527d3a6465ea/lib/sha256-uint8array.ts#L40
-  function createHash(algorithm) {
-    if (algorithm && !algorithms[algorithm] && !algorithms[algorithm.toLowerCase()]) {
-      throw new Error("Digest method not supported");
-    }
-    return new Hash();
-  }
-
-  //https://github.com/kawanet/sha256-uint8array/blob/52e8f1b891c84fcb436f0f2e1103527d3a6465ea/lib/sha256-uint8array.ts#L6
-  const K = [
-    0x428a2f98 | 0, 0x71374491 | 0, 0xb5c0fbcf | 0, 0xe9b5dba5 | 0,
-    0x3956c25b | 0, 0x59f111f1 | 0, 0x923f82a4 | 0, 0xab1c5ed5 | 0,
-    0xd807aa98 | 0, 0x12835b01 | 0, 0x243185be | 0, 0x550c7dc3 | 0,
-    0x72be5d74 | 0, 0x80deb1fe | 0, 0x9bdc06a7 | 0, 0xc19bf174 | 0,
-    0xe49b69c1 | 0, 0xefbe4786 | 0, 0x0fc19dc6 | 0, 0x240ca1cc | 0,
-    0x2de92c6f | 0, 0x4a7484aa | 0, 0x5cb0a9dc | 0, 0x76f988da | 0,
-    0x983e5152 | 0, 0xa831c66d | 0, 0xb00327c8 | 0, 0xbf597fc7 | 0,
-    0xc6e00bf3 | 0, 0xd5a79147 | 0, 0x06ca6351 | 0, 0x14292967 | 0,
-    0x27b70a85 | 0, 0x2e1b2138 | 0, 0x4d2c6dfc | 0, 0x53380d13 | 0,
-    0x650a7354 | 0, 0x766a0abb | 0, 0x81c2c92e | 0, 0x92722c85 | 0,
-    0xa2bfe8a1 | 0, 0xa81a664b | 0, 0xc24b8b70 | 0, 0xc76c51a3 | 0,
-    0xd192e819 | 0, 0xd6990624 | 0, 0xf40e3585 | 0, 0x106aa070 | 0,
-    0x19a4c116 | 0, 0x1e376c08 | 0, 0x2748774c | 0, 0x34b0bcb5 | 0,
-    0x391c0cb3 | 0, 0x4ed8aa4a | 0, 0x5b9cca4f | 0, 0x682e6ff3 | 0,
-    0x748f82ee | 0, 0x78a5636f | 0, 0x84c87814 | 0, 0x8cc70208 | 0,
-    0x90befffa | 0, 0xa4506ceb | 0, 0xbef9a3f7 | 0, 0xc67178f2 | 0,
-  ];
-
-  //https://github.com/kawanet/sha256-uint8array/blob/52e8f1b891c84fcb436f0f2e1103527d3a6465ea/lib/sha256-uint8array.ts#L48
-  class Hash {
-    constructor() {
-      // first 32 bits of the fractional parts of the square roots of the first 8 primes 2..19
-      this.A = 0x6a09e667 | 0;
-      this.B = 0xbb67ae85 | 0;
-      this.C = 0x3c6ef372 | 0;
-      this.D = 0xa54ff53a | 0;
-      this.E = 0x510e527f | 0;
-      this.F = 0x9b05688c | 0;
-      this.G = 0x1f83d9ab | 0;
-      this.H = 0x5be0cd19 | 0;
-      this._size = 0;
-      this._sp = 0; // surrogate pair
-      if (!sharedBuffer || sharedOffset >= 8000 /* allocTotal */) {
-        sharedBuffer = new ArrayBuffer(8000 /* allocTotal */);
-        sharedOffset = 0;
-      }
-      this._byte = new Uint8Array(sharedBuffer, sharedOffset, 80 /* allocBytes */);
-      this._word = new Int32Array(sharedBuffer, sharedOffset, 20 /* allocWords */);
-      sharedOffset += 80 /* allocBytes */;
-    }
-    update(data) {
-      // data: string
-      if ("string" === typeof data) {
-        return this._utf8(data);
-      }
-      // data: undefined
-      if (data == null) {
-        throw new TypeError("Invalid type: " + typeof data);
-      }
-      const byteOffset = data.byteOffset;
-      const length = data.byteLength;
-      let blocks = (length / 64 /* inputBytes */) | 0;
-      let offset = 0;
-      // longer than 1 block
-      if (blocks && !(byteOffset & 3) && !(this._size % 64 /* inputBytes */)) {
-        const block = new Int32Array(data.buffer, byteOffset, blocks * 16 /* inputWords */);
-        while (blocks--) {
-          this._int32(block, offset >> 2);
-          offset += 64 /* inputBytes */;
-        }
-        this._size += offset;
-      }
-      // data: TypedArray | DataView
-      const BYTES_PER_ELEMENT = data.BYTES_PER_ELEMENT;
-      if (BYTES_PER_ELEMENT !== 1 && data.buffer) {
-        const rest = new Uint8Array(data.buffer, byteOffset + offset, length - offset);
-        return this._uint8(rest);
-      }
-      // no more bytes
-      if (offset === length)
-        return this;
-      // data: Uint8Array | Int8Array
-      return this._uint8(data, offset);
-    }
-    _uint8(data, offset) {
-      const { _byte, _word } = this;
-      const length = data.length;
-      offset = offset | 0;
-      while (offset < length) {
-        const start = this._size % 64 /* inputBytes */;
-        let index = start;
-        while (offset < length && index < 64 /* inputBytes */) {
-          _byte[index++] = data[offset++];
-        }
-        if (index >= 64 /* inputBytes */) {
-          this._int32(_word);
-        }
-        this._size += index - start;
-      }
-      return this;
-    }
-    _utf8(text) {
-      const { _byte, _word } = this;
-      const length = text.length;
-      let surrogate = this._sp;
-      for (let offset = 0; offset < length;) {
-        const start = this._size % 64 /* inputBytes */;
-        let index = start;
-        while (offset < length && index < 64 /* inputBytes */) {
-          let code = text.charCodeAt(offset++) | 0;
-          if (code < 0x80) {
-            // ASCII characters
-            _byte[index++] = code;
-          }
-          else if (code < 0x800) {
-            // 2 bytes
-            _byte[index++] = 0xC0 | (code >>> 6);
-            _byte[index++] = 0x80 | (code & 0x3F);
-          }
-          else if (code < 0xD800 || code > 0xDFFF) {
-            // 3 bytes
-            _byte[index++] = 0xE0 | (code >>> 12);
-            _byte[index++] = 0x80 | ((code >>> 6) & 0x3F);
-            _byte[index++] = 0x80 | (code & 0x3F);
-          }
-          else if (surrogate) {
-            // 4 bytes - surrogate pair
-            code = ((surrogate & 0x3FF) << 10) + (code & 0x3FF) + 0x10000;
-            _byte[index++] = 0xF0 | (code >>> 18);
-            _byte[index++] = 0x80 | ((code >>> 12) & 0x3F);
-            _byte[index++] = 0x80 | ((code >>> 6) & 0x3F);
-            _byte[index++] = 0x80 | (code & 0x3F);
-            surrogate = 0;
-          }
-          else {
-            surrogate = code;
-          }
-        }
-        if (index >= 64 /* inputBytes */) {
-          this._int32(_word);
-          _word[0] = _word[16 /* inputWords */];
-        }
-        this._size += index - start;
-      }
-      this._sp = surrogate;
-      return this;
-    }
-    _int32(data, offset) {
-      let { A, B, C, D, E, F, G, H } = this;
-      let i = 0;
-      offset = offset | 0;
-      while (i < 16 /* inputWords */) {
-        W[i++] = swap32(data[offset++]);
-      }
-      for (i = 16 /* inputWords */; i < 64 /* workWords */; i++) {
-        W[i] = (gamma1(W[i - 2]) + W[i - 7] + gamma0(W[i - 15]) + W[i - 16]) | 0;
-      }
-      for (i = 0; i < 64 /* workWords */; i++) {
-        const T1 = (H + sigma1(E) + ch(E, F, G) + K[i] + W[i]) | 0;
-        const T2 = (sigma0(A) + maj(A, B, C)) | 0;
-        H = G;
-        G = F;
-        F = E;
-        E = (D + T1) | 0;
-        D = C;
-        C = B;
-        B = A;
-        A = (T1 + T2) | 0;
-      }
-      this.A = (A + this.A) | 0;
-      this.B = (B + this.B) | 0;
-      this.C = (C + this.C) | 0;
-      this.D = (D + this.D) | 0;
-      this.E = (E + this.E) | 0;
-      this.F = (F + this.F) | 0;
-      this.G = (G + this.G) | 0;
-      this.H = (H + this.H) | 0;
-    }
-    digest(encoding) {
-      const { _byte, _word } = this;
-      let i = (this._size % 64 /* inputBytes */) | 0;
-      _byte[i++] = 0x80;
-      // pad 0 for current word
-      while (i & 3) {
-        _byte[i++] = 0;
-      }
-      i >>= 2;
-      if (i > 14 /* highIndex */) {
-        while (i < 16 /* inputWords */) {
-          _word[i++] = 0;
-        }
-        i = 0;
-        this._int32(_word);
-      }
-      // pad 0 for rest words
-      while (i < 16 /* inputWords */) {
-        _word[i++] = 0;
-      }
-      // input size
-      const bits64 = this._size * 8;
-      const low32 = (bits64 & 0xffffffff) >>> 0;
-      const high32 = (bits64 - low32) / 0x100000000;
-      if (high32)
-        _word[14 /* highIndex */] = swap32(high32);
-      if (low32)
-        _word[15 /* lowIndex */] = swap32(low32);
-      this._int32(_word);
-      return (encoding === "hex") ? this._hex() : this._bin();
-    }
-    _hex() {
-      const { A, B, C, D, E, F, G, H } = this;
-      return hex32(A) + hex32(B) + hex32(C) + hex32(D) + hex32(E) + hex32(F) + hex32(G) + hex32(H);
-    }
-    _bin() {
-      const { A, B, C, D, E, F, G, H, _byte, _word } = this;
-      _word[0] = swap32(A);
-      _word[1] = swap32(B);
-      _word[2] = swap32(C);
-      _word[3] = swap32(D);
-      _word[4] = swap32(E);
-      _word[5] = swap32(F);
-      _word[6] = swap32(G);
-      _word[7] = swap32(H);
-      return _byte.slice(0, 32);
-    }
-  }
-
-  //https://github.com/kawanet/sha256-uint8array/blob/52e8f1b891c84fcb436f0f2e1103527d3a6465ea/lib/sha256-uint8array.ts#L290
-  const W = new Int32Array(64 /* workWords */);
-  let sharedBuffer;
-  let sharedOffset = 0;
-  const hex32 = num => (num + 0x100000000).toString(16).substr(-8);
-  const swapLE = (c => (((c << 24) & 0xff000000) | ((c << 8) & 0xff0000) | ((c >> 8) & 0xff00) | ((c >> 24) & 0xff)));
-  const swapBE = (c => c);
-  const swap32 = isBE() ? swapBE : swapLE;
-  const ch = (x, y, z) => (z ^ (x & (y ^ z)));
-  const maj = (x, y, z) => ((x & y) | (z & (x | y)));
-  const sigma0 = x => ((x >>> 2 | x << 30) ^ (x >>> 13 | x << 19) ^ (x >>> 22 | x << 10));
-  const sigma1 = x => ((x >>> 6 | x << 26) ^ (x >>> 11 | x << 21) ^ (x >>> 25 | x << 7));
-  const gamma0 = x => ((x >>> 7 | x << 25) ^ (x >>> 18 | x << 14) ^ (x >>> 3));
-  const gamma1 = x => ((x >>> 17 | x << 15) ^ (x >>> 19 | x << 13) ^ (x >>> 10));
-
-  //https://github.com/kawanet/sha256-uint8array/blob/52e8f1b891c84fcb436f0f2e1103527d3a6465ea/lib/sha256-uint8array.ts#L308
-  function isBE() {
-    const buf = new Uint8Array(new Uint16Array([0xFEFF]).buffer); // BOM
-    return (buf[0] === 0xFE);
-  }
-
-  var MSB = 0x80
-    , REST = 0x7F
-    , MSBALL = ~REST
-    , INT = Math.pow(2, 31);
-
-  //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/hashes/digest.js#L10
-  const create = (code, digest) => {
-    const size = digest.byteLength
-    const sizeOffset = encodingLength_1(code)
-    const digestOffset = sizeOffset + encodingLength_1(size)
-
-    const bytes = new Uint8Array(digestOffset + size)
-    encodeTo_1(code, bytes, 0)
-    encodeTo_1(size, bytes, sizeOffset)
-    bytes.set(digest, digestOffset)
-
-    return new Digest(code, size, digest, bytes)
-  }
-
-  //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/hashes/hasher.js#L22
-  class Hasher {
-
-    constructor(name, code, encode) {
-      this.name = name
-      this.code = code
-      this.encode = encode
-    }
-
-    digest(input) {
-      if (input instanceof Uint8Array) {
-        const result = this.encode(input)
-        return result instanceof Uint8Array
-          ? create(this.code, result)
-          : result.then((digest) => create(this.code, digest))
-      } else {
-        throw Error('Unknown type, must be binary type')
-      }
-    }
-  }
-
-  const from = ({ name, code, encode }) => new Hasher(name, code, encode)
-
-  //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/hashes/sha2.js#L7
-  s_sha256 = from({
-    name: 'sha2-256',
-    code: 18,
-    //encode: (input) => coerce(crypto__default["default"].createHash('sha256').update(input).digest())
-    encode: (input) => {
-      return coerce(createHash('sha256').update(input).digest());
-    }
-  });
-  /*---------------------------------------------------------------------------------------------
-  *  Copyright 2016-2020 Protocol Labs
-  *  Licensed under the MIT License.
-  *  https://github.com/ipld/js-dag-pb/blob/master/LICENSE-MIT
-  *--------------------------------------------------------------------------------------------*/
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/util.js#L8
-  const pbNodeProperties = ['Data', 'Links']
-  const pbLinkProperties = ['Hash', 'Name', 'Tsize']
-
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L1
-  const textEncoder = new TextEncoder()
-  const maxInt32 = 2 ** 32
-  const maxUInt32 = 2 ** 31
-
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L197
-  const len8tab = [
-    0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
-  ]
-
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L23
-  function encodeLink(link, bytes) {
-    let i = bytes.length
-
-    if (typeof link.Tsize === 'number') {
-      if (link.Tsize < 0) {
-        throw new Error('Tsize cannot be negative')
-      }
-      if (!Number.isSafeInteger(link.Tsize)) {
-        throw new Error('Tsize too large for encoding')
-      }
-      i = encodeVarint(bytes, i, link.Tsize) - 1
-      bytes[i] = 0x18
-    }
-
-    if (typeof link.Name === 'string') {
-      const nameBytes = textEncoder.encode(link.Name)
-      i -= nameBytes.length
-      bytes.set(nameBytes, i)
-      i = encodeVarint(bytes, i, nameBytes.length) - 1
-      bytes[i] = 0x12
-    }
-
-    if (link.Hash) {
-      i -= link.Hash.length
-      bytes.set(link.Hash, i)
-      i = encodeVarint(bytes, i, link.Hash.length) - 1
-      bytes[i] = 0xa
-    }
-
-    return bytes.length - i
-  }
-
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L91
-  function sizeLink(link) {
-    let n = 0
-
-    if (link.Hash) {
-      const l = link.Hash.length
-      n += 1 + l + sov(l)
-    }
-
-    if (typeof link.Name === 'string') {
-      const l = textEncoder.encode(link.Name).length
-      n += 1 + l + sov(l)
-    }
-
-    if (typeof link.Tsize === 'number') {
-      n += 1 + sov(link.Tsize)
-    }
-
-    return n
-  }
-
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L179
-  function len64(x) {
-    let n = 0
-    if (x >= maxInt32) {
-      x = Math.floor(x / maxInt32)
-      n = 32
-    }
-    if (x >= (1 << 16)) {
-      x >>>= 16
-      n += 16
-    }
-    if (x >= (1 << 8)) {
-      x >>>= 8
-      n += 8
-    }
-    return n + len8tab[x]
-  }
-
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L166
-  function sov(x) {
-    if (x % 2 === 0) {
-      x++
-    }
-    return Math.floor((len64(x) + 6) / 7)
-  }
-
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L141
-  function encodeVarint(bytes, offset, v) {
-    offset -= sov(v)
-    const base = offset
-
-    while (v >= maxUInt32) {
-      bytes[offset++] = (v & 0x7f) | 0x80
-      v /= 128
-    }
-
-    while (v >= 128) {
-      bytes[offset++] = (v & 0x7f) | 0x80
-      v >>>= 7
-    }
-
-    bytes[offset] = v
-
-    return base
-  }
-
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L141
-  function sizeNode(node) {
-    let n = 0
-
-    if (node.Data) {
-      const l = node.Data.length
-      n += 1 + l + sov(l)
-    }
-
-    if (node.Links) {
-      for (const link of node.Links) {
-        const l = sizeLink(link)
-        n += 1 + l + sov(l)
-      }
-    }
-
-    return n
-  }
-
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L61
-  function encodeNode(node) {
-    const size = sizeNode(node)
-    const bytes = new Uint8Array(size)
-    let i = size
-
-    if (node.Data) {
-      i -= node.Data.length
-      bytes.set(node.Data, i)
-      i = encodeVarint(bytes, i, node.Data.length) - 1
-      bytes[i] = 0xa
-    }
-
-    if (node.Links) {
-      for (let index = node.Links.length - 1; index >= 0; index--) {
-        const size = encodeLink(node.Links[index], bytes.subarray(0, i))
-        i -= size
-        i = encodeVarint(bytes, i, size) - 1
-        bytes[i] = 0x12
-      }
-    }
-
-    return bytes
-  }
-
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/util.js#L18
-  function linkComparator(a, b) {
-    if (a === b) {
-      return 0
-    }
-
-    const abuf = a.Name ? textEncoder.encode(a.Name) : []
-    const bbuf = b.Name ? textEncoder.encode(b.Name) : []
-
-    let x = abuf.length
-    let y = bbuf.length
-
-    for (let i = 0, len = Math.min(x, y); i < len; ++i) {
-      if (abuf[i] !== bbuf[i]) {
-        x = abuf[i]
-        y = bbuf[i]
-        break
-      }
-    }
-
-    return x < y ? -1 : y < x ? 1 : 0
-  }
-
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/util.js#L45
-  function hasOnlyProperties(node, properties) {
-    return !Object.keys(node).some((p) => !properties.includes(p))
-  }
-
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/util.js#L147
-  function validate(node) {
-
-    if (!node || typeof node !== 'object' || Array.isArray(node)) {
-      throw new TypeError('Invalid DAG-PB form')
-    }
-
-    if (!hasOnlyProperties(node, pbNodeProperties)) {
-      throw new TypeError('Invalid DAG-PB form (extraneous properties)')
-    }
-
-    if (node.Data !== undefined && !(node.Data instanceof Uint8Array)) {
-      throw new TypeError('Invalid DAG-PB form (Data must be a Uint8Array)')
-    }
-
-    if (!Array.isArray(node.Links)) {
-      throw new TypeError('Invalid DAG-PB form (Links must be an array)')
-    }
-
-    for (let i = 0; i < node.Links.length; i++) {
-      const link = node.Links[i]
-      if (!link || typeof link !== 'object' || Array.isArray(link)) {
-        throw new TypeError('Invalid DAG-PB form (bad link object)')
-      }
-
-      if (!hasOnlyProperties(link, pbLinkProperties)) {
-        throw new TypeError('Invalid DAG-PB form (extraneous properties on link object)')
-      }
-
-      if (!link.Hash) {
-        throw new TypeError('Invalid DAG-PB form (link must have a Hash)')
-      }
-
-      if (link.Hash.asCID !== link.Hash) {
-        throw new TypeError('Invalid DAG-PB form (link Hash must be a CID)')
-      }
-
-      if (link.Name !== undefined && typeof link.Name !== 'string') {
-        throw new TypeError('Invalid DAG-PB form (link Name must be a string)')
-      }
-
-      if (link.Tsize !== undefined && (typeof link.Tsize !== 'number' || link.Tsize % 1 !== 0)) {
-        throw new TypeError('Invalid DAG-PB form (link Tsize must be an integer)')
-      }
-
-      if (i > 0 && linkComparator(link, node.Links[i - 1]) === -1) {
-        throw new TypeError('Invalid DAG-PB form (links must be sorted by Name bytes)')
-      }
-    }
-  }
-
-  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/index.js#L23
-  var d_encode = (node) => {
-    validate(node)
-    const pbn = {}
-    if (node.Links) {
-      pbn.Links = node.Links.map((l) => {
-        const link = {}
-        if (l.Hash) {
-          link.Hash = l.Hash.bytes // cid -> bytes
-        }
-        if (l.Name !== undefined) {
-          link.Name = l.Name
-        }
-        if (l.Tsize !== undefined) {
-          link.Tsize = l.Tsize
-        }
-        return link
-      })
-    }
-    if (node.Data) {
-      pbn.Data = node.Data
-    }
-
-    return encodeNode(pbn)
-  }
-
-  const hashItems = async (items, version) => {
-    const opts = mergeOptions(defaultOptions, { cidVersion: 1, onlyHash: true, rawLeaves: true, maxChunkSize: 1048576 })
-    if (version == undefined)
-      version = 1;
-    let Links = [];
-    for (let i = 0; i < items.length; i++) {
-      let item = items[i];
-      Links.push({
-        Name: item.name,
-        Hash: parse(item.cid),
-        Tsize: item.size
-      })
-    };
-
-    try {
-      const dirUnixFS = new UnixFS({
-        type: 'directory',
-        mtime: undefined,
-        mode: 493
-      });
-      const node = {
-        Data: dirUnixFS.marshal(),
-        Links
-      };
-      // const buffer = d_encode(node);
-
-      // const cid = await persist(buffer, {
-      //   get: async cid => { throw new Error(`unexpected block API get for ${cid}`) },
-      //   put: async () => { }
-      // }, opts);
-      // console.dir(opts);
-      // return {
-      //   size: 0,//bytes.length + Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0),
-      //   cid: cid.toString()
-      // }
-      const bytes = d_encode(node);
-      const hash = await s_sha256.digest(bytes);
-      const dagPB_code = 0x70;
-      // const cid = CID.create(version, RAW_CODE, hash);
-      const cid = CID.create(version, dagPB_code, hash);
-      return {
-        size: bytes.length + Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0),
-        cid: cid.toString()
-      }
-    } catch (e) {
-      throw e;
-    }
-  };
-  const hashContent = async (value, version) => {
-    try {
-      if (version == undefined)
-        version = 1;
-      if (typeof (value) == 'string')
-        value = new TextEncoder("utf-8").encode(value);
-
-      var cid;
-      if (version == 0) {
-        const unixFS = new UnixFS({
-          type: 'file',
-          data: value
-        })
-        const bytes = d_encode({
-          Data: unixFS.marshal(),
-          Links: []
-        })
-        const hash = await s_sha256.digest(bytes);
-        cid = CID.create(version, DAG_PB_CODE, hash);
-      }
-      else {
-        const hash = await s_sha256.digest(value);
-        if (value.length <= 1048576) //1 MB
-          cid = CID.create(version, RAW_CODE, hash)
-        else
-          cid = CID.create(version, DAG_PB_CODE, hash)
-      }
-      return cid.toString();
-    }
-    catch (e) {
-      throw e;
-    }
-  };
-  const parse = function (cid) {
-    return CID.parse(cid)
-  };
-
-  // test start from here
-  /*---------------------------------------------------------------------------------------------
-  *  Copyright (c) 2020 Protocol Labs
-  *  Licensed under the MIT License.
-  *  https://github.com/rvagg/bl/blob/master/LICENSE.md
-  *--------------------------------------------------------------------------------------------*/
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L4
-  const symbol = Symbol.for('BufferList')
-  function BufferList(buf) {
-    if (!(this instanceof BufferList)) {
-      return new BufferList(buf)
-    }
-
-    BufferList._init.call(this, buf)
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L14
-  BufferList._init = function _init(buf) {
-    Object.defineProperty(this, symbol, { value: true })
-
-    this._bufs = []
-    this.length = 0
-
-    if (buf) {
-      this.append(buf)
-    }
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L25
-  BufferList.prototype._new = function _new(buf) {
-    return new BufferList(buf)
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L29
-  BufferList.prototype._offset = function _offset(offset) {
-    if (offset === 0) {
-      return [0, 0]
-    }
-
-    let tot = 0
-
-    for (let i = 0; i < this._bufs.length; i++) {
-      const _t = tot + this._bufs[i].length
-      if (offset < _t || i === this._bufs.length - 1) {
-        return [i, offset - tot]
-      }
-      tot = _t
-    }
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L45
-  BufferList.prototype._reverseOffset = function (blOffset) {
-    const bufferId = blOffset[0]
-    let offset = blOffset[1]
-
-    for (let i = 0; i < bufferId; i++) {
-      offset += this._bufs[i].length
-    }
-
-    return offset
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L56
-  BufferList.prototype.get = function get(index) {
-    if (index > this.length || index < 0) {
-      return undefined
-    }
-
-    const offset = this._offset(index)
-
-    return this._bufs[offset[0]][offset[1]]
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L66
-  BufferList.prototype.slice = function slice(start, end) {
-    if (typeof start === 'number' && start < 0) {
-      start += this.length
-    }
-
-    if (typeof end === 'number' && end < 0) {
-      end += this.length
-    }
-
-    return this.copy(null, 0, start, end)
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L78
-  BufferList.prototype.copy = function copy(dst, dstStart, srcStart, srcEnd) {
-    if (typeof srcStart !== 'number' || srcStart < 0) {
-      srcStart = 0
-    }
-
-    if (typeof srcEnd !== 'number' || srcEnd > this.length) {
-      srcEnd = this.length
-    }
-
-    if (srcStart >= this.length) {
-      return dst || Buffer.alloc(0)
-    }
-
-    if (srcEnd <= 0) {
-      return dst || Buffer.alloc(0)
-    }
-
-    const copy = !!dst
-    const off = this._offset(srcStart)
-    const len = srcEnd - srcStart
-    let bytes = len
-    let bufoff = (copy && dstStart) || 0
-    let start = off[1]
-
-    // copy/slice everything
-    if (srcStart === 0 && srcEnd === this.length) {
-      if (!copy) {
-        // slice, but full concat if multiple buffers
-        return this._bufs.length === 1
-          ? this._bufs[0]
-          : util_Buffer.concat(this._bufs, this.length)
-      }
-
-      // copy, need to copy individual buffers
-      for (let i = 0; i < this._bufs.length; i++) {
-        this._bufs[i].copy(dst, bufoff)
-        bufoff += this._bufs[i].length
-      }
-
-      return dst
-    }
-
-    // easy, cheap case where it's a subset of one of the buffers
-    if (bytes <= this._bufs[off[0]].length - start) {
-      return copy
-        ? this._bufs[off[0]].copy(dst, dstStart, start, start + bytes)
-        : this._bufs[off[0]].slice(start, start + bytes)
-    }
-
-    if (!copy) {
-      // a slice, we need something to copy in to
-      dst = Buffer.allocUnsafe(len)
-    }
-
-    for (let i = off[0]; i < this._bufs.length; i++) {
-      const l = this._bufs[i].length - start
-
-      if (bytes > l) {
-        this._bufs[i].copy(dst, bufoff, start)
-        bufoff += l
-      } else {
-        this._bufs[i].copy(dst, bufoff, start, start + bytes)
-        bufoff += l
-        break
-      }
-
-      bytes -= l
-
-      if (start) {
-        start = 0
-      }
-    }
-
-    // safeguard so that we don't return uninitialized memory
-    if (dst.length > bufoff) return dst.slice(0, bufoff)
-
-    return dst
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L157
-  BufferList.prototype.shallowSlice = function shallowSlice(start, end) {
-    start = start || 0
-    end = typeof end !== 'number' ? this.length : end
-
-    if (start < 0) {
-      start += this.length
-    }
-
-    if (end < 0) {
-      end += this.length
-    }
-
-    if (start === end) {
-      return this._new()
-    }
-
-    const startOffset = this._offset(start)
-    const endOffset = this._offset(end)
-    const buffers = this._bufs.slice(startOffset[0], endOffset[0] + 1)
-
-    if (endOffset[1] === 0) {
-      buffers.pop()
-    } else {
-      buffers[buffers.length - 1] = buffers[buffers.length - 1].slice(0, endOffset[1])
-    }
-
-    if (startOffset[1] !== 0) {
-      buffers[0] = buffers[0].slice(startOffset[1])
-    }
-
-    return this._new(buffers)
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L190
-  BufferList.prototype.toString = function toString(encoding, start, end) {
-    return this.slice(start, end).toString(encoding)
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L194
-  BufferList.prototype.consume = function consume(bytes) {
-    // first, normalize the argument, in accordance with how Buffer does it
-    bytes = Math.trunc(bytes)
-    // do nothing if not a positive number
-    if (Number.isNaN(bytes) || bytes <= 0) return this
-
-    while (this._bufs.length) {
-      if (bytes >= this._bufs[0].length) {
-        bytes -= this._bufs[0].length
-        this.length -= this._bufs[0].length
-        this._bufs.shift()
-      } else {
-        this._bufs[0] = this._bufs[0].slice(bytes)
-        this.length -= bytes
-        break
-      }
-    }
-
-    return this
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L215
-  BufferList.prototype.duplicate = function duplicate() {
-    const copy = this._new()
-
-    for (let i = 0; i < this._bufs.length; i++) {
-      copy.append(this._bufs[i])
-    }
-
-    return copy
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L225
-  BufferList.prototype.append = function append(buf) {
-    if (buf == null) {
-      return this
-    }
-
-    if (buf.buffer) {
-      // append a view of the underlying ArrayBuffer
-      this._appendBuffer(util_Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength))
-    } else if (Array.isArray(buf)) {
-      for (let i = 0; i < buf.length; i++) {
-        this.append(buf[i])
-      }
-    } else if (this._isBufferList(buf)) {
-      // unwrap argument into individual BufferLists
-      for (let i = 0; i < buf._bufs.length; i++) {
-        this.append(buf._bufs[i])
-      }
-    } else {
-      // coerce number arguments to strings, since Buffer(number) does
-      // uninitialized memory allocation
-      if (typeof buf === 'number') {
-        buf = buf.toString()
-      }
-
-      this._appendBuffer(util_Buffer.from(buf))
-    }
-
-    return this
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L255
-  BufferList.prototype._appendBuffer = function appendBuffer(buf) {
-    this._bufs.push(buf)
-    this.length += buf.length
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L260
-  BufferList.prototype.indexOf = function (search, offset, encoding) {
-    if (encoding === undefined && typeof offset === 'string') {
-      encoding = offset
-      offset = undefined
-    }
-
-    if (typeof search === 'function' || Array.isArray(search)) {
-      throw new TypeError('The "value" argument must be one of type string, Buffer, BufferList, or Uint8Array.')
-    } else if (typeof search === 'number') {
-      search = util_Buffer.from([search])
-    } else if (typeof search === 'string') {
-      search = util_Buffer.from(search, encoding)
-    } else if (this._isBufferList(search)) {
-      search = search.slice()
-    } else if (Array.isArray(search.buffer)) {
-      search = util_Buffer.from(search.buffer, search.byteOffset, search.byteLength)
-    } else if (!Buffer.isBuffer(search)) {
-      search = util_Buffer.from(search)
-    }
-
-    offset = Number(offset || 0)
-
-    if (isNaN(offset)) {
-      offset = 0
-    }
-
-    if (offset < 0) {
-      offset = this.length + offset
-    }
-
-    if (offset < 0) {
-      offset = 0
-    }
-
-    if (search.length === 0) {
-      return offset > this.length ? this.length : offset
-    }
-
-    const blOffset = this._offset(offset)
-    let blIndex = blOffset[0] // index of which internal buffer we're working on
-    let buffOffset = blOffset[1] // offset of the internal buffer we're working on
-
-    // scan over each buffer
-    for (; blIndex < this._bufs.length; blIndex++) {
-      const buff = this._bufs[blIndex]
-
-      while (buffOffset < buff.length) {
-        const availableWindow = buff.length - buffOffset
-
-        if (availableWindow >= search.length) {
-          const nativeSearchResult = buff.indexOf(search, buffOffset)
-
-          if (nativeSearchResult !== -1) {
-            return this._reverseOffset([blIndex, nativeSearchResult])
-          }
-
-          buffOffset = buff.length - search.length + 1 // end of native search window
-        } else {
-          const revOffset = this._reverseOffset([blIndex, buffOffset])
-
-          if (this._match(revOffset, search)) {
-            return revOffset
-          }
-
-          buffOffset++
-        }
-      }
-
-      buffOffset = 0
-    }
-
-    return -1
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L334
-  BufferList.prototype._match = function (offset, search) {
-    if (this.length - offset < search.length) {
-      return false
-    }
-
-    for (let searchOffset = 0; searchOffset < search.length; searchOffset++) {
-      if (this.get(offset + searchOffset) !== search[searchOffset]) {
-        return false
-      }
-    }
-    return true
-  }
-
-    //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L347
-    ; (function () {
-      const methods = {
-        readDoubleBE: 8,
-        readDoubleLE: 8,
-        readFloatBE: 4,
-        readFloatLE: 4,
-        readInt32BE: 4,
-        readInt32LE: 4,
-        readUInt32BE: 4,
-        readUInt32LE: 4,
-        readInt16BE: 2,
-        readInt16LE: 2,
-        readUInt16BE: 2,
-        readUInt16LE: 2,
-        readInt8: 1,
-        readUInt8: 1,
-        readIntBE: null,
-        readIntLE: null,
-        readUIntBE: null,
-        readUIntLE: null
-      }
-
-      for (const m in methods) {
-        (function (m) {
-          if (methods[m] === null) {
-            BufferList.prototype[m] = function (offset, byteLength) {
-              return this.slice(offset, offset + byteLength)[m](0, byteLength)
-            }
-          } else {
-            BufferList.prototype[m] = function (offset = 0) {
-              return this.slice(offset, offset + methods[m])[m](0)
-            }
-          }
-        }(m))
-      }
-    }())
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L388
-  BufferList.prototype._isBufferList = function _isBufferList(b) {
-    return b instanceof BufferList || BufferList.isBufferList(b)
-  }
-
-  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L392
-  BufferList.isBufferList = function isBufferList(b) {
-    return b != null && b[symbol]
-  }
-
   //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/options.js#L8
   async function hamtHashFn(buf) {
     const hash = await multihashing(buf, 'murmur3-128')
@@ -2644,12 +1682,6 @@
 
     return result
   }
-
-  /*---------------------------------------------------------------------------------------------
-  *  Copyright (c) 2020 Protocol Labs
-  *  Licensed under the MIT and APACHE License
-  *  https://github.com/ipfs/js-ipfs-unixfs/blob/master/LICENSE
-  *--------------------------------------------------------------------------------------------*/
 
   //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/chunker/rabin.js#L19
   async function* rabinChunker(source, options) {
@@ -2828,1243 +1860,6 @@
     }
   }
 
-  /*---------------------------------------------------------------------------------------------
-  *  Copyright (c) 2020 Protocol Labs
-  *  Licensed under the MIT License.
-  *  https://github.com/multiformats/js-multiformats/blob/master/LICENSE-MIT
-  *--------------------------------------------------------------------------------------------*/
-
-  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L21
-  async function Multihashing(bytes, alg, length) {
-    const digest = await Multihashing.digest(bytes, alg, length)
-    return multihash.mh_encode(digest, alg, length)
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/constants.js#L18
-  const mh_names = Object.freeze({
-    'sha2-256': 0x12,
-  })
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L13
-  const mh_codes = /** @type {import('./types').CodeNameMap} */({})
-  for (const key in mh_names) {
-    const name = /** @type {HashName} */(key)
-    mh_codes[mh_names[name]] = name
-  }
-  Object.freeze(mh_codes)
-
-  // No license(?)
-  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/util/bases.js#L15
-  function createCodec(name, prefix, encode, decode) {
-    return {
-      name,
-      prefix,
-      encoder: {
-        name,
-        prefix,
-        encode
-      },
-      decoder: { decode }
-    };
-  }
-
-  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/util/bases.js#L30
-  const string = createCodec('utf8', 'u', buf => {
-    const decoder = new TextDecoder('utf8');
-    return 'u' + decoder.decode(buf);
-  }, str => {
-    const encoder = new TextEncoder();
-    return encoder.encode(str.substring(1));
-  });
-
-  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/util/bases.js#L63
-  var bases = {
-    utf8: string,
-    'utf-8': string,
-  };
-
-  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/to-string.js#L18
-  function uint8ArrayToString(array, encoding = 'utf8') {
-    const base = bases[encoding];
-    if (!base) {
-      throw new Error(`Unsupported encoding "${encoding}"`);
-    }
-    if ((encoding === 'utf8' || encoding === 'utf-8') && globalThis.Buffer != null && globalThis.Buffer.from != null) {
-      return globalThis.Buffer.from(array.buffer, array.byteOffset, array.byteLength).toString('utf8');
-    }
-    return base.encoder.encode(array).substring(1);
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L28
-  function mh_toHexString(hash) {
-    if (!(hash instanceof Uint8Array)) {
-      throw new Error('must be passed a Uint8Array')
-    }
-
-    return uint8ArrayToString(hash, 'base16')
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L42
-  function mh_fromHexString(hash) {
-    return uint8ArrayFromString(hash, 'base16')
-  }
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/base.js#L3
-  const encodeText = (text) => textEncoder.encode(text)
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/base.js#L13
-  class Base {
-    constructor(name, code, factory, alphabet) {
-      this.name = name
-      this.code = code
-      this.codeBuf = encodeText(this.code)
-      this.alphabet = alphabet
-      this.codec = factory(alphabet)
-    }
-    encode(buf) {
-      return this.codec.encode(buf)
-    }
-    decode(string) {
-      for (const char of string) {
-        if (this.alphabet && this.alphabet.indexOf(char) < 0) {
-          throw new Error(`invalid character '${char}' in '${string}'`)
-        }
-      }
-      return this.codec.decode(string)
-    }
-  }
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/rfc4648.js#L104
-  const rfc4648_1 = (bitsPerChar) => (alphabet) => {
-    return {
-      encode(input) {
-        return _encode(input, alphabet, bitsPerChar)
-      },
-      decode(input) {
-        return _decode(input, alphabet, bitsPerChar)
-      }
-    }
-  }
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/constants.js#L27
-  const constants = [
-    ['base32', 'b', rfc4648_1(5), 'abcdefghijklmnopqrstuvwxyz234567'],
-    ['base58btc', 'z', _basex, '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'],
-  ]
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/constants.js#L54
-  const constants1_names = constants.reduce((prev, tupple) => {
-    prev[tupple[0]] = new Base(tupple[0], tupple[1], tupple[2], tupple[3])
-    return prev
-  }, /** @type {Record<BaseName,Base>} */({}))
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/constants.js#L59
-  const constants1_codes = constants.reduce((prev, tupple) => {
-    prev[tupple[1]] = constants1_names[tupple[0]]
-    return prev
-  }, /** @type {Record<BaseCode,Base>} */({}))
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L115
-  function encoding(nameOrCode) {
-    if (Object.prototype.hasOwnProperty.call(constants1_names, /** @type {BaseName} */(nameOrCode))) {
-      return constants1_names[/** @type {BaseName} */(nameOrCode)]
-    } else if (Object.prototype.hasOwnProperty.call(constants1_codes, /** @type {BaseCode} */(nameOrCode))) {
-      return constants1_codes[/** @type {BaseCode} */(nameOrCode)]
-    } else {
-      throw new Error(`Unsupported encoding: ${nameOrCode}`)
-    }
-  }
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/util.js#L24
-  function concat(arrs, length) {
-    const output = new Uint8Array(length)
-    let offset = 0
-
-    for (const arr of arrs) {
-      output.set(arr, offset)
-      offset += arr.length
-    }
-
-    return output
-  }
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/util.js#L3
-  const textDecoder = new TextDecoder()
-  const decodeText = (bytes) => textDecoder.decode(bytes)
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L103
-  function validEncode(name, buf) {
-    const enc = encoding(name)
-    enc.decode(decodeText(buf))
-  }
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L23
-  function multibase(nameOrCode, buf) {
-    if (!buf) {
-      throw new Error('requires an encoded Uint8Array')
-    }
-    const { name, codeBuf } = encoding(nameOrCode)
-    validEncode(name, buf)
-
-    return concat([codeBuf, buf], codeBuf.length + buf.length)
-  }
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L42
-  function multibase_encode(nameOrCode, buf) {
-    const enc = encoding(nameOrCode)
-    const data = encodeText(enc.encode(buf))
-
-    return concat([enc.codeBuf, data], enc.codeBuf.length + data.length)
-  }
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L58
-  function multibase_decode(data) {
-    if (data instanceof Uint8Array) {
-      data = decodeText(data)
-    }
-    const prefix = data[0]
-    if (['f', 'F', 'v', 'V', 't', 'T', 'b', 'B', 'c', 'C', 'h', 'k', 'K'].includes(prefix)) {
-      data = data.toLowerCase()
-    }
-    const enc = encoding(/** @type {BaseCode} */(data[0]))
-    return enc.decode(data.substring(1))
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L52
-  function mh_toB58String(hash) {
-    if (!(hash instanceof Uint8Array)) {
-      throw new Error('must be passed a Uint8Array')
-    }
-    return uint8ArrayToString(multibase_encode('base58btc', hash)).slice(1)
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L66
-  function mh_fromB58String(hash) {
-    const encoded = hash instanceof Uint8Array
-      ? uint8ArrayToString(hash)
-      : hash
-
-    return multibase_decode('z' + encoded)
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L80
-  function mh_decode(bytes) {
-    if (!(bytes instanceof Uint8Array)) {
-      throw new Error('multihash must be a Uint8Array')
-    }
-
-    if (bytes.length < 2) {
-      throw new Error('multihash too short. must be > 2 bytes.')
-    }
-
-    const code = /** @type {HashCode} */(decode_2(bytes))
-    if (!mh_isValidCode(code)) {
-      throw new Error(`multihash unknown function code: 0x${code.toString(16)}`)
-    }
-    bytes = bytes.slice(decode_2.bytes)
-
-    const len = decode_2(bytes)
-    if (len < 0) {
-      throw new Error(`multihash invalid length: ${len}`)
-    }
-    bytes = bytes.slice(decode_2.bytes)
-
-    if (bytes.length !== len) {
-      throw new Error(`multihash length inconsistent: 0x${uint8ArrayToString(bytes, 'base16')}`)
-    }
-
-    return {
-      code,
-      name: mh_codes[code],
-      length: len,
-      digest: bytes
-    }
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L123
-  function mh_encode(digest, code, length) {
-    if (!digest || code === undefined) {
-      throw new Error('multihash encode requires at least two args: digest, code')
-    }
-    const hashfn = mh_coerceCode(code)
-
-    if (!(digest instanceof Uint8Array)) {
-      throw new Error('digest should be a Uint8Array')
-    }
-
-    if (length == null) {
-      length = digest.length
-    }
-
-    if (length && digest.length !== length) {
-      throw new Error('digest length should be equal to specified length.')
-    }
-
-    function alloc_allocUnsafe(size = 0) {
-      if (globalThis.Buffer != null && globalThis.Buffer.allocUnsafe != null) {
-        return globalThis.Buffer.allocUnsafe(size);
-      }
-      return new Uint8Array(size);
-    }
-
-    const hash = encode_2(hashfn)
-    const len = encode_2(length)
-    function uint8ArrayConcat(arrays, length) {
-      if (!length) {
-        length = arrays.reduce((acc, curr) => acc + curr.length, 0);
-      }
-      const output = alloc_allocUnsafe(length);
-      let offset = 0;
-      for (const arr of arrays) {
-        output.set(arr, offset);
-        offset += arr.length;
-      }
-      return output;
-    }
-    return uint8ArrayConcat([hash, len, digest], hash.length + len.length + digest.length)
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L155
-  function mh_coerceCode(name) {
-    let code = name
-
-    if (typeof name === 'string') {
-      if (mh_names[name] === undefined) {
-        throw new Error(`Unrecognized hash function named: ${name}`)
-      }
-      code = mh_names[name]
-    }
-
-    if (typeof code !== 'number') {
-      throw new Error(`Hash function code should be a number. Got: ${code}`)
-    }
-
-    if (mh_codes[code] === undefined && !mh_isAppCode(code)) {
-      throw new Error(`Unrecognized function code: ${code}`)
-    }
-
-    return code
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L183
-  function mh_isAppCode(code) {
-    return code > 0 && code < 0x10
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L212
-  function mh_validate(multihash) {
-    mh_decode(multihash)
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L223
-  function mh_prefix(multihash) {
-    mh_validate(multihash)
-
-    return multihash.subarray(0, 2)
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L193
-  function mh_isValidCode(code) {
-    if (mh_isAppCode(code)) {
-      return true
-    }
-
-    if (mh_codes[code]) {
-      return true
-    }
-
-    return false
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L229
-  const multihash = {
-    mh_names,
-    mh_codes,
-    mh_toHexString,
-    mh_fromHexString,
-    mh_toB58String,
-    mh_fromB58String,
-    mh_decode,
-    mh_encode,
-    mh_coerceCode,
-    mh_isAppCode,
-    mh_validate,
-    mh_prefix,
-    mh_isValidCode
-  }
-
-  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L29
-  Multihashing.multihash = multihash
-
-  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L37
-  Multihashing.digest = async (bytes, alg, length) => {
-    const hash = Multihashing.createHash(alg)
-    const digest = await hash(bytes)
-    return length ? digest.slice(0, length) : digest
-  }
-
-  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L49
-  Multihashing.createHash = function (alg) {
-    if (!alg) {
-      const e = errcode(new Error('hash algorithm must be specified'), 'ERR_HASH_ALGORITHM_NOT_SPECIFIED')
-      throw e
-    }
-    const code = multihash.mh_coerceCode(alg)
-    if (!Multihashing.functions[code]) {
-      throw errcode(new Error(`multihash function '${alg}' not yet supported`), 'ERR_HASH_ALGORITHM_NOT_SUPPORTED')
-    }
-    return Multihashing.functions[code]
-  }
-
-  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/sha.js#L21
-  const digest = async (data, alg) => {
-    switch (alg) {
-      case 'sha2-256':
-        return createHash('sha256').update(data).digest()
-      default:
-        throw new Error(`${alg} is not a supported algorithm`)
-    }
-  }
-
-  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/sha.js#L38
-  const { factory: sha } = {
-    factory: (alg) => async (data) => {
-      return digest(data, alg)
-    },
-    digest,
-    multihashing: async (buf, alg, length) => {
-      const h = await digest(buf, alg)
-      return multihash.encode(h, alg, length)
-    }
-  }
-
-  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/crypto.js#L53
-  var crypto = {
-    sha2256: sha('sha2-256'),
-  }
-
-  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L69
-  Multihashing.functions = {
-    0x12: crypto.sha2256,
-  }
-
-  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L114
-  Multihashing.validate = async (bytes, hash) => {
-    const newHash = await Multihashing(bytes, multihash.decode(hash).name)
-    return equals(hash, newHash)
-  }
-
-  //https://github.com/multiformats/js-cid/blob/2ed9449c7a7d2df522485822ae46f2d8d10fbbcc/src/cid-util.js#L5
-  const CIDUtil = {
-    checkCIDComponents: function (other) {
-      if (other == null) {
-        return 'null values are not valid CIDs'
-      }
-
-      if (!(other.version === 0 || other.version === 1)) {
-        return 'Invalid version, must be a number equal to 1 or 0'
-      }
-
-      if (typeof other.codec !== 'string') {
-        return 'codec must be string'
-      }
-
-      if (other.version === 0) {
-        if (other.codec !== 'dag-pb') {
-          return "codec must be 'dag-pb' for CIDv0"
-        }
-        if (other.multibaseName !== 'base58btc') {
-          return "multibaseName must be 'base58btc' for CIDv0"
-        }
-      }
-
-      if (!(other.multihash instanceof Uint8Array)) {
-        return 'multihash must be a Uint8Array'
-      }
-
-      try {
-        var mh = multihash
-        mh.mh_validate(other.multihash)
-      } catch (err) {
-        let errorMsg = err.message
-        if (!errorMsg) { // Just in case mh.validate() throws an error with empty error message
-          errorMsg = 'Multihash validation failed'
-        }
-        return errorMsg
-      }
-    }
-  }
-
-  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/util.js#L17
-  function uint8ArrayToNumber(buf) {
-    return parseInt(uint8ArrayToString(buf, 'base16'), 16)
-  }
-
-  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/util.js#L35
-  function varintUint8ArrayEncode(input) {
-    return Uint8Array.from(encode_2(uint8ArrayToNumber(input)))
-  }
-
-  const baseTable = Object.freeze({
-    'raw': 0x55,
-    'dag-pb': 0x70,
-  })
-
-  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/util.js#L42
-  function varintEncode(num) {
-    return Uint8Array.from(encode_2(num))
-  }
-
-  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/maps.js#L12
-  const nameToVarint = /** @type {NameUint8ArrayMap} */ ({})
-  const constantToCode = /** @type {ConstantCodeMap} */({})
-  const codeToName = /** @type {CodeNameMap} */({})
-
-  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/index.js#L111
-  function getVarintFromName(name) {
-    const code = nameToVarint[name]
-    if (code === undefined) {
-      throw new Error(`Codec "${name}" not found`)
-    }
-    return code
-  }
-
-  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/maps.js#L17
-  for (const name in baseTable) {
-    const codecName = /** @type {CodecName} */(name)
-    const code = baseTable[codecName]
-    nameToVarint[codecName] = varintEncode(code)
-
-    const constant = /** @type {CodecConstant} */(codecName.toUpperCase().replace(/-/g, '_'))
-    constantToCode[constant] = code
-
-    if (!codeToName[code]) {
-      codeToName[code] = codecName
-    }
-  }
-
-  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/maps.js#L30
-  Object.freeze(nameToVarint)
-  Object.freeze(constantToCode)
-  Object.freeze(codeToName)
-
-  const multicodec = {
-    //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/index.js#L29
-    addPrefix: function addPrefix(multicodecStrOrCode, data) {
-      let prefix
-
-      if (multicodecStrOrCode instanceof Uint8Array) {
-        prefix = varintUint8ArrayEncode(multicodecStrOrCode)
-      } else {
-        if (nameToVarint[multicodecStrOrCode]) {
-          prefix = nameToVarint[multicodecStrOrCode]
-        } else {
-          throw new Error('multicodec not recognized')
-        }
-      }
-
-      return uint8ArrayConcat([prefix, data], prefix.length + data.length)
-    },
-    //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/index.js#L51
-    rmPrefix: function rmPrefix(data) {
-      varint.decode(/** @type {Buffer} */(data))
-      return data.slice(varint.decode.bytes)
-    },
-    //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/index.js#L77
-    getCodeVarint: function getCodeVarint(name) {
-      return getVarintFromName(name)
-    },
-  }
-
-  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/alloc.js#L24
-  function allocUnsafe(size = 0) {
-    if (globalThis.Buffer != null && globalThis.Buffer.allocUnsafe != null) {
-      return globalThis.Buffer.allocUnsafe(size);
-    }
-    return new Uint8Array(size);
-  }
-
-  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/concat.js#L9
-  function uint8ArrayConcat(arrays, length) {
-    if (!length) {
-      length = arrays.reduce((acc, curr) => acc + curr.length, 0);
-    }
-    const output = allocUnsafe(length);
-    let offset = 0;
-    for (const arr of arrays) {
-      output.set(arr, offset);
-      offset += arr.length;
-    }
-    return output;
-  }
-
-  //https://github.com/multiformats/js-cid/blob/2ed9449c7a7d2df522485822ae46f2d8d10fbbcc/src/index.js#L38
-  class CID_1 {
-    constructor(version, codec, multihash, multibaseName) {
-      this.version
-      this.codec
-      this.multihash
-
-      Object.defineProperty(this, symbol, { value: true })
-      if (CID_1.isCID(version)) {
-        const cid = /** @type {CID_1} */(version)
-        this.version = cid.version
-        this.codec = cid.codec
-        this.multihash = cid.multihash
-        this.multibaseName = cid.multibaseName || (cid.version === 0 ? 'base58btc' : 'base32')
-        return
-      }
-
-      if (typeof version === 'string') {
-        // e.g. 'base32' or false
-        const baseName = multibase.isEncoded(version)
-        if (baseName) {
-          // version is a CID String encoded with multibase, so v1
-          const cid = multibase.decode(version)
-          this.version = /** @type {CIDVersion} */(parseInt(cid[0].toString(), 16))
-          this.codec = multicodec.getCodec(cid.slice(1))
-          this.multihash = multicodec.rmPrefix(cid.slice(1))
-          this.multibaseName = baseName
-        } else {
-          // version is a base58btc string multihash, so v0
-          this.version = 0
-          this.codec = 'dag-pb'
-          this.multihash = mh.fromB58String(version)
-          this.multibaseName = 'base58btc'
-        }
-        CID_1.validateCID(this)
-        Object.defineProperty(this, 'string', { value: version })
-        return
-      }
-
-      if (version instanceof Uint8Array) {
-        const v = parseInt(version[0].toString(), 16)
-        if (v === 1) {
-          // version is a CID Uint8Array
-          const cid = version
-          this.version = v
-          this.codec = multicodec.getCodec(cid.slice(1))
-          this.multihash = multicodec.rmPrefix(cid.slice(1))
-          this.multibaseName = 'base32'
-        } else {
-          // version is a raw multihash Uint8Array, so v0
-          this.version = 0
-          this.codec = 'dag-pb'
-          this.multihash = version
-          this.multibaseName = 'base58btc'
-        }
-        CID_1.validateCID(this)
-        return
-      }
-
-      // otherwise, assemble the CID from the parameters
-
-      this.version = version
-
-      if (typeof codec === 'number') {
-        codec = codecInts[codec]
-      }
-
-      this.codec = /** @type {CodecName} */ (codec)
-      this.multihash = /** @type {Uint8Array} */ (multihash)
-      this.multibaseName = multibaseName || (version === 0 ? 'base58btc' : 'base32')
-
-      CID_1.validateCID(this)
-    }
-
-    get bytes() {
-      let bytes = this._bytes
-
-      if (!bytes) {
-        if (this.version === 0) {
-          bytes = this.multihash
-        } else if (this.version === 1) {
-          const codec = multicodec.getCodeVarint(this.codec)
-          bytes = uint8ArrayConcat([
-            [1], codec, this.multihash
-          ], 1 + codec.byteLength + this.multihash.byteLength)
-        } else {
-          throw new Error('unsupported version')
-        }
-        Object.defineProperty(this, '_bytes', { value: bytes })
-      }
-
-      return bytes
-    }
-
-    get prefix() {
-      const codec = multicodec.getCodeVarint(this.codec)
-      const multihash = mh.prefix(this.multihash)
-      const prefix = uint8ArrayConcat([
-        [this.version], codec, multihash
-      ], 1 + codec.byteLength + multihash.byteLength)
-
-      return prefix
-    }
-
-    get code() {
-      return codecs[this.codec]
-    }
-
-    toV0() {
-      if (this.codec !== 'dag-pb') {
-        throw new Error('Cannot convert a non dag-pb CID to CIDv0')
-      }
-
-      const { name, length } = mh.decode(this.multihash)
-
-      if (name !== 'sha2-256') {
-        throw new Error('Cannot convert non sha2-256 multihash CID to CIDv0')
-      }
-
-      if (length !== 32) {
-        throw new Error('Cannot convert non 32 byte multihash CID to CIDv0')
-      }
-
-      return new CID_1(0, this.codec, this.multihash)
-    }
-
-    toV1() {
-      return new CID_1(1, this.codec, this.multihash, this.multibaseName)
-    }
-
-    toBaseEncodedString(base = this.multibaseName) {
-      if (this.string && this.string.length !== 0 && base === this.multibaseName) {
-        return this.string
-      }
-      let str
-      if (this.version === 0) {
-        if (base !== 'base58btc') {
-          throw new Error('not supported with CIDv0, to support different bases, please migrate the instance do CIDv1, you can do that through cid.toV1()')
-        }
-        str = multihash.mh_toB58String(this.multihash)
-      } else if (this.version === 1) {
-        str = uint8ArrayToString(multibase_encode(base, this.bytes))
-      } else {
-        throw new Error('unsupported version')
-      }
-      if (base === this.multibaseName) {
-        // cache the string value
-        Object.defineProperty(this, 'string', { value: str })
-      }
-      return str
-    }
-
-    [Symbol.for('nodejs.util.inspect.custom')]() {
-      return 'CID_1(' + this.toString() + ')'
-    }
-
-    toString(base) {
-      return this.toBaseEncodedString(base)
-    }
-
-    toJSON() {
-      return {
-        codec: this.codec,
-        version: this.version,
-        hash: this.multihash
-      }
-    }
-
-    equals(other) {
-      return this.codec === other.codec &&
-        this.version === other.version &&
-        uint8ArrayEquals(this.multihash, other.multihash)
-    }
-
-    static validateCID(other) {
-      const errorMsg = CIDUtil.checkCIDComponents(other)
-      if (errorMsg) {
-        throw new Error(errorMsg)
-      }
-    }
-
-    static isCID(value) {
-      return value instanceof CID_1 || Boolean(value && value[symbol])
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/utils/persist.js#L10
-  const persist = async (buffer, block, options) => {
-    if (!options.codec) {
-      options.codec = 'dag-pb'
-    }
-
-    if (!options.cidVersion) {
-      options.cidVersion = 0
-    }
-
-    if (!options.hashAlg) {
-      options.hashAlg = 'sha2-256'
-    }
-
-    if (options.hashAlg !== 'sha2-256') {
-      options.cidVersion = 1
-    }
-
-    const multihash = await Multihashing(buffer, options.hashAlg) // buffer is [Uint8Array]
-    const cid = new CID_1(options.cidVersion, options.codec, multihash)
-
-    if (!options.onlyHash) {
-      await block.put(buffer, {
-        pin: options.pin,
-        preload: options.preload,
-        timeout: options.timeout,
-        cid
-      })
-    }
-
-    return cid
-  }
-
-  //https://github.com/Two-Screen/stable/blob/fff2be6088a96c9613e3799cb966c912c6d6fcb7/stable.js#L31
-  function exec(arr, comp) {
-    if (typeof (comp) !== 'function') {
-      comp = function (a, b) {
-        return String(a).localeCompare(b)
-      };
-    }
-    var len = arr.length;
-    if (len <= 1) {
-      return arr
-    }
-    var buffer = new Array(len);
-    for (var chk = 1; chk < len; chk *= 2) {
-      pass(arr, comp, chk, buffer);
-
-      var tmp = arr;
-      arr = buffer;
-      buffer = tmp;
-    }
-
-    return arr
-  }
-
-  //https://github.com/Two-Screen/stable/blob/fff2be6088a96c9613e3799cb966c912c6d6fcb7/stable.js#L60
-  var pass = function (arr, comp, chk, result) {
-    var len = arr.length;
-    var i = 0;
-    // Step size / double chunk size.
-    var dbl = chk * 2;
-    // Bounds of the left and right chunks.
-    var l, r, e;
-    // Iterators over the left and right chunk.
-    var li, ri;
-
-    // Iterate over pairs of chunks.
-    for (l = 0; l < len; l += dbl) {
-      r = l + chk;
-      e = r + chk;
-      if (r > len) r = len;
-      if (e > len) e = len;
-
-      // Iterate both chunks in parallel.
-      li = l;
-      ri = r;
-      while (true) {
-        // Compare the chunks.
-        if (li < r && ri < e) {
-          // This works for a regular `sort()` compatible comparator,
-          // but also for a simple comparator like: `a > b`
-          if (comp(arr[li], arr[ri]) <= 0) {
-            result[i++] = arr[li++];
-          }
-          else {
-            result[i++] = arr[ri++];
-          }
-        }
-        // Nothing to compare, just flush what's left.
-        else if (li < r) {
-          result[i++] = arr[li++];
-        }
-        else if (ri < e) {
-          result[i++] = arr[ri++];
-        }
-        // Both iterators are at the chunk ends.
-        else {
-          break
-        }
-      }
-    }
-  };
-
-  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag-node/sortLinks.js#L28
-  const sortLinks = (links) => {
-    const sort = stable;
-    sort.inplace(links, linkSort)
-  }
-
-  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/compare.js#L7
-  function uint8ArrayCompare(a, b) {
-    for (let i = 0; i < a.byteLength; i++) {
-      if (a[i] < b[i]) {
-        return -1
-      }
-
-      if (a[i] > b[i]) {
-        return 1
-      }
-    }
-
-    if (a.byteLength > b.byteLength) {
-      return 1
-    }
-
-    if (a.byteLength < b.byteLength) {
-      return -1
-    }
-
-    return 0
-  }
-
-  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag-node/sortLinks.js#L15
-  const linkSort = (a, b) => {
-    const buf1 = a.nameAsBuffer
-    const buf2 = b.nameAsBuffer
-
-    return uint8ArrayCompare(buf1, buf2)
-  }
-
-  //https://github.com/Two-Screen/stable/blob/fff2be6088a96c9613e3799cb966c912c6d6fcb7/stable.js#L13
-  var stable = function (arr, comp) {
-    return exec(arr.slice(), comp)
-  };
-
-  //https://github.com/Two-Screen/stable/blob/fff2be6088a96c9613e3799cb966c912c6d6fcb7/stable.js#L17
-  stable.inplace = function (arr, comp) {
-    var result = exec(arr, comp);
-
-    if (result !== arr) {
-      pass(result, null, arr.length, arr);
-    }
-
-    return arr
-  };
-
-  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/from-string.js#L18
-  function uint8ArrayFromString(string, encoding = 'utf8') {
-    const base = bases[encoding]
-
-    if (!base) {
-      throw new Error(`Unsupported encoding "${encoding}"`)
-    }
-
-    return base.decoder.decode(`${base.prefix}${string}`)
-  }
-
-  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag-link/dagLink.js#L9
-  class DAGLink {
-    constructor(name, size, cid) {
-      if (!cid) {
-        throw new Error('A link requires a cid to point to')
-      }
-      this.Name = name || ''
-      this.Tsize = size
-      this.Hash = new CID_1(cid)
-
-      Object.defineProperties(this, {
-        _nameBuf: { value: null, writable: true, enumerable: false }
-      })
-    }
-
-    toString() {
-      return `DAGLink <${this.Hash.toBaseEncodedString()} - name: "${this.Name}", size: ${this.Tsize}>`
-    }
-
-    toJSON() {
-      if (!this._json) {
-        this._json = Object.freeze({
-          name: this.Name,
-          size: this.Tsize,
-          cid: this.Hash.toBaseEncodedString()
-        })
-      }
-
-      return Object.assign({}, this._json)
-    }
-    get nameAsBuffer() {
-      if (this._nameBuf != null) {
-        return this._nameBuf
-      }
-
-      this._nameBuf = uint8ArrayFromString(this.Name)
-      return this._nameBuf
-    }
-  }
-
-  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag-node/dagNode.js#L18
-  class DAGNode {
-
-    constructor(data, links = [], serializedSize = null) {
-      if (!data) {
-        data = new Uint8Array(0)
-      }
-      if (typeof data === 'string') {
-        data = uint8ArrayFromString(data)
-      }
-
-      if (!(data instanceof Uint8Array)) {
-        throw new Error('Passed \'data\' is not a Uint8Array or a String!')
-      }
-
-      if (serializedSize !== null && typeof serializedSize !== 'number') {
-        throw new Error('Passed \'serializedSize\' must be a number!')
-      }
-
-      const sortedLinks = links.map((link) => {
-        return link instanceof DAGLink
-          ? link
-          : createDagLinkFromB58EncodedHash(link)
-      })
-      sortLinks(sortedLinks)
-
-      this.Data = data
-      this.Links = sortedLinks
-
-      Object.defineProperties(this, {
-        _serializedSize: { value: serializedSize, writable: true, enumerable: false },
-        _size: { value: null, writable: true, enumerable: false }
-      })
-    }
-
-    toJSON() {
-      if (!this._json) {
-        this._json = Object.freeze({
-          data: this.Data,
-          links: this.Links.map((l) => l.toJSON()),
-          size: this.size
-        })
-      }
-
-      return Object.assign({}, this._json)
-    }
-
-    toString() {
-      return `DAGNode <data: "${uint8ArrayToString(this.Data, 'base64urlpad')}", links: ${this.Links.length}, size: ${this.size}>`
-    }
-
-    _invalidateCached() {
-      this._serializedSize = null
-      this._size = null
-    }
-
-    /**
-     * @param {DAGLink | import('../types').DAGLinkLike} link
-     */
-    addLink(link) {
-      this._invalidateCached()
-      return addLink(this, link)
-    }
-
-    /**
-     * @param {DAGLink | string | CID} link
-     */
-    rmLink(link) {
-      this._invalidateCached()
-      return rmLink(this, link)
-    }
-
-    /**
-     * @param {import('./toDagLink').ToDagLinkOptions} [options]
-     */
-    toDAGLink(options) {
-      return toDAGLink(this, options)
-    }
-
-    serialize() {
-      const buf = serializeDAGNode(this)
-
-      this._serializedSize = buf.length
-
-      return buf
-    }
-
-    get size() {
-      if (this._size == null) {
-        let serializedSize
-
-        if (serializedSize == null) {
-          this._serializedSize = this.serialize().length
-          serializedSize = this._serializedSize
-        }
-
-        this._size = this.Links.reduce((sum, l) => sum + l.Tsize, serializedSize)
-      }
-
-      return this._size
-    }
-
-    set size(size) {
-      throw new Error("Can't set property: 'size' is immutable")
-    }
-  }
-
-  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/serialize.js#L23
-  const toProtoBuf = (node) => {
-    const pbn = {}
-
-    if (node.Data && node.Data.byteLength > 0) {
-      pbn.Data = node.Data
-    } else {
-      // NOTE: this has to be null in order to match go-ipfs serialization
-      // `null !== new Uint8Array(0)`
-      pbn.Data = null
-    }
-
-    if (node.Links && node.Links.length > 0) {
-      pbn.Links = node.Links
-        .map((link) => ({
-          Hash: link.Hash.bytes,
-          Name: link.Name,
-          Tsize: link.Tsize
-        }))
-    } else {
-      pbn.Links = null
-    }
-
-    return pbn
-  }
-
-  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/serialize.js#L53
-  const serializeDAGNode = (node) => {
-    return encode(toProtoBuf(node))
-  }
-
-  //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/writer.js#L374
-  Writer.prototype.bytes = function write_bytes(value) {
-    var len = value.length >>> 0;
-    if (!len)
-      return this._push(writeByte, 1, 0);
-    if (util_isString(value)) {
-      var buf = Writer.alloc(len = base64.length(value));
-      base64.decode(value, buf, 0);
-      value = buf;
-    }
-    return this.uint32(len)._push(writeBytes, len, value);
-  };
-
-  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/lib/utf8/index.js#L15
-  function utf8_length(string) {
-    var len = 0,
-      c = 0;
-    for (var i = 0; i < string.length; ++i) {
-      c = string.charCodeAt(i);
-      if (c < 128)
-        len += 1;
-      else if (c < 2048)
-        len += 2;
-      else if ((c & 0xFC00) === 0xD800 && (string.charCodeAt(i + 1) & 0xFC00) === 0xDC00) {
-        ++i;
-        len += 4;
-      } else
-        len += 3;
-    }
-    return len;
-  };
-
-  //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/writer.js#L391
-  Writer.prototype.string = function write_string(value) {
-    var len = utf8_length(value);
-    return len
-      ? this.uint32(len)._push(utf8.write, len, value)
-      : this._push(writeByte, 1, 0);
-  };
-
-  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag.js#L31
-  function PBLink(p) {
-    if (p)
-      for (var ks = Object.keys(p), i = 0; i < ks.length; ++i)
-        if (p[ks[i]] != null)
-          this[ks[i]] = p[ks[i]];
-  }
-
-  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag.js#L71
-  PBLink.encode = function encode(m, w) {
-    if (!w)
-      w = $Writer.create();
-    if (m.Hash != null && Object.hasOwnProperty.call(m, "Hash"))
-      w.uint32(10).bytes(m.Hash);
-    if (m.Name != null && Object.hasOwnProperty.call(m, "Name"))
-      w.uint32(18).string(m.Name);
-    if (m.Tsize != null && Object.hasOwnProperty.call(m, "Tsize"))
-      w.uint32(24).uint64(m.Tsize);
-    return w;
-  };
-
-  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L207
-  Writer.prototype.uint32 = function write_uint32(value) {
-    this.len += (this.tail = this.tail.next = new VarintOp(
-      (value = value >>> 0)
-        < 128 ? 1
-        : value < 16384 ? 2
-          : value < 2097152 ? 3
-            : value < 268435456 ? 4
-              : 5,
-      value)).len;
-    return this;
-  };
-
-  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L59
-  function State(writer) {
-    this.head = writer.head;
-    this.tail = writer.tail;
-    this.len = writer.len;
-    this.next = writer.states;
-  }
-
-  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L403
-  Writer.prototype.fork = function fork() {
-    this.states = new State(this);
-    this.head = this.tail = new Op(noop, 0, 0);
-    this.len = 0;
-    return this;
-  };
-
-  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L414
-  Writer.prototype.reset = function reset() {
-    if (this.states) {
-      this.head = this.states.head;
-      this.tail = this.states.tail;
-      this.len = this.states.len;
-      this.states = this.states.next;
-    } else {
-      this.head = this.tail = new Op(noop, 0, 0);
-      this.len = 0;
-    }
-    return this;
-  };
-
-  //https://github.com/protobufjs/protobuf.js/blob/48457c47372c39e07a8ecf1360f80de7f263ab2e/src/writer.js#L431
-  Writer.prototype.ldelim = function ldelim() {
-    var head = this.head,
-      tail = this.tail,
-      len = this.len;
-    this.reset().uint32(len);
-    if (len) {
-      this.tail.next = head.next; // skip noop
-      this.tail = tail;
-      this.len += len;
-    }
-    return this;
-  };
-
-  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/serialize.js#L87
-  function encode(pbf) {
-    const writer = Writer.create()
-
-    if (pbf.Links != null) {
-      for (let i = 0; i < pbf.Links.length; i++) {
-        PBLink.encode(pbf.Links[i], writer.uint32(18).fork()).ldelim()
-      }
-    }
-
-    if (pbf.Data != null) {
-      writer.uint32(10).bytes(pbf.Data)
-    }
-
-    return writer.finish()
-  }
-
   //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/dag-builder/dir.js#L12
   const dirBuilder = async (item, block, options) => {
     const unixfs = new UnixFS({
@@ -4098,17 +1893,6 @@
     }
 
     return roots[0]
-  }
-
-  //https://github.com/achingbrain/it/blob/c74ff5ff0d1b4164cd2f556f1b431d77ad47dd16/packages/it-all/index.js#L9
-  const all = async (source) => {
-    const arr = []
-
-    for await (const entry of source) {
-      arr.push(entry)
-    }
-
-    return arr
   }
 
   const dagBuilders = {
@@ -4561,50 +2345,6 @@
     }
   }
 
-  //https://github.com/achingbrain/it/blob/c74ff5ff0d1b4164cd2f556f1b431d77ad47dd16/packages/it-batch/index.js#L12
-  async function* batch(source, size = 1) {
-    let things = []
-
-    if (size < 1) {
-      size = 1
-    }
-
-    for await (const thing of source) {
-      things.push(thing)
-
-      while (things.length >= size) {
-        yield things.slice(0, size)
-
-        things = things.slice(size)
-      }
-    }
-
-    while (things.length) {
-      yield things.slice(0, size)
-
-      things = things.slice(size)
-    }
-  }
-
-  //https://github.com/achingbrain/it-parallel-batch/blob/2a7f2c29b44be057c0862d4864856fcc66466d57/packages/it-parallel-batch/index.js#L5
-  async function* parallelBatch(source, size = 1) {
-    for await (const tasks of batch(source, size)) {
-      const things = tasks.map(
-        p => {
-          return p().then(value => ({ ok: true, value }), err => ({ ok: false, err }))
-        })
-
-      for (let i = 0; i < things.length; i++) {
-        const result = await things[i]
-        if (result.ok) {
-          yield result.value
-        } else {
-          throw result.err
-        }
-      }
-    }
-  }
-
   //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dir.js#L20
   class Dir {
     constructor(props, options) {
@@ -4755,6 +2495,2332 @@
     hamtBucketBits: 8
   }
 
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (c) 2020-2021 Yusuke Kawasaki
+  *  Licensed under the MIT License.
+  *  https://github.com/kawanet/sha256-uint8array/blob/main/LICENSE
+  *--------------------------------------------------------------------------------------------*/
+  //https://github.com/kawanet/sha256-uint8array/blob/52e8f1b891c84fcb436f0f2e1103527d3a6465ea/lib/sha256-uint8array.ts#L36
+  const algorithms = {
+    sha256: 1,
+  };
+
+  //https://github.com/kawanet/sha256-uint8array/blob/52e8f1b891c84fcb436f0f2e1103527d3a6465ea/lib/sha256-uint8array.ts#L40
+  function createHash(algorithm) {
+    if (algorithm && !algorithms[algorithm] && !algorithms[algorithm.toLowerCase()]) {
+      throw new Error("Digest method not supported");
+    }
+    return new Hash();
+  }
+
+  //https://github.com/kawanet/sha256-uint8array/blob/52e8f1b891c84fcb436f0f2e1103527d3a6465ea/lib/sha256-uint8array.ts#L6
+  const K = [
+    0x428a2f98 | 0, 0x71374491 | 0, 0xb5c0fbcf | 0, 0xe9b5dba5 | 0,
+    0x3956c25b | 0, 0x59f111f1 | 0, 0x923f82a4 | 0, 0xab1c5ed5 | 0,
+    0xd807aa98 | 0, 0x12835b01 | 0, 0x243185be | 0, 0x550c7dc3 | 0,
+    0x72be5d74 | 0, 0x80deb1fe | 0, 0x9bdc06a7 | 0, 0xc19bf174 | 0,
+    0xe49b69c1 | 0, 0xefbe4786 | 0, 0x0fc19dc6 | 0, 0x240ca1cc | 0,
+    0x2de92c6f | 0, 0x4a7484aa | 0, 0x5cb0a9dc | 0, 0x76f988da | 0,
+    0x983e5152 | 0, 0xa831c66d | 0, 0xb00327c8 | 0, 0xbf597fc7 | 0,
+    0xc6e00bf3 | 0, 0xd5a79147 | 0, 0x06ca6351 | 0, 0x14292967 | 0,
+    0x27b70a85 | 0, 0x2e1b2138 | 0, 0x4d2c6dfc | 0, 0x53380d13 | 0,
+    0x650a7354 | 0, 0x766a0abb | 0, 0x81c2c92e | 0, 0x92722c85 | 0,
+    0xa2bfe8a1 | 0, 0xa81a664b | 0, 0xc24b8b70 | 0, 0xc76c51a3 | 0,
+    0xd192e819 | 0, 0xd6990624 | 0, 0xf40e3585 | 0, 0x106aa070 | 0,
+    0x19a4c116 | 0, 0x1e376c08 | 0, 0x2748774c | 0, 0x34b0bcb5 | 0,
+    0x391c0cb3 | 0, 0x4ed8aa4a | 0, 0x5b9cca4f | 0, 0x682e6ff3 | 0,
+    0x748f82ee | 0, 0x78a5636f | 0, 0x84c87814 | 0, 0x8cc70208 | 0,
+    0x90befffa | 0, 0xa4506ceb | 0, 0xbef9a3f7 | 0, 0xc67178f2 | 0,
+  ];
+
+  //https://github.com/kawanet/sha256-uint8array/blob/52e8f1b891c84fcb436f0f2e1103527d3a6465ea/lib/sha256-uint8array.ts#L48
+  class Hash {
+    constructor() {
+      // first 32 bits of the fractional parts of the square roots of the first 8 primes 2..19
+      this.A = 0x6a09e667 | 0;
+      this.B = 0xbb67ae85 | 0;
+      this.C = 0x3c6ef372 | 0;
+      this.D = 0xa54ff53a | 0;
+      this.E = 0x510e527f | 0;
+      this.F = 0x9b05688c | 0;
+      this.G = 0x1f83d9ab | 0;
+      this.H = 0x5be0cd19 | 0;
+      this._size = 0;
+      this._sp = 0; // surrogate pair
+      if (!sharedBuffer || sharedOffset >= 8000 /* allocTotal */) {
+        sharedBuffer = new ArrayBuffer(8000 /* allocTotal */);
+        sharedOffset = 0;
+      }
+      this._byte = new Uint8Array(sharedBuffer, sharedOffset, 80 /* allocBytes */);
+      this._word = new Int32Array(sharedBuffer, sharedOffset, 20 /* allocWords */);
+      sharedOffset += 80 /* allocBytes */;
+    }
+    update(data) {
+      // data: string
+      if ("string" === typeof data) {
+        return this._utf8(data);
+      }
+      // data: undefined
+      if (data == null) {
+        throw new TypeError("Invalid type: " + typeof data);
+      }
+      const byteOffset = data.byteOffset;
+      const length = data.byteLength;
+      let blocks = (length / 64 /* inputBytes */) | 0;
+      let offset = 0;
+      // longer than 1 block
+      if (blocks && !(byteOffset & 3) && !(this._size % 64 /* inputBytes */)) {
+        const block = new Int32Array(data.buffer, byteOffset, blocks * 16 /* inputWords */);
+        while (blocks--) {
+          this._int32(block, offset >> 2);
+          offset += 64 /* inputBytes */;
+        }
+        this._size += offset;
+      }
+      // data: TypedArray | DataView
+      const BYTES_PER_ELEMENT = data.BYTES_PER_ELEMENT;
+      if (BYTES_PER_ELEMENT !== 1 && data.buffer) {
+        const rest = new Uint8Array(data.buffer, byteOffset + offset, length - offset);
+        return this._uint8(rest);
+      }
+      // no more bytes
+      if (offset === length)
+        return this;
+      // data: Uint8Array | Int8Array
+      return this._uint8(data, offset);
+    }
+    _uint8(data, offset) {
+      const { _byte, _word } = this;
+      const length = data.length;
+      offset = offset | 0;
+      while (offset < length) {
+        const start = this._size % 64 /* inputBytes */;
+        let index = start;
+        while (offset < length && index < 64 /* inputBytes */) {
+          _byte[index++] = data[offset++];
+        }
+        if (index >= 64 /* inputBytes */) {
+          this._int32(_word);
+        }
+        this._size += index - start;
+      }
+      return this;
+    }
+    _utf8(text) {
+      const { _byte, _word } = this;
+      const length = text.length;
+      let surrogate = this._sp;
+      for (let offset = 0; offset < length;) {
+        const start = this._size % 64 /* inputBytes */;
+        let index = start;
+        while (offset < length && index < 64 /* inputBytes */) {
+          let code = text.charCodeAt(offset++) | 0;
+          if (code < 0x80) {
+            // ASCII characters
+            _byte[index++] = code;
+          }
+          else if (code < 0x800) {
+            // 2 bytes
+            _byte[index++] = 0xC0 | (code >>> 6);
+            _byte[index++] = 0x80 | (code & 0x3F);
+          }
+          else if (code < 0xD800 || code > 0xDFFF) {
+            // 3 bytes
+            _byte[index++] = 0xE0 | (code >>> 12);
+            _byte[index++] = 0x80 | ((code >>> 6) & 0x3F);
+            _byte[index++] = 0x80 | (code & 0x3F);
+          }
+          else if (surrogate) {
+            // 4 bytes - surrogate pair
+            code = ((surrogate & 0x3FF) << 10) + (code & 0x3FF) + 0x10000;
+            _byte[index++] = 0xF0 | (code >>> 18);
+            _byte[index++] = 0x80 | ((code >>> 12) & 0x3F);
+            _byte[index++] = 0x80 | ((code >>> 6) & 0x3F);
+            _byte[index++] = 0x80 | (code & 0x3F);
+            surrogate = 0;
+          }
+          else {
+            surrogate = code;
+          }
+        }
+        if (index >= 64 /* inputBytes */) {
+          this._int32(_word);
+          _word[0] = _word[16 /* inputWords */];
+        }
+        this._size += index - start;
+      }
+      this._sp = surrogate;
+      return this;
+    }
+    _int32(data, offset) {
+      let { A, B, C, D, E, F, G, H } = this;
+      let i = 0;
+      offset = offset | 0;
+      while (i < 16 /* inputWords */) {
+        W[i++] = swap32(data[offset++]);
+      }
+      for (i = 16 /* inputWords */; i < 64 /* workWords */; i++) {
+        W[i] = (gamma1(W[i - 2]) + W[i - 7] + gamma0(W[i - 15]) + W[i - 16]) | 0;
+      }
+      for (i = 0; i < 64 /* workWords */; i++) {
+        const T1 = (H + sigma1(E) + ch(E, F, G) + K[i] + W[i]) | 0;
+        const T2 = (sigma0(A) + maj(A, B, C)) | 0;
+        H = G;
+        G = F;
+        F = E;
+        E = (D + T1) | 0;
+        D = C;
+        C = B;
+        B = A;
+        A = (T1 + T2) | 0;
+      }
+      this.A = (A + this.A) | 0;
+      this.B = (B + this.B) | 0;
+      this.C = (C + this.C) | 0;
+      this.D = (D + this.D) | 0;
+      this.E = (E + this.E) | 0;
+      this.F = (F + this.F) | 0;
+      this.G = (G + this.G) | 0;
+      this.H = (H + this.H) | 0;
+    }
+    digest(encoding) {
+      const { _byte, _word } = this;
+      let i = (this._size % 64 /* inputBytes */) | 0;
+      _byte[i++] = 0x80;
+      // pad 0 for current word
+      while (i & 3) {
+        _byte[i++] = 0;
+      }
+      i >>= 2;
+      if (i > 14 /* highIndex */) {
+        while (i < 16 /* inputWords */) {
+          _word[i++] = 0;
+        }
+        i = 0;
+        this._int32(_word);
+      }
+      // pad 0 for rest words
+      while (i < 16 /* inputWords */) {
+        _word[i++] = 0;
+      }
+      // input size
+      const bits64 = this._size * 8;
+      const low32 = (bits64 & 0xffffffff) >>> 0;
+      const high32 = (bits64 - low32) / 0x100000000;
+      if (high32)
+        _word[14 /* highIndex */] = swap32(high32);
+      if (low32)
+        _word[15 /* lowIndex */] = swap32(low32);
+      this._int32(_word);
+      return (encoding === "hex") ? this._hex() : this._bin();
+    }
+    _hex() {
+      const { A, B, C, D, E, F, G, H } = this;
+      return hex32(A) + hex32(B) + hex32(C) + hex32(D) + hex32(E) + hex32(F) + hex32(G) + hex32(H);
+    }
+    _bin() {
+      const { A, B, C, D, E, F, G, H, _byte, _word } = this;
+      _word[0] = swap32(A);
+      _word[1] = swap32(B);
+      _word[2] = swap32(C);
+      _word[3] = swap32(D);
+      _word[4] = swap32(E);
+      _word[5] = swap32(F);
+      _word[6] = swap32(G);
+      _word[7] = swap32(H);
+      return _byte.slice(0, 32);
+    }
+  }
+
+  //https://github.com/kawanet/sha256-uint8array/blob/52e8f1b891c84fcb436f0f2e1103527d3a6465ea/lib/sha256-uint8array.ts#L290
+  const W = new Int32Array(64 /* workWords */);
+  let sharedBuffer;
+  let sharedOffset = 0;
+  const hex32 = num => (num + 0x100000000).toString(16).substr(-8);
+  const swapLE = (c => (((c << 24) & 0xff000000) | ((c << 8) & 0xff0000) | ((c >> 8) & 0xff00) | ((c >> 24) & 0xff)));
+  const swapBE = (c => c);
+  const swap32 = isBE() ? swapBE : swapLE;
+  const ch = (x, y, z) => (z ^ (x & (y ^ z)));
+  const maj = (x, y, z) => ((x & y) | (z & (x | y)));
+  const sigma0 = x => ((x >>> 2 | x << 30) ^ (x >>> 13 | x << 19) ^ (x >>> 22 | x << 10));
+  const sigma1 = x => ((x >>> 6 | x << 26) ^ (x >>> 11 | x << 21) ^ (x >>> 25 | x << 7));
+  const gamma0 = x => ((x >>> 7 | x << 25) ^ (x >>> 18 | x << 14) ^ (x >>> 3));
+  const gamma1 = x => ((x >>> 17 | x << 15) ^ (x >>> 19 | x << 13) ^ (x >>> 10));
+
+  //https://github.com/kawanet/sha256-uint8array/blob/52e8f1b891c84fcb436f0f2e1103527d3a6465ea/lib/sha256-uint8array.ts#L308
+  function isBE() {
+    const buf = new Uint8Array(new Uint16Array([0xFEFF]).buffer); // BOM
+    return (buf[0] === 0xFE);
+  }
+
+  var MSB = 0x80
+    , REST = 0x7F
+    , MSBALL = ~REST
+    , INT = Math.pow(2, 31);
+
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright 2016-2020 Protocol Labs
+  *  Licensed under the MIT License.
+  *  https://github.com/ipld/js-dag-pb/blob/master/LICENSE-MIT
+  *--------------------------------------------------------------------------------------------*/
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/util.js#L8
+  const pbNodeProperties = ['Data', 'Links']
+  const pbLinkProperties = ['Hash', 'Name', 'Tsize']
+
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L1
+  const textEncoder = new TextEncoder()
+  const maxInt32 = 2 ** 32
+  const maxUInt32 = 2 ** 31
+
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L197
+  const len8tab = [
+    0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
+  ]
+
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L23
+  function encodeLink(link, bytes) {
+    let i = bytes.length
+
+    if (typeof link.Tsize === 'number') {
+      if (link.Tsize < 0) {
+        throw new Error('Tsize cannot be negative')
+      }
+      if (!Number.isSafeInteger(link.Tsize)) {
+        throw new Error('Tsize too large for encoding')
+      }
+      i = encodeVarint(bytes, i, link.Tsize) - 1
+      bytes[i] = 0x18
+    }
+
+    if (typeof link.Name === 'string') {
+      const nameBytes = textEncoder.encode(link.Name)
+      i -= nameBytes.length
+      bytes.set(nameBytes, i)
+      i = encodeVarint(bytes, i, nameBytes.length) - 1
+      bytes[i] = 0x12
+    }
+
+    if (link.Hash) {
+      i -= link.Hash.length
+      bytes.set(link.Hash, i)
+      i = encodeVarint(bytes, i, link.Hash.length) - 1
+      bytes[i] = 0xa
+    }
+
+    return bytes.length - i
+  }
+
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L91
+  function sizeLink(link) {
+    let n = 0
+
+    if (link.Hash) {
+      const l = link.Hash.length
+      n += 1 + l + sov(l)
+    }
+
+    if (typeof link.Name === 'string') {
+      const l = textEncoder.encode(link.Name).length
+      n += 1 + l + sov(l)
+    }
+
+    if (typeof link.Tsize === 'number') {
+      n += 1 + sov(link.Tsize)
+    }
+
+    return n
+  }
+
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L179
+  function len64(x) {
+    let n = 0
+    if (x >= maxInt32) {
+      x = Math.floor(x / maxInt32)
+      n = 32
+    }
+    if (x >= (1 << 16)) {
+      x >>>= 16
+      n += 16
+    }
+    if (x >= (1 << 8)) {
+      x >>>= 8
+      n += 8
+    }
+    return n + len8tab[x]
+  }
+
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L166
+  function sov(x) {
+    if (x % 2 === 0) {
+      x++
+    }
+    return Math.floor((len64(x) + 6) / 7)
+  }
+
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L141
+  function encodeVarint(bytes, offset, v) {
+    offset -= sov(v)
+    const base = offset
+
+    while (v >= maxUInt32) {
+      bytes[offset++] = (v & 0x7f) | 0x80
+      v /= 128
+    }
+
+    while (v >= 128) {
+      bytes[offset++] = (v & 0x7f) | 0x80
+      v >>>= 7
+    }
+
+    bytes[offset] = v
+
+    return base
+  }
+
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L141
+  function sizeNode(node) {
+    let n = 0
+
+    if (node.Data) {
+      const l = node.Data.length
+      n += 1 + l + sov(l)
+    }
+
+    if (node.Links) {
+      for (const link of node.Links) {
+        const l = sizeLink(link)
+        n += 1 + l + sov(l)
+      }
+    }
+
+    return n
+  }
+
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L61
+  function encodeNode(node) {
+    const size = sizeNode(node)
+    const bytes = new Uint8Array(size)
+    let i = size
+
+    if (node.Data) {
+      i -= node.Data.length
+      bytes.set(node.Data, i)
+      i = encodeVarint(bytes, i, node.Data.length) - 1
+      bytes[i] = 0xa
+    }
+
+    if (node.Links) {
+      for (let index = node.Links.length - 1; index >= 0; index--) {
+        const size = encodeLink(node.Links[index], bytes.subarray(0, i))
+        i -= size
+        i = encodeVarint(bytes, i, size) - 1
+        bytes[i] = 0x12
+      }
+    }
+
+    return bytes
+  }
+
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/util.js#L18
+  function linkComparator(a, b) {
+    if (a === b) {
+      return 0
+    }
+
+    const abuf = a.Name ? textEncoder.encode(a.Name) : []
+    const bbuf = b.Name ? textEncoder.encode(b.Name) : []
+
+    let x = abuf.length
+    let y = bbuf.length
+
+    for (let i = 0, len = Math.min(x, y); i < len; ++i) {
+      if (abuf[i] !== bbuf[i]) {
+        x = abuf[i]
+        y = bbuf[i]
+        break
+      }
+    }
+
+    return x < y ? -1 : y < x ? 1 : 0
+  }
+
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/util.js#L45
+  function hasOnlyProperties(node, properties) {
+    return !Object.keys(node).some((p) => !properties.includes(p))
+  }
+
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/util.js#L147
+  function validate(node) {
+
+    if (!node || typeof node !== 'object' || Array.isArray(node)) {
+      throw new TypeError('Invalid DAG-PB form')
+    }
+
+    if (!hasOnlyProperties(node, pbNodeProperties)) {
+      throw new TypeError('Invalid DAG-PB form (extraneous properties)')
+    }
+
+    if (node.Data !== undefined && !(node.Data instanceof Uint8Array)) {
+      throw new TypeError('Invalid DAG-PB form (Data must be a Uint8Array)')
+    }
+
+    if (!Array.isArray(node.Links)) {
+      throw new TypeError('Invalid DAG-PB form (Links must be an array)')
+    }
+
+    for (let i = 0; i < node.Links.length; i++) {
+      const link = node.Links[i]
+      if (!link || typeof link !== 'object' || Array.isArray(link)) {
+        throw new TypeError('Invalid DAG-PB form (bad link object)')
+      }
+
+      if (!hasOnlyProperties(link, pbLinkProperties)) {
+        throw new TypeError('Invalid DAG-PB form (extraneous properties on link object)')
+      }
+
+      if (!link.Hash) {
+        throw new TypeError('Invalid DAG-PB form (link must have a Hash)')
+      }
+
+      if (link.Hash.asCID !== link.Hash) {
+        throw new TypeError('Invalid DAG-PB form (link Hash must be a CID)')
+      }
+
+      if (link.Name !== undefined && typeof link.Name !== 'string') {
+        throw new TypeError('Invalid DAG-PB form (link Name must be a string)')
+      }
+
+      if (link.Tsize !== undefined && (typeof link.Tsize !== 'number' || link.Tsize % 1 !== 0)) {
+        throw new TypeError('Invalid DAG-PB form (link Tsize must be an integer)')
+      }
+
+      if (i > 0 && linkComparator(link, node.Links[i - 1]) === -1) {
+        throw new TypeError('Invalid DAG-PB form (links must be sorted by Name bytes)')
+      }
+    }
+  }
+
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/index.js#L23
+  var d_encode = (node) => {
+    validate(node)
+    const pbn = {}
+    if (node.Links) {
+      pbn.Links = node.Links.map((l) => {
+        const link = {}
+        if (l.Hash) {
+          link.Hash = l.Hash.bytes // cid -> bytes
+        }
+        if (l.Name !== undefined) {
+          link.Name = l.Name
+        }
+        if (l.Tsize !== undefined) {
+          link.Tsize = l.Tsize
+        }
+        return link
+      })
+    }
+    if (node.Data) {
+      pbn.Data = node.Data
+    }
+
+    return encodeNode(pbn)
+  }
+
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (c) 2020-2021 Yusuke Kawasaki
+  *  Licensed under the MIT License.
+  *  https://github.com/ipld/js-ipld-dag-pb/blob/master/LICENSE.md
+  *--------------------------------------------------------------------------------------------*/
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag-node/sortLinks.js#L28
+  const sortLinks = (links) => {
+    const sort = stable;
+    sort.inplace(links, linkSort)
+  }
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag-node/sortLinks.js#L15
+  const linkSort = (a, b) => {
+    const buf1 = a.nameAsBuffer
+    const buf2 = b.nameAsBuffer
+
+    return uint8ArrayCompare(buf1, buf2)
+  }
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag-link/dagLink.js#L9
+  class DAGLink {
+    constructor(name, size, cid) {
+      if (!cid) {
+        throw new Error('A link requires a cid to point to')
+      }
+      this.Name = name || ''
+      this.Tsize = size
+      this.Hash = new CID_1(cid)
+
+      Object.defineProperties(this, {
+        _nameBuf: { value: null, writable: true, enumerable: false }
+      })
+    }
+
+    toString() {
+      return `DAGLink <${this.Hash.toBaseEncodedString()} - name: "${this.Name}", size: ${this.Tsize}>`
+    }
+
+    toJSON() {
+      if (!this._json) {
+        this._json = Object.freeze({
+          name: this.Name,
+          size: this.Tsize,
+          cid: this.Hash.toBaseEncodedString()
+        })
+      }
+
+      return Object.assign({}, this._json)
+    }
+    get nameAsBuffer() {
+      if (this._nameBuf != null) {
+        return this._nameBuf
+      }
+
+      this._nameBuf = uint8ArrayFromString(this.Name)
+      return this._nameBuf
+    }
+  }
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag-node/dagNode.js#L18
+  class DAGNode {
+
+    constructor(data, links = [], serializedSize = null) {
+      if (!data) {
+        data = new Uint8Array(0)
+      }
+      if (typeof data === 'string') {
+        data = uint8ArrayFromString(data)
+      }
+
+      if (!(data instanceof Uint8Array)) {
+        throw new Error('Passed \'data\' is not a Uint8Array or a String!')
+      }
+
+      if (serializedSize !== null && typeof serializedSize !== 'number') {
+        throw new Error('Passed \'serializedSize\' must be a number!')
+      }
+
+      const sortedLinks = links.map((link) => {
+        return link instanceof DAGLink
+          ? link
+          : createDagLinkFromB58EncodedHash(link)
+      })
+      sortLinks(sortedLinks)
+
+      this.Data = data
+      this.Links = sortedLinks
+
+      Object.defineProperties(this, {
+        _serializedSize: { value: serializedSize, writable: true, enumerable: false },
+        _size: { value: null, writable: true, enumerable: false }
+      })
+    }
+
+    toJSON() {
+      if (!this._json) {
+        this._json = Object.freeze({
+          data: this.Data,
+          links: this.Links.map((l) => l.toJSON()),
+          size: this.size
+        })
+      }
+
+      return Object.assign({}, this._json)
+    }
+
+    toString() {
+      return `DAGNode <data: "${uint8ArrayToString(this.Data, 'base64urlpad')}", links: ${this.Links.length}, size: ${this.size}>`
+    }
+
+    _invalidateCached() {
+      this._serializedSize = null
+      this._size = null
+    }
+
+    /**
+     * @param {DAGLink | import('../types').DAGLinkLike} link
+     */
+    addLink(link) {
+      this._invalidateCached()
+      return addLink(this, link)
+    }
+
+    /**
+     * @param {DAGLink | string | CID} link
+     */
+    rmLink(link) {
+      this._invalidateCached()
+      return rmLink(this, link)
+    }
+
+    /**
+     * @param {import('./toDagLink').ToDagLinkOptions} [options]
+     */
+    toDAGLink(options) {
+      return toDAGLink(this, options)
+    }
+
+    serialize() {
+      const buf = serializeDAGNode(this)
+
+      this._serializedSize = buf.length
+
+      return buf
+    }
+
+    get size() {
+      if (this._size == null) {
+        let serializedSize
+
+        if (serializedSize == null) {
+          this._serializedSize = this.serialize().length
+          serializedSize = this._serializedSize
+        }
+
+        this._size = this.Links.reduce((sum, l) => sum + l.Tsize, serializedSize)
+      }
+
+      return this._size
+    }
+
+    set size(size) {
+      throw new Error("Can't set property: 'size' is immutable")
+    }
+  }
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/serialize.js#L23
+  const toProtoBuf = (node) => {
+    const pbn = {}
+
+    if (node.Data && node.Data.byteLength > 0) {
+      pbn.Data = node.Data
+    } else {
+      // NOTE: this has to be null in order to match go-ipfs serialization
+      // `null !== new Uint8Array(0)`
+      pbn.Data = null
+    }
+
+    if (node.Links && node.Links.length > 0) {
+      pbn.Links = node.Links
+        .map((link) => ({
+          Hash: link.Hash.bytes,
+          Name: link.Name,
+          Tsize: link.Tsize
+        }))
+    } else {
+      pbn.Links = null
+    }
+
+    return pbn
+  }
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/serialize.js#L53
+  const serializeDAGNode = (node) => {
+    return encode(toProtoBuf(node))
+  }
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag.js#L31
+  function PBLink(p) {
+    if (p)
+      for (var ks = Object.keys(p), i = 0; i < ks.length; ++i)
+        if (p[ks[i]] != null)
+          this[ks[i]] = p[ks[i]];
+  }
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/dag.js#L71
+  PBLink.encode = function encode(m, w) {
+    if (!w)
+      w = $Writer.create();
+    if (m.Hash != null && Object.hasOwnProperty.call(m, "Hash"))
+      w.uint32(10).bytes(m.Hash);
+    if (m.Name != null && Object.hasOwnProperty.call(m, "Name"))
+      w.uint32(18).string(m.Name);
+    if (m.Tsize != null && Object.hasOwnProperty.call(m, "Tsize"))
+      w.uint32(24).uint64(m.Tsize);
+    return w;
+  };
+
+  //https://github.com/ipld/js-ipld-dag-pb/blob/6b0e011b7917611386cff392d56bfd81c8cacf8c/src/serialize.js#L87
+  function encode(pbf) {
+    const writer = Writer.create()
+
+    if (pbf.Links != null) {
+      for (let i = 0; i < pbf.Links.length; i++) {
+        PBLink.encode(pbf.Links[i], writer.uint32(18).fork()).ldelim()
+      }
+    }
+
+    if (pbf.Data != null) {
+      writer.uint32(10).bytes(pbf.Data)
+    }
+
+    return writer.finish()
+  }
+
+  const hashItems = async (items, version) => {
+    const opts = mergeOptions(defaultOptions, { cidVersion: 1, onlyHash: true, rawLeaves: true, maxChunkSize: 1048576 })
+    if (version == undefined)
+      version = 1;
+    let Links = [];
+    for (let i = 0; i < items.length; i++) {
+      let item = items[i];
+      Links.push({
+        Name: item.name,
+        Hash: parse(item.cid),
+        Tsize: item.size
+      })
+    };
+
+    try {
+      const dirUnixFS = new UnixFS({
+        type: 'directory',
+        mtime: undefined,
+        mode: 493
+      });
+      const node = {
+        Data: dirUnixFS.marshal(),
+        Links
+      };
+      // const buffer = d_encode(node);
+
+      // const cid = await persist(buffer, {
+      //   get: async cid => { throw new Error(`unexpected block API get for ${cid}`) },
+      //   put: async () => { }
+      // }, opts);
+      // console.dir(opts);
+      // return {
+      //   size: 0,//bytes.length + Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0),
+      //   cid: cid.toString()
+      // }
+      const bytes = d_encode(node);
+      const hash = await s_sha256.digest(bytes);
+      const dagPB_code = 0x70;
+      // const cid = CID.create(version, RAW_CODE, hash);
+      const cid = CID.create(version, dagPB_code, hash);
+      return {
+        size: bytes.length + Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0),
+        cid: cid.toString()
+      }
+    } catch (e) {
+      throw e;
+    }
+  };
+  const hashContent = async (value, version) => {
+    try {
+      if (version == undefined)
+        version = 1;
+      if (typeof (value) == 'string')
+        value = new TextEncoder("utf-8").encode(value);
+
+      var cid;
+      if (version == 0) {
+        const unixFS = new UnixFS({
+          type: 'file',
+          data: value
+        })
+        const bytes = d_encode({
+          Data: unixFS.marshal(),
+          Links: []
+        })
+        const hash = await s_sha256.digest(bytes);
+        cid = CID.create(version, DAG_PB_CODE, hash);
+      }
+      else {
+        const hash = await s_sha256.digest(value);
+        if (value.length <= 1048576) //1 MB
+          cid = CID.create(version, RAW_CODE, hash)
+        else
+          cid = CID.create(version, DAG_PB_CODE, hash)
+      }
+      return cid.toString();
+    }
+    catch (e) {
+      throw e;
+    }
+  };
+  const parse = function (cid) {
+    return CID.parse(cid)
+  };
+
+  // new code start from here
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (c) 2020 Protocol Labs
+  *  Licensed under the MIT License.
+  *  https://github.com/rvagg/bl/blob/master/LICENSE.md
+  *--------------------------------------------------------------------------------------------*/
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L4
+  const symbol = Symbol.for('BufferList')
+  function BufferList(buf) {
+    if (!(this instanceof BufferList)) {
+      return new BufferList(buf)
+    }
+
+    BufferList._init.call(this, buf)
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L14
+  BufferList._init = function _init(buf) {
+    Object.defineProperty(this, symbol, { value: true })
+
+    this._bufs = []
+    this.length = 0
+
+    if (buf) {
+      this.append(buf)
+    }
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L25
+  BufferList.prototype._new = function _new(buf) {
+    return new BufferList(buf)
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L29
+  BufferList.prototype._offset = function _offset(offset) {
+    if (offset === 0) {
+      return [0, 0]
+    }
+
+    let tot = 0
+
+    for (let i = 0; i < this._bufs.length; i++) {
+      const _t = tot + this._bufs[i].length
+      if (offset < _t || i === this._bufs.length - 1) {
+        return [i, offset - tot]
+      }
+      tot = _t
+    }
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L45
+  BufferList.prototype._reverseOffset = function (blOffset) {
+    const bufferId = blOffset[0]
+    let offset = blOffset[1]
+
+    for (let i = 0; i < bufferId; i++) {
+      offset += this._bufs[i].length
+    }
+
+    return offset
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L56
+  BufferList.prototype.get = function get(index) {
+    if (index > this.length || index < 0) {
+      return undefined
+    }
+
+    const offset = this._offset(index)
+
+    return this._bufs[offset[0]][offset[1]]
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L66
+  BufferList.prototype.slice = function slice(start, end) {
+    if (typeof start === 'number' && start < 0) {
+      start += this.length
+    }
+
+    if (typeof end === 'number' && end < 0) {
+      end += this.length
+    }
+
+    return this.copy(null, 0, start, end)
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L78
+  BufferList.prototype.copy = function copy(dst, dstStart, srcStart, srcEnd) {
+    if (typeof srcStart !== 'number' || srcStart < 0) {
+      srcStart = 0
+    }
+
+    if (typeof srcEnd !== 'number' || srcEnd > this.length) {
+      srcEnd = this.length
+    }
+
+    if (srcStart >= this.length) {
+      return dst || Buffer.alloc(0)
+    }
+
+    if (srcEnd <= 0) {
+      return dst || Buffer.alloc(0)
+    }
+
+    const copy = !!dst
+    const off = this._offset(srcStart)
+    const len = srcEnd - srcStart
+    let bytes = len
+    let bufoff = (copy && dstStart) || 0
+    let start = off[1]
+
+    // copy/slice everything
+    if (srcStart === 0 && srcEnd === this.length) {
+      if (!copy) {
+        // slice, but full concat if multiple buffers
+        return this._bufs.length === 1
+          ? this._bufs[0]
+          : util_Buffer.concat(this._bufs, this.length)
+      }
+
+      // copy, need to copy individual buffers
+      for (let i = 0; i < this._bufs.length; i++) {
+        this._bufs[i].copy(dst, bufoff)
+        bufoff += this._bufs[i].length
+      }
+
+      return dst
+    }
+
+    // easy, cheap case where it's a subset of one of the buffers
+    if (bytes <= this._bufs[off[0]].length - start) {
+      return copy
+        ? this._bufs[off[0]].copy(dst, dstStart, start, start + bytes)
+        : this._bufs[off[0]].slice(start, start + bytes)
+    }
+
+    if (!copy) {
+      // a slice, we need something to copy in to
+      dst = Buffer.allocUnsafe(len)
+    }
+
+    for (let i = off[0]; i < this._bufs.length; i++) {
+      const l = this._bufs[i].length - start
+
+      if (bytes > l) {
+        this._bufs[i].copy(dst, bufoff, start)
+        bufoff += l
+      } else {
+        this._bufs[i].copy(dst, bufoff, start, start + bytes)
+        bufoff += l
+        break
+      }
+
+      bytes -= l
+
+      if (start) {
+        start = 0
+      }
+    }
+
+    // safeguard so that we don't return uninitialized memory
+    if (dst.length > bufoff) return dst.slice(0, bufoff)
+
+    return dst
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L157
+  BufferList.prototype.shallowSlice = function shallowSlice(start, end) {
+    start = start || 0
+    end = typeof end !== 'number' ? this.length : end
+
+    if (start < 0) {
+      start += this.length
+    }
+
+    if (end < 0) {
+      end += this.length
+    }
+
+    if (start === end) {
+      return this._new()
+    }
+
+    const startOffset = this._offset(start)
+    const endOffset = this._offset(end)
+    const buffers = this._bufs.slice(startOffset[0], endOffset[0] + 1)
+
+    if (endOffset[1] === 0) {
+      buffers.pop()
+    } else {
+      buffers[buffers.length - 1] = buffers[buffers.length - 1].slice(0, endOffset[1])
+    }
+
+    if (startOffset[1] !== 0) {
+      buffers[0] = buffers[0].slice(startOffset[1])
+    }
+
+    return this._new(buffers)
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L190
+  BufferList.prototype.toString = function toString(encoding, start, end) {
+    return this.slice(start, end).toString(encoding)
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L194
+  BufferList.prototype.consume = function consume(bytes) {
+    // first, normalize the argument, in accordance with how Buffer does it
+    bytes = Math.trunc(bytes)
+    // do nothing if not a positive number
+    if (Number.isNaN(bytes) || bytes <= 0) return this
+
+    while (this._bufs.length) {
+      if (bytes >= this._bufs[0].length) {
+        bytes -= this._bufs[0].length
+        this.length -= this._bufs[0].length
+        this._bufs.shift()
+      } else {
+        this._bufs[0] = this._bufs[0].slice(bytes)
+        this.length -= bytes
+        break
+      }
+    }
+
+    return this
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L215
+  BufferList.prototype.duplicate = function duplicate() {
+    const copy = this._new()
+
+    for (let i = 0; i < this._bufs.length; i++) {
+      copy.append(this._bufs[i])
+    }
+
+    return copy
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L225
+  BufferList.prototype.append = function append(buf) {
+    if (buf == null) {
+      return this
+    }
+
+    if (buf.buffer) {
+      // append a view of the underlying ArrayBuffer
+      this._appendBuffer(util_Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength))
+    } else if (Array.isArray(buf)) {
+      for (let i = 0; i < buf.length; i++) {
+        this.append(buf[i])
+      }
+    } else if (this._isBufferList(buf)) {
+      // unwrap argument into individual BufferLists
+      for (let i = 0; i < buf._bufs.length; i++) {
+        this.append(buf._bufs[i])
+      }
+    } else {
+      // coerce number arguments to strings, since Buffer(number) does
+      // uninitialized memory allocation
+      if (typeof buf === 'number') {
+        buf = buf.toString()
+      }
+
+      this._appendBuffer(util_Buffer.from(buf))
+    }
+
+    return this
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L255
+  BufferList.prototype._appendBuffer = function appendBuffer(buf) {
+    this._bufs.push(buf)
+    this.length += buf.length
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L260
+  BufferList.prototype.indexOf = function (search, offset, encoding) {
+    if (encoding === undefined && typeof offset === 'string') {
+      encoding = offset
+      offset = undefined
+    }
+
+    if (typeof search === 'function' || Array.isArray(search)) {
+      throw new TypeError('The "value" argument must be one of type string, Buffer, BufferList, or Uint8Array.')
+    } else if (typeof search === 'number') {
+      search = util_Buffer.from([search])
+    } else if (typeof search === 'string') {
+      search = util_Buffer.from(search, encoding)
+    } else if (this._isBufferList(search)) {
+      search = search.slice()
+    } else if (Array.isArray(search.buffer)) {
+      search = util_Buffer.from(search.buffer, search.byteOffset, search.byteLength)
+    } else if (!Buffer.isBuffer(search)) {
+      search = util_Buffer.from(search)
+    }
+
+    offset = Number(offset || 0)
+
+    if (isNaN(offset)) {
+      offset = 0
+    }
+
+    if (offset < 0) {
+      offset = this.length + offset
+    }
+
+    if (offset < 0) {
+      offset = 0
+    }
+
+    if (search.length === 0) {
+      return offset > this.length ? this.length : offset
+    }
+
+    const blOffset = this._offset(offset)
+    let blIndex = blOffset[0] // index of which internal buffer we're working on
+    let buffOffset = blOffset[1] // offset of the internal buffer we're working on
+
+    // scan over each buffer
+    for (; blIndex < this._bufs.length; blIndex++) {
+      const buff = this._bufs[blIndex]
+
+      while (buffOffset < buff.length) {
+        const availableWindow = buff.length - buffOffset
+
+        if (availableWindow >= search.length) {
+          const nativeSearchResult = buff.indexOf(search, buffOffset)
+
+          if (nativeSearchResult !== -1) {
+            return this._reverseOffset([blIndex, nativeSearchResult])
+          }
+
+          buffOffset = buff.length - search.length + 1 // end of native search window
+        } else {
+          const revOffset = this._reverseOffset([blIndex, buffOffset])
+
+          if (this._match(revOffset, search)) {
+            return revOffset
+          }
+
+          buffOffset++
+        }
+      }
+
+      buffOffset = 0
+    }
+
+    return -1
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L334
+  BufferList.prototype._match = function (offset, search) {
+    if (this.length - offset < search.length) {
+      return false
+    }
+
+    for (let searchOffset = 0; searchOffset < search.length; searchOffset++) {
+      if (this.get(offset + searchOffset) !== search[searchOffset]) {
+        return false
+      }
+    }
+    return true
+  }
+
+    //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L347
+    ; (function () {
+      const methods = {
+        readDoubleBE: 8,
+        readDoubleLE: 8,
+        readFloatBE: 4,
+        readFloatLE: 4,
+        readInt32BE: 4,
+        readInt32LE: 4,
+        readUInt32BE: 4,
+        readUInt32LE: 4,
+        readInt16BE: 2,
+        readInt16LE: 2,
+        readUInt16BE: 2,
+        readUInt16LE: 2,
+        readInt8: 1,
+        readUInt8: 1,
+        readIntBE: null,
+        readIntLE: null,
+        readUIntBE: null,
+        readUIntLE: null
+      }
+
+      for (const m in methods) {
+        (function (m) {
+          if (methods[m] === null) {
+            BufferList.prototype[m] = function (offset, byteLength) {
+              return this.slice(offset, offset + byteLength)[m](0, byteLength)
+            }
+          } else {
+            BufferList.prototype[m] = function (offset = 0) {
+              return this.slice(offset, offset + methods[m])[m](0)
+            }
+          }
+        }(m))
+      }
+    }())
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L388
+  BufferList.prototype._isBufferList = function _isBufferList(b) {
+    return b instanceof BufferList || BufferList.isBufferList(b)
+  }
+
+  //https://github.com/rvagg/bl/blob/f7a00711cbf04a20d42f7aebfe2fa948390b9ccd/BufferList.js#L392
+  BufferList.isBufferList = function isBufferList(b) {
+    return b != null && b[symbol]
+  }
+
+  // No license(?)
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/util/bases.js#L15
+  function createCodec(name, prefix, encode, decode) {
+    return {
+      name,
+      prefix,
+      encoder: {
+        name,
+        prefix,
+        encode
+      },
+      decoder: { decode }
+    };
+  }
+
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/util/bases.js#L30
+  const string = createCodec('utf8', 'u', buf => {
+    const decoder = new TextDecoder('utf8');
+    return 'u' + decoder.decode(buf);
+  }, str => {
+    const encoder = new TextEncoder();
+    return encoder.encode(str.substring(1));
+  });
+
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/util/bases.js#L63
+  var bases = {
+    utf8: string,
+    'utf-8': string,
+  };
+
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/to-string.js#L18
+  function uint8ArrayToString(array, encoding = 'utf8') {
+    const base = bases[encoding];
+    if (!base) {
+      throw new Error(`Unsupported encoding "${encoding}"`);
+    }
+    if ((encoding === 'utf8' || encoding === 'utf-8') && globalThis.Buffer != null && globalThis.Buffer.from != null) {
+      return globalThis.Buffer.from(array.buffer, array.byteOffset, array.byteLength).toString('utf8');
+    }
+    return base.encoder.encode(array).substring(1);
+  }
+
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/alloc.js#L24
+  function allocUnsafe(size = 0) {
+    if (globalThis.Buffer != null && globalThis.Buffer.allocUnsafe != null) {
+      return globalThis.Buffer.allocUnsafe(size);
+    }
+    return new Uint8Array(size);
+  }
+
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/concat.js#L9
+  function uint8ArrayConcat(arrays, length) {
+    if (!length) {
+      length = arrays.reduce((acc, curr) => acc + curr.length, 0);
+    }
+    const output = allocUnsafe(length);
+    let offset = 0;
+    for (const arr of arrays) {
+      output.set(arr, offset);
+      offset += arr.length;
+    }
+    return output;
+  }
+
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/compare.js#L7
+  function uint8ArrayCompare(a, b) {
+    for (let i = 0; i < a.byteLength; i++) {
+      if (a[i] < b[i]) {
+        return -1
+      }
+
+      if (a[i] > b[i]) {
+        return 1
+      }
+    }
+
+    if (a.byteLength > b.byteLength) {
+      return 1
+    }
+
+    if (a.byteLength < b.byteLength) {
+      return -1
+    }
+
+    return 0
+  }
+
+  //https://github.com/achingbrain/uint8arrays/blob/56329d16d6ca575c9638f3abb9601b8a034783b8/src/from-string.js#L18
+  function uint8ArrayFromString(string, encoding = 'utf8') {
+    const base = bases[encoding]
+
+    if (!base) {
+      throw new Error(`Unsupported encoding "${encoding}"`)
+    }
+
+    return base.decoder.decode(`${base.prefix}${string}`)
+  }
+
+  // No license(?)
+  //https://github.com/achingbrain/it/blob/c74ff5ff0d1b4164cd2f556f1b431d77ad47dd16/packages/it-all/index.js#L9
+  const all = async (source) => {
+    const arr = []
+
+    for await (const entry of source) {
+      arr.push(entry)
+    }
+
+    return arr
+  }
+
+  //https://github.com/achingbrain/it/blob/c74ff5ff0d1b4164cd2f556f1b431d77ad47dd16/packages/it-batch/index.js#L12
+  async function* batch(source, size = 1) {
+    let things = []
+
+    if (size < 1) {
+      size = 1
+    }
+
+    for await (const thing of source) {
+      things.push(thing)
+
+      while (things.length >= size) {
+        yield things.slice(0, size)
+
+        things = things.slice(size)
+      }
+    }
+
+    while (things.length) {
+      yield things.slice(0, size)
+
+      things = things.slice(size)
+    }
+  }
+
+  // No license(?)
+  //https://github.com/achingbrain/it-parallel-batch/blob/2a7f2c29b44be057c0862d4864856fcc66466d57/packages/it-parallel-batch/index.js#L5
+  async function* parallelBatch(source, size = 1) {
+    for await (const tasks of batch(source, size)) {
+      const things = tasks.map(
+        p => {
+          return p().then(value => ({ ok: true, value }), err => ({ ok: false, err }))
+        })
+
+      for (let i = 0; i < things.length; i++) {
+        const result = await things[i]
+        if (result.ok) {
+          yield result.value
+        } else {
+          throw result.err
+        }
+      }
+    }
+  }
+
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (c) 2020 Protocol Labs
+  *  Licensed under the MIT License.
+  *  https://github.com/multiformats/js-multihash/blob/master/LICENSE
+  *--------------------------------------------------------------------------------------------*/
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/constants.js#L18
+  const mh_names = Object.freeze({
+    'sha2-256': 0x12,
+  })
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L13
+  const mh_codes = /** @type {import('./types').CodeNameMap} */({})
+  for (const key in mh_names) {
+    const name = /** @type {HashName} */(key)
+    mh_codes[mh_names[name]] = name
+  }
+  Object.freeze(mh_codes)
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L28
+  function mh_toHexString(hash) {
+    if (!(hash instanceof Uint8Array)) {
+      throw new Error('must be passed a Uint8Array')
+    }
+
+    return uint8ArrayToString(hash, 'base16')
+  }
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L42
+  function mh_fromHexString(hash) {
+    return uint8ArrayFromString(hash, 'base16')
+  }
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L52
+  function mh_toB58String(hash) {
+    if (!(hash instanceof Uint8Array)) {
+      throw new Error('must be passed a Uint8Array')
+    }
+    return uint8ArrayToString(multibase_encode('base58btc', hash)).slice(1)
+  }
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L66
+  function mh_fromB58String(hash) {
+    const encoded = hash instanceof Uint8Array
+      ? uint8ArrayToString(hash)
+      : hash
+
+    return multibase_decode('z' + encoded)
+  }
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L80
+  function mh_decode(bytes) {
+    if (!(bytes instanceof Uint8Array)) {
+      throw new Error('multihash must be a Uint8Array')
+    }
+
+    if (bytes.length < 2) {
+      throw new Error('multihash too short. must be > 2 bytes.')
+    }
+
+    const code = /** @type {HashCode} */(decode_2(bytes))
+    if (!mh_isValidCode(code)) {
+      throw new Error(`multihash unknown function code: 0x${code.toString(16)}`)
+    }
+    bytes = bytes.slice(decode_2.bytes)
+
+    const len = decode_2(bytes)
+    if (len < 0) {
+      throw new Error(`multihash invalid length: ${len}`)
+    }
+    bytes = bytes.slice(decode_2.bytes)
+
+    if (bytes.length !== len) {
+      throw new Error(`multihash length inconsistent: 0x${uint8ArrayToString(bytes, 'base16')}`)
+    }
+
+    return {
+      code,
+      name: mh_codes[code],
+      length: len,
+      digest: bytes
+    }
+  }
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L123
+  function mh_encode(digest, code, length) {
+    if (!digest || code === undefined) {
+      throw new Error('multihash encode requires at least two args: digest, code')
+    }
+    const hashfn = mh_coerceCode(code)
+
+    if (!(digest instanceof Uint8Array)) {
+      throw new Error('digest should be a Uint8Array')
+    }
+
+    if (length == null) {
+      length = digest.length
+    }
+
+    if (length && digest.length !== length) {
+      throw new Error('digest length should be equal to specified length.')
+    }
+
+    function alloc_allocUnsafe(size = 0) {
+      if (globalThis.Buffer != null && globalThis.Buffer.allocUnsafe != null) {
+        return globalThis.Buffer.allocUnsafe(size);
+      }
+      return new Uint8Array(size);
+    }
+
+    const hash = encode_2(hashfn)
+    const len = encode_2(length)
+    function uint8ArrayConcat(arrays, length) {
+      if (!length) {
+        length = arrays.reduce((acc, curr) => acc + curr.length, 0);
+      }
+      const output = alloc_allocUnsafe(length);
+      let offset = 0;
+      for (const arr of arrays) {
+        output.set(arr, offset);
+        offset += arr.length;
+      }
+      return output;
+    }
+    return uint8ArrayConcat([hash, len, digest], hash.length + len.length + digest.length)
+  }
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L155
+  function mh_coerceCode(name) {
+    let code = name
+
+    if (typeof name === 'string') {
+      if (mh_names[name] === undefined) {
+        throw new Error(`Unrecognized hash function named: ${name}`)
+      }
+      code = mh_names[name]
+    }
+
+    if (typeof code !== 'number') {
+      throw new Error(`Hash function code should be a number. Got: ${code}`)
+    }
+
+    if (mh_codes[code] === undefined && !mh_isAppCode(code)) {
+      throw new Error(`Unrecognized function code: ${code}`)
+    }
+
+    return code
+  }
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L183
+  function mh_isAppCode(code) {
+    return code > 0 && code < 0x10
+  }
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L212
+  function mh_validate(multihash) {
+    mh_decode(multihash)
+  }
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L223
+  function mh_prefix(multihash) {
+    mh_validate(multihash)
+
+    return multihash.subarray(0, 2)
+  }
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L193
+  function mh_isValidCode(code) {
+    if (mh_isAppCode(code)) {
+      return true
+    }
+
+    if (mh_codes[code]) {
+      return true
+    }
+
+    return false
+  }
+
+  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L229
+  const multihash = {
+    mh_names,
+    mh_codes,
+    mh_toHexString,
+    mh_fromHexString,
+    mh_toB58String,
+    mh_fromB58String,
+    mh_decode,
+    mh_encode,
+    mh_coerceCode,
+    mh_isAppCode,
+    mh_validate,
+    mh_prefix,
+    mh_isValidCode
+  }
+
+
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (c) 2020 Protocol Labs
+  *  Licensed under the MIT License.
+  *  https://github.com/multiformats/js-multihashing-async/blob/master/LICENSE
+  *--------------------------------------------------------------------------------------------*/
+
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L21
+  async function Multihashing(bytes, alg, length) {
+    const digest = await Multihashing.digest(bytes, alg, length)
+    return multihash.mh_encode(digest, alg, length)
+  }
+
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L29
+  Multihashing.multihash = multihash
+
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L37
+  Multihashing.digest = async (bytes, alg, length) => {
+    const hash = Multihashing.createHash(alg)
+    const digest = await hash(bytes)
+    return length ? digest.slice(0, length) : digest
+  }
+
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L49
+  Multihashing.createHash = function (alg) {
+    if (!alg) {
+      const e = errcode(new Error('hash algorithm must be specified'), 'ERR_HASH_ALGORITHM_NOT_SPECIFIED')
+      throw e
+    }
+    const code = multihash.mh_coerceCode(alg)
+    if (!Multihashing.functions[code]) {
+      throw errcode(new Error(`multihash function '${alg}' not yet supported`), 'ERR_HASH_ALGORITHM_NOT_SUPPORTED')
+    }
+    return Multihashing.functions[code]
+  }
+
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/sha.js#L21
+  const digest = async (data, alg) => {
+    switch (alg) {
+      case 'sha2-256':
+        return createHash('sha256').update(data).digest()
+      default:
+        throw new Error(`${alg} is not a supported algorithm`)
+    }
+  }
+
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/sha.js#L38
+  const { factory: sha } = {
+    factory: (alg) => async (data) => {
+      return digest(data, alg)
+    },
+    digest,
+    multihashing: async (buf, alg, length) => {
+      const h = await digest(buf, alg)
+      return multihash.encode(h, alg, length)
+    }
+  }
+
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/crypto.js#L53
+  var crypto = {
+    sha2256: sha('sha2-256'),
+  }
+
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L69
+  Multihashing.functions = {
+    0x12: crypto.sha2256,
+  }
+
+  //https://github.com/multiformats/js-multihashing-async/blob/52b2c2b61a16a94ba0a93548209f85a01cffb5dc/src/index.js#L114
+  Multihashing.validate = async (bytes, hash) => {
+    const newHash = await Multihashing(bytes, multihash.decode(hash).name)
+    return equals(hash, newHash)
+  }
+
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (c) 2020 Protocol Labs
+  *  Licensed under the MIT License.
+  *  https://github.com/multiformats/js-multibase/blob/master/LICENSE
+  *--------------------------------------------------------------------------------------------*/
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/base.js#L3
+  const encodeText = (text) => textEncoder.encode(text)
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/base.js#L13
+  class Base {
+    constructor(name, code, factory, alphabet) {
+      this.name = name
+      this.code = code
+      this.codeBuf = encodeText(this.code)
+      this.alphabet = alphabet
+      this.codec = factory(alphabet)
+    }
+    encode(buf) {
+      return this.codec.encode(buf)
+    }
+    decode(string) {
+      for (const char of string) {
+        if (this.alphabet && this.alphabet.indexOf(char) < 0) {
+          throw new Error(`invalid character '${char}' in '${string}'`)
+        }
+      }
+      return this.codec.decode(string)
+    }
+  }
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/rfc4648.js#L104
+  const rfc4648_1 = (bitsPerChar) => (alphabet) => {
+    return {
+      encode(input) {
+        return _encode(input, alphabet, bitsPerChar)
+      },
+      decode(input) {
+        return _decode(input, alphabet, bitsPerChar)
+      }
+    }
+  }
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/constants.js#L27
+  const constants = [
+    ['base32', 'b', rfc4648_1(5), 'abcdefghijklmnopqrstuvwxyz234567'],
+    ['base58btc', 'z', _basex, '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'],
+  ]
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/constants.js#L54
+  const constants1_names = constants.reduce((prev, tupple) => {
+    prev[tupple[0]] = new Base(tupple[0], tupple[1], tupple[2], tupple[3])
+    return prev
+  }, /** @type {Record<BaseName,Base>} */({}))
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/constants.js#L59
+  const constants1_codes = constants.reduce((prev, tupple) => {
+    prev[tupple[1]] = constants1_names[tupple[0]]
+    return prev
+  }, /** @type {Record<BaseCode,Base>} */({}))
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L115
+  function encoding(nameOrCode) {
+    if (Object.prototype.hasOwnProperty.call(constants1_names, /** @type {BaseName} */(nameOrCode))) {
+      return constants1_names[/** @type {BaseName} */(nameOrCode)]
+    } else if (Object.prototype.hasOwnProperty.call(constants1_codes, /** @type {BaseCode} */(nameOrCode))) {
+      return constants1_codes[/** @type {BaseCode} */(nameOrCode)]
+    } else {
+      throw new Error(`Unsupported encoding: ${nameOrCode}`)
+    }
+  }
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/util.js#L24
+  function concat(arrs, length) {
+    const output = new Uint8Array(length)
+    let offset = 0
+
+    for (const arr of arrs) {
+      output.set(arr, offset)
+      offset += arr.length
+    }
+
+    return output
+  }
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/util.js#L3
+  const textDecoder = new TextDecoder()
+  const decodeText = (bytes) => textDecoder.decode(bytes)
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L103
+  function validEncode(name, buf) {
+    const enc = encoding(name)
+    enc.decode(decodeText(buf))
+  }
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L23
+  function multibase(nameOrCode, buf) {
+    if (!buf) {
+      throw new Error('requires an encoded Uint8Array')
+    }
+    const { name, codeBuf } = encoding(nameOrCode)
+    validEncode(name, buf)
+
+    return concat([codeBuf, buf], codeBuf.length + buf.length)
+  }
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L42
+  function multibase_encode(nameOrCode, buf) {
+    const enc = encoding(nameOrCode)
+    const data = encodeText(enc.encode(buf))
+
+    return concat([enc.codeBuf, data], enc.codeBuf.length + data.length)
+  }
+
+  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L58
+  function multibase_decode(data) {
+    if (data instanceof Uint8Array) {
+      data = decodeText(data)
+    }
+    const prefix = data[0]
+    if (['f', 'F', 'v', 'V', 't', 'T', 'b', 'B', 'c', 'C', 'h', 'k', 'K'].includes(prefix)) {
+      data = data.toLowerCase()
+    }
+    const enc = encoding(/** @type {BaseCode} */(data[0]))
+    return enc.decode(data.substring(1))
+  }
+
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (c) 2020 Protocol Labs
+  *  Licensed under the MIT License.
+  *  https://github.com/multiformats/js-cid/blob/master/LICENSE
+  *--------------------------------------------------------------------------------------------*/
+
+  //https://github.com/multiformats/js-cid/blob/2ed9449c7a7d2df522485822ae46f2d8d10fbbcc/src/cid-util.js#L5
+  const CIDUtil = {
+    checkCIDComponents: function (other) {
+      if (other == null) {
+        return 'null values are not valid CIDs'
+      }
+
+      if (!(other.version === 0 || other.version === 1)) {
+        return 'Invalid version, must be a number equal to 1 or 0'
+      }
+
+      if (typeof other.codec !== 'string') {
+        return 'codec must be string'
+      }
+
+      if (other.version === 0) {
+        if (other.codec !== 'dag-pb') {
+          return "codec must be 'dag-pb' for CIDv0"
+        }
+        if (other.multibaseName !== 'base58btc') {
+          return "multibaseName must be 'base58btc' for CIDv0"
+        }
+      }
+
+      if (!(other.multihash instanceof Uint8Array)) {
+        return 'multihash must be a Uint8Array'
+      }
+
+      try {
+        var mh = multihash
+        mh.mh_validate(other.multihash)
+      } catch (err) {
+        let errorMsg = err.message
+        if (!errorMsg) { // Just in case mh.validate() throws an error with empty error message
+          errorMsg = 'Multihash validation failed'
+        }
+        return errorMsg
+      }
+    }
+  }
+
+  //https://github.com/multiformats/js-cid/blob/2ed9449c7a7d2df522485822ae46f2d8d10fbbcc/src/index.js#L38
+  class CID_1 {
+    constructor(version, codec, multihash, multibaseName) {
+      this.version
+      this.codec
+      this.multihash
+
+      Object.defineProperty(this, symbol, { value: true })
+      if (CID_1.isCID(version)) {
+        const cid = /** @type {CID_1} */(version)
+        this.version = cid.version
+        this.codec = cid.codec
+        this.multihash = cid.multihash
+        this.multibaseName = cid.multibaseName || (cid.version === 0 ? 'base58btc' : 'base32')
+        return
+      }
+
+      if (typeof version === 'string') {
+        // e.g. 'base32' or false
+        const baseName = multibase.isEncoded(version)
+        if (baseName) {
+          // version is a CID String encoded with multibase, so v1
+          const cid = multibase.decode(version)
+          this.version = /** @type {CIDVersion} */(parseInt(cid[0].toString(), 16))
+          this.codec = multicodec.getCodec(cid.slice(1))
+          this.multihash = multicodec.rmPrefix(cid.slice(1))
+          this.multibaseName = baseName
+        } else {
+          // version is a base58btc string multihash, so v0
+          this.version = 0
+          this.codec = 'dag-pb'
+          this.multihash = mh.fromB58String(version)
+          this.multibaseName = 'base58btc'
+        }
+        CID_1.validateCID(this)
+        Object.defineProperty(this, 'string', { value: version })
+        return
+      }
+
+      if (version instanceof Uint8Array) {
+        const v = parseInt(version[0].toString(), 16)
+        if (v === 1) {
+          // version is a CID Uint8Array
+          const cid = version
+          this.version = v
+          this.codec = multicodec.getCodec(cid.slice(1))
+          this.multihash = multicodec.rmPrefix(cid.slice(1))
+          this.multibaseName = 'base32'
+        } else {
+          // version is a raw multihash Uint8Array, so v0
+          this.version = 0
+          this.codec = 'dag-pb'
+          this.multihash = version
+          this.multibaseName = 'base58btc'
+        }
+        CID_1.validateCID(this)
+        return
+      }
+
+      // otherwise, assemble the CID from the parameters
+
+      this.version = version
+
+      if (typeof codec === 'number') {
+        codec = codecInts[codec]
+      }
+
+      this.codec = /** @type {CodecName} */ (codec)
+      this.multihash = /** @type {Uint8Array} */ (multihash)
+      this.multibaseName = multibaseName || (version === 0 ? 'base58btc' : 'base32')
+
+      CID_1.validateCID(this)
+    }
+
+    get bytes() {
+      let bytes = this._bytes
+
+      if (!bytes) {
+        if (this.version === 0) {
+          bytes = this.multihash
+        } else if (this.version === 1) {
+          const codec = multicodec.getCodeVarint(this.codec)
+          bytes = uint8ArrayConcat([
+            [1], codec, this.multihash
+          ], 1 + codec.byteLength + this.multihash.byteLength)
+        } else {
+          throw new Error('unsupported version')
+        }
+        Object.defineProperty(this, '_bytes', { value: bytes })
+      }
+
+      return bytes
+    }
+
+    get prefix() {
+      const codec = multicodec.getCodeVarint(this.codec)
+      const multihash = mh.prefix(this.multihash)
+      const prefix = uint8ArrayConcat([
+        [this.version], codec, multihash
+      ], 1 + codec.byteLength + multihash.byteLength)
+
+      return prefix
+    }
+
+    get code() {
+      return codecs[this.codec]
+    }
+
+    toV0() {
+      if (this.codec !== 'dag-pb') {
+        throw new Error('Cannot convert a non dag-pb CID to CIDv0')
+      }
+
+      const { name, length } = mh.decode(this.multihash)
+
+      if (name !== 'sha2-256') {
+        throw new Error('Cannot convert non sha2-256 multihash CID to CIDv0')
+      }
+
+      if (length !== 32) {
+        throw new Error('Cannot convert non 32 byte multihash CID to CIDv0')
+      }
+
+      return new CID_1(0, this.codec, this.multihash)
+    }
+
+    toV1() {
+      return new CID_1(1, this.codec, this.multihash, this.multibaseName)
+    }
+
+    toBaseEncodedString(base = this.multibaseName) {
+      if (this.string && this.string.length !== 0 && base === this.multibaseName) {
+        return this.string
+      }
+      let str
+      if (this.version === 0) {
+        if (base !== 'base58btc') {
+          throw new Error('not supported with CIDv0, to support different bases, please migrate the instance do CIDv1, you can do that through cid.toV1()')
+        }
+        str = multihash.mh_toB58String(this.multihash)
+      } else if (this.version === 1) {
+        str = uint8ArrayToString(multibase_encode(base, this.bytes))
+      } else {
+        throw new Error('unsupported version')
+      }
+      if (base === this.multibaseName) {
+        // cache the string value
+        Object.defineProperty(this, 'string', { value: str })
+      }
+      return str
+    }
+
+    [Symbol.for('nodejs.util.inspect.custom')]() {
+      return 'CID_1(' + this.toString() + ')'
+    }
+
+    toString(base) {
+      return this.toBaseEncodedString(base)
+    }
+
+    toJSON() {
+      return {
+        codec: this.codec,
+        version: this.version,
+        hash: this.multihash
+      }
+    }
+
+    equals(other) {
+      return this.codec === other.codec &&
+        this.version === other.version &&
+        uint8ArrayEquals(this.multihash, other.multihash)
+    }
+
+    static validateCID(other) {
+      const errorMsg = CIDUtil.checkCIDComponents(other)
+      if (errorMsg) {
+        throw new Error(errorMsg)
+      }
+    }
+
+    static isCID(value) {
+      return value instanceof CID_1 || Boolean(value && value[symbol])
+    }
+  }
+
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (c) 2020 Protocol Labs
+  *  Licensed under the MIT License.
+  *  https://github.com/multiformats/js-multicodec/blob/master/LICENSE
+  *--------------------------------------------------------------------------------------------*/
+
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/util.js#L17
+  function uint8ArrayToNumber(buf) {
+    return parseInt(uint8ArrayToString(buf, 'base16'), 16)
+  }
+
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/util.js#L35
+  function varintUint8ArrayEncode(input) {
+    return Uint8Array.from(encode_2(uint8ArrayToNumber(input)))
+  }
+
+  const baseTable = Object.freeze({
+    'raw': 0x55,
+    'dag-pb': 0x70,
+  })
+
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/util.js#L42
+  function varintEncode(num) {
+    return Uint8Array.from(encode_2(num))
+  }
+
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/maps.js#L12
+  const nameToVarint = /** @type {NameUint8ArrayMap} */ ({})
+  const constantToCode = /** @type {ConstantCodeMap} */({})
+  const codeToName = /** @type {CodeNameMap} */({})
+
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/index.js#L111
+  function getVarintFromName(name) {
+    const code = nameToVarint[name]
+    if (code === undefined) {
+      throw new Error(`Codec "${name}" not found`)
+    }
+    return code
+  }
+
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/maps.js#L17
+  for (const name in baseTable) {
+    const codecName = /** @type {CodecName} */(name)
+    const code = baseTable[codecName]
+    nameToVarint[codecName] = varintEncode(code)
+
+    const constant = /** @type {CodecConstant} */(codecName.toUpperCase().replace(/-/g, '_'))
+    constantToCode[constant] = code
+
+    if (!codeToName[code]) {
+      codeToName[code] = codecName
+    }
+  }
+
+  //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/maps.js#L30
+  Object.freeze(nameToVarint)
+  Object.freeze(constantToCode)
+  Object.freeze(codeToName)
+
+  const multicodec = {
+    //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/index.js#L29
+    addPrefix: function addPrefix(multicodecStrOrCode, data) {
+      let prefix
+
+      if (multicodecStrOrCode instanceof Uint8Array) {
+        prefix = varintUint8ArrayEncode(multicodecStrOrCode)
+      } else {
+        if (nameToVarint[multicodecStrOrCode]) {
+          prefix = nameToVarint[multicodecStrOrCode]
+        } else {
+          throw new Error('multicodec not recognized')
+        }
+      }
+
+      return uint8ArrayConcat([prefix, data], prefix.length + data.length)
+    },
+    //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/index.js#L51
+    rmPrefix: function rmPrefix(data) {
+      varint.decode(/** @type {Buffer} */(data))
+      return data.slice(varint.decode.bytes)
+    },
+    //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/index.js#L77
+    getCodeVarint: function getCodeVarint(name) {
+      return getVarintFromName(name)
+    },
+  }
+
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (c) 2020 Protocol Labs
+  *  Licensed under the MIT and Apache-2.0 License.
+  *  https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/LICENSE
+  *--------------------------------------------------------------------------------------------*/
+
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/utils/persist.js#L10
+  const persist = async (buffer, block, options) => {
+    if (!options.codec) {
+      options.codec = 'dag-pb'
+    }
+
+    if (!options.cidVersion) {
+      options.cidVersion = 0
+    }
+
+    if (!options.hashAlg) {
+      options.hashAlg = 'sha2-256'
+    }
+
+    if (options.hashAlg !== 'sha2-256') {
+      options.cidVersion = 1
+    }
+
+    const multihash = await Multihashing(buffer, options.hashAlg) // buffer is [Uint8Array]
+    const cid = new CID_1(options.cidVersion, options.codec, multihash)
+
+    if (!options.onlyHash) {
+      await block.put(buffer, {
+        pin: options.pin,
+        preload: options.preload,
+        timeout: options.timeout,
+        cid
+      })
+    }
+
+    return cid
+  }
+
+  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/index.js#L30
+  async function* importer(source, block, options = {}) {
+    const opts = mergeOptions(defaultOptions, options)
+
+    let dagBuilder
+
+    if (typeof options.dagBuilder === 'function') {
+      dagBuilder = options.dagBuilder
+    } else {
+      dagBuilder = dagBuilder1
+    }
+
+    let treeBuilder
+
+    if (typeof options.treeBuilder === 'function') {
+      treeBuilder = options.treeBuilder
+    } else {
+      treeBuilder = treeBuilder1
+    }
+
+    let candidates
+
+    if (Symbol.asyncIterator in source || Symbol.iterator in source) {
+      candidates = source
+    } else {
+      candidates = [source]
+    }
+    for await (const entry of treeBuilder(parallelBatch(dagBuilder(candidates, block, opts), opts.fileImportConcurrency), block, opts)) {
+      yield {
+        cid: entry.cid,
+        path: entry.path,
+        unixfs: entry.unixfs,
+        size: entry.size
+      }
+    }
+  }
+
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (C) 2018 Angry Bytes and contributors.
+  *  Licensed under the MIT and Apache-2.0 License.
+  *  https://github.com/Two-Screen/stable/blob/master/README.md
+  *--------------------------------------------------------------------------------------------*/
+
+  //https://github.com/Two-Screen/stable/blob/fff2be6088a96c9613e3799cb966c912c6d6fcb7/stable.js#L31
+  function exec(arr, comp) {
+    if (typeof (comp) !== 'function') {
+      comp = function (a, b) {
+        return String(a).localeCompare(b)
+      };
+    }
+    var len = arr.length;
+    if (len <= 1) {
+      return arr
+    }
+    var buffer = new Array(len);
+    for (var chk = 1; chk < len; chk *= 2) {
+      pass(arr, comp, chk, buffer);
+
+      var tmp = arr;
+      arr = buffer;
+      buffer = tmp;
+    }
+
+    return arr
+  }
+
+  //https://github.com/Two-Screen/stable/blob/fff2be6088a96c9613e3799cb966c912c6d6fcb7/stable.js#L60
+  var pass = function (arr, comp, chk, result) {
+    var len = arr.length;
+    var i = 0;
+    // Step size / double chunk size.
+    var dbl = chk * 2;
+    // Bounds of the left and right chunks.
+    var l, r, e;
+    // Iterators over the left and right chunk.
+    var li, ri;
+
+    // Iterate over pairs of chunks.
+    for (l = 0; l < len; l += dbl) {
+      r = l + chk;
+      e = r + chk;
+      if (r > len) r = len;
+      if (e > len) e = len;
+
+      // Iterate both chunks in parallel.
+      li = l;
+      ri = r;
+      while (true) {
+        // Compare the chunks.
+        if (li < r && ri < e) {
+          // This works for a regular `sort()` compatible comparator,
+          // but also for a simple comparator like: `a > b`
+          if (comp(arr[li], arr[ri]) <= 0) {
+            result[i++] = arr[li++];
+          }
+          else {
+            result[i++] = arr[ri++];
+          }
+        }
+        // Nothing to compare, just flush what's left.
+        else if (li < r) {
+          result[i++] = arr[li++];
+        }
+        else if (ri < e) {
+          result[i++] = arr[ri++];
+        }
+        // Both iterators are at the chunk ends.
+        else {
+          break
+        }
+      }
+    }
+  };
+
+  //https://github.com/Two-Screen/stable/blob/fff2be6088a96c9613e3799cb966c912c6d6fcb7/stable.js#L13
+  var stable = function (arr, comp) {
+    return exec(arr.slice(), comp)
+  };
+
+  //https://github.com/Two-Screen/stable/blob/fff2be6088a96c9613e3799cb966c912c6d6fcb7/stable.js#L17
+  stable.inplace = function (arr, comp) {
+    var result = exec(arr, comp);
+
+    if (result !== arr) {
+      pass(result, null, arr.length, arr);
+    }
+
+    return arr
+  };
+
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (C) 2018 Angry Bytes and contributors.
+  *  Licensed under the MIT.
+  *  https://github.com/sindresorhus/is-plain-obj/blob/main/license
+  *--------------------------------------------------------------------------------------------*/
+
   //https://github.com/sindresorhus/is-plain-obj/blob/68e8cc77bb1bbd0bf7d629d3574b6ca70289b2cc/index.js#L1
   const isOptionObject = value => {
     if (Object.prototype.toString.call(value) !== '[object Object]') {
@@ -4764,6 +4830,12 @@
     const prototype = Object.getPrototypeOf(value);
     return prototype === null || prototype === Object.prototype;
   };
+
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (C) 2018 Angry Bytes and contributors.
+  *  Licensed under the MIT.
+  *  https://github.com/schnittstabil/merge-options/blob/master/license
+  *--------------------------------------------------------------------------------------------*/
 
   //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L4
   const { hasOwnProperty } = Object.prototype;
@@ -4927,42 +4999,11 @@
 
   const mergeOptions = merge_options.bind({ ignoreUndefined: true })
 
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/index.js#L30
-  async function* importer(source, block, options = {}) {
-    const opts = mergeOptions(defaultOptions, options)
-
-    let dagBuilder
-
-    if (typeof options.dagBuilder === 'function') {
-      dagBuilder = options.dagBuilder
-    } else {
-      dagBuilder = dagBuilder1
-    }
-
-    let treeBuilder
-
-    if (typeof options.treeBuilder === 'function') {
-      treeBuilder = options.treeBuilder
-    } else {
-      treeBuilder = treeBuilder1
-    }
-
-    let candidates
-
-    if (Symbol.asyncIterator in source || Symbol.iterator in source) {
-      candidates = source
-    } else {
-      candidates = [source]
-    }
-    for await (const entry of treeBuilder(parallelBatch(dagBuilder(candidates, block, opts), opts.fileImportConcurrency), block, opts)) {
-      yield {
-        cid: entry.cid,
-        path: entry.path,
-        unixfs: entry.unixfs,
-        size: entry.size
-      }
-    }
-  }
+  /*---------------------------------------------------------------------------------------------
+  *  Copyright (C) 2018 Angry Bytes and contributors.
+  *  Licensed under the MIT.
+  *  https://github.com/alanshaw/ipfs-only-hash/blob/master/LICENSE
+  *--------------------------------------------------------------------------------------------*/
 
   //https://github.com/alanshaw/ipfs-only-hash/blob/31a971c167c94ca38715a25e50fdc521c1c57ddf/index.js#L3
   const block = {
