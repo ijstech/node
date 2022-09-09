@@ -3042,7 +3042,7 @@
   }
 
   /*---------------------------------------------------------------------------------------------
-  *  Copyright (c) 2020-2021 Yusuke Kawasaki
+  *  Copyright (c) 2016-2018 Protocol Labs
   *  Licensed under the MIT License.
   *  https://github.com/ipld/js-ipld-dag-pb/blob/master/LICENSE.md
   *--------------------------------------------------------------------------------------------*/
@@ -3364,7 +3364,7 @@
 
   // new code start from here
   /*---------------------------------------------------------------------------------------------
-  *  Copyright (c) 2020 Protocol Labs
+  *  Copyright (c) 2013-2019 bl contributors
   *  Licensed under the MIT License.
   *  https://github.com/rvagg/bl/blob/master/LICENSE.md
   *--------------------------------------------------------------------------------------------*/
@@ -4200,7 +4200,7 @@
   }
 
   /*---------------------------------------------------------------------------------------------
-  *  Copyright (c) 2020 Protocol Labs
+  *  Copyright (c) 2020 Protocol Labs Inc
   *  Licensed under the MIT License.
   *  https://github.com/multiformats/js-multibase/blob/master/LICENSE
   *--------------------------------------------------------------------------------------------*/
@@ -4327,7 +4327,7 @@
   }
 
   /*---------------------------------------------------------------------------------------------
-  *  Copyright (c) 2020 Protocol Labs
+  *  Copyright (c) 2016 Friedel Ziegelmayer
   *  Licensed under the MIT License.
   *  https://github.com/multiformats/js-cid/blob/master/LICENSE
   *--------------------------------------------------------------------------------------------*/
@@ -4560,7 +4560,7 @@
   }
 
   /*---------------------------------------------------------------------------------------------
-  *  Copyright (c) 2020 Protocol Labs
+  *  Copyright © 2016 Multiformats
   *  Licensed under the MIT License.
   *  https://github.com/multiformats/js-multicodec/blob/master/LICENSE
   *--------------------------------------------------------------------------------------------*/
@@ -4647,7 +4647,6 @@
   }
 
   /*---------------------------------------------------------------------------------------------
-  *  Copyright (c) 2020 Protocol Labs
   *  Licensed under the MIT and Apache-2.0 License.
   *  https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/LICENSE
   *--------------------------------------------------------------------------------------------*/
@@ -4815,7 +4814,8 @@
   };
 
   /*---------------------------------------------------------------------------------------------
-  *  Copyright (C) 2018 Angry Bytes and contributors.
+  *  Copyright (c) 2020 Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
+  *  Licensed under the MIT License.
   *  https://github.com/sindresorhus/is-plain-obj/blob/main/license
   *--------------------------------------------------------------------------------------------*/
 
@@ -4830,7 +4830,8 @@
   };
 
   /*---------------------------------------------------------------------------------------------
-  *  Copyright (C) 2018 Angry Bytes and contributors.
+  *  Copyright (c) Michael Mayer <michael@schnittstabil.de>
+  *  Licensed under the MIT License.
   *  https://github.com/schnittstabil/merge-options/blob/master/license
   *--------------------------------------------------------------------------------------------*/
 
@@ -4997,7 +4998,8 @@
   const mergeOptions = merge_options.bind({ ignoreUndefined: true })
 
   /*---------------------------------------------------------------------------------------------
-  *  Copyright (C) 2018 Angry Bytes and contributors.
+  *  Copyright (c) 2019 Alan Shaw
+  *  Licensed under the MIT License.
   *  https://github.com/alanshaw/ipfs-only-hash/blob/master/LICENSE
   *--------------------------------------------------------------------------------------------*/
 
