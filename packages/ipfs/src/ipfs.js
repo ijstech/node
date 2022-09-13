@@ -3069,7 +3069,7 @@
       }
       this.Name = name || ''
       this.Tsize = size
-      this.Hash = new CID_1(cid)
+      this.Hash = new CID1(cid)
 
       Object.defineProperties(this, {
         _nameBuf: { value: null, writable: true, enumerable: false }
@@ -4374,15 +4374,15 @@
   }
 
   //https://github.com/multiformats/js-cid/blob/2ed9449c7a7d2df522485822ae46f2d8d10fbbcc/src/index.js#L38
-  class CID_1 {
+  class CID1 {
     constructor(version, codec, multihash, multibaseName) {
       this.version
       this.codec
       this.multihash
 
       Object.defineProperty(this, symbol, { value: true })
-      if (CID_1.isCID(version)) {
-        const cid = /** @type {CID_1} */(version)
+      if (CID1.isCID(version)) {
+        const cid = /** @type {CID1} */(version)
         this.version = cid.version
         this.codec = cid.codec
         this.multihash = cid.multihash
@@ -4390,61 +4390,13 @@
         return
       }
 
-      if (typeof version === 'string') {
-        // e.g. 'base32' or false
-        const baseName = multibase.isEncoded(version)
-        if (baseName) {
-          // version is a CID String encoded with multibase, so v1
-          const cid = multibase.decode(version)
-          this.version = /** @type {CIDVersion} */(parseInt(cid[0].toString(), 16))
-          this.codec = multicodec.getCodec(cid.slice(1))
-          this.multihash = multicodec.rmPrefix(cid.slice(1))
-          this.multibaseName = baseName
-        } else {
-          // version is a base58btc string multihash, so v0
-          this.version = 0
-          this.codec = 'dag-pb'
-          this.multihash = mh.fromB58String(version)
-          this.multibaseName = 'base58btc'
-        }
-        CID_1.validateCID(this)
-        Object.defineProperty(this, 'string', { value: version })
-        return
-      }
-
-      if (version instanceof Uint8Array) {
-        const v = parseInt(version[0].toString(), 16)
-        if (v === 1) {
-          // version is a CID Uint8Array
-          const cid = version
-          this.version = v
-          this.codec = multicodec.getCodec(cid.slice(1))
-          this.multihash = multicodec.rmPrefix(cid.slice(1))
-          this.multibaseName = 'base32'
-        } else {
-          // version is a raw multihash Uint8Array, so v0
-          this.version = 0
-          this.codec = 'dag-pb'
-          this.multihash = version
-          this.multibaseName = 'base58btc'
-        }
-        CID_1.validateCID(this)
-        return
-      }
-
-      // otherwise, assemble the CID from the parameters
-
       this.version = version
-
-      if (typeof codec === 'number') {
-        codec = codecInts[codec]
-      }
 
       this.codec = /** @type {CodecName} */ (codec)
       this.multihash = /** @type {Uint8Array} */ (multihash)
       this.multibaseName = multibaseName || (version === 0 ? 'base58btc' : 'base32')
 
-      CID_1.validateCID(this)
+      CID1.validateCID(this)
     }
 
     get bytes() {
@@ -4465,42 +4417,6 @@
       }
 
       return bytes
-    }
-
-    get prefix() {
-      const codec = multicodec.getCodeVarint(this.codec)
-      const multihash = mh.prefix(this.multihash)
-      const prefix = uint8ArrayConcat([
-        [this.version], codec, multihash
-      ], 1 + codec.byteLength + multihash.byteLength)
-
-      return prefix
-    }
-
-    get code() {
-      return codecs[this.codec]
-    }
-
-    toV0() {
-      if (this.codec !== 'dag-pb') {
-        throw new Error('Cannot convert a non dag-pb CID to CIDv0')
-      }
-
-      const { name, length } = mh.decode(this.multihash)
-
-      if (name !== 'sha2-256') {
-        throw new Error('Cannot convert non sha2-256 multihash CID to CIDv0')
-      }
-
-      if (length !== 32) {
-        throw new Error('Cannot convert non 32 byte multihash CID to CIDv0')
-      }
-
-      return new CID_1(0, this.codec, this.multihash)
-    }
-
-    toV1() {
-      return new CID_1(1, this.codec, this.multihash, this.multibaseName)
     }
 
     toBaseEncodedString(base = this.multibaseName) {
@@ -4525,26 +4441,8 @@
       return str
     }
 
-    [Symbol.for('nodejs.util.inspect.custom')]() {
-      return 'CID_1(' + this.toString() + ')'
-    }
-
     toString(base) {
       return this.toBaseEncodedString(base)
-    }
-
-    toJSON() {
-      return {
-        codec: this.codec,
-        version: this.version,
-        hash: this.multihash
-      }
-    }
-
-    equals(other) {
-      return this.codec === other.codec &&
-        this.version === other.version &&
-        uint8ArrayEquals(this.multihash, other.multihash)
     }
 
     static validateCID(other) {
@@ -4555,7 +4453,7 @@
     }
 
     static isCID(value) {
-      return value instanceof CID_1 || Boolean(value && value[symbol])
+      return value instanceof CID1 || Boolean(value && value[symbol])
     }
   }
 
@@ -4670,7 +4568,7 @@
     }
 
     const multihash = await Multihashing(buffer, options.hashAlg) // buffer is [Uint8Array]
-    const cid = new CID_1(options.cidVersion, options.codec, multihash)
+    const cid = new CID1(options.cidVersion, options.codec, multihash)
 
     if (!options.onlyHash) {
       await block.put(buffer, {
