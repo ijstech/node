@@ -25,6 +25,10 @@ export interface IHttpServerOptions {
     securePort?: number;
     router?: IRouterOptions;
 }
+export interface IDomainPackage {
+    baseUrl: string;
+    packagePath: string;
+}
 export declare class HttpServer {
     private app;
     private options;
@@ -33,12 +37,16 @@ export declare class HttpServer {
     private running;
     private http;
     private https;
+    private withDefaultMiddleware;
+    private packageManager;
+    private domainPacks;
     constructor(options: IHttpServerOptions);
+    addDomainPackage(domain: string, baseUrl: string, packagePath: string): Promise<void>;
     getCert(domain: string): Promise<Tls.SecureContext>;
-    getRouter(ctx: Koa.Context): {
+    getRouter(ctx: Koa.Context): Promise<{
         router: IRouterPluginOptions;
         baseUrl: string;
-    };
+    }>;
     start(): Promise<void>;
     use(middleware: any): void;
 }
