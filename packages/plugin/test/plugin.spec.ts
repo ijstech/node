@@ -1,12 +1,12 @@
 import {Router, Worker, RouterRequest, RouterResponse} from '../src';
 import assert from "assert";
-import {PackageManager, IPackage} from '@ijstech/package';
+import {PackageManager, Package} from '@ijstech/package';
 import Path from 'path';
 
 describe('Plugins', function() {    
     it('Worker Plugin', async function(){              
         let manager = new PackageManager();        
-        manager.packageImporter = async (packName: string): Promise<IPackage>=>{
+        manager.packageImporter = async (packName: string): Promise<Package>=>{
             if (packName == '@ijs/pack1')
                 return manager.addPackage(Path.join(__dirname, 'packs/pack1'))
         };        
