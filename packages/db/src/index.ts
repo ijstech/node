@@ -43,7 +43,7 @@ function getPluginClient(vm: VM, db: string, client: Types.IDBClient): Types.IDB
             async query(sql:string, params?: any[]): Promise<any>{
                 let result = await client.query(sql, params);
                 return JSON.stringify(result);
-            },
+            },            
             async resolve(table: string, fields: Types.IFields, criteria: any, args: any): Promise<any>{
                 let result = await client.resolve(table, fields, criteria, args);
                 return JSON.stringify(result);
@@ -51,8 +51,10 @@ function getPluginClient(vm: VM, db: string, client: Types.IDBClient): Types.IDB
             rollback(): Promise<boolean>{
                 return client.rollback();
             }
-        }
-        vm.injectGlobalObject(name, plugin);        
+        };
+        (plugin as any)["$$query_json"] = true;
+        (plugin as any)["$$resolve_json"] = true;
+        vm.injectGlobalObject(name, plugin);
     }
     return name;
 }

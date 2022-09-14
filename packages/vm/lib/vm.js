@@ -71,7 +71,8 @@ class VM {
                     result[v] = {
                         ref: this.functionToReference(obj[v]),
                         type: 'func',
-                        async: true
+                        async: true,
+                        json: obj['$$' + v + '_json'] == true
                     };
                 }
                 else if (typeof obj[v] === 'object') {
@@ -142,6 +143,9 @@ class VM {
                     try {
                         if (typeof (result) == 'string' && result.startsWith('$$plugin_')) {
                             return global[result];
+                        }
+                        else if (typeof (result) == 'string' && obj.json) {
+                            return JSON.parse(result);
                         }
                         else
                             return result;

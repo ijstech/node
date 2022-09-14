@@ -96,7 +96,8 @@ export class VM {
                     result[v] = {
                         ref: this.functionToReference(obj[v]), 
                         type: 'func',
-                        async: true //obj['$$' + v]?true:false
+                        async: true, //obj['$$' + v]?true:false,
+                        json: obj['$$' + v + '_json'] == true
                     };
                 }
                 else if(typeof obj[v] === 'object'){
@@ -164,9 +165,9 @@ export class VM {
                             if (typeof(result) == 'string' && result.startsWith('$$plugin_')){                                
                                 return global[result];
                             }
-                            // else if (typeof(result) == 'string' && ['{', '['].indexOf(result[0]) > -1 && ['}', ']'].indexOf(result.slice(-1)) > -1){
-                            //     return JSON.parse(result)
-                            // }
+                            else if (typeof(result) == 'string' && obj.json){
+                                return JSON.parse(result)
+                            }
                             else
                                 return result
                         }

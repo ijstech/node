@@ -51,6 +51,8 @@ function getPluginClient(vm, db, client) {
                 return client.rollback();
             }
         };
+        plugin["$$query_json"] = true;
+        plugin["$$resolve_json"] = true;
         vm.injectGlobalObject(name, plugin);
     }
     return name;
