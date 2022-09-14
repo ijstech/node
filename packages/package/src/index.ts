@@ -1,16 +1,35 @@
-import * as IPFSUtils from '@ijstech/ipfs';
 import {Compiler, ICompilerResult, IPackage} from '@ijstech/tsc';
 import {Storage} from '@ijstech/storage';
 import {promises as Fs} from 'fs';
 import Path from 'path';
+import { IRouterPluginMethod } from '@ijstech/types';
 export {IPackage};
 
+export interface ISCConfig {
+    src?: string;   
+    router?: {
+        routes: {
+            methods: IRouterPluginMethod[],
+            url: string,
+            module: string,
+            moduleScript?: string,
+            params?: any,
+            plugins?: { 
+                cache?: boolean, 
+                db?: boolean
+            },
+            dependencies?: {
+                [packageName: string]: string
+            }
+        }[]
+    };
+};
 export class Package{
     private manager: PackageManager;
     private packagePath: string;
     private scripts: {[name: string]: ICompilerResult} = {};    
     private packageConfig: any;    
-    private scconfig: any;
+    public scconfig: ISCConfig;
     
     constructor(manager: PackageManager, packagePath: string){
         this.manager = manager;
@@ -94,9 +113,9 @@ export class Package{
     };
 };
 interface IOptions{
-    storage?: Storage;    
+    storage?: Storage;
 }
-export type PackageImporter = (packageName: string, version?: string) => Promise<IPackage>;
+export type PackageImporter = (packageName: string, version?: string) => Promise<Package>;
 export interface IPackageScript {
     script?: string;
     dts?: string;
@@ -104,54 +123,37 @@ export interface IPackageScript {
 }
 export class PackageManager{
     private options: IOptions;
-    private packagesByPath: {[path: string]: IPackage} = {};
-    private packagesByVersion: {[version: string]: IPackage} = {};
-    private packagesByName: {[name: string]: IPackage} = {};
+    private packagesByPath: {[path: string]: Package} = {};
+    private packagesByVersion: {[version: string]: Package} = {};
+    private packagesByName: {[name: string]: Package} = {};
     public packageImporter?: PackageImporter;
 
     constructor(options?: IOptions){
         this.options = options;
     };
-    async addPackage(pack: string | IPackage): Promise<IPackage>{
-        if (typeof(pack) == 'string'){
-            if (!this.packagesByPath[pack]){
-                let result = new Package(this, pack);
-                await result.init();
-                await result.getScript();
-                this.packagesByPath[pack] = result;
-                this.packagesByVersion[`${result.name}@${result.version}`] = result;            
-                this.packagesByName[result.name] = result;
-            };
-            return this.packagesByPath[pack];
-        }   
-        else {
-            if (pack.path && !this.packagesByPath[pack.path])
-                this.packagesByPath[pack.path] = pack;
-            if (pack.name && !this.packagesByName[pack.name])
-                this.packagesByName[pack.name] = pack;
-            if (pack.name && pack.version && !this.packagesByVersion[`${pack.name}@${pack.version}`])
-                this.packagesByVersion[`${pack.name}@${pack.version}`] = pack;
-            return pack
+    async addPackage(packagePath: string): Promise<Package>{
+        if (!this.packagesByPath[packagePath]){
+            let result = new Package(this, packagePath);
+            await result.init();
+            this.packagesByPath[packagePath] = result;
+            this.packagesByVersion[`${result.name}@${result.version}`] = result;            
+            this.packagesByName[result.name] = result;
         };
+        return this.packagesByPath[packagePath];
     };
     async getScript(packageName: string, fileName?: string): Promise<IPackageScript>{
         let pack = await this.getPackage(packageName);
-        if (pack instanceof Package)
+        if (pack)
             return await pack.getScript(fileName)
-        else
-            return {                
-                script: pack.script,
-                dependencies: pack.dependencies,
-                dts: pack.dts
-            }
     };
-    async getPackage(name: string, version?: string): Promise<IPackage>{        
+    async getPackage(name: string, version?: string): Promise<Package>{        
         try{
-            let result: IPackage;
+            let result: Package;
             if (version)
                 result = this.packagesByVersion[`${name}@${version}`]
             else
                 result = this.packagesByName[`${name}`];
+                
             if (!result && this.packageImporter)
                 result  = await this.packageImporter(name, version);
             return result;

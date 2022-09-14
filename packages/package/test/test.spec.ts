@@ -1,11 +1,11 @@
 import assert from "assert";
-import {IPackage, PackageManager} from '../src/index';
+import {Package, PackageManager} from '../src/index';
 import Path from 'path';
 
 describe('Package Manager', function() {    
     it('get package script', async function(){
         let manager = new PackageManager();        
-        manager.packageImporter = (packageName: string):Promise<IPackage>=>{
+        manager.packageImporter = (packageName: string):Promise<Package>=>{
             if (packageName == 'pack1')
                 return manager.addPackage(Path.join(__dirname, './pack'))
         }        

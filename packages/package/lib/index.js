@@ -7,6 +7,7 @@ exports.PackageManager = exports.Package = void 0;
 const tsc_1 = require("@ijstech/tsc");
 const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
+;
 class Package {
     constructor(manager, packagePath) {
         this.scripts = {};
@@ -106,41 +107,22 @@ class PackageManager {
         this.options = options;
     }
     ;
-    async addPackage(pack) {
-        if (typeof (pack) == 'string') {
-            if (!this.packagesByPath[pack]) {
-                let result = new Package(this, pack);
-                await result.init();
-                await result.getScript();
-                this.packagesByPath[pack] = result;
-                this.packagesByVersion[`${result.name}@${result.version}`] = result;
-                this.packagesByName[result.name] = result;
-            }
-            ;
-            return this.packagesByPath[pack];
-        }
-        else {
-            if (pack.path && !this.packagesByPath[pack.path])
-                this.packagesByPath[pack.path] = pack;
-            if (pack.name && !this.packagesByName[pack.name])
-                this.packagesByName[pack.name] = pack;
-            if (pack.name && pack.version && !this.packagesByVersion[`${pack.name}@${pack.version}`])
-                this.packagesByVersion[`${pack.name}@${pack.version}`] = pack;
-            return pack;
+    async addPackage(packagePath) {
+        if (!this.packagesByPath[packagePath]) {
+            let result = new Package(this, packagePath);
+            await result.init();
+            this.packagesByPath[packagePath] = result;
+            this.packagesByVersion[`${result.name}@${result.version}`] = result;
+            this.packagesByName[result.name] = result;
         }
         ;
+        return this.packagesByPath[packagePath];
     }
     ;
     async getScript(packageName, fileName) {
         let pack = await this.getPackage(packageName);
-        if (pack instanceof Package)
+        if (pack)
             return await pack.getScript(fileName);
-        else
-            return {
-                script: pack.script,
-                dependencies: pack.dependencies,
-                dts: pack.dts
-            };
     }
     ;
     async getPackage(name, version) {
