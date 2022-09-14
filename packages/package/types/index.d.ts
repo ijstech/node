@@ -2,23 +2,24 @@ import { ICompilerResult, IPackage } from '@ijstech/tsc';
 import { Storage } from '@ijstech/storage';
 import { IRouterPluginMethod } from '@ijstech/types';
 export { IPackage };
+export interface IRoute {
+    methods: IRouterPluginMethod[];
+    url: string;
+    module: string;
+    moduleScript?: string;
+    params?: any;
+    plugins?: {
+        cache?: boolean;
+        db?: boolean;
+    };
+    dependencies?: {
+        [packageName: string]: string;
+    };
+}
 export interface ISCConfig {
     src?: string;
     router?: {
-        routes: {
-            methods: IRouterPluginMethod[];
-            url: string;
-            module: string;
-            moduleScript?: string;
-            params?: any;
-            plugins?: {
-                cache?: boolean;
-                db?: boolean;
-            };
-            dependencies?: {
-                [packageName: string]: string;
-            };
-        }[];
+        routes: IRoute[];
     };
 }
 export declare class Package {

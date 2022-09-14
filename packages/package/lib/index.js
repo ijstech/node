@@ -8,6 +8,7 @@ const tsc_1 = require("@ijstech/tsc");
 const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
 ;
+;
 class Package {
     constructor(manager, packagePath) {
         this.scripts = {};
