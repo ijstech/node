@@ -51,7 +51,7 @@ export declare class TContext {
     private _applyQueries;
     private _deletedRecords;
     private _graphql;
-    constructor(client?: Types.IDBClient);
+    constructor(client?: Types.IDBClient | Types.IDbConnectionOptions);
     _getRecordSetId(): number;
     _getSchema(): ISchema;
     private getApplyQueries;

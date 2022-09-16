@@ -5,6 +5,7 @@
 *-----------------------------------------------------------*/
 import * as Types from '@ijstech/types';
 import * as GraphQL from "graphql";
+import * as DB from '@ijstech/db';
 
 function generateUUID() { // Public Domain/MIT
     var d = new Date().getTime();//Timestamp
@@ -59,6 +60,9 @@ interface IRecord {
 interface IQuery{
 
 }
+function isDBClient(object: any): object is Types.IDBClient {
+    return 'query' in object;
+}
 export class TContext {
     private $$records: {[name: string]: {
         tableName: string,
@@ -74,9 +78,14 @@ export class TContext {
     private _applyQueries:{[id: number]: Types.IQuery} = {};
     private _deletedRecords = {};
     private _graphql: TGraphQL;
-    constructor(client?: Types.IDBClient){
-        this.initRecordsets();        
-        this._client = client;
+    constructor(client?: Types.IDBClient | Types.IDbConnectionOptions){
+        this.initRecordsets();
+        if (client){
+            if (isDBClient(client))
+                this._client = client
+            else
+                this._client = DB.getClient(client);
+        };
     };
     _getRecordSetId(): number{
         return this._recordSetIdxCount++;

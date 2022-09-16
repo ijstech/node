@@ -21,6 +21,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OneToMany = exports.BlobField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.RecordSet = exports.TGraphQL = exports.TRecordSet = exports.TRecord = exports.TContext = void 0;
 const GraphQL = __importStar(require("graphql"));
+const DB = __importStar(require("@ijstech/db"));
 function generateUUID() {
     var d = new Date().getTime();
     var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now() * 1000)) || 0;
@@ -41,6 +42,9 @@ function generateUUID() {
 ;
 ;
 ;
+function isDBClient(object) {
+    return 'query' in object;
+}
 class TContext {
     constructor(client) {
         this._recordSets = {};
@@ -50,7 +54,13 @@ class TContext {
         this._applyQueries = {};
         this._deletedRecords = {};
         this.initRecordsets();
-        this._client = client;
+        if (client) {
+            if (isDBClient(client))
+                this._client = client;
+            else
+                this._client = DB.getClient(client);
+        }
+        ;
     }
     ;
     _getRecordSetId() {

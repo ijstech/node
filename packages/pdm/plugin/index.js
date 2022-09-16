@@ -17,11 +17,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-define("pdm", ["require", "exports", "graphql"], function (require, exports, GraphQL) {
+define("pdm", ["require", "exports", "graphql", "@ijstech/db"], function (require, exports, GraphQL, DB) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.OneToMany = exports.BlobField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.RecordSet = exports.TGraphQL = exports.TRecordSet = exports.TRecord = exports.TContext = void 0;
     GraphQL = __importStar(GraphQL);
+    DB = __importStar(DB);
     function generateUUID() {
         var d = new Date().getTime();
         var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now() * 1000)) || 0;
@@ -42,6 +43,9 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
     ;
     ;
     ;
+    function isDBClient(object) {
+        return 'query' in object;
+    }
     class TContext {
         constructor(client) {
             this._recordSets = {};
@@ -51,7 +55,13 @@ define("pdm", ["require", "exports", "graphql"], function (require, exports, Gra
             this._applyQueries = {};
             this._deletedRecords = {};
             this.initRecordsets();
-            this._client = client;
+            if (client) {
+                if (isDBClient(client))
+                    this._client = client;
+                else
+                    this._client = DB.getClient(client);
+            }
+            ;
         }
         ;
         _getRecordSetId() {
