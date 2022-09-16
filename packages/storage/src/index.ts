@@ -7,6 +7,9 @@ import * as IPFSUtils from '@ijstech/ipfs';
 import {IS3Options, S3} from './s3';
 import Extract from 'extract-zip';
 import { Web3Storage, getFilesFromPath} from 'web3.storage';
+import {IDbConnectionOptions} from '@ijstech/types';
+import Context from './log.pdm';
+
 const appPrefix = 'sc';
 
 async function download(url: string, dest: string) {
@@ -41,12 +44,14 @@ export interface IStorageOptions{
     s3?: IS3Options;
     web3Storage?: {endpoint?: string,token: string};
     localCache?: {path: string};
+    log?: IDbConnectionOptions;
 };
 export class Storage{
     private options: IStorageOptions;
     private s3: S3;
     private web3Storage: Web3Storage;
     private _initDir: boolean;
+    private logContext: Context;
 
     constructor(options: IStorageOptions){
         this.options = options;
@@ -54,6 +59,8 @@ export class Storage{
             this.s3 = new S3(this.options.s3);        
         if (this.options.web3Storage?.token)
             this.web3Storage = new Web3Storage({ token: this.options.web3Storage.token});
+        if (this.options.log)
+            this.logContext = new Context(this.options.log);
     };
     private async initDir(){
         if (!this._initDir){
@@ -92,11 +99,15 @@ export class Storage{
             await Fs.writeFile(filePath, content);
         };
     };
-    async getFileContent(cid: string, filePath: string): Promise<string>{
-        if (filePath[0] == '/')
+    async getFileContent(cid: string, filePath: string|string[]): Promise<string>{
+        if (typeof(filePath) == 'string' && filePath[0] == '/')
             filePath = filePath.substring(1);
         let key = `stat/${cid}`;
-        let paths = filePath.split('/');
+        let paths: string[];
+        if (Array.isArray(filePath))
+            paths = filePath
+        else
+            paths = filePath.split('/');
         let item:IPFSUtils.ICidInfo;
         let localCache: boolean;
         if (await this.localCacheExist(key)){
@@ -106,36 +117,23 @@ export class Storage{
         else if (this.s3){
             let content = await this.s3.getObject(key)
             item = JSON.parse(content);
+            if ((await IPFSUtils.hashItems(item.links)).cid != cid)
+                throw new Error('CID not match');
             await this.putLocalCache(key, content);
         }
-        let items: IPFSUtils.ICidInfo[];
-        for (let i = 0; i < paths.length; i ++){
-            let items = item.links;     
-            if (!localCache){
-                let cid = (await IPFSUtils.hashItems(items)).cid;
-                if (cid != item.cid)
-                    throw new Error('CID not match');
-            }
-            for (let k = 0; k < items.length; k ++){
-                if (items[k].name == paths[i]){
-                    if (items[k].type == 'file'){
-                        let key = `ipfs/${items[k].cid}`;
-                        let content: string;
-                        if (await this.localCacheExist(key))
-                            content = await this.getLocalCache(key)
-                        else{
-                            content = await this.s3.getObject(key);
-                            let cid = await IPFSUtils.hashContent(content);
-                            if (cid != items[k].cid)
-                                throw new Error('CID not match');
-                            await this.putLocalCache(key, content);
-                        };
-                        return content;
-                    }
-                    else{
-                        item = items[k];
-                        break;
-                    };
+        
+        let path = paths.shift();
+        for (let i = 0; i < item.links.length; i++){
+            if (item.links[i].name == path){
+                if (item.links[i].type == 'dir')
+                    return await this.getFileContent(item.links[i].cid, paths)
+                else{
+                    let content = await this.s3.getObject(`ipfs/${item.links[i].cid}`);
+                    let cid = await IPFSUtils.hashContent(content);
+                    if (cid != item.links[i].cid)
+                        throw new Error('CID not match');
+                    await this.putLocalCache(`ipfs/${item.links[i].cid}`, content);
+                    return content;
                 };
             };
         };
@@ -151,21 +149,57 @@ export class Storage{
             cid = await this.web3Storage.put(files, {
                 name: name
             });  
-            if (cid != hash.cid){                
-                console.dir('Error: CID not match');
-                console.dir(cid);
-                console.dir(hash.cid);
-                // throw new Error('CID not match');
-            }
+            if (cid != hash.cid)
+                throw new Error('CID not match');
         };
-        if (to.s3){
-            await this.putLocalCache('stat/' + hash.cid, JSON.stringify(hash, null, 4));
-            let exists = await this.s3.hasObject(`stat/${hash.cid}`,);
-            if (!exists)
-                await this.s3.putObject(`stat/${hash.cid}`, JSON.stringify(hash));
-            await this.s3.syncFiles(path, 'ipfs', hash.links);
+        if (to.s3){   
+            await this.syncItemToS3(path, hash);
         };
         return hash;
+    };
+    async syncItemToS3(sourcePath: string, item: IPFSUtils.ICidInfo, parent?: IPFSUtils.ICidInfo){
+        let key: string;
+        if (item.type == 'dir')
+            key = `stat/${item.cid}`
+        else
+            key = `ipfs/${item.cid}`;
+        let exists = await this.s3.hasObject(key);
+        if (!exists){
+            if (item.type == 'dir'){
+                if (item.links?.length > 0){
+                    for (let i = 0; i < item.links.length; i ++)
+                        await this.syncItemToS3(Path.join(sourcePath, item.links[i].name), item.links[i], item);
+
+                    let data: IPFSUtils.ICidInfo = JSON.parse(JSON.stringify(item));
+                    for (let i = 0; i < data.links.length; i ++)
+                        delete data.links[i].links;
+                    await this.s3.putObject(key, JSON.stringify(data)); 
+                    if (this.logContext){
+                        this.logContext.storageLog.applyInsert({
+                            cid: data.cid,
+                            createDate: new Date(),
+                            parentCid: parent?parent.cid:null,
+                            size: data.size,
+                            type: 1
+                        });
+                        await this.logContext.save();
+                    }
+                }
+            }
+            else{
+                await this.s3.putObjectFrom(key, sourcePath);
+                if (this.logContext){
+                    this.logContext.storageLog.applyInsert({
+                        cid: item.cid,
+                        createDate: new Date(),
+                        parentCid: parent.cid,
+                        size: item.size,
+                        type: 2
+                    });                
+                    await this.logContext.save();
+                }
+            };
+        };
     };
     async syncGithubTo(repo: IGithubRepo, to: {ipfs?:boolean, s3?: boolean}, sourceDir?: string): Promise<IPFSUtils.ICidInfo>{
         let id = Crypto.randomUUID();

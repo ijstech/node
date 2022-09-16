@@ -10,5 +10,13 @@ module.exports = {
     },
     localCache: {
         path: 'cache'
+    },
+    log: {
+        mysql: {
+            host: '',
+            user: '',
+            password: '',
+            database: ''
+        }
     }
 }
