@@ -68,24 +68,25 @@ export async function hashDir(dirPath: string, version?: number): Promise<ICidIn
         links: items
     };
 };
-export async function hashContent(content: string | Buffer, version?: number): Promise<string> {
+export async function hashContent(content: string | Buffer, version?: number): Promise<{cid: string, size: number}> {
     if (version == undefined)
         version = 1;
     // return await IPFS.hashContent(content, version);    
     if (content.length == 0){
-        return await IPFS.hashContent('', version);  
-    }
-    let result;
+        return {
+            cid: await IPFS.hashContent('', version),
+            size: 0
+        };  
+    }    
     if (version == 1){
-        result = await IPFS.hashFile(content, version, { //match web3.storage default parameters, https://github.com/web3-storage/web3.storage/blob/3f6b6d38de796e4758f1dffffe8cde948d2bb4ac/packages/client/src/lib.js#L113
+        return await IPFS.hashFile(content, version, { //match web3.storage default parameters, https://github.com/web3-storage/web3.storage/blob/3f6b6d38de796e4758f1dffffe8cde948d2bb4ac/packages/client/src/lib.js#L113
             rawLeaves: true,
             maxChunkSize: 1048576,
             maxChildrenPerNode: 1024
         })
     }
     else
-        result = await IPFS.hashFile(content, version);
-    return result.cid;
+        return await IPFS.hashFile(content, version);
 }
 // test start from here
 export async function hashFile(filePath: string, version?: number, options?: {

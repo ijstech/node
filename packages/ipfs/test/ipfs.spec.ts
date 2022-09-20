@@ -1,6 +1,8 @@
 import { ICidInfo, hashDir, hashItems, hashContent, hashFile} from '../src/index';
 import assert from 'assert';
 import Path from 'path';
+import {promises as Fs} from 'fs';
+import { resourceLimits } from 'worker_threads';
 
 // import fs from 'fs';
 // import Hash from './hashOnly';
@@ -713,12 +715,12 @@ describe('IPFS', function () {
     })
   });
   it('hash content V0', async () => {
-    let cid = await hashContent('Hello World!', 0);
-    assert.strictEqual(cid, 'Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy');
+    let result = await hashContent('Hello World!', 0);
+    assert.strictEqual(result.cid, 'Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy');
   });
   it('hash content V1', async () => {
-    let cid = await hashContent('Hello World!', 1);
-    assert.strictEqual(cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
+    let result = await hashContent('Hello World!', 1);
+    assert.strictEqual(result.cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
   });
   it('hash text file v0', async () => {
     //https://ipfs.io/ipfs/Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy
@@ -741,9 +743,26 @@ describe('IPFS', function () {
     assert.strictEqual(cid, 'bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla');
   });
   it('hash text file v1 size 1048577', async () => {
+    //https://bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby.ipfs.dweb.link/1048577.bin
     //https://dweb.link/ipfs/bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq?filename=1048577.bin
     let { cid } = await hashFile(Path.resolve(__dirname, './1048577.bin'), 1);
     assert.strictEqual(cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
+  });
+  it('hash content v1 size 1048577', async () => {
+    //https://bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby.ipfs.dweb.link/1048577.bin
+    //https://dweb.link/ipfs/bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq?filename=1048577.bin
+    let content = await Fs.readFile(Path.resolve(__dirname, './1048577.bin'), 'utf-8');
+    let result = await hashContent(content);    
+    assert.strictEqual(result.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
+    result = await hashItems([
+        {
+            cid: result.cid,
+            name: '1048577.bin',
+            size: result.size,
+            type: 'file'
+        }
+    ]);
+    assert.strictEqual(result.cid, 'bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby');
   });
   it('hash text file v0 size 1048577', async () => {    
     let {cid} = await hashFile(Path.resolve(__dirname, './1048577.bin'), 0);

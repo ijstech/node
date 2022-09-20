@@ -62,19 +62,20 @@ async function hashContent(content, version) {
     if (version == undefined)
         version = 1;
     if (content.length == 0) {
-        return await ipfs_js_1.default.hashContent('', version);
+        return {
+            cid: await ipfs_js_1.default.hashContent('', version),
+            size: 0
+        };
     }
-    let result;
     if (version == 1) {
-        result = await ipfs_js_1.default.hashFile(content, version, {
+        return await ipfs_js_1.default.hashFile(content, version, {
             rawLeaves: true,
             maxChunkSize: 1048576,
             maxChildrenPerNode: 1024
         });
     }
     else
-        result = await ipfs_js_1.default.hashFile(content, version);
-    return result.cid;
+        return await ipfs_js_1.default.hashFile(content, version);
 }
 exports.hashContent = hashContent;
 async function hashFile(filePath, version, options) {
