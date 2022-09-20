@@ -20,7 +20,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 define("pdm", ["require", "exports", "graphql", "@ijstech/db"], function (require, exports, GraphQL, DB) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.OneToMany = exports.BlobField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.RecordSet = exports.TGraphQL = exports.TRecordSet = exports.TRecord = exports.TContext = void 0;
+    exports.OneToMany = exports.BlobField = exports.TimeField = exports.DateTimeField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.RecordSet = exports.TGraphQL = exports.TRecordSet = exports.TRecord = exports.TContext = void 0;
     GraphQL = __importStar(GraphQL);
     DB = __importStar(DB);
     function generateUUID() {
@@ -623,6 +623,8 @@ define("pdm", ["require", "exports", "graphql", "@ijstech/db"], function (requir
                         case 'char':
                         case 'varchar':
                         case 'date':
+                        case 'dateTime':
+                        case 'time':
                             type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLString);
                             criteria[prop] = { type: GraphQL.GraphQLString };
                             break;
@@ -699,6 +701,8 @@ define("pdm", ["require", "exports", "graphql", "@ijstech/db"], function (requir
         }
     }
     exports.TGraphQL = TGraphQL;
+    ;
+    ;
     ;
     ;
     ;
@@ -807,6 +811,28 @@ define("pdm", ["require", "exports", "graphql", "@ijstech/db"], function (requir
         };
     }
     exports.DateField = DateField;
+    ;
+    function DateTimeField(fieldType) {
+        return function (target, propName) {
+            fieldType = fieldType || {};
+            fieldType.field = fieldType.field || propName;
+            fieldType.dataType = 'dateTime';
+            target['$$fields'] = target['$$fields'] || {};
+            target['$$fields'][propName] = fieldType;
+        };
+    }
+    exports.DateTimeField = DateTimeField;
+    ;
+    function TimeField(fieldType) {
+        return function (target, propName) {
+            fieldType = fieldType || {};
+            fieldType.field = fieldType.field || propName;
+            fieldType.dataType = 'time';
+            target['$$fields'] = target['$$fields'] || {};
+            target['$$fields'][propName] = fieldType;
+        };
+    }
+    exports.TimeField = TimeField;
     ;
     function BlobField(fieldType) {
         return function (target, propName) {

@@ -29,7 +29,7 @@ export interface IField{
     size?: number;
     details?: any;
     table?: string;
-    dataType?: 'key'|'ref'|'1toM'|'char'|'varchar'|'boolean'|'integer'|'decimal'|'date'|'blob'|'text'|'mediumText'|'longText';
+    dataType?: 'key'|'ref'|'1toM'|'char'|'varchar'|'boolean'|'integer'|'decimal'|'date'|'dateTime'|'time'|'blob'|'text'|'mediumText'|'longText';
 }
 export interface IFields{[name: string]: IField}
 export interface IRefField extends IField{
@@ -641,6 +641,8 @@ export class TGraphQL {
                     case 'char':
                     case 'varchar':
                     case 'date':
+                    case 'dateTime':
+                    case 'time':
                         type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLString);
                         criteria[prop] = { type: GraphQL.GraphQLString };
                         break;
@@ -734,6 +736,12 @@ export interface IIntegerField extends IField{
 export interface IDateField extends IField{
 
 };
+export interface IDateTimeField extends IField{
+
+};
+export interface ITimeField extends IField{
+
+};
 export function RecordSet(tableName: string, recordType: typeof TRecord, recordSetType?: any){
     return function (target: TContext, propName: string, params?: any) {
         target['$$records'] = target['$$records'] || {};
@@ -818,6 +826,24 @@ export function DateField(fieldType?: IDateField){
         fieldType = fieldType || {};
         fieldType.field = fieldType.field || propName;
         fieldType.dataType = 'date';
+        target['$$fields'] = target['$$fields'] || {};
+        target['$$fields'][propName] = fieldType;
+    };
+};
+export function DateTimeField(fieldType?: IDateField){
+    return function (target: TRecord, propName: string) {
+        fieldType = fieldType || {};
+        fieldType.field = fieldType.field || propName;
+        fieldType.dataType = 'dateTime';
+        target['$$fields'] = target['$$fields'] || {};
+        target['$$fields'][propName] = fieldType;
+    };
+};
+export function TimeField(fieldType?: IDateField){
+    return function (target: TRecord, propName: string) {
+        fieldType = fieldType || {};
+        fieldType.field = fieldType.field || propName;
+        fieldType.dataType = 'time';
         target['$$fields'] = target['$$fields'] || {};
         target['$$fields'][propName] = fieldType;
     };

@@ -6,7 +6,7 @@ export interface IField {
     size?: number;
     details?: any;
     table?: string;
-    dataType?: 'key' | 'ref' | '1toM' | 'char' | 'varchar' | 'boolean' | 'integer' | 'decimal' | 'date' | 'blob' | 'text' | 'mediumText' | 'longText';
+    dataType?: 'key' | 'ref' | '1toM' | 'char' | 'varchar' | 'boolean' | 'integer' | 'decimal' | 'date' | 'dateTime' | 'time' | 'blob' | 'text' | 'mediumText' | 'longText';
 }
 export interface IFields {
     [name: string]: IField;
@@ -174,6 +174,10 @@ export interface IIntegerField extends IField {
 }
 export interface IDateField extends IField {
 }
+export interface IDateTimeField extends IField {
+}
+export interface ITimeField extends IField {
+}
 export declare function RecordSet(tableName: string, recordType: typeof TRecord, recordSetType?: any): (target: TContext, propName: string, params?: any) => void;
 export declare function KeyField(fieldType?: IField): (target: TRecord, propName: string) => void;
 export declare function RefTo<T extends TContext>(record: keyof T, field?: string): (target: TRecord, propName: string) => void;
@@ -182,6 +186,8 @@ export declare function DecimalField(fieldType?: IDecimalField): (target: TRecor
 export declare function IntegerField(fieldType?: IIntegerField): (target: TRecord, propName: string) => void;
 export declare function BooleanField(fieldType?: IBooleanField): (target: TRecord, propName: string) => void;
 export declare function DateField(fieldType?: IDateField): (target: TRecord, propName: string) => void;
+export declare function DateTimeField(fieldType?: IDateField): (target: TRecord, propName: string) => void;
+export declare function TimeField(fieldType?: IDateField): (target: TRecord, propName: string) => void;
 export declare function BlobField(fieldType?: IField): (target: TRecord, propName: string) => void;
 export declare function OneToMany<T>(record: typeof TRecord, prop: keyof T, tableName: string, fieldName: string): (target: TRecord, propName: string) => void;
 export {};

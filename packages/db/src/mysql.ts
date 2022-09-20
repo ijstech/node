@@ -355,6 +355,8 @@ export class MySQLClient implements Types.IDBClient{
                 case 'char':
                 case 'varchar':
                 case 'date':
+                case 'dateTime':
+                case 'time':
                 case 'boolean':
                 case 'integer':
                 case 'decimal':
@@ -432,6 +434,12 @@ export class MySQLClient implements Types.IDBClient{
                             case 'date':
                                 columnBuilder.push(`${this.escape(fieldName)} DATE NULL`);
                                 break;
+                            case 'dateTime':
+                                columnBuilder.push(`${this.escape(fieldName)} DATETIME NULL`);
+                                break;
+                            case 'time':
+                                columnBuilder.push(`${this.escape(fieldName)} TIME NULL`);
+                                break;
                             case 'blob':
                                 columnBuilder.push(`${this.escape(fieldName)} MEDIUMBLOB`);
                                 break;
@@ -496,9 +504,15 @@ export class MySQLClient implements Types.IDBClient{
                             case 'decimal':
                                 columnBuilder.push(`ADD ${this.escape(fieldName)} DECIMAL(?, ?) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
                                 columnBuilderParams.push((<Types.IDecimalField> field).digits || 11, (<Types.IDecimalField> field).decimals || 2)
-                                break;
+                                break;                            
                             case 'date':
                                 columnBuilder.push(`ADD ${this.escape(fieldName)} DATE NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case 'dateTime':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} DATETIME NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                break;
+                            case 'time':
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} TIME NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
                                 break;
                             case 'blob':
                                 columnBuilder.push(`ADD ${this.escape(fieldName)} MEDIUMBLOB ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
