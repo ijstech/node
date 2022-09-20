@@ -3948,35 +3948,12 @@
   }
   Object.freeze(mh_codes)
 
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L28
-  function mh_toHexString(hash) {
-    if (!(hash instanceof Uint8Array)) {
-      throw new Error('must be passed a Uint8Array')
-    }
-
-    return uint8ArrayToString(hash, 'base16')
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L42
-  function mh_fromHexString(hash) {
-    return uint8ArrayFromString(hash, 'base16')
-  }
-
   //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L52
   function mh_toB58String(hash) {
     if (!(hash instanceof Uint8Array)) {
       throw new Error('must be passed a Uint8Array')
     }
     return uint8ArrayToString(multibase_encode('base58btc', hash)).slice(1)
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L66
-  function mh_fromB58String(hash) {
-    const encoded = hash instanceof Uint8Array
-      ? uint8ArrayToString(hash)
-      : hash
-
-    return multibase_decode('z' + encoded)
   }
 
   //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L80
@@ -4088,41 +4065,16 @@
     mh_decode(multihash)
   }
 
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L223
-  function mh_prefix(multihash) {
-    mh_validate(multihash)
-
-    return multihash.subarray(0, 2)
-  }
-
-  //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L193
-  function mh_isValidCode(code) {
-    if (mh_isAppCode(code)) {
-      return true
-    }
-
-    if (mh_codes[code]) {
-      return true
-    }
-
-    return false
-  }
-
   //https://github.com/multiformats/js-multihash/blob/98ebff7e248bc842fbdfb22b14b58fb9c8679f96/src/index.js#L229
   const multihash = {
     mh_names,
     mh_codes,
-    mh_toHexString,
-    mh_fromHexString,
     mh_toB58String,
-    mh_fromB58String,
     mh_decode,
     mh_encode,
     mh_coerceCode,
     mh_isAppCode,
     mh_validate,
-    mh_prefix,
-    mh_isValidCode
   }
 
 
@@ -4311,19 +4263,6 @@
     const data = encodeText(enc.encode(buf))
 
     return concat([enc.codeBuf, data], enc.codeBuf.length + data.length)
-  }
-
-  //https://github.com/multiformats/js-multibase/blob/f3a4e2dd0c0090b44bb0af67336594122ec930e2/src/index.js#L58
-  function multibase_decode(data) {
-    if (data instanceof Uint8Array) {
-      data = decodeText(data)
-    }
-    const prefix = data[0]
-    if (['f', 'F', 'v', 'V', 't', 'T', 'b', 'B', 'c', 'C', 'h', 'k', 'K'].includes(prefix)) {
-      data = data.toLowerCase()
-    }
-    const enc = encoding(/** @type {BaseCode} */(data[0]))
-    return enc.decode(data.substring(1))
   }
 
   /*---------------------------------------------------------------------------------------------
