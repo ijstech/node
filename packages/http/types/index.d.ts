@@ -7,6 +7,7 @@
 import Koa from 'koa';
 import Tls from 'tls';
 import { IRouterPluginOptions } from '@ijstech/plugin';
+import { IJobQueueConnectionOptions } from '@ijstech/types';
 export interface IPlugin {
     scriptPath?: string;
     baseUrl?: string;
@@ -18,16 +19,42 @@ export interface IRouterOptions {
     module?: string;
     routes?: IRouterPluginOptions[];
 }
+export interface IWorkerOptions {
+    enabled: boolean;
+    jobQueue: string;
+    connection: IJobQueueConnectionOptions;
+}
 export interface IHttpServerOptions {
     ciphers?: string;
     certPath?: string;
     port?: number;
     securePort?: number;
     router?: IRouterOptions;
+    workerOptions?: IWorkerOptions;
+}
+export interface IDomainOptions {
+    plugins?: {
+        db?: {
+            mysql?: {
+                host: string;
+                user: string;
+                password: string;
+                database: string;
+            };
+        };
+        cache?: {
+            redis?: {
+                host: string;
+                password?: string;
+                db?: number;
+            };
+        };
+    };
 }
 export interface IDomainPackage {
     baseUrl: string;
     packagePath: string;
+    options?: IDomainOptions;
 }
 export declare class HttpServer {
     private app;
@@ -41,7 +68,7 @@ export declare class HttpServer {
     private packageManager;
     private domainPacks;
     constructor(options: IHttpServerOptions);
-    addDomainPackage(domain: string, baseUrl: string, packagePath: string): Promise<void>;
+    addDomainPackage(domain: string, baseUrl: string, packagePath: string, options?: IDomainOptions): Promise<void>;
     getCert(domain: string): Promise<Tls.SecureContext>;
     getRouter(ctx: Koa.Context): Promise<{
         router: IRouterPluginOptions;

@@ -40,40 +40,45 @@ function matchRoute(pack, route, url) {
 }
 ;
 ;
+;
 class HttpServer {
     constructor(options) {
         this.ssl = {};
         this.domainPacks = {};
-        this.app = new koa_1.default();
-        this.app.use(koa_bodyparser_1.default());
         this.options = options;
-        this.ciphers = options.ciphers || [
-            "ECDHE-RSA-AES256-SHA384",
-            "DHE-RSA-AES256-SHA384",
-            "ECDHE-RSA-AES256-SHA256",
-            "DHE-RSA-AES256-SHA256",
-            "ECDHE-RSA-AES128-SHA256",
-            "DHE-RSA-AES128-SHA256",
-            "HIGH",
-            "!aNULL",
-            "!eNULL",
-            "!EXPORT",
-            "!DES",
-            "!RC4",
-            "!MD5",
-            "!PSK",
-            "!SRP",
-            "!CAMELLIA"
-        ].join(':');
+        if (this.options.port || this.options.securePort) {
+            this.app = new koa_1.default();
+            this.app.use(koa_bodyparser_1.default());
+            this.ciphers = options.ciphers || [
+                "ECDHE-RSA-AES256-SHA384",
+                "DHE-RSA-AES256-SHA384",
+                "ECDHE-RSA-AES256-SHA256",
+                "DHE-RSA-AES256-SHA256",
+                "ECDHE-RSA-AES128-SHA256",
+                "DHE-RSA-AES128-SHA256",
+                "HIGH",
+                "!aNULL",
+                "!eNULL",
+                "!EXPORT",
+                "!DES",
+                "!RC4",
+                "!MD5",
+                "!PSK",
+                "!SRP",
+                "!CAMELLIA"
+            ].join(':');
+        }
+        ;
     }
     ;
-    async addDomainPackage(domain, baseUrl, packagePath) {
+    async addDomainPackage(domain, baseUrl, packagePath, options) {
         if (!this.packageManager)
             this.packageManager = new package_1.PackageManager();
         let packs = this.domainPacks[domain] || [];
         packs.push({
             baseUrl: baseUrl,
-            packagePath: packagePath
+            packagePath: packagePath,
+            options: options
         });
         this.domainPacks[domain] = packs;
     }
@@ -197,7 +202,7 @@ class HttpServer {
             }
             ;
             this.app.use(async (ctx, next) => {
-                var _a, _b, _c, _d;
+                var _a, _b, _c, _d, _e, _f;
                 if (this.options.router && this.options.router.routes) {
                     let matched = await this.getRouter(ctx);
                     if (matched === null || matched === void 0 ? void 0 : matched.router) {
@@ -246,11 +251,20 @@ class HttpServer {
                                             if (!plugin) {
                                                 let script = await p.getScript(route.module);
                                                 if (script) {
+                                                    let plugins = {};
+                                                    if (pack.options && pack.options.plugins) {
+                                                        if ((_e = route.plugins) === null || _e === void 0 ? void 0 : _e.db)
+                                                            plugins.db = { default: pack.options.plugins.db };
+                                                        if ((_f = route.plugins) === null || _f === void 0 ? void 0 : _f.cache)
+                                                            plugins.cache = pack.options.plugins.cache;
+                                                    }
+                                                    ;
                                                     plugin = new plugin_1.Router({
                                                         baseUrl: route.url,
                                                         methods: [method],
                                                         script: script.script,
-                                                        dependencies: script.dependencies
+                                                        dependencies: script.dependencies,
+                                                        plugins: plugins
                                                     });
                                                     route._plugin = plugin;
                                                 }

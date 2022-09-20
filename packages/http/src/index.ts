@@ -14,7 +14,7 @@ import Https from 'https';
 import Templates from './templates/404';
 import {IRouterPluginOptions, Router, RouterRequest} from '@ijstech/plugin';
 import {PackageManager, IRoute} from '@ijstech/package';
-import { IRouterPluginMethod } from '@ijstech/types';
+import { IRouterPluginMethod, IJobQueueConnectionOptions } from '@ijstech/types';
 import {match} from './pathToRegexp';
 
 const RootPath = process.cwd();
@@ -30,12 +30,18 @@ export interface IRouterOptions {
     module?: string;
     routes?: IRouterPluginOptions[];
 };
+export interface IWorkerOptions{
+    enabled: boolean;
+    jobQueue: string;
+    connection: IJobQueueConnectionOptions
+}
 export interface IHttpServerOptions{    
     ciphers?: string;
     certPath?: string;
     port?: number;
     securePort?: number;
     router?: IRouterOptions;
+    workerOptions?: IWorkerOptions;
 };
 function matchRoute(pack: IDomainPackage, route: IRoute, url: string): any{
     if (pack.baseUrl + route.url == url)
@@ -50,9 +56,29 @@ function matchRoute(pack: IDomainPackage, route: IRoute, url: string): any{
     else
         return Object.assign({}, result.params);
 };
+export interface IDomainOptions{
+    plugins?: {
+        db?: {
+            mysql?: {
+                host: string,
+                user: string,
+                password: string,
+                database: string
+            }
+        },
+        cache?: {
+            redis?: {
+                host: string,
+                password?: string,
+                db?: number
+            }
+        }
+    };
+};
 export interface IDomainPackage{
     baseUrl: string;
     packagePath: string;
+    options?: IDomainOptions
 };
 export class HttpServer {
     private app: Koa;
@@ -67,35 +93,38 @@ export class HttpServer {
     private domainPacks: {[name: string]:IDomainPackage[]} = {};
 
     constructor(options: IHttpServerOptions){
-        this.app = new Koa();        
-        this.app.use(BodyParser());
         this.options = options;
-        this.ciphers = options.ciphers || [
-            "ECDHE-RSA-AES256-SHA384",
-            "DHE-RSA-AES256-SHA384",
-            "ECDHE-RSA-AES256-SHA256",
-            "DHE-RSA-AES256-SHA256",
-            "ECDHE-RSA-AES128-SHA256",
-            "DHE-RSA-AES128-SHA256",
-            "HIGH",
-            "!aNULL",
-            "!eNULL",
-            "!EXPORT",
-            "!DES",
-            "!RC4",
-            "!MD5",
-            "!PSK",
-            "!SRP",
-            "!CAMELLIA"
-        ].join(':');  
+        if (this.options.port || this.options.securePort){
+            this.app = new Koa();
+            this.app.use(BodyParser());        
+            this.ciphers = options.ciphers || [
+                "ECDHE-RSA-AES256-SHA384",
+                "DHE-RSA-AES256-SHA384",
+                "ECDHE-RSA-AES256-SHA256",
+                "DHE-RSA-AES256-SHA256",
+                "ECDHE-RSA-AES128-SHA256",
+                "DHE-RSA-AES128-SHA256",
+                "HIGH",
+                "!aNULL",
+                "!eNULL",
+                "!EXPORT",
+                "!DES",
+                "!RC4",
+                "!MD5",
+                "!PSK",
+                "!SRP",
+                "!CAMELLIA"
+            ].join(':'); 
+        };
     };    
-    async addDomainPackage(domain: string, baseUrl: string, packagePath: string){
+    async addDomainPackage(domain: string, baseUrl: string, packagePath: string, options?: IDomainOptions){
         if (!this.packageManager)
             this.packageManager = new PackageManager();
         let packs = this.domainPacks[domain] || [];
         packs.push({
             baseUrl: baseUrl,
-            packagePath: packagePath
+            packagePath: packagePath,
+            options: options
         });
         this.domainPacks[domain] = packs;
     };
@@ -251,11 +280,19 @@ export class HttpServer {
                                             if (!plugin){
                                                 let script = await p.getScript(route.module);
                                                 if (script){
+                                                    let plugins:any = {};
+                                                    if (pack.options && pack.options.plugins){
+                                                        if (route.plugins?.db)
+                                                            plugins.db = {default: pack.options.plugins.db};
+                                                        if (route.plugins?.cache)
+                                                            plugins.cache = pack.options.plugins.cache;
+                                                    };
                                                     plugin = new Router({
                                                         baseUrl: route.url,
                                                         methods: [method],
                                                         script: script.script,
-                                                        dependencies: script.dependencies
+                                                        dependencies: script.dependencies,
+                                                        plugins: plugins
                                                     });
                                                     (<any>route)._plugin = plugin;
                                                 };

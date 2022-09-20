@@ -4,6 +4,7 @@ import http from 'http';
 import Koa from 'koa';
 import {URL} from 'url';
 import Path from 'path';
+import Config from './data/config.js';
 
 async function request(method: string, path: string, data?: any): Promise<{statusCode:number|undefined, contentType:string|undefined, data: any}>{
     return new Promise((resolve, reject)=>{
@@ -57,7 +58,7 @@ describe('HTTP Server', function() {
             port:8888
         });        
         await server.start();        
-        await server.addDomainPackage('localhost', '/pack1', Path.resolve(__dirname, 'router'));        
+        await server.addDomainPackage('localhost', '/pack1', Path.resolve(__dirname, 'router'), Config);
         server.use(async (ctx: Koa.Context)=>{
             if (ctx.method == 'GET' && ctx.url == '/ok'){
                 ctx.body = 'get ok';
@@ -94,6 +95,18 @@ describe('HTTP Server', function() {
         assert.strictEqual(result.data.params.param1, 'p1');
         assert.strictEqual(result.data.params.param2, 'p2');
         assert.strictEqual(result.data.params.param3, 'default param3 value');
+    });
+    it ('Domain Package Router DB Plugin', async function(){
+        let result = await post('http://localhost:8888/pack1/hello/db');        
+        assert.strictEqual(typeof(result.data.dbResult[0].sysdate), 'string');
+        assert.strictEqual(result.statusCode, 200);
+        assert.strictEqual(result.data.msg, 'POST hello');        
+    });
+    it ('Domain Package Router Cache Plugin', async function(){
+        let result = await post('http://localhost:8888/pack1/hello/cache');        
+        assert.strictEqual(result.statusCode, 200);
+        assert.strictEqual(result.data.msg, 'POST hello');
+        assert.strictEqual(result.data.cacheResult, true);
     });
     it ('Domain Package Router PUT', async function(){
         let result = await put('http://localhost:8888/pack1/hello');
