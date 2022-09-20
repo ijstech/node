@@ -299,7 +299,7 @@ export interface IField{
     size?: number;
     details?: any;
     table?: string;
-    dataType?: 'key'|'ref'|'1toM'|'char'|'varchar'|'boolean'|'integer'|'decimal'|'date'|'blob'|'text'|'mediumText'|'longText';
+    dataType?: 'key'|'ref'|'1toM'|'char'|'varchar'|'boolean'|'integer'|'decimal'|'date'|'dateTime'|'time'|'blob'|'text'|'mediumText'|'longText';
 }
 export interface IFields{[name: string]: IField}
 export interface IRefField extends IField{
