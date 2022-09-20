@@ -3,10 +3,11 @@ import {S3} from '../src/s3';
 import {Storage} from '../src';
 import Config from './data/config.js';
 import Path from 'path';
-import Fs from 'fs';
+import {promises as Fs, rmSync} from 'fs';
+
 
 try{
-    Fs.rmSync(Path.join(__dirname, 'cache'), { recursive: true, force: true });
+    rmSync(Path.join(__dirname, 'cache'), { recursive: true, force: true });
 }
 catch(err){};
 Config.localCache = {
@@ -17,7 +18,7 @@ describe('Storage', function () {
     it('Sync Dir', async function(){
         let storage = new Storage(Config);
         let path = Path.join(__dirname, './dir');
-        let result = await storage.syncDirTo(path, {s3: true, ipfs: true}, 'local test dir')
+        let result = await storage.putDir(path, {s3: true, ipfs: true}, 'local test dir')
         assert.strictEqual(result.cid, 'bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy');
     });
     it('get Item', async function(){
@@ -29,7 +30,7 @@ describe('Storage', function () {
     });
     it('Sync Github', async function(){
         let storage = new Storage(Config);
-        let result = await storage.syncGithubTo({org:'ijstech',repo:'openswap-scbook',commit:'f1abac737421db53e507be21dafc6710a73c8c6f'}, {ipfs: true, s3: false});
+        let result = await storage.putGithub({org:'ijstech',repo:'openswap-scbook',commit:'f1abac737421db53e507be21dafc6710a73c8c6f'}, {ipfs: true, s3: false});
         assert.strictEqual(result.cid, 'bafybeiabehpjuhbjnnrehsrl327pr5tp4fqhclp3th5ta4bxazlmmdkopq');
     });
     it('get File', async function(){
@@ -43,19 +44,26 @@ describe('Storage', function () {
         let storage = new Storage(Config);
         let path = Path.join(__dirname, './dir/folder 1/file 2.txt');
         let result = await storage.putFile(path, {}, 'local file')
-        assert.strictEqual(result.cid, 'bafybeiaujqvgye35gwlz6jlzljojrosci25yuro6qb2754ysfkkjwgo4ma');
+        assert.strictEqual(result.cid, 'bafkreih6p4idjvfghxpjdetts4zpwvj2oidyr5bcyvzd5r6kdrudfaedpy');
     });    
-    it('putObject', async function () {
+    it('put content', async function(){
+        let storage = new Storage(Config);
+        let path = Path.join(__dirname, './dir/folder 1/file 2.txt');
+        let content = await Fs.readFile(path, 'utf-8');
+        let result = await storage.putContent(content, {}, 'local file content')
+        assert.strictEqual(result.cid, 'bafkreih6p4idjvfghxpjdetts4zpwvj2oidyr5bcyvzd5r6kdrudfaedpy');
+    }); 
+    it('s3.putObject', async function () {
         let s3 = new S3(Config.s3)
         let result = await s3.putObject('hello.txt', 'hello!');
         assert.strictEqual(typeof(result.ETag), 'string');
     });
-    it('getObject', async function () {
+    it('s3.getObject', async function () {
         let s3 = new S3(Config.s3)
         let result = await s3.getObject('hello.txt');
         assert.strictEqual(result, 'hello!');
     });
-    it('hasObject', async function () {
+    it('a3.hasObject', async function () {
         let s3 = new S3(Config.s3)
         let result = await s3.hasObject('not_exist_file.txt');
         assert.strictEqual(result, false);

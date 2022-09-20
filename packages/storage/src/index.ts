@@ -6,9 +6,9 @@ import Os from 'os';
 import * as IPFSUtils from '@ijstech/ipfs';
 import {IS3Options, S3} from './s3';
 import Extract from 'extract-zip';
-import { Web3Storage, getFilesFromPath} from 'web3.storage';
+import { Web3Storage, getFilesFromPath, File} from 'web3.storage';
 import {IDbConnectionOptions} from '@ijstech/types';
-import {StorageUploadLog, Context} from './log.pdm';
+import {Context} from './log.pdm';
 
 const appPrefix = 'sc';
 
@@ -137,7 +137,7 @@ export class Storage{
                     return await this.getFile(item.links[i].cid, paths)
                 else{
                     let content = await this.s3.getObject(`${type}/${item.links[i].cid}`);
-                    let cid = await IPFSUtils.hashContent(content);
+                    let {cid} = await IPFSUtils.hashContent(content);
                     if (cid != item.links[i].cid)
                         throw new Error('CID not match');
                     await this.putLocalCache(type, item.links[i].cid, content);
@@ -146,10 +146,62 @@ export class Storage{
             };
         };
     };
+    async putContent(fileContent: string, to?: {ipfs?:boolean, s3?: boolean}, source?: string): Promise<IPFSUtils.ICidInfo>{
+        let fileItem = await IPFSUtils.hashContent(fileContent);
+        let exists: boolean;
+        if (this.s3){
+            exists = await this.s3.hasObject(`ipfs/${fileItem.cid}`);  
+            if (exists)
+                return fileItem;
+        };
+        let folderItem = await IPFSUtils.hashItems([
+            {
+                cid: fileItem.cid,
+                name: 'file',
+                size: fileItem.size,
+                type: 'file'
+            }
+        ])
+        if ((!to || to.ipfs != false) && this.web3Storage){
+            const files = [
+                new File([fileContent], 'file'),
+            ];       
+            let cid = await this.web3Storage.put(files, {
+                name: source
+            });  
+            if (cid != folderItem.cid)
+                throw new Error('CID not match');
+        };
+        if (!to || to.s3 != false){    
+            let logContext: Context;
+            if (this.options.log){
+                logContext = new Context(this.options.log);
+                let log = logContext.uploadLog.add();
+                log.source = source;
+                log.uploadDate = new Date();
+
+                logContext.uploadItem.applyInsert({
+                    cid: fileItem.cid,
+                    logGuid: log.guid,
+                    size: fileItem.size,
+                    type: 2
+                });
+            }
+            await this.s3.putObject(`ipfs/${fileItem.cid}`, fileContent);
+            if (logContext)
+                await logContext.save();
+        };
+        return fileItem;
+    };
     async putFile(filePath: string, to?: {ipfs?:boolean, s3?: boolean}, source?: string): Promise<IPFSUtils.ICidInfo>{
-        let fileItem = await IPFSUtils.hashFile(filePath);
+        let fileItem = await IPFSUtils.hashFile(filePath);        
+        let exists: boolean;
+        if (this.s3){
+            exists = await this.s3.hasObject(`ipfs/${fileItem.cid}`);  
+            if (exists)
+                return fileItem;
+        };
         let fileName = filePath.split('/').pop();
-        // let content = await Fs.readFile(filePath, 'utf8');        
         let folderItem = await IPFSUtils.hashItems([
             {
                 cid: fileItem.cid,
@@ -158,7 +210,8 @@ export class Storage{
                 links: [],
                 type: 'file'
             }
-        ])
+        ]);
+
         if ((!to || to.ipfs != false) && this.web3Storage){            
             const files = await getFilesFromPath(filePath);
             let cid = await this.web3Storage.put(files, {
@@ -167,7 +220,7 @@ export class Storage{
             if (cid != folderItem.cid)
                 throw new Error('CID not match');
         };
-        if (!to || to.s3 != false){            
+        if (!to || to.s3 != false){
             let logContext: Context;
             if (this.options.log){
                 logContext = new Context(this.options.log);
@@ -175,7 +228,7 @@ export class Storage{
                 log.source = source;
                 log.uploadDate = new Date();
             }
-            await this.syncItemToS3(logContext, filePath, {
+            await this.putToS3(logContext, filePath, {
                 cid: fileItem.cid,
                 name: fileName,
                 size: fileItem.size, 
@@ -184,7 +237,7 @@ export class Storage{
             if (logContext)
                 await logContext.save();
         };
-        return folderItem;
+        return fileItem;
     };
     async getItem(cid: string): Promise<string>{
         if (await this.localCacheExist('stat', cid)){
@@ -212,13 +265,13 @@ export class Storage{
                 }
                 catch(err){};
             };
-            if (!match && (await IPFSUtils.hashContent(content)) != cid)            
+            if (!match && (await IPFSUtils.hashContent(content)).cid != cid)            
                 throw new Error('CID not match');
             await this.putLocalCache(itemType, cid, content);
             return content;
         };
     };
-    async syncDirTo(path: string, to?: {ipfs?:boolean, s3?: boolean}, source?: string): Promise<IPFSUtils.ICidInfo>{
+    async putDir(path: string, to?: {ipfs?:boolean, s3?: boolean}, source?: string): Promise<IPFSUtils.ICidInfo>{
         let hash = await IPFSUtils.hashDir(path, 1);        
         let cid: string;
         if ((!to || to.ipfs != false) && this.web3Storage){
@@ -240,13 +293,13 @@ export class Storage{
                 log.source = source;
                 log.uploadDate = new Date();
             };
-            await this.syncItemToS3(logContext, path, hash);
+            await this.putToS3(logContext, path, hash);
             if (logContext)
                 await logContext.save();
         }
         return hash;
     };
-    private async syncItemToS3(logContext: Context, sourcePath: string, item: IPFSUtils.ICidInfo, parent?: IPFSUtils.ICidInfo){        
+    private async putToS3(logContext: Context, sourcePath: string, item: IPFSUtils.ICidInfo, parent?: IPFSUtils.ICidInfo){        
         let itemType: IItemType;
         if (item.type == 'dir')
             itemType = 'stat'
@@ -258,7 +311,7 @@ export class Storage{
             if (item.type == 'dir'){
                 if (item.links?.length > 0){
                     for (let i = 0; i < item.links.length; i ++)
-                        await this.syncItemToS3(logContext, Path.join(sourcePath, item.links[i].name), item.links[i], item);
+                        await this.putToS3(logContext, Path.join(sourcePath, item.links[i].name), item.links[i], item);
 
                     let data: IPFSUtils.ICidInfo = JSON.parse(JSON.stringify(item));
                     for (let i = 0; i < data.links.length; i ++)
@@ -289,7 +342,7 @@ export class Storage{
             };
         };
     };
-    async syncGithubTo(repo: IGithubRepo, to: {ipfs?:boolean, s3?: boolean}, sourceDir?: string): Promise<IPFSUtils.ICidInfo>{
+    async putGithub(repo: IGithubRepo, to: {ipfs?:boolean, s3?: boolean}, sourceDir?: string): Promise<IPFSUtils.ICidInfo>{
         let id = Crypto.randomUUID();
         let tmpDir = await Fs.mkdtemp(Path.join(Os.tmpdir(), appPrefix));
         let dir = `${tmpDir}/${id}`;
@@ -304,7 +357,7 @@ export class Storage{
             await download(url, targetFile);
             await Extract(targetFile, { dir: targetDir });
             let name = `${repo.org}/${repo.repo}/${repo.commit}`;
-            let result = await this.syncDirTo(pinDir, to, name);
+            let result = await this.putDir(pinDir, to, name);
 
             return result;
 
