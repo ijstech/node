@@ -10,7 +10,7 @@ import Path from 'path';
 export interface ICidInfo {
     cid: string;
     links?: ICidInfo[];
-    name: string;
+    name?: string;
     size: number;
     type?: 'dir' | 'file'
 }
@@ -68,7 +68,7 @@ export async function hashDir(dirPath: string, version?: number): Promise<ICidIn
         links: items
     };
 };
-export async function hashContent(content: string | Buffer, version?: number): Promise<{cid: string, size: number}> {
+export async function hashContent(content: string | Buffer, version?: number): Promise<ICidInfo> {
     if (version == undefined)
         version = 1;
     // return await IPFS.hashContent(content, version);    
