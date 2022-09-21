@@ -15,7 +15,7 @@ Config.localCache = {
 }
 describe('Storage', function () {
     this.timeout(1800000);    
-    it('Sync Dir', async function(){
+    it('put Dir', async function(){
         let storage = new Storage(Config);
         let path = Path.join(__dirname, './dir');
         let result = await storage.putDir(path, {s3: true, ipfs: true}, 'local test dir')
@@ -28,7 +28,7 @@ describe('Storage', function () {
         result = await storage.getItem('bafkreiedx5743ej6qhjv6diostwr5qdbd2hdwsijyi5qb347a5xsaxthyy')
         assert.strictEqual(result, 'file 1');
     });
-    it('Sync Github', async function(){
+    it('put Github', async function(){
         let storage = new Storage(Config);
         let result = await storage.putGithub({org:'ijstech',repo:'openswap-scbook',commit:'f1abac737421db53e507be21dafc6710a73c8c6f'}, {ipfs: true, s3: false});
         assert.strictEqual(result.cid, 'bafybeiabehpjuhbjnnrehsrl327pr5tp4fqhclp3th5ta4bxazlmmdkopq');
