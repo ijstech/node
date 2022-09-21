@@ -36,11 +36,12 @@ export interface IWorkerOptions{
     connection: IJobQueueConnectionOptions
 }
 export interface IHttpServerOptions{    
-    ciphers?: string;
     certPath?: string;
+    ciphers?: string;
+    cors?: boolean;
     port?: number;
-    securePort?: number;
     router?: IRouterOptions;
+    securePort?: number;    
     workerOptions?: IWorkerOptions;
 };
 function matchRoute(pack: IDomainPackage, route: IRoute, url: string): any{
@@ -234,6 +235,18 @@ export class HttpServer {
                 console.log(`https server is running at ${this.options.securePort}`);
             };
             this.app.use(async (ctx: Koa.Context, next)=>{
+                if (this.options.cors){
+                    if (ctx.method == 'OPTIONS'){
+                        ctx.set('Access-Control-Allow-Origin', '*');
+                        ctx.set('Access-Control-Allow-Headers', 'content-type');
+                        ctx.status = 200;
+                        return;
+                    }
+                    else if (ctx.method == 'POST'){
+                        ctx.set('Access-Control-Allow-Origin', '*');
+                        ctx.set('Access-Control-Allow-Headers', 'content-type');
+                    };
+                };
                 if (this.options.router && this.options.router.routes){
                     let matched = await this.getRouter(ctx);
                     if (matched?.router){

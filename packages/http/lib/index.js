@@ -203,6 +203,20 @@ class HttpServer {
             ;
             this.app.use(async (ctx, next) => {
                 var _a, _b, _c, _d, _e, _f;
+                if (this.options.cors) {
+                    if (ctx.method == 'OPTIONS') {
+                        ctx.set('Access-Control-Allow-Origin', '*');
+                        ctx.set('Access-Control-Allow-Headers', 'content-type');
+                        ctx.status = 200;
+                        return;
+                    }
+                    else if (ctx.method == 'POST') {
+                        ctx.set('Access-Control-Allow-Origin', '*');
+                        ctx.set('Access-Control-Allow-Headers', 'content-type');
+                    }
+                    ;
+                }
+                ;
                 if (this.options.router && this.options.router.routes) {
                     let matched = await this.getRouter(ctx);
                     if (matched === null || matched === void 0 ? void 0 : matched.router) {

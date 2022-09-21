@@ -25,11 +25,12 @@ export interface IWorkerOptions {
     connection: IJobQueueConnectionOptions;
 }
 export interface IHttpServerOptions {
-    ciphers?: string;
     certPath?: string;
+    ciphers?: string;
+    cors?: boolean;
     port?: number;
-    securePort?: number;
     router?: IRouterOptions;
+    securePort?: number;
     workerOptions?: IWorkerOptions;
 }
 export interface IDomainOptions {
