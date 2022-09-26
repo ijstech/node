@@ -22,6 +22,9 @@ __decorate([
 __decorate([
     pdm_1.default.StringField({ size: 512 })
 ], StorageUploadLog.prototype, "source", void 0);
+__decorate([
+    pdm_1.default.IntegerField()
+], StorageUploadLog.prototype, "size", void 0);
 exports.StorageUploadLog = StorageUploadLog;
 class StorageUploadItem extends pdm_1.default.TRecord {
 }

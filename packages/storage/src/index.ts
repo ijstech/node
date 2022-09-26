@@ -179,6 +179,7 @@ export class Storage{
                 let log = logContext.uploadLog.add();
                 log.source = source;
                 log.uploadDate = new Date();
+                log.size = fileItem.size;
 
                 logContext.uploadItem.applyInsert({
                     cid: fileItem.cid,
@@ -227,6 +228,7 @@ export class Storage{
                 let log = logContext.uploadLog.add();
                 log.source = source;
                 log.uploadDate = new Date();
+                log.size = fileItem.size;
             }
             await this.putToS3(logContext, filePath, {
                 cid: fileItem.cid,
@@ -292,10 +294,12 @@ export class Storage{
                 let log = logContext.uploadLog.add();
                 log.source = source;
                 log.uploadDate = new Date();
+                log.size = hash.size;
             };
             await this.putToS3(logContext, path, hash);
-            if (logContext)
+            if (logContext){
                 await logContext.save();
+            }
         }
         return hash;
     };

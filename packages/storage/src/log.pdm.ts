@@ -7,6 +7,8 @@ export class StorageUploadLog extends PDM.TRecord {
     uploadDate: Date;    
     @PDM.StringField({size: 512})
     source: string;
+    @PDM.IntegerField()
+    size: number;
 }
 export class StorageUploadItem extends PDM.TRecord {
     @PDM.KeyField()

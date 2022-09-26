@@ -3,6 +3,7 @@ export declare class StorageUploadLog extends PDM.TRecord {
     guid: string;
     uploadDate: Date;
     source: string;
+    size: number;
 }
 export declare class StorageUploadItem extends PDM.TRecord {
     guid: string;
