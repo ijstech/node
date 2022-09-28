@@ -6,7 +6,6 @@ import {URL} from 'url';
 import Path from 'path';
 import Config from './data/config.js';
 import {Queue} from '@ijstech/queue';
-import { exit } from "process";
 
 async function request(method: string, path: string, data?: any): Promise<{statusCode:number|undefined, contentType:string|undefined, data: any, headers}>{
     return new Promise((resolve, reject)=>{
