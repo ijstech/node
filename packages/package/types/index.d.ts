@@ -6,7 +6,19 @@ export interface IRoute {
     methods: IRouterPluginMethod[];
     url: string;
     module: string;
-    moduleScript?: string;
+    moduleScript?: ICompilerResult;
+    params?: any;
+    plugins?: {
+        cache?: boolean;
+        db?: boolean;
+    };
+    dependencies?: {
+        [packageName: string]: string;
+    };
+}
+export interface IWorker {
+    module: string;
+    moduleScript?: ICompilerResult;
     params?: any;
     plugins?: {
         cache?: boolean;
@@ -21,14 +33,17 @@ export interface ISCConfig {
     router?: {
         routes: IRoute[];
     };
+    workers?: {
+        [name: string]: IWorker;
+    };
 }
-export declare function matchRoute(pack: IDomainRouter, route: IRoute, url: string): any;
-export interface IDomainRouter {
+export declare function matchRoute(pack: IDomainRouterPackage, route: IRoute, url: string): any;
+export interface IDomainRouterPackage {
     baseUrl: string;
     packagePath: string;
     options?: IDomainOptions;
 }
-export interface IDomainWorker {
+export interface IDomainWorkerPackage {
     packagePath: string;
     options?: IDomainOptions;
 }
@@ -82,12 +97,10 @@ export declare class PackageManager {
     private packagesByPath;
     private packagesByVersion;
     private packagesByName;
-    private domainRouters;
-    private domainWorkers;
+    private domainRouterPackages;
     packageImporter?: PackageImporter;
     constructor(options?: IOptions);
-    addDomainRouter(domain: string, router: IDomainRouter): Promise<void>;
-    addDomainWorker(domain: string, worker: IDomainWorker): Promise<void>;
+    addDomainRouter(domain: string, pack: IDomainRouterPackage): Promise<void>;
     addPackage(packagePath: string): Promise<Package>;
     getDomainRouter(ctx: {
         domain: string;
@@ -99,6 +112,7 @@ export declare class PackageManager {
         options: IDomainOptions;
         params: any;
     }>;
+    getPackageWorker(pack: IDomainWorkerPackage, workerName: string): Promise<IWorker>;
     getScript(packageName: string, fileName?: string): Promise<IPackageScript>;
     getPackage(name: string, version?: string): Promise<Package>;
 }

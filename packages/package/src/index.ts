@@ -10,7 +10,19 @@ export interface IRoute{
     methods: IRouterPluginMethod[];
     url: string;
     module: string;
-    moduleScript?: string;
+    moduleScript?: ICompilerResult;
+    params?: any;
+    plugins?: {
+        cache?: boolean;
+        db?: boolean;
+    };
+    dependencies?: {
+        [packageName: string]: string;
+    };
+};
+export interface IWorker{
+    module: string;
+    moduleScript?: ICompilerResult;
     params?: any;
     plugins?: {
         cache?: boolean;
@@ -25,8 +37,9 @@ export interface ISCConfig {
     router?: {
         routes: IRoute[]
     };
+    workers?: {[name: string]: IWorker};
 };
-export function matchRoute(pack: IDomainRouter, route: IRoute, url: string): any{
+export function matchRoute(pack: IDomainRouterPackage, route: IRoute, url: string): any{
     if (pack.baseUrl + route.url == url)
         return true;
     if (!(<any>route)._match){
@@ -39,12 +52,12 @@ export function matchRoute(pack: IDomainRouter, route: IRoute, url: string): any
     else
         return Object.assign({}, result.params);
 };
-export interface IDomainRouter{
+export interface IDomainRouterPackage{
     baseUrl: string;
     packagePath: string;
     options?: IDomainOptions
 };
-export interface IDomainWorker{
+export interface IDomainWorkerPackage{
     packagePath: string;
     options?: IDomainOptions
 };
@@ -169,23 +182,17 @@ export class PackageManager{
     private packagesByPath: {[path: string]: Package} = {};
     private packagesByVersion: {[version: string]: Package} = {};
     private packagesByName: {[name: string]: Package} = {};
-    private domainRouters: {[name: string]:IDomainRouter[]} = {};
-    private domainWorkers: {[name: string]:IDomainWorker[]} = {};
+    private domainRouterPackages: {[name: string]:IDomainRouterPackage[]} = {};
 
     public packageImporter?: PackageImporter;
 
     constructor(options?: IOptions){
         this.options = options;
     };
-    async addDomainRouter(domain: string, router:IDomainRouter){
-        let packs = this.domainRouters[domain] || [];
-        packs.push(router);
-        this.domainRouters[domain] = packs;
-    };
-    async addDomainWorker(domain: string, worker:IDomainWorker){
-        let packs = this.domainWorkers[domain] || [];
-        packs.push(worker);
-        this.domainWorkers[domain] = packs;
+    async addDomainRouter(domain: string, pack:IDomainRouterPackage){
+        let packs = this.domainRouterPackages[domain] || [];
+        packs.push(pack);
+        this.domainRouterPackages[domain] = packs;
     };
     async addPackage(packagePath: string): Promise<Package>{
         if (!this.packagesByPath[packagePath]){
@@ -202,7 +209,7 @@ export class PackageManager{
         method: string,
         url: string
     }): Promise<{pack: Package, route: IRoute, options: IDomainOptions, params: any}>{
-        let packs = this.domainRouters[ctx.domain];                    
+        let packs = this.domainRouterPackages[ctx.domain];
         if (packs){
             let method = ctx.method as IRouterPluginMethod;
             for (let i = 0; i < packs.length; i ++){
@@ -234,6 +241,18 @@ export class PackageManager{
             };
         };
         return <any>{};
+    };
+    async getPackageWorker(pack: IDomainWorkerPackage, workerName: string): Promise<IWorker>{                
+        let p = await this.addPackage(pack.packagePath);        
+        let workers = p.scconfig?.workers;
+        if (workers){
+            let w = workers[workerName];
+            if (w){
+                if (!w.moduleScript)
+                    w.moduleScript = await p.getScript(w.module);
+                return w;
+            };
+        };
     };
     async getScript(packageName: string, fileName?: string): Promise<IPackageScript>{
         let pack = await this.getPackage(packageName);

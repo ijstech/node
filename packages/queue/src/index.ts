@@ -8,7 +8,7 @@ import {Worker, Router, IRouterRequest, RouterRequest, RouterResponse} from '@ij
 import {Message} from '@ijstech/message';
 import {getJobQueue, JobQueue, IJobQueueOptions} from './jobQueue';
 import * as Types from '@ijstech/types';
-import {PackageManager, IDomainRouter} from '@ijstech/package';
+import {PackageManager, IDomainRouterPackage} from '@ijstech/package';
 export {IQueueOptions} from '@ijstech/types';
 export {getJobQueue, JobQueue, IJobQueueOptions};
 
@@ -24,7 +24,7 @@ export class Queue {
     constructor(options: Types.IQueueOptions) {
         this.options = options;
     };
-    async addDomainRouter(domain: string, router: IDomainRouter){
+    async addDomainRouter(domain: string, router: IDomainRouterPackage){
         if (!this.packageManager)
             this.packageManager = new PackageManager();
         this.packageManager.addDomainRouter(domain, router); 
