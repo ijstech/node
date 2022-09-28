@@ -22,6 +22,31 @@ export interface ISCConfig {
         routes: IRoute[];
     };
 }
+export declare function matchRoute(pack: IDomainPackage, route: IRoute, url: string): any;
+export interface IDomainPackage {
+    baseUrl: string;
+    packagePath: string;
+    options?: IDomainOptions;
+}
+export interface IDomainOptions {
+    plugins?: {
+        db?: {
+            mysql?: {
+                host: string;
+                user: string;
+                password: string;
+                database: string;
+            };
+        };
+        cache?: {
+            redis?: {
+                host: string;
+                password?: string;
+                db?: number;
+            };
+        };
+    };
+}
 export declare class Package {
     private manager;
     private packagePath;
@@ -53,9 +78,21 @@ export declare class PackageManager {
     private packagesByPath;
     private packagesByVersion;
     private packagesByName;
+    private domainPacks;
     packageImporter?: PackageImporter;
     constructor(options?: IOptions);
+    addDomainPackage(domain: string, baseUrl: string, packagePath: string, options?: IDomainOptions): Promise<void>;
     addPackage(packagePath: string): Promise<Package>;
+    getDomainRouter(ctx: {
+        domain: string;
+        method: string;
+        url: string;
+    }): Promise<{
+        pack: Package;
+        route: IRoute;
+        options: IDomainOptions;
+        params: any;
+    }>;
     getScript(packageName: string, fileName?: string): Promise<IPackageScript>;
     getPackage(name: string, version?: string): Promise<Package>;
 }

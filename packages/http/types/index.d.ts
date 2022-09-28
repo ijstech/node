@@ -7,6 +7,7 @@
 import Koa from 'koa';
 import Tls from 'tls';
 import { IRouterPluginOptions } from '@ijstech/plugin';
+import { IDomainOptions } from '@ijstech/package';
 import { IJobQueueConnectionOptions } from '@ijstech/types';
 export interface IPlugin {
     scriptPath?: string;
@@ -33,30 +34,6 @@ export interface IHttpServerOptions {
     securePort?: number;
     workerOptions?: IWorkerOptions;
 }
-export interface IDomainOptions {
-    plugins?: {
-        db?: {
-            mysql?: {
-                host: string;
-                user: string;
-                password: string;
-                database: string;
-            };
-        };
-        cache?: {
-            redis?: {
-                host: string;
-                password?: string;
-                db?: number;
-            };
-        };
-    };
-}
-export interface IDomainPackage {
-    baseUrl: string;
-    packagePath: string;
-    options?: IDomainOptions;
-}
 export declare class HttpServer {
     private app;
     private options;
@@ -67,7 +44,7 @@ export declare class HttpServer {
     private https;
     private withDefaultMiddleware;
     private packageManager;
-    private domainPacks;
+    private queue;
     constructor(options: IHttpServerOptions);
     addDomainPackage(domain: string, baseUrl: string, packagePath: string, options?: IDomainOptions): Promise<void>;
     getCert(domain: string): Promise<Tls.SecureContext>;
@@ -75,6 +52,7 @@ export declare class HttpServer {
         router: IRouterPluginOptions;
         baseUrl: string;
     }>;
+    stop(): Promise<void>;
     start(): Promise<void>;
     use(middleware: any): void;
 }

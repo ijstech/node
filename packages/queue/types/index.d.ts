@@ -4,21 +4,18 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 import { Worker } from '@ijstech/plugin';
-import { Message } from '@ijstech/message';
 import { getJobQueue, JobQueue, IJobQueueOptions } from './jobQueue';
 import * as Types from '@ijstech/types';
+import { IDomainOptions } from '@ijstech/package';
 export { IQueueOptions } from '@ijstech/types';
 export { getJobQueue, JobQueue, IJobQueueOptions };
-interface IQueueWorkerOptions extends Types.IQueuePluginOptions {
-    plugin?: Worker;
-    queue?: JobQueue;
-    message?: Message;
-}
 export declare class Queue {
     private options;
     private started;
+    private packageManager;
     constructor(options: Types.IQueueOptions);
-    runWorker(worker: IQueueWorkerOptions): void;
+    addDomainPackage(domain: string, baseUrl: string, packagePath: string, options?: IDomainOptions): Promise<void>;
+    private runWorker;
     start(): void;
 }
 export declare function loadPlugin(plugin: Worker, options: Types.IQueueRequiredPluginOptions, vm?: Types.VM): Types.IQueuePlugin;

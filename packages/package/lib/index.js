@@ -3,10 +3,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PackageManager = exports.Package = void 0;
+exports.PackageManager = exports.Package = exports.matchRoute = void 0;
 const tsc_1 = require("@ijstech/tsc");
 const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
+const pathToRegexp_1 = require("./pathToRegexp");
+;
+;
+function matchRoute(pack, route, url) {
+    if (pack.baseUrl + route.url == url)
+        return true;
+    if (!route._match) {
+        let keys = [];
+        route._match = pathToRegexp_1.match(pack.baseUrl + route.url);
+    }
+    let result = route._match(url);
+    if (result === false)
+        return false;
+    else
+        return Object.assign({}, result.params);
+}
+exports.matchRoute = matchRoute;
+;
 ;
 ;
 class Package {
@@ -105,7 +123,18 @@ class PackageManager {
         this.packagesByPath = {};
         this.packagesByVersion = {};
         this.packagesByName = {};
+        this.domainPacks = {};
         this.options = options;
+    }
+    ;
+    async addDomainPackage(domain, baseUrl, packagePath, options) {
+        let packs = this.domainPacks[domain] || [];
+        packs.push({
+            baseUrl: baseUrl,
+            packagePath: packagePath,
+            options: options
+        });
+        this.domainPacks[domain] = packs;
     }
     ;
     async addPackage(packagePath) {
@@ -118,6 +147,49 @@ class PackageManager {
         }
         ;
         return this.packagesByPath[packagePath];
+    }
+    ;
+    async getDomainRouter(ctx) {
+        var _a, _b;
+        let packs = this.domainPacks[ctx.domain];
+        if (packs) {
+            let method = ctx.method;
+            for (let i = 0; i < packs.length; i++) {
+                let pack = packs[i];
+                if (ctx.url.startsWith(pack.baseUrl)) {
+                    let p = await this.addPackage(pack.packagePath);
+                    for (let k = 0; k < ((_b = (_a = p.scconfig) === null || _a === void 0 ? void 0 : _a.router) === null || _b === void 0 ? void 0 : _b.routes.length); k++) {
+                        let route = p.scconfig.router.routes[k];
+                        if (route.methods.indexOf(method) > -1) {
+                            let params = matchRoute(pack, route, ctx.url);
+                            if (params !== false) {
+                                if (params === true)
+                                    params = route.params;
+                                else {
+                                    params = params || {};
+                                    for (let p in route.params)
+                                        params[p] = route.params[p];
+                                }
+                                ;
+                                return {
+                                    options: pack.options,
+                                    pack: p,
+                                    params,
+                                    route
+                                };
+                            }
+                            ;
+                        }
+                        ;
+                    }
+                    ;
+                }
+                ;
+            }
+            ;
+        }
+        ;
+        return {};
     }
     ;
     async getScript(packageName, fileName) {
@@ -140,6 +212,7 @@ class PackageManager {
         catch (err) {
             console.error(err);
         }
+        ;
     }
     ;
 }

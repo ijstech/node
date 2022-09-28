@@ -13,9 +13,9 @@ import Http from 'http';
 import Https from 'https';
 import Templates from './templates/404';
 import {IRouterPluginOptions, Router, RouterRequest} from '@ijstech/plugin';
-import {PackageManager, IRoute} from '@ijstech/package';
+import {PackageManager, IDomainOptions} from '@ijstech/package';
 import { IRouterPluginMethod, IJobQueueConnectionOptions } from '@ijstech/types';
-import {match} from './pathToRegexp';
+import {getJobQueue, JobQueue} from '@ijstech/queue';
 
 const RootPath = process.cwd();
 
@@ -44,43 +44,6 @@ export interface IHttpServerOptions{
     securePort?: number;    
     workerOptions?: IWorkerOptions;
 };
-function matchRoute(pack: IDomainPackage, route: IRoute, url: string): any{
-    if (pack.baseUrl + route.url == url)
-        return true;
-    if (!(<any>route)._match){
-        let keys = [];
-        (<any>route)._match = match(pack.baseUrl + route.url);        
-    }    
-    let result = (<any>route)._match(url);
-    if (result === false )
-        return false
-    else
-        return Object.assign({}, result.params);
-};
-export interface IDomainOptions{
-    plugins?: {
-        db?: {
-            mysql?: {
-                host: string,
-                user: string,
-                password: string,
-                database: string
-            }
-        },
-        cache?: {
-            redis?: {
-                host: string,
-                password?: string,
-                db?: number
-            }
-        }
-    };
-};
-export interface IDomainPackage{
-    baseUrl: string;
-    packagePath: string;
-    options?: IDomainOptions
-};
 export class HttpServer {
     private app: Koa;
     private options: IHttpServerOptions;
@@ -91,10 +54,14 @@ export class HttpServer {
     private https: Https.Server;
     private withDefaultMiddleware: boolean;    
     private packageManager: PackageManager;
-    private domainPacks: {[name: string]:IDomainPackage[]} = {};
+    private queue: JobQueue;
+    // private domainPacks: {[name: string]:IDomainPackage[]} = {};
 
     constructor(options: IHttpServerOptions){
-        this.options = options;
+        this.options = options;        
+        if (this.options.workerOptions)
+            this.queue = getJobQueue(this.options.workerOptions);
+
         if (this.options.port || this.options.securePort){
             this.app = new Koa();
             this.app.use(BodyParser());        
@@ -121,13 +88,14 @@ export class HttpServer {
     async addDomainPackage(domain: string, baseUrl: string, packagePath: string, options?: IDomainOptions){
         if (!this.packageManager)
             this.packageManager = new PackageManager();
-        let packs = this.domainPacks[domain] || [];
-        packs.push({
-            baseUrl: baseUrl,
-            packagePath: packagePath,
-            options: options
-        });
-        this.domainPacks[domain] = packs;
+        this.packageManager.addDomainPackage(domain, baseUrl, packagePath, options);
+        // let packs = this.domainPacks[domain] || [];
+        // packs.push({
+        //     baseUrl: baseUrl,
+        //     packagePath: packagePath,
+        //     options: options
+        // });
+        // this.domainPacks[domain] = packs;
     };
     getCert(domain: string): Promise<Tls.SecureContext>{            
         let self = this;
@@ -213,6 +181,13 @@ export class HttpServer {
             };
         }
     };
+    async stop(){
+        if (this.http)
+            this.http.close();
+        if (this.https)
+            this.https.close()
+        this.running = false;
+    };
     async start(){        
         if (this.running)
             return;
@@ -277,56 +252,57 @@ export class HttpServer {
                         await next();
                 }
                 else if (this.packageManager){
-                    let packs = this.domainPacks[ctx.hostname];                    
-                    if (packs){
-                        let method = ctx.method as IRouterPluginMethod;
-                        for (let i = 0; i < packs.length; i ++){
-                            let pack = packs[i];
-                            if (ctx.url.startsWith(pack.baseUrl)){
-                                let p = await this.packageManager.addPackage(pack.packagePath);
-                                for (let k = 0; k < p.scconfig?.router?.routes.length; k ++){
-                                    let route = p.scconfig.router.routes[k];                                    
-                                    if (route.methods.indexOf(method) > -1){
-                                        let params = matchRoute(pack, route, ctx.url);
-                                        if (params !== false){
-                                            let plugin: Router = (<any>route)._plugin;
-                                            if (!plugin){
-                                                let script = await p.getScript(route.module);
-                                                if (script){
-                                                    let plugins:any = {};
-                                                    if (pack.options && pack.options.plugins){
-                                                        if (route.plugins?.db)
-                                                            plugins.db = {default: pack.options.plugins.db};
-                                                        if (route.plugins?.cache)
-                                                            plugins.cache = pack.options.plugins.cache;
-                                                    };
-                                                    plugin = new Router({
-                                                        baseUrl: route.url,
-                                                        methods: [method],
-                                                        script: script.script,
-                                                        dependencies: script.dependencies,
-                                                        plugins: plugins
-                                                    });
-                                                    (<any>route)._plugin = plugin;
-                                                };
-                                            };
-                                            if (plugin){                                                
-                                                let request = RouterRequest(ctx);                                                
-                                                if (params === true)
-                                                    request.params = route.params
-                                                else{
-                                                    request.params = params || {};
-                                                    for (let p in route.params)
-                                                        request.params[p] = route.params[p];
-                                                };
-                                                await plugin.route(ctx, request);
-                                                return;
-                                            };
-                                        };
+                    let {pack, route, params, options} = await this.packageManager.getDomainRouter({
+                        method: ctx.method,
+                        domain: ctx.hostname,
+                        url: ctx.url
+                    });
+                    if (route && params !== false){
+                        if (this.queue){
+                            let jobReq: any = {
+                                request: RouterRequest(ctx)
+                            };
+                            let result = await this.queue.createJob(jobReq, true);
+                            ctx.set('job-id',result.id);
+                            ctx.status = result.result.statusCode;
+                            ctx.body = result.result.body
+                        }
+                        else{
+                            let plugin: Router = (<any>route)._plugin;
+                            if (!plugin){
+                                let script = await pack.getScript(route.module);
+                                if (script){
+                                    let plugins:any = {};
+                                    if (options && options.plugins){
+                                        if (route.plugins?.db)
+                                            plugins.db = {default: options.plugins.db};
+                                        if (route.plugins?.cache)
+                                            plugins.cache = options.plugins.cache;
                                     };
+                                    let method = ctx.method as IRouterPluginMethod;
+                                    plugin = new Router({
+                                        baseUrl: route.url,
+                                        methods: [method],
+                                        script: script.script,
+                                        dependencies: script.dependencies,
+                                        plugins: plugins
+                                    });
+                                    (<any>route)._plugin = plugin;
                                 };
                             };
-                        };
+                            if (plugin){                                                
+                                let request = RouterRequest(ctx);                                                
+                                if (params === true)
+                                    request.params = route.params
+                                else{
+                                    request.params = params || {};
+                                    for (let p in route.params)
+                                        request.params[p] = route.params[p];
+                                };
+                                await plugin.route(ctx, request);
+                                return;
+                            };
+                        }
                     };
                 };
                 await next();

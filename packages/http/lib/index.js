@@ -19,33 +19,18 @@ const https_1 = __importDefault(require("https"));
 const _404_1 = __importDefault(require("./templates/404"));
 const plugin_1 = require("@ijstech/plugin");
 const package_1 = require("@ijstech/package");
-const pathToRegexp_1 = require("./pathToRegexp");
+const queue_1 = require("@ijstech/queue");
 const RootPath = process.cwd();
 ;
-;
-;
-;
-function matchRoute(pack, route, url) {
-    if (pack.baseUrl + route.url == url)
-        return true;
-    if (!route._match) {
-        let keys = [];
-        route._match = pathToRegexp_1.match(pack.baseUrl + route.url);
-    }
-    let result = route._match(url);
-    if (result === false)
-        return false;
-    else
-        return Object.assign({}, result.params);
-}
 ;
 ;
 ;
 class HttpServer {
     constructor(options) {
         this.ssl = {};
-        this.domainPacks = {};
         this.options = options;
+        if (this.options.workerOptions)
+            this.queue = queue_1.getJobQueue(this.options.workerOptions);
         if (this.options.port || this.options.securePort) {
             this.app = new koa_1.default();
             this.app.use(koa_bodyparser_1.default());
@@ -74,13 +59,7 @@ class HttpServer {
     async addDomainPackage(domain, baseUrl, packagePath, options) {
         if (!this.packageManager)
             this.packageManager = new package_1.PackageManager();
-        let packs = this.domainPacks[domain] || [];
-        packs.push({
-            baseUrl: baseUrl,
-            packagePath: packagePath,
-            options: options
-        });
-        this.domainPacks[domain] = packs;
+        this.packageManager.addDomainPackage(domain, baseUrl, packagePath, options);
     }
     ;
     getCert(domain) {
@@ -178,6 +157,14 @@ class HttpServer {
         }
     }
     ;
+    async stop() {
+        if (this.http)
+            this.http.close();
+        if (this.https)
+            this.https.close();
+        this.running = false;
+    }
+    ;
     async start() {
         if (this.running)
             return;
@@ -202,7 +189,7 @@ class HttpServer {
             }
             ;
             this.app.use(async (ctx, next) => {
-                var _a, _b, _c, _d, _e, _f;
+                var _a, _b, _c, _d;
                 if (this.options.cors) {
                     if (ctx.method == 'OPTIONS') {
                         ctx.set('Access-Control-Allow-Origin', '*');
@@ -249,66 +236,62 @@ class HttpServer {
                         await next();
                 }
                 else if (this.packageManager) {
-                    let packs = this.domainPacks[ctx.hostname];
-                    if (packs) {
-                        let method = ctx.method;
-                        for (let i = 0; i < packs.length; i++) {
-                            let pack = packs[i];
-                            if (ctx.url.startsWith(pack.baseUrl)) {
-                                let p = await this.packageManager.addPackage(pack.packagePath);
-                                for (let k = 0; k < ((_d = (_c = p.scconfig) === null || _c === void 0 ? void 0 : _c.router) === null || _d === void 0 ? void 0 : _d.routes.length); k++) {
-                                    let route = p.scconfig.router.routes[k];
-                                    if (route.methods.indexOf(method) > -1) {
-                                        let params = matchRoute(pack, route, ctx.url);
-                                        if (params !== false) {
-                                            let plugin = route._plugin;
-                                            if (!plugin) {
-                                                let script = await p.getScript(route.module);
-                                                if (script) {
-                                                    let plugins = {};
-                                                    if (pack.options && pack.options.plugins) {
-                                                        if ((_e = route.plugins) === null || _e === void 0 ? void 0 : _e.db)
-                                                            plugins.db = { default: pack.options.plugins.db };
-                                                        if ((_f = route.plugins) === null || _f === void 0 ? void 0 : _f.cache)
-                                                            plugins.cache = pack.options.plugins.cache;
-                                                    }
-                                                    ;
-                                                    plugin = new plugin_1.Router({
-                                                        baseUrl: route.url,
-                                                        methods: [method],
-                                                        script: script.script,
-                                                        dependencies: script.dependencies,
-                                                        plugins: plugins
-                                                    });
-                                                    route._plugin = plugin;
-                                                }
-                                                ;
-                                            }
-                                            ;
-                                            if (plugin) {
-                                                let request = plugin_1.RouterRequest(ctx);
-                                                if (params === true)
-                                                    request.params = route.params;
-                                                else {
-                                                    request.params = params || {};
-                                                    for (let p in route.params)
-                                                        request.params[p] = route.params[p];
-                                                }
-                                                ;
-                                                await plugin.route(ctx, request);
-                                                return;
-                                            }
-                                            ;
-                                        }
-                                        ;
+                    let { pack, route, params, options } = await this.packageManager.getDomainRouter({
+                        method: ctx.method,
+                        domain: ctx.hostname,
+                        url: ctx.url
+                    });
+                    if (route && params !== false) {
+                        if (this.queue) {
+                            let jobReq = {
+                                request: plugin_1.RouterRequest(ctx)
+                            };
+                            let result = await this.queue.createJob(jobReq, true);
+                            ctx.set('job-id', result.id);
+                            ctx.status = result.result.statusCode;
+                            ctx.body = result.result.body;
+                        }
+                        else {
+                            let plugin = route._plugin;
+                            if (!plugin) {
+                                let script = await pack.getScript(route.module);
+                                if (script) {
+                                    let plugins = {};
+                                    if (options && options.plugins) {
+                                        if ((_c = route.plugins) === null || _c === void 0 ? void 0 : _c.db)
+                                            plugins.db = { default: options.plugins.db };
+                                        if ((_d = route.plugins) === null || _d === void 0 ? void 0 : _d.cache)
+                                            plugins.cache = options.plugins.cache;
                                     }
                                     ;
+                                    let method = ctx.method;
+                                    plugin = new plugin_1.Router({
+                                        baseUrl: route.url,
+                                        methods: [method],
+                                        script: script.script,
+                                        dependencies: script.dependencies,
+                                        plugins: plugins
+                                    });
+                                    route._plugin = plugin;
                                 }
                                 ;
                             }
                             ;
+                            if (plugin) {
+                                let request = plugin_1.RouterRequest(ctx);
+                                if (params === true)
+                                    request.params = route.params;
+                                else {
+                                    request.params = params || {};
+                                    for (let p in route.params)
+                                        request.params[p] = route.params[p];
+                                }
+                                ;
+                                await plugin.route(ctx, request);
+                                return;
+                            }
+                            ;
                         }
-                        ;
                     }
                     ;
                 }

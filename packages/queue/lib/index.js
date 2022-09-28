@@ -11,9 +11,16 @@ const message_1 = require("@ijstech/message");
 const jobQueue_1 = require("./jobQueue");
 Object.defineProperty(exports, "getJobQueue", { enumerable: true, get: function () { return jobQueue_1.getJobQueue; } });
 Object.defineProperty(exports, "JobQueue", { enumerable: true, get: function () { return jobQueue_1.JobQueue; } });
+const package_1 = require("@ijstech/package");
 class Queue {
     constructor(options) {
         this.options = options;
+    }
+    ;
+    async addDomainPackage(domain, baseUrl, packagePath, options) {
+        if (!this.packageManager)
+            this.packageManager = new package_1.PackageManager();
+        this.packageManager.addDomainPackage(domain, baseUrl, packagePath, options);
     }
     ;
     runWorker(worker) {
@@ -37,12 +44,69 @@ class Queue {
         if (this.started)
             return;
         this.started = true;
-        for (let i = 0; i < this.options.workers.length; i++) {
-            let worker = this.options.workers[i];
-            if (!worker.disabled)
-                this.runWorker(worker);
+        if (this.options.jobQueue && !this.options.disabled && this.options.connection) {
+            let queue = jobQueue_1.getJobQueue({
+                connection: this.options.connection,
+                jobQueue: this.options.jobQueue
+            });
+            queue.processJob(async (job) => {
+                var _a, _b;
+                let request = job.data.request;
+                if (this.packageManager && request && request.hostname) {
+                    let { options, pack, params, route } = await this.packageManager.getDomainRouter({
+                        domain: request.hostname,
+                        method: request.method,
+                        url: request.url
+                    });
+                    if (route) {
+                        let plugin = route._plugin;
+                        if (!plugin) {
+                            let script = await pack.getScript(route.module);
+                            if (script) {
+                                let plugins = {};
+                                if (options && options.plugins) {
+                                    if ((_a = route.plugins) === null || _a === void 0 ? void 0 : _a.db)
+                                        plugins.db = { default: options.plugins.db };
+                                    if ((_b = route.plugins) === null || _b === void 0 ? void 0 : _b.cache)
+                                        plugins.cache = options.plugins.cache;
+                                }
+                                ;
+                                let method = request.method;
+                                plugin = new plugin_1.Router({
+                                    baseUrl: route.url,
+                                    methods: [method],
+                                    script: script.script,
+                                    params: route.params,
+                                    dependencies: script.dependencies,
+                                    plugins: plugins
+                                });
+                                route._plugin = plugin;
+                            }
+                            ;
+                        }
+                        ;
+                        if (plugin) {
+                            let result = {};
+                            request.params = params;
+                            await plugin.route(null, plugin_1.RouterRequest(request), plugin_1.RouterResponse(result));
+                            return result;
+                        }
+                        ;
+                    }
+                    ;
+                }
+                ;
+            });
         }
         ;
+        if (this.options.workers) {
+            for (let i = 0; i < this.options.workers.length; i++) {
+                let worker = this.options.workers[i];
+                if (!worker.disabled)
+                    this.runWorker(worker);
+            }
+            ;
+        }
     }
     ;
 }

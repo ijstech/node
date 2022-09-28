@@ -261,6 +261,9 @@ export interface IQueuePluginOptions extends IWorkerPluginOptions{
     connection: IJobQueueConnectionOptions;
 }
 export interface IQueueOptions {
+    jobQueue?: string;
+    disabled?: boolean;
+    connection?: IJobQueueConnectionOptions;
     module?: string;
     workers: IQueuePluginOptions[];
 }

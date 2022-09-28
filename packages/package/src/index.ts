@@ -3,6 +3,7 @@ import {Storage} from '@ijstech/storage';
 import {promises as Fs} from 'fs';
 import Path from 'path';
 import { IRouterPluginMethod } from '@ijstech/types';
+import {match} from './pathToRegexp';
 export {IPackage};
 
 export interface IRoute{
@@ -23,6 +24,43 @@ export interface ISCConfig {
     src?: string;   
     router?: {
         routes: IRoute[]
+    };
+};
+export function matchRoute(pack: IDomainPackage, route: IRoute, url: string): any{
+    if (pack.baseUrl + route.url == url)
+        return true;
+    if (!(<any>route)._match){
+        let keys = [];
+        (<any>route)._match = match(pack.baseUrl + route.url);        
+    }    
+    let result = (<any>route)._match(url);
+    if (result === false )
+        return false
+    else
+        return Object.assign({}, result.params);
+};
+export interface IDomainPackage{
+    baseUrl: string;
+    packagePath: string;
+    options?: IDomainOptions
+};
+export interface IDomainOptions{
+    plugins?: {
+        db?: {
+            mysql?: {
+                host: string,
+                user: string,
+                password: string,
+                database: string
+            }
+        },
+        cache?: {
+            redis?: {
+                host: string,
+                password?: string,
+                db?: number
+            }
+        }
     };
 };
 export class Package{
@@ -127,10 +165,21 @@ export class PackageManager{
     private packagesByPath: {[path: string]: Package} = {};
     private packagesByVersion: {[version: string]: Package} = {};
     private packagesByName: {[name: string]: Package} = {};
+    private domainPacks: {[name: string]:IDomainPackage[]} = {};
+
     public packageImporter?: PackageImporter;
 
     constructor(options?: IOptions){
         this.options = options;
+    };
+    async addDomainPackage(domain: string, baseUrl: string, packagePath: string, options?: IDomainOptions){
+        let packs = this.domainPacks[domain] || [];
+        packs.push({
+            baseUrl: baseUrl,
+            packagePath: packagePath,
+            options: options
+        });
+        this.domainPacks[domain] = packs;
     };
     async addPackage(packagePath: string): Promise<Package>{
         if (!this.packagesByPath[packagePath]){
@@ -141,6 +190,44 @@ export class PackageManager{
             this.packagesByName[result.name] = result;
         };
         return this.packagesByPath[packagePath];
+    };
+    async getDomainRouter(ctx: {
+        domain: string,
+        method: string,
+        url: string
+    }): Promise<{pack: Package, route: IRoute, options: IDomainOptions, params: any}>{
+        let packs = this.domainPacks[ctx.domain];                    
+        if (packs){
+            let method = ctx.method as IRouterPluginMethod;
+            for (let i = 0; i < packs.length; i ++){
+                let pack = packs[i];
+                if (ctx.url.startsWith(pack.baseUrl)){
+                    let p = await this.addPackage(pack.packagePath);
+                    for (let k = 0; k < p.scconfig?.router?.routes.length; k ++){
+                        let route = p.scconfig.router.routes[k];                                    
+                        if (route.methods.indexOf(method) > -1){
+                            let params = matchRoute(pack, route, ctx.url);
+                            if (params !== false){
+                                if (params === true)
+                                    params = route.params
+                                else{
+                                    params = params || {};
+                                    for (let p in route.params)
+                                        params[p] = route.params[p];
+                                };                                                
+                                return {
+                                    options: pack.options,
+                                    pack: p,
+                                    params,
+                                    route                                    
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        return <any>{};
     };
     async getScript(packageName: string, fileName?: string): Promise<IPackageScript>{
         let pack = await this.getPackage(packageName);
@@ -161,6 +248,6 @@ export class PackageManager{
         }
         catch(err){
             console.error(err)
-        }
+        };
     };
 };
