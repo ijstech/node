@@ -7,7 +7,7 @@
 import Koa from 'koa';
 import Tls from 'tls';
 import { IRouterPluginOptions } from '@ijstech/plugin';
-import { IDomainRouter } from '@ijstech/package';
+import { IDomainRouterPackage } from '@ijstech/package';
 import { IJobQueueConnectionOptions } from '@ijstech/types';
 export interface IPlugin {
     scriptPath?: string;
@@ -46,7 +46,7 @@ export declare class HttpServer {
     private packageManager;
     private queue;
     constructor(options: IHttpServerOptions);
-    addDomainRouter(domain: string, router: IDomainRouter): Promise<void>;
+    addDomainRouter(domain: string, router: IDomainRouterPackage): Promise<void>;
     getCert(domain: string): Promise<Tls.SecureContext>;
     getRouter(ctx: Koa.Context): Promise<{
         router: IRouterPluginOptions;

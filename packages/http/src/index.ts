@@ -13,7 +13,7 @@ import Http from 'http';
 import Https from 'https';
 import Templates from './templates/404';
 import {IRouterPluginOptions, Router, RouterRequest} from '@ijstech/plugin';
-import {PackageManager, IDomainRouter} from '@ijstech/package';
+import {PackageManager, IDomainRouterPackage} from '@ijstech/package';
 import { IRouterPluginMethod, IJobQueueConnectionOptions } from '@ijstech/types';
 import {getJobQueue, JobQueue} from '@ijstech/queue';
 
@@ -84,7 +84,7 @@ export class HttpServer {
             ].join(':'); 
         };
     };    
-    async addDomainRouter(domain: string, router: IDomainRouter){
+    async addDomainRouter(domain: string, router: IDomainRouterPackage){
         if (!this.packageManager)
             this.packageManager = new PackageManager();
         this.packageManager.addDomainRouter(domain, router);
