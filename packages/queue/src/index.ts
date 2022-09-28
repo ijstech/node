@@ -8,7 +8,7 @@ import {Worker, Router, IRouterRequest, RouterRequest, RouterResponse} from '@ij
 import {Message} from '@ijstech/message';
 import {getJobQueue, JobQueue, IJobQueueOptions} from './jobQueue';
 import * as Types from '@ijstech/types';
-import {PackageManager, IDomainOptions,} from '@ijstech/package';
+import {PackageManager, IDomainRouter} from '@ijstech/package';
 export {IQueueOptions} from '@ijstech/types';
 export {getJobQueue, JobQueue, IJobQueueOptions};
 
@@ -24,10 +24,10 @@ export class Queue {
     constructor(options: Types.IQueueOptions) {
         this.options = options;
     };
-    async addDomainPackage(domain: string, baseUrl: string, packagePath: string, options?: IDomainOptions){
+    async addDomainRouter(domain: string, router: IDomainRouter){
         if (!this.packageManager)
             this.packageManager = new PackageManager();
-        this.packageManager.addDomainPackage(domain, baseUrl, packagePath, options); 
+        this.packageManager.addDomainRouter(domain, router); 
     };
     private runWorker(worker: IQueueWorkerOptions) {        
         worker.plugin = new Worker(worker);
@@ -115,8 +115,11 @@ export function loadPlugin(plugin: Worker, options: Types.IQueueRequiredPluginOp
                     jobQueue: queue,
                     connection: options.connection
                 });
-                let job = await q.createJob(data, waitForResult, timeout, retries);                
-                if (vm) //can returns string value to VM only
+                let job = await q.createJob(data, waitForResult, {
+                    timeout,
+                    retries
+                });                
+                if (vm)
                     return <any>JSON.stringify(job);
                 else
                     return job;

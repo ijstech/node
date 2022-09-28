@@ -13,6 +13,8 @@ export {Job};
 export interface IJobQueueOptions extends Types.IPluginOptions{
     jobQueue: string;
     disabled?: boolean;
+    removeOnSuccess?: boolean;
+    activateDelayedJobs?: boolean;
     connection: Types.IJobQueueConnectionOptions;
 };
 let Queues = {};
@@ -28,11 +30,19 @@ export class JobQueue{
     private _queue: Queue;
     constructor(options: IJobQueueOptions){
         this._options = options;
-        this._queue = new Queue(options.jobQueue, {redis: options.connection.redis});
+        this._queue = new Queue(options.jobQueue, {
+            redis: options.connection.redis, 
+            removeOnSuccess: options.removeOnSuccess||false, 
+            activateDelayedJobs: options.activateDelayedJobs||false
+        });
     };
-    async createJob(data: any, waitForResult?: boolean, timeout?: number, retries?: number): Promise<IJob>{        
+    async createJob(data: any, waitForResult?: boolean, options?: {
+            id?: string;
+            timeout?: number;
+            retries?: number;
+        }): Promise<IJob>{        
         return new Promise(async (resolve)=>{
-            let job = this._queue.createJob(data).retries(retries || 5);
+            let job = this._queue.createJob(data).retries(options?.retries || 5);
             if (waitForResult){
                 job.on('succeeded', (result)=>{                    
                     resolve({

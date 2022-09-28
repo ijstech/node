@@ -26,7 +26,7 @@ export interface ISCConfig {
         routes: IRoute[]
     };
 };
-export function matchRoute(pack: IDomainPackage, route: IRoute, url: string): any{
+export function matchRoute(pack: IDomainRouter, route: IRoute, url: string): any{
     if (pack.baseUrl + route.url == url)
         return true;
     if (!(<any>route)._match){
@@ -39,8 +39,12 @@ export function matchRoute(pack: IDomainPackage, route: IRoute, url: string): an
     else
         return Object.assign({}, result.params);
 };
-export interface IDomainPackage{
+export interface IDomainRouter{
     baseUrl: string;
+    packagePath: string;
+    options?: IDomainOptions
+};
+export interface IDomainWorker{
     packagePath: string;
     options?: IDomainOptions
 };
@@ -165,21 +169,23 @@ export class PackageManager{
     private packagesByPath: {[path: string]: Package} = {};
     private packagesByVersion: {[version: string]: Package} = {};
     private packagesByName: {[name: string]: Package} = {};
-    private domainPacks: {[name: string]:IDomainPackage[]} = {};
+    private domainRouters: {[name: string]:IDomainRouter[]} = {};
+    private domainWorkers: {[name: string]:IDomainWorker[]} = {};
 
     public packageImporter?: PackageImporter;
 
     constructor(options?: IOptions){
         this.options = options;
     };
-    async addDomainPackage(domain: string, baseUrl: string, packagePath: string, options?: IDomainOptions){
-        let packs = this.domainPacks[domain] || [];
-        packs.push({
-            baseUrl: baseUrl,
-            packagePath: packagePath,
-            options: options
-        });
-        this.domainPacks[domain] = packs;
+    async addDomainRouter(domain: string, router:IDomainRouter){
+        let packs = this.domainRouters[domain] || [];
+        packs.push(router);
+        this.domainRouters[domain] = packs;
+    };
+    async addDomainWorker(domain: string, worker:IDomainWorker){
+        let packs = this.domainWorkers[domain] || [];
+        packs.push(worker);
+        this.domainWorkers[domain] = packs;
     };
     async addPackage(packagePath: string): Promise<Package>{
         if (!this.packagesByPath[packagePath]){
@@ -196,7 +202,7 @@ export class PackageManager{
         method: string,
         url: string
     }): Promise<{pack: Package, route: IRoute, options: IDomainOptions, params: any}>{
-        let packs = this.domainPacks[ctx.domain];                    
+        let packs = this.domainRouters[ctx.domain];                    
         if (packs){
             let method = ctx.method as IRouterPluginMethod;
             for (let i = 0; i < packs.length; i ++){

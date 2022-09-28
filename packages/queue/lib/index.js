@@ -17,10 +17,10 @@ class Queue {
         this.options = options;
     }
     ;
-    async addDomainPackage(domain, baseUrl, packagePath, options) {
+    async addDomainRouter(domain, router) {
         if (!this.packageManager)
             this.packageManager = new package_1.PackageManager();
-        this.packageManager.addDomainPackage(domain, baseUrl, packagePath, options);
+        this.packageManager.addDomainRouter(domain, router);
     }
     ;
     runWorker(worker) {
@@ -121,7 +121,10 @@ function loadPlugin(plugin, options, vm) {
                     jobQueue: queue,
                     connection: options.connection
                 });
-                let job = await q.createJob(data, waitForResult, timeout, retries);
+                let job = await q.createJob(data, waitForResult, {
+                    timeout,
+                    retries
+                });
                 if (vm)
                     return JSON.stringify(job);
                 else

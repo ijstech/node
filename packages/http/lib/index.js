@@ -56,10 +56,10 @@ class HttpServer {
         ;
     }
     ;
-    async addDomainPackage(domain, baseUrl, packagePath, options) {
+    async addDomainRouter(domain, router) {
         if (!this.packageManager)
             this.packageManager = new package_1.PackageManager();
-        this.packageManager.addDomainPackage(domain, baseUrl, packagePath, options);
+        this.packageManager.addDomainRouter(domain, router);
     }
     ;
     getCert(domain) {

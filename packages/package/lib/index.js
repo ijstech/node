@@ -27,6 +27,7 @@ exports.matchRoute = matchRoute;
 ;
 ;
 ;
+;
 class Package {
     constructor(manager, packagePath) {
         this.scripts = {};
@@ -123,18 +124,21 @@ class PackageManager {
         this.packagesByPath = {};
         this.packagesByVersion = {};
         this.packagesByName = {};
-        this.domainPacks = {};
+        this.domainRouters = {};
+        this.domainWorkers = {};
         this.options = options;
     }
     ;
-    async addDomainPackage(domain, baseUrl, packagePath, options) {
-        let packs = this.domainPacks[domain] || [];
-        packs.push({
-            baseUrl: baseUrl,
-            packagePath: packagePath,
-            options: options
-        });
-        this.domainPacks[domain] = packs;
+    async addDomainRouter(domain, router) {
+        let packs = this.domainRouters[domain] || [];
+        packs.push(router);
+        this.domainRouters[domain] = packs;
+    }
+    ;
+    async addDomainWorker(domain, worker) {
+        let packs = this.domainWorkers[domain] || [];
+        packs.push(worker);
+        this.domainWorkers[domain] = packs;
     }
     ;
     async addPackage(packagePath) {
@@ -151,7 +155,7 @@ class PackageManager {
     ;
     async getDomainRouter(ctx) {
         var _a, _b;
-        let packs = this.domainPacks[ctx.domain];
+        let packs = this.domainRouters[ctx.domain];
         if (packs) {
             let method = ctx.method;
             for (let i = 0; i < packs.length; i++) {

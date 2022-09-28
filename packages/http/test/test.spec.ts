@@ -60,7 +60,11 @@ describe('HTTP Server', function() {
             port:8888
         });        
         await server.start();        
-        await server.addDomainPackage('localhost', '/pack1', Path.resolve(__dirname, 'router'), Config);
+        await server.addDomainRouter('localhost', {
+            baseUrl: '/pack1', 
+            packagePath: Path.resolve(__dirname, 'router'), 
+            options: Config
+        });
         server.use(async (ctx: Koa.Context)=>{
             if (ctx.method == 'GET' && ctx.url == '/ok'){
                 ctx.body = 'get ok';
@@ -132,7 +136,11 @@ describe('HTTP Server with Job Queue', function() {
             workerOptions: Config.workerOptions
         });        
         await server.start();        
-        await server.addDomainPackage('localhost', '/pack1', Path.resolve(__dirname, 'router'), Config);
+        await server.addDomainRouter('localhost', {
+            baseUrl: '/pack1', 
+            packagePath: Path.resolve(__dirname, 'router'), 
+            options: Config
+        });
         server.use(async (ctx: Koa.Context)=>{
             if (ctx.method == 'GET' && ctx.url == '/ok'){
                 ctx.body = 'get ok';
@@ -142,7 +150,11 @@ describe('HTTP Server with Job Queue', function() {
         });
         if (Config.workerOptions){
             queue = new Queue(Config.workerOptions);
-            await queue.addDomainPackage('localhost', '/pack1', Path.resolve(__dirname, 'router'), Config);
+            await queue.addDomainRouter('localhost', {
+                baseUrl: '/pack1', 
+                packagePath: Path.resolve(__dirname, 'router'), 
+                options: Config
+            });
             queue.start();
         };
     });

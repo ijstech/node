@@ -22,9 +22,13 @@ export interface ISCConfig {
         routes: IRoute[];
     };
 }
-export declare function matchRoute(pack: IDomainPackage, route: IRoute, url: string): any;
-export interface IDomainPackage {
+export declare function matchRoute(pack: IDomainRouter, route: IRoute, url: string): any;
+export interface IDomainRouter {
     baseUrl: string;
+    packagePath: string;
+    options?: IDomainOptions;
+}
+export interface IDomainWorker {
     packagePath: string;
     options?: IDomainOptions;
 }
@@ -78,10 +82,12 @@ export declare class PackageManager {
     private packagesByPath;
     private packagesByVersion;
     private packagesByName;
-    private domainPacks;
+    private domainRouters;
+    private domainWorkers;
     packageImporter?: PackageImporter;
     constructor(options?: IOptions);
-    addDomainPackage(domain: string, baseUrl: string, packagePath: string, options?: IDomainOptions): Promise<void>;
+    addDomainRouter(domain: string, router: IDomainRouter): Promise<void>;
+    addDomainWorker(domain: string, worker: IDomainWorker): Promise<void>;
     addPackage(packagePath: string): Promise<Package>;
     getDomainRouter(ctx: {
         domain: string;

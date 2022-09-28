@@ -10,6 +10,8 @@ export { Job };
 export interface IJobQueueOptions extends Types.IPluginOptions {
     jobQueue: string;
     disabled?: boolean;
+    removeOnSuccess?: boolean;
+    activateDelayedJobs?: boolean;
     connection: Types.IJobQueueConnectionOptions;
 }
 export interface IJob {
@@ -22,7 +24,11 @@ export declare class JobQueue {
     private _options;
     private _queue;
     constructor(options: IJobQueueOptions);
-    createJob(data: any, waitForResult?: boolean, timeout?: number, retries?: number): Promise<IJob>;
+    createJob(data: any, waitForResult?: boolean, options?: {
+        id?: string;
+        timeout?: number;
+        retries?: number;
+    }): Promise<IJob>;
     processJob(handler: (job: Queue.Job<any>) => Promise<any>): void;
 }
 export declare function getJobQueue(options: IJobQueueOptions): JobQueue;

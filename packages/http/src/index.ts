@@ -13,7 +13,7 @@ import Http from 'http';
 import Https from 'https';
 import Templates from './templates/404';
 import {IRouterPluginOptions, Router, RouterRequest} from '@ijstech/plugin';
-import {PackageManager, IDomainOptions} from '@ijstech/package';
+import {PackageManager, IDomainRouter} from '@ijstech/package';
 import { IRouterPluginMethod, IJobQueueConnectionOptions } from '@ijstech/types';
 import {getJobQueue, JobQueue} from '@ijstech/queue';
 
@@ -55,7 +55,6 @@ export class HttpServer {
     private withDefaultMiddleware: boolean;    
     private packageManager: PackageManager;
     private queue: JobQueue;
-    // private domainPacks: {[name: string]:IDomainPackage[]} = {};
 
     constructor(options: IHttpServerOptions){
         this.options = options;        
@@ -85,17 +84,10 @@ export class HttpServer {
             ].join(':'); 
         };
     };    
-    async addDomainPackage(domain: string, baseUrl: string, packagePath: string, options?: IDomainOptions){
+    async addDomainRouter(domain: string, router: IDomainRouter){
         if (!this.packageManager)
             this.packageManager = new PackageManager();
-        this.packageManager.addDomainPackage(domain, baseUrl, packagePath, options);
-        // let packs = this.domainPacks[domain] || [];
-        // packs.push({
-        //     baseUrl: baseUrl,
-        //     packagePath: packagePath,
-        //     options: options
-        // });
-        // this.domainPacks[domain] = packs;
+        this.packageManager.addDomainRouter(domain, router);
     };
     getCert(domain: string): Promise<Tls.SecureContext>{            
         let self = this;

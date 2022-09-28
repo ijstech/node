@@ -16,12 +16,16 @@ let Queues = {};
 class JobQueue {
     constructor(options) {
         this._options = options;
-        this._queue = new bee_queue_1.default(options.jobQueue, { redis: options.connection.redis });
+        this._queue = new bee_queue_1.default(options.jobQueue, {
+            redis: options.connection.redis,
+            removeOnSuccess: options.removeOnSuccess || false,
+            activateDelayedJobs: options.activateDelayedJobs || false
+        });
     }
     ;
-    async createJob(data, waitForResult, timeout, retries) {
+    async createJob(data, waitForResult, options) {
         return new Promise(async (resolve) => {
-            let job = this._queue.createJob(data).retries(retries || 5);
+            let job = this._queue.createJob(data).retries((options === null || options === void 0 ? void 0 : options.retries) || 5);
             if (waitForResult) {
                 job.on('succeeded', (result) => {
                     resolve({
