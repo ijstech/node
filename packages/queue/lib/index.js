@@ -34,7 +34,8 @@ class Queue {
     }
     ;
     runWorker(worker) {
-        worker.plugin = new plugin_1.Worker(worker);
+        if (!worker.plugin)
+            worker.plugin = new plugin_1.Worker(worker);
         worker.queue = jobQueue_1.getJobQueue(worker);
         if (worker.plugins && worker.plugins.message) {
             worker.message = new message_1.Message(worker.plugin, worker.plugins.message);
@@ -55,11 +56,11 @@ class Queue {
             return;
         this.started = true;
         if (this.options.jobQueue && !this.options.disabled && this.options.connection) {
-            let queue = jobQueue_1.getJobQueue({
+            this.queue = jobQueue_1.getJobQueue({
                 connection: this.options.connection,
                 jobQueue: this.options.jobQueue
             });
-            queue.processJob(async (job) => {
+            this.queue.processJob(async (job) => {
                 var _a, _b, _c, _d, _e, _f, _g;
                 if ((_a = job.data) === null || _a === void 0 ? void 0 : _a.worker) {
                     let worker = job.data.worker;
@@ -143,6 +144,25 @@ class Queue {
             }
             ;
         }
+    }
+    ;
+    stop() {
+        if (!this.started)
+            return;
+        this.queue.stop();
+        if (this.options.workers) {
+            for (let i = 0; i < this.options.workers.length; i++) {
+                let worker = this.options.workers[i];
+                if (worker.queue) {
+                    worker.queue.stop();
+                    worker.queue = null;
+                }
+                ;
+            }
+            ;
+        }
+        ;
+        this.started = false;
     }
     ;
 }

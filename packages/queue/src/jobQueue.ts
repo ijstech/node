@@ -73,6 +73,9 @@ export class JobQueue{
     processJob(handler: (job: Queue.Job<any>)=>Promise<any>){
         this._queue.process(handler);
     };
+    stop(){
+        this._queue.close();
+    };
 };
 export function getJobQueue(options: IJobQueueOptions): JobQueue{
     let id = options.connection.redis.host + ':' + (options.connection.redis.db || 0) +':' + options.jobQueue;

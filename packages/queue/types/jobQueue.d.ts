@@ -28,5 +28,6 @@ export declare class JobQueue {
         retries?: number;
     }): Promise<IJob>;
     processJob(handler: (job: Queue.Job<any>) => Promise<any>): void;
+    stop(): void;
 }
 export declare function getJobQueue(options: IJobQueueOptions): JobQueue;

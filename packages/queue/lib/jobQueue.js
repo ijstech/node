@@ -59,6 +59,10 @@ class JobQueue {
         this._queue.process(handler);
     }
     ;
+    stop() {
+        this._queue.close();
+    }
+    ;
 }
 exports.JobQueue = JobQueue;
 ;

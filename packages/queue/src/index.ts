@@ -26,6 +26,7 @@ export class Queue {
     private options: Types.IQueueOptions;
     private started: boolean;
     private packageManager: PackageManager;
+    private queue: JobQueue;
     private domainPackage: {[domain: string]: {[packPath: string]: IDomainWorkerPackage}} = {};
 
     constructor(options: Types.IQueueOptions) {
@@ -43,7 +44,8 @@ export class Queue {
         this.domainPackage[domain][worker.packagePath] = worker; 
     };
     private runWorker(worker: IQueueWorkerOptions) {        
-        worker.plugin = new Worker(worker);
+        if (!worker.plugin)
+            worker.plugin = new Worker(worker);
         worker.queue = getJobQueue(worker);
         if (worker.plugins && worker.plugins.message) {
             worker.message = new Message(worker.plugin, worker.plugins.message);
@@ -63,11 +65,11 @@ export class Queue {
             return;
         this.started = true;
         if (this.options.jobQueue && !this.options.disabled && this.options.connection){
-            let queue = getJobQueue({
+            this.queue = getJobQueue({
                 connection: this.options.connection,
                 jobQueue: this.options.jobQueue
-            });
-            queue.processJob(async (job) =>{                                
+            });            
+            this.queue.processJob(async (job) =>{                                
                 if (job.data?.worker){                    
                     let worker = job.data.worker;  
                     let pack: IDomainWorkerPackage;
@@ -138,11 +140,26 @@ export class Queue {
         };
         if (this.options.workers){
             for (let i = 0; i < this.options.workers.length; i++) {
-                let worker = this.options.workers[i];
+                let worker:IQueueWorkerOptions = this.options.workers[i];
                 if (!worker.disabled)
                     this.runWorker(worker);
             };
         }
+    };
+    stop(){
+        if (!this.started)
+            return;
+        this.queue.stop();
+        if (this.options.workers){
+            for (let i = 0; i < this.options.workers.length; i++) {
+                let worker: IQueueWorkerOptions = this.options.workers[i];
+                if (worker.queue){
+                    worker.queue.stop();
+                    worker.queue = null;
+                };
+            };
+        };
+        this.started = false;
     };
 };
 export function loadPlugin(plugin: Worker, options: Types.IQueueRequiredPluginOptions, vm?: Types.VM): Types.IQueuePlugin{
