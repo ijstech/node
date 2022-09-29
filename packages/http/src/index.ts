@@ -42,7 +42,7 @@ export interface IHttpServerOptions{
     port?: number;
     router?: IRouterOptions;
     securePort?: number;    
-    workerOptions?: IWorkerOptions;
+    worker?: IWorkerOptions;
 };
 export class HttpServer {
     private app: Koa;
@@ -58,8 +58,8 @@ export class HttpServer {
 
     constructor(options: IHttpServerOptions){
         this.options = options;        
-        if (this.options.workerOptions)
-            this.queue = getJobQueue(this.options.workerOptions);
+        if (this.options.worker)
+            this.queue = getJobQueue(this.options.worker);
 
         if (this.options.port || this.options.securePort){
             this.app = new Koa();

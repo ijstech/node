@@ -133,7 +133,7 @@ describe('HTTP Server with Job Queue', function() {
     before(async ()=>{
         server = new HttpServer({
             port:8888,
-            workerOptions: Config.workerOptions
+            worker: Config.worker
         });        
         await server.start();        
         await server.addDomainRouter('localhost', {
