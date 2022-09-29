@@ -18,32 +18,33 @@ class JobQueue {
         this._options = options;
         this._queue = new bee_queue_1.default(options.jobQueue, {
             redis: options.connection.redis,
-            removeOnSuccess: options.removeOnSuccess || false,
-            activateDelayedJobs: options.activateDelayedJobs || false
+            removeOnSuccess: true,
+            removeOnFailure: true
         });
     }
     ;
     async createJob(data, waitForResult, options) {
         return new Promise(async (resolve) => {
             let job = this._queue.createJob(data).retries((options === null || options === void 0 ? void 0 : options.retries) || 5);
-            if (waitForResult) {
-                job.on('succeeded', (result) => {
+            job.on('succeeded', (result) => {
+                if (waitForResult)
                     resolve({
                         id: job.id,
                         progress: 100,
                         status: 'succeeded',
                         result: result
                     });
-                });
-                job.on('failed', (err) => {
+            });
+            job.on('failed', (err) => {
+                if (waitForResult)
                     resolve({
                         id: result.id,
                         progress: result.progress,
                         status: 'failed'
                     });
-                });
-            }
-            ;
+            });
+            if (options === null || options === void 0 ? void 0 : options.id)
+                job.setId(options.id);
             let result = await job.save();
             if (!waitForResult)
                 resolve({

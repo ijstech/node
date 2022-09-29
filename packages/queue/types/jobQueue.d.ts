@@ -10,8 +10,6 @@ export { Job };
 export interface IJobQueueOptions extends Types.IPluginOptions {
     jobQueue: string;
     disabled?: boolean;
-    removeOnSuccess?: boolean;
-    activateDelayedJobs?: boolean;
     connection: Types.IJobQueueConnectionOptions;
 }
 export interface IJob {

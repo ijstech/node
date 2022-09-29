@@ -6,31 +6,77 @@
 
 import {IWorkerPluginOptions, Worker} from '@ijstech/plugin';
 import CronParser from 'cron-parser';
+import {PackageManager, IDomainWorkerPackage} from '@ijstech/package';
+import {JobQueue, IWorkerOptions} from '@ijstech/queue'
 
 export interface ISchdeulePluginOptions extends IWorkerPluginOptions{
     cron: string;
     disabled?: boolean;
-}
+};
 export interface ISchedulerOptions {
     module?: string;
-    jobs?: ISchdeulePluginOptions[]
-}
-export interface IScheduleJobOptions extends ISchdeulePluginOptions{
+    jobs?: ISchdeulePluginOptions[];
+    worker?: IWorkerOptions;
+};
+export interface IScheduleJob extends ISchdeulePluginOptions{
+    id?: string;
     next?: CronParser.CronDate;
+    domain?: string;
+    pack?: IDomainWorkerPackage;
+    workerName?: string;
     plugin?: Worker;
-}
+};
+export interface IDomainSchedule {
+    id?: string;
+    cron: string;    
+    worker: string;
+    params?: any;
+};
+export interface IDomainWorker {
+    pack: IDomainWorkerPackage;
+    schedules: IDomainSchedule[];
+};
 export class Scheduler {
     private options: ISchedulerOptions;
     private timer: any;
     private started: boolean;
-    private jobs: IScheduleJobOptions[];
-    constructor(options: ISchedulerOptions){
+    private jobs: IScheduleJob[];
+    private queue: JobQueue;
+    private packageManager: PackageManager;
+    private domainWorkers: {[domain: string]: IDomainWorker[]} = {};
+
+    constructor(options?: ISchedulerOptions){
         this.jobs = [];
-        this.options = options || {};            
+        this.options = options || {};                    
+        if (this.options.worker)
+            this.queue = new JobQueue({
+                jobQueue: this.options.worker.jobQueue,
+                connection: this.options.worker.connection
+            });
+
         this.options.jobs = this.options.jobs || [];   
         for (let i = 0; i < this.options.jobs.length; i ++)
             this.addJob(this.options.jobs[i], this.options.module);
-    }
+    };
+    async addDomainWorker(domain: string, pack: IDomainWorkerPackage, schedules: IDomainSchedule[]){
+        if (!this.packageManager)
+            this.packageManager = new PackageManager();        
+        this.domainWorkers[domain] = this.domainWorkers[domain] || [];
+        let domainWorkers = this.domainWorkers[domain];
+        domainWorkers.push({pack, schedules});
+        for (let i = 0; i < schedules.length; i ++){
+            let schedule = schedules[i];            
+            let id = schedule.id || `${domain}:${schedule.worker}:${i}`
+            this.jobs.push({
+                id: id, 
+                domain: domain,
+                cron: schedule.cron,
+                pack: pack,
+                workerName: schedule.worker,
+                params: schedule.params
+            });
+        };
+    };
     addJob(job: ISchdeulePluginOptions, module?: string){        
         if (module)
             job.modulePath = module;
@@ -45,34 +91,70 @@ export class Scheduler {
         this.started = true; 
         this.timer = setInterval(()=>{
             this.processJobs();
-        }, 500)
-    }
-    private async runJob(job: IScheduleJobOptions){
+        }, 500);
+    };
+    stop(){
+        clearInterval(this.timer);
+        this.started = false;
+    };
+    private async runJob(job: IScheduleJob){
         if (!job.next){
             job.next = CronParser.parseExpression(job.cron).next();
-            console.log('Next Schedule: ' + job.next.toString() + ' ' + job.scriptPath)
-        }                
+            console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id?job.id:''));
+        };
         if (job.next.getTime() < new Date().getTime()){
             job.processing = true;
             try{
-                if (!job.plugin){
-                    job.plugin = new Worker(job);                    
-                    await job.plugin.init(job.params);
+                if (job.pack){                    
+                    if (this.queue){                        
+                        let result = await this.queue.createJob({                        
+                            worker: {
+                                domain: job.domain,
+                                packagePath: job.pack.packagePath,
+                                workerName: job.workerName,
+                                params: job.params
+                            }
+                        }, false, {
+                            id: job.id
+                        });
+                    }
+                    else{
+                        if (!job.plugin){
+                            let worker = await this.packageManager.getPackageWorker(job.pack, job.workerName);
+                            let plugins: any = {};
+                            if (worker.plugins?.cache)
+                                plugins.cache = job.pack.options.plugins.cache
+                            if (worker.plugins?.db)
+                                plugins.db = {default: job.pack.options.plugins.db}
+                            job.plugin = new Worker({
+                                dependencies: worker.moduleScript.dependencies,
+                                script: worker.moduleScript.script,
+                                params: worker.params                            
+                            });
+                        };
+                        let result = await job.plugin.process(job.params);
+                    }
                 }
-                await job.plugin.process(job.params)
+                else{
+                    if (!job.plugin){
+                        job.plugin = new Worker(job);                    
+                        await job.plugin.init(job.params);
+                    };
+                    await job.plugin.process(job.params);
+                };
                 job.next = CronParser.parseExpression(job.cron).next();
-                console.log('Next Schedule: ' + job.next.toString() + ' ' + job.scriptPath)
+                console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id?job.id:''));
             }
             finally{
                 job.processing = false;
-            }
-        }
-    }
+            };
+        };
+    };
     private processJobs(){
-        this.jobs.forEach(async (job: IScheduleJobOptions)=>{
-            if (!job.disabled && !job.processing){     
+        this.jobs.forEach(async (job: IScheduleJob)=>{
+            if (!job.disabled && !job.processing){
                 this.runJob(job);
-            }
-        })        
-    }
-}
+            };
+        });
+    };
+};

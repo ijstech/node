@@ -265,7 +265,7 @@ export interface IQueueOptions {
     disabled?: boolean;
     connection?: IJobQueueConnectionOptions;
     module?: string;
-    workers: IQueuePluginOptions[];
+    workers?: IQueuePluginOptions[];
 }
 export interface IQueueJob{
     id: string;

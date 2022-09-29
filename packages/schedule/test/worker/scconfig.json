@@ -1,0 +1,32 @@
+{
+    "src": ".",
+    "workers": {
+        "worker1": {
+            "module": "index.ts",
+            "params": {
+                "param1": "default worker1 param1 value"
+            },
+            "plugins": {
+                "cache": false,
+                "db": false
+            },
+            "dependencies": {
+                
+            }
+        },
+        "worker2": {
+            "module": "index.ts",
+            "params": {
+                "param1": "default worker2 param1 value",
+                "db": true
+            },
+            "plugins": {
+                "cache": true,
+                "db": true
+            },
+            "dependencies": {
+                
+            }
+        }
+    }
+}

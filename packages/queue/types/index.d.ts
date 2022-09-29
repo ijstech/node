@@ -6,15 +6,22 @@
 import { Worker } from '@ijstech/plugin';
 import { getJobQueue, JobQueue, IJobQueueOptions } from './jobQueue';
 import * as Types from '@ijstech/types';
-import { IDomainRouterPackage } from '@ijstech/package';
+import { IDomainRouterPackage, IDomainWorkerPackage } from '@ijstech/package';
 export { IQueueOptions } from '@ijstech/types';
 export { getJobQueue, JobQueue, IJobQueueOptions };
+export interface IWorkerOptions {
+    enabled: boolean;
+    jobQueue: string;
+    connection: Types.IJobQueueConnectionOptions;
+}
 export declare class Queue {
     private options;
     private started;
     private packageManager;
+    private domainPackage;
     constructor(options: Types.IQueueOptions);
     addDomainRouter(domain: string, router: IDomainRouterPackage): Promise<void>;
+    addDomainWorker(domain: string, worker: IDomainWorkerPackage): Promise<void>;
     private runWorker;
     start(): void;
 }

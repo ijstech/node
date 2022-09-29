@@ -13,8 +13,6 @@ export {Job};
 export interface IJobQueueOptions extends Types.IPluginOptions{
     jobQueue: string;
     disabled?: boolean;
-    removeOnSuccess?: boolean;
-    activateDelayedJobs?: boolean;
     connection: Types.IJobQueueConnectionOptions;
 };
 let Queues = {};
@@ -32,9 +30,10 @@ export class JobQueue{
         this._options = options;
         this._queue = new Queue(options.jobQueue, {
             redis: options.connection.redis, 
-            removeOnSuccess: options.removeOnSuccess||false, 
-            activateDelayedJobs: options.activateDelayedJobs||false
+            removeOnSuccess: true, 
+            removeOnFailure: true
         });
+        // this._queue.checkStalledJobs(5000, (err, numStalled) => {});
     };
     async createJob(data: any, waitForResult?: boolean, options?: {
             id?: string;
@@ -43,23 +42,25 @@ export class JobQueue{
         }): Promise<IJob>{        
         return new Promise(async (resolve)=>{
             let job = this._queue.createJob(data).retries(options?.retries || 5);
-            if (waitForResult){
-                job.on('succeeded', (result)=>{                    
+            job.on('succeeded', (result)=>{                    
+                if (waitForResult)
                     resolve({
                         id: job.id,
                         progress: 100,
                         status: 'succeeded',
                         result: result
                     });
-                });
-                job.on('failed', (err) => {
+            });
+            job.on('failed', (err) => {
+                if (waitForResult)
                     resolve({
                         id: result.id,
                         progress: result.progress,
                         status: 'failed'
                     })
-                });
-            };
+            });
+            if (options?.id)
+                job.setId(options.id);
             let result = await job.save();            
             if (!waitForResult)                
                 resolve({
