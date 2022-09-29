@@ -57,14 +57,18 @@ describe('HTTP Server', function() {
     let server: HttpServer;
     before(async ()=>{
         server = new HttpServer({
-            port:8888
+            port:8888, 
+            domains: {
+                "localhost": [
+                    {
+                        baseUrl: '/pack1', 
+                        packagePath: Path.resolve(__dirname, 'router'), 
+                        options: Config
+                    }
+                ]
+            }
         });        
-        await server.start();        
-        await server.addDomainRouter('localhost', {
-            baseUrl: '/pack1', 
-            packagePath: Path.resolve(__dirname, 'router'), 
-            options: Config
-        });
+        await server.start();      
         server.use(async (ctx: Koa.Context)=>{
             if (ctx.method == 'GET' && ctx.url == '/ok'){
                 ctx.body = 'get ok';
@@ -133,14 +137,18 @@ describe('HTTP Server with Job Queue', function() {
     before(async ()=>{
         server = new HttpServer({
             port:8888,
-            worker: Config.worker
+            worker: Config.worker,
+            domains: {
+                "localhost": [
+                    {
+                        baseUrl: '/pack1', 
+                        packagePath: Path.resolve(__dirname, 'router'), 
+                        options: Config
+                    }
+                ]
+            }
         });        
-        await server.start();        
-        await server.addDomainRouter('localhost', {
-            baseUrl: '/pack1', 
-            packagePath: Path.resolve(__dirname, 'router'), 
-            options: Config
-        });
+        await server.start();
         server.use(async (ctx: Koa.Context)=>{
             if (ctx.method == 'GET' && ctx.url == '/ok'){
                 ctx.body = 'get ok';
@@ -148,8 +156,11 @@ describe('HTTP Server with Job Queue', function() {
             else if (ctx.method == 'POST' && ctx.url == '/')
                 ctx.body = 'post ok';
         });
-        if (Config.workerOptions){
-            queue = new Queue(Config.workerOptions);
+        if (Config.worker){
+            queue = new Queue({
+                jobQueue: Config.worker.jobQueue,
+                connection: Config.worker.connection                
+            });
             await queue.addDomainRouter('localhost', {
                 baseUrl: '/pack1', 
                 packagePath: Path.resolve(__dirname, 'router'), 

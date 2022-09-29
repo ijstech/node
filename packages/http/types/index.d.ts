@@ -33,6 +33,9 @@ export interface IHttpServerOptions {
     router?: IRouterOptions;
     securePort?: number;
     worker?: IWorkerOptions;
+    domains?: {
+        [domainName: string]: IDomainRouterPackage[];
+    };
 }
 export declare class HttpServer {
     private app;

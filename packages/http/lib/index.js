@@ -31,6 +31,15 @@ class HttpServer {
         this.options = options;
         if (this.options.worker)
             this.queue = queue_1.getJobQueue(this.options.worker);
+        if (this.options.domains) {
+            for (let domain in this.options.domains) {
+                let packages = this.options.domains[domain];
+                for (let i = 0; i < packages.length; i++)
+                    this.addDomainRouter(domain, packages[i]);
+            }
+            ;
+        }
+        ;
         if (this.options.port || this.options.securePort) {
             this.app = new koa_1.default();
             this.app.use(koa_bodyparser_1.default());

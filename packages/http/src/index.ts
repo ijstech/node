@@ -43,6 +43,7 @@ export interface IHttpServerOptions{
     router?: IRouterOptions;
     securePort?: number;    
     worker?: IWorkerOptions;
+    domains?: {[domainName: string]: IDomainRouterPackage[]}
 };
 export class HttpServer {
     private app: Koa;
@@ -60,7 +61,13 @@ export class HttpServer {
         this.options = options;        
         if (this.options.worker)
             this.queue = getJobQueue(this.options.worker);
-
+        if (this.options.domains){
+            for (let domain in this.options.domains){
+                let packages = this.options.domains[domain];
+                for (let i = 0; i < packages.length; i ++)
+                    this.addDomainRouter(domain, packages[i]);
+            };
+        };
         if (this.options.port || this.options.securePort){
             this.app = new Koa();
             this.app.use(BodyParser());        
