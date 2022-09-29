@@ -29,8 +29,8 @@ class HttpServer {
     constructor(options) {
         this.ssl = {};
         this.options = options;
-        if (this.options.workerOptions)
-            this.queue = queue_1.getJobQueue(this.options.workerOptions);
+        if (this.options.worker)
+            this.queue = queue_1.getJobQueue(this.options.worker);
         if (this.options.port || this.options.securePort) {
             this.app = new koa_1.default();
             this.app.use(koa_bodyparser_1.default());
