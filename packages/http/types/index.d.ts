@@ -32,7 +32,7 @@ export interface IHttpServerOptions {
     port?: number;
     router?: IRouterOptions;
     securePort?: number;
-    workerOptions?: IWorkerOptions;
+    worker?: IWorkerOptions;
 }
 export declare class HttpServer {
     private app;
