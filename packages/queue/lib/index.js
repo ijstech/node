@@ -45,7 +45,9 @@ class Queue {
     ;
     async addDomainWorker(domain, worker) {
         if (!this.packageManager)
-            this.packageManager = new package_1.PackageManager();
+            this.packageManager = new package_1.PackageManager({
+                storage: this.options.storage
+            });
         this.domainPackage[domain] = this.domainPackage[domain] || {};
         this.domainPackage[domain][worker.packagePath] = worker;
     }

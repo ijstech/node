@@ -53,7 +53,9 @@ export class Queue {
     };
     async addDomainWorker(domain: string, worker: IDomainWorkerPackage){
         if (!this.packageManager)
-            this.packageManager = new PackageManager();
+            this.packageManager = new PackageManager({
+                storage: this.options.storage
+            });
         this.domainPackage[domain] = this.domainPackage[domain] || {};
         this.domainPackage[domain][worker.packagePath] = worker; 
     };
