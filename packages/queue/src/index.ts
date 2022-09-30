@@ -31,6 +31,17 @@ export class Queue {
 
     constructor(options: Types.IQueueOptions) {
         this.options = options;
+        for (let domain in options.domains){
+            let domainOptions = options.domains[domain];
+            if (domainOptions.routers){
+                for (let i = 0; i < domainOptions.routers.length; i ++)
+                    this.addDomainRouter(domain, domainOptions.routers[i]);
+            };
+            if (domainOptions.workers){
+                for (let i = 0; i < domainOptions.workers.length; i ++)
+                    this.addDomainWorker(domain, domainOptions.workers[i]);
+            };
+        };
     };
     async addDomainRouter(domain: string, router: IDomainRouterPackage){
         if (!this.packageManager)

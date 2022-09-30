@@ -254,11 +254,26 @@ export interface IWalletPlugin {
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
     soliditySha3(...val: any[]): string;	
 }
+export interface IDomainOptions{
+    plugins?: {
+        db?: IDbConnectionOptions,
+        cache?: ICacheClientOptions
+    };
+}
 //Queue Plugin
 export interface IQueuePluginOptions extends IWorkerPluginOptions{
     jobQueue: string;
     disabled?: boolean;
     connection: IJobQueueConnectionOptions;
+}
+export interface IDomainRouterPackage{
+    baseUrl: string;
+    packagePath: string;
+    options?: IDomainOptions
+}
+export interface IDomainWorkerPackage{
+    packagePath: string;
+    options?: IDomainOptions
 }
 export interface IQueueOptions {
     jobQueue?: string;
@@ -266,6 +281,10 @@ export interface IQueueOptions {
     connection?: IJobQueueConnectionOptions;
     module?: string;
     workers?: IQueuePluginOptions[];
+    domains?: {[domainName: string]: {
+        routers?: IDomainRouterPackage[],
+        workers?: IDomainWorkerPackage[]
+    }}
 }
 export interface IQueueJob{
     id: string;

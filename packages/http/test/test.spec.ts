@@ -156,18 +156,20 @@ describe('HTTP Server with Job Queue', function() {
             else if (ctx.method == 'POST' && ctx.url == '/')
                 ctx.body = 'post ok';
         });
-        if (Config.worker){
-            queue = new Queue({
-                jobQueue: Config.worker.jobQueue,
-                connection: Config.worker.connection                
-            });
-            await queue.addDomainRouter('localhost', {
-                baseUrl: '/pack1', 
-                packagePath: Path.resolve(__dirname, 'router'), 
-                options: Config
-            });
-            queue.start();
-        };
+        queue = new Queue({
+            jobQueue: Config.worker.jobQueue,
+            connection: Config.worker.connection,
+            domains: {
+                "localhost": {
+                    routers: [{
+                        baseUrl: '/pack1', 
+                        packagePath: Path.resolve(__dirname, 'router'), 
+                        options: Config
+                    }]
+                }
+            }
+        });
+        queue.start();
     });
     it ('Simple router GET', async function(){
         let result = await get('http://localhost:8888/ok')        
