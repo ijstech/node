@@ -28,25 +28,31 @@ class Scheduler {
                 jobQueue: this.options.worker.jobQueue,
                 connection: this.options.worker.connection
             });
+        for (let domain in this.options.domains) {
+            let domainWorkers = this.options.domains[domain];
+            for (let i = 0; i < domainWorkers.length; i++) {
+                this.addDomainWorker(domain, domainWorkers[i]);
+            }
+        }
         this.options.jobs = this.options.jobs || [];
         for (let i = 0; i < this.options.jobs.length; i++)
             this.addJob(this.options.jobs[i], this.options.module);
     }
     ;
-    async addDomainWorker(domain, pack, schedules) {
+    async addDomainWorker(domain, worker) {
         if (!this.packageManager)
             this.packageManager = new package_1.PackageManager();
         this.domainWorkers[domain] = this.domainWorkers[domain] || [];
         let domainWorkers = this.domainWorkers[domain];
-        domainWorkers.push({ pack, schedules });
-        for (let i = 0; i < schedules.length; i++) {
-            let schedule = schedules[i];
+        domainWorkers.push(worker);
+        for (let i = 0; i < worker.schedules.length; i++) {
+            let schedule = worker.schedules[i];
             let id = schedule.id || `${domain}:${schedule.worker}:${i}`;
             this.jobs.push({
                 id: id,
                 domain: domain,
                 cron: schedule.cron,
-                pack: pack,
+                pack: worker.pack,
                 workerName: schedule.worker,
                 params: schedule.params
             });

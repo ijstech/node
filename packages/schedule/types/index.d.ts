@@ -15,6 +15,9 @@ export interface ISchedulerOptions {
     module?: string;
     jobs?: ISchdeulePluginOptions[];
     worker?: IWorkerOptions;
+    domains?: {
+        [domainName: string]: IDomainWorker[];
+    };
 }
 export interface IScheduleJob extends ISchdeulePluginOptions {
     id?: string;
@@ -43,7 +46,7 @@ export declare class Scheduler {
     private packageManager;
     private domainWorkers;
     constructor(options?: ISchedulerOptions);
-    addDomainWorker(domain: string, pack: IDomainWorkerPackage, schedules: IDomainSchedule[]): Promise<void>;
+    addDomainWorker(domain: string, worker: IDomainWorker): Promise<void>;
     addJob(job: ISchdeulePluginOptions, module?: string): void;
     start(): void;
     stop(): void;

@@ -12,44 +12,56 @@ async function test(){
     });
     queue1.start();
 
-    let scheduler1 = new Scheduler(Config);    
+    let scheduler1 = new Scheduler({
+
+    });    
     await scheduler1.addDomainWorker('localhost', {
-        packagePath: Path.resolve(__dirname, 'worker'), 
-        options: Config
-    }, [
-        {        
-            id: 'job:113',
-            cron: '*/4 * * * * *', //every 4 seconds
-            worker: 'worker2',
-            params: {param1: 'db'}
+        pack: {
+            packagePath: Path.resolve(__dirname, 'worker'), 
+            options: Config
         },
-        {
-            id: 'job:115',
-            cron: '*/4 * * * * *', //every 4 seconds
-            worker: 'worker2',
-            params: {param1: 'cache'}
-        }
-    ]);   
+        schedules: [
+            {        
+                id: 'job:113',
+                cron: '*/4 * * * * *', //every 4 seconds
+                worker: 'worker2',
+                params: {param1: 'db'}
+            },
+            {
+                id: 'job:115',
+                cron: '*/4 * * * * *', //every 4 seconds
+                worker: 'worker2',
+                params: {param1: 'cache'}
+            }
+        ]}
+    );  
     scheduler1.start();  
 
-    let scheduler2 = new Scheduler(Config);    
-    await scheduler2.addDomainWorker('localhost', {
-        packagePath: Path.resolve(__dirname, 'worker'), 
-        options: Config
-    }, [
-        {        
-            id: 'job:113',
-            cron: '*/4 * * * * *', //every 4 seconds
-            worker: 'worker2',
-            params: {param1: 'db'}
-        },
-        {
-            id: 'job:115',
-            cron: '*/4 * * * * *', //every 4 seconds
-            worker: 'worker2',
-            params: {param1: 'cache'}
+    let scheduler2 = new Scheduler({
+        worker: Config.worker,
+        domains: {
+            "localhost": [{
+                pack: {
+                    packagePath: Path.resolve(__dirname, 'worker'), 
+                    options: Config
+                },
+                schedules: [
+                    {        
+                        id: 'job:113',
+                        cron: '*/4 * * * * *', //every 4 seconds
+                        worker: 'worker2',
+                        params: {param1: 'db'}
+                    },
+                    {
+                        id: 'job:115',
+                        cron: '*/4 * * * * *', //every 4 seconds
+                        worker: 'worker2',
+                        params: {param1: 'cache'}
+                    }
+                ]
+            }]
         }
-    ]);   
+    });     
     scheduler2.start();  
 }
 test();
