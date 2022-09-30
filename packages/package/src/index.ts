@@ -1,5 +1,5 @@
 import {Compiler, ICompilerResult, IPackage} from '@ijstech/tsc';
-import {Storage} from '@ijstech/storage';
+import {IStorageOptions, Storage} from '@ijstech/storage';
 import {promises as Fs} from 'fs';
 import Path from 'path';
 import { IRouterPluginMethod } from '@ijstech/types';
@@ -81,32 +81,25 @@ export interface IDomainOptions{
     };
 };
 export class Package{
-    private manager: PackageManager;
-    private packagePath: string;
+    private manager: PackageManager;    
     private scripts: {[name: string]: ICompilerResult} = {};    
     private packageConfig: any;    
     public scconfig: ISCConfig;
+    private packagePath: string;
     
     constructor(manager: PackageManager, packagePath: string){
         this.manager = manager;
         this.packagePath = packagePath;
     };
-
-    private async getFileContent(filePath: string): Promise<string>{
-        if (this.packagePath.indexOf('/') >=0){ //local package
-            return await Fs.readFile(Path.join(this.packagePath, filePath), 'utf8');
-        }
-        else{ //ipfs cid
-
-        }
-        return;
+    async getFileContent(filePath: string): Promise<string>{
+        return this.manager.getFileContent(this, filePath);
     };
     get name(): string{
         return this.packageConfig.name || this.packagePath;
     };
     get path(): string{
-        return this.packagePath;
-    }
+        return this.packagePath; 
+    };
     get version(): string{
         return this.packageConfig.version || '*';
     };
@@ -169,8 +162,8 @@ export class Package{
     };
 };
 interface IOptions{
-    storage?: Storage;
-}
+    storage?: IStorageOptions;
+};
 export type PackageImporter = (packageName: string, version?: string) => Promise<Package>;
 export interface IPackageScript {
     script?: string;
@@ -179,6 +172,7 @@ export interface IPackageScript {
 }
 export class PackageManager{
     private options: IOptions;
+    private storage: Storage;
     private packagesByPath: {[path: string]: Package} = {};
     private packagesByVersion: {[version: string]: Package} = {};
     private packagesByName: {[name: string]: Package} = {};
@@ -241,6 +235,17 @@ export class PackageManager{
             };
         };
         return <any>{};
+    };
+    async getFileContent(pack: Package, filePath: string): Promise<string>{
+        if (pack.path.indexOf('/') >=0){ //local package
+            return await Fs.readFile(Path.join(pack.path, filePath), 'utf8');
+        }
+        else if (this.options.storage){ //ipfs cid
+            if (!this.storage)
+                this.storage = new Storage(this.options.storage);
+            return await this.storage.getFile(pack.path, filePath);
+        };
+        return;
     };
     async getPackageWorker(pack: IDomainWorkerPackage, workerName: string): Promise<IWorker>{                
         let p = await this.addPackage(pack.packagePath);        

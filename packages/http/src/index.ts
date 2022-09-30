@@ -16,6 +16,7 @@ import {IRouterPluginOptions, Router, RouterRequest} from '@ijstech/plugin';
 import {PackageManager, IDomainRouterPackage} from '@ijstech/package';
 import { IRouterPluginMethod, IJobQueueConnectionOptions } from '@ijstech/types';
 import {getJobQueue, JobQueue} from '@ijstech/queue';
+import {IStorageOptions} from '@ijstech/storage';
 
 const RootPath = process.cwd();
 
@@ -43,6 +44,7 @@ export interface IHttpServerOptions{
     router?: IRouterOptions;
     securePort?: number;    
     worker?: IWorkerOptions;
+    storage?: IStorageOptions;
     domains?: {[domainName: string]: IDomainRouterPackage[]}
 };
 export class HttpServer {
@@ -93,7 +95,9 @@ export class HttpServer {
     };    
     async addDomainRouter(domain: string, router: IDomainRouterPackage){
         if (!this.packageManager)
-            this.packageManager = new PackageManager();
+            this.packageManager = new PackageManager({
+                storage: this.options.storage
+            });
         this.packageManager.addDomainRouter(domain, router);
     };
     getCert(domain: string): Promise<Tls.SecureContext>{            
@@ -180,12 +184,24 @@ export class HttpServer {
             };
         }
     };
-    async stop(){
-        if (this.http)
-            this.http.close();
-        if (this.https)
-            this.https.close()
-        this.running = false;
+    async stop(){        
+        if (this.running){
+            return new Promise((resolve)=>{                        
+                this.running = false;
+                if (this.http){
+                    this.http.close(()=>{
+                        if (this.https)
+                            this.https.close(resolve)
+                        else
+                            resolve(null);
+                    });
+                }
+                else if (this.https)
+                    this.https.close(resolve)
+                else
+                    resolve(null);
+            });
+        }
     };
     async start(){        
         if (this.running)

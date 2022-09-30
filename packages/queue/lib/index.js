@@ -17,6 +17,7 @@ const package_1 = require("@ijstech/package");
 class Queue {
     constructor(options) {
         this.domainPackage = {};
+        options = JSON.parse(JSON.stringify(options || {}));
         this.options = options;
         for (let domain in options.domains) {
             let domainOptions = options.domains[domain];
@@ -36,7 +37,9 @@ class Queue {
     ;
     async addDomainRouter(domain, router) {
         if (!this.packageManager)
-            this.packageManager = new package_1.PackageManager();
+            this.packageManager = new package_1.PackageManager({
+                storage: this.options.storage
+            });
         this.packageManager.addDomainRouter(domain, router);
     }
     ;
@@ -160,15 +163,15 @@ class Queue {
         }
     }
     ;
-    stop() {
+    async stop() {
         if (!this.started)
             return;
-        this.queue.stop();
+        await this.queue.stop();
         if (this.options.workers) {
             for (let i = 0; i < this.options.workers.length; i++) {
                 let worker = this.options.workers[i];
                 if (worker.queue) {
-                    worker.queue.stop();
+                    await worker.queue.stop();
                     worker.queue = null;
                 }
                 ;

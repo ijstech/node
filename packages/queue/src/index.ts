@@ -30,6 +30,7 @@ export class Queue {
     private domainPackage: {[domain: string]: {[packPath: string]: IDomainWorkerPackage}} = {};
 
     constructor(options: Types.IQueueOptions) {
+        options = JSON.parse(JSON.stringify(options || {}));
         this.options = options;
         for (let domain in options.domains){
             let domainOptions = options.domains[domain];
@@ -45,7 +46,9 @@ export class Queue {
     };
     async addDomainRouter(domain: string, router: IDomainRouterPackage){
         if (!this.packageManager)
-            this.packageManager = new PackageManager();
+            this.packageManager = new PackageManager({
+                storage: this.options.storage
+            });
         this.packageManager.addDomainRouter(domain, router); 
     };
     async addDomainWorker(domain: string, worker: IDomainWorkerPackage){
@@ -157,15 +160,15 @@ export class Queue {
             };
         }
     };
-    stop(){
+    async stop(): Promise<void>{
         if (!this.started)
             return;
-        this.queue.stop();
+        await this.queue.stop();
         if (this.options.workers){
             for (let i = 0; i < this.options.workers.length; i++) {
                 let worker: IQueueWorkerOptions = this.options.workers[i];
                 if (worker.queue){
-                    worker.queue.stop();
+                    await worker.queue.stop();
                     worker.queue = null;
                 };
             };

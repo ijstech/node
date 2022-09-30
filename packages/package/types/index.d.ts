@@ -1,5 +1,5 @@
 import { ICompilerResult, IPackage } from '@ijstech/tsc';
-import { Storage } from '@ijstech/storage';
+import { IStorageOptions } from '@ijstech/storage';
 import { IRouterPluginMethod } from '@ijstech/types';
 export { IPackage };
 export interface IRoute {
@@ -68,12 +68,12 @@ export interface IDomainOptions {
 }
 export declare class Package {
     private manager;
-    private packagePath;
     private scripts;
     private packageConfig;
     scconfig: ISCConfig;
+    private packagePath;
     constructor(manager: PackageManager, packagePath: string);
-    private getFileContent;
+    getFileContent(filePath: string): Promise<string>;
     get name(): string;
     get path(): string;
     get version(): string;
@@ -82,7 +82,7 @@ export declare class Package {
     getScript(fileName?: string): Promise<ICompilerResult>;
 }
 interface IOptions {
-    storage?: Storage;
+    storage?: IStorageOptions;
 }
 export declare type PackageImporter = (packageName: string, version?: string) => Promise<Package>;
 export interface IPackageScript {
@@ -94,6 +94,7 @@ export interface IPackageScript {
 }
 export declare class PackageManager {
     private options;
+    private storage;
     private packagesByPath;
     private packagesByVersion;
     private packagesByName;
@@ -112,6 +113,7 @@ export declare class PackageManager {
         options: IDomainOptions;
         params: any;
     }>;
+    getFileContent(pack: Package, filePath: string): Promise<string>;
     getPackageWorker(pack: IDomainWorkerPackage, workerName: string): Promise<IWorker>;
     getScript(packageName: string, fileName?: string): Promise<IPackageScript>;
     getPackage(name: string, version?: string): Promise<Package>;

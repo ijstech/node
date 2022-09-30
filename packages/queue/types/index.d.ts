@@ -25,7 +25,7 @@ export declare class Queue {
     addDomainWorker(domain: string, worker: IDomainWorkerPackage): Promise<void>;
     private runWorker;
     start(): void;
-    stop(): void;
+    stop(): Promise<void>;
 }
 export declare function loadPlugin(plugin: Worker, options: Types.IQueueRequiredPluginOptions, vm?: Types.VM): Types.IQueuePlugin;
 export default loadPlugin;

@@ -73,8 +73,13 @@ export class JobQueue{
     processJob(handler: (job: Queue.Job<any>)=>Promise<any>){
         this._queue.process(handler);
     };
-    stop(){
-        this._queue.close();
+    async stop(){
+        Queues = {};
+        return new Promise((resolve)=>{
+            this._queue.close(()=>{
+                resolve(null)
+            });
+        })
     };
 };
 export function getJobQueue(options: IJobQueueOptions): JobQueue{

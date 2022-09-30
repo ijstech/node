@@ -9,6 +9,7 @@ import Tls from 'tls';
 import { IRouterPluginOptions } from '@ijstech/plugin';
 import { IDomainRouterPackage } from '@ijstech/package';
 import { IJobQueueConnectionOptions } from '@ijstech/types';
+import { IStorageOptions } from '@ijstech/storage';
 export interface IPlugin {
     scriptPath?: string;
     baseUrl?: string;
@@ -33,6 +34,7 @@ export interface IHttpServerOptions {
     router?: IRouterOptions;
     securePort?: number;
     worker?: IWorkerOptions;
+    storage?: IStorageOptions;
     domains?: {
         [domainName: string]: IDomainRouterPackage[];
     };
@@ -55,7 +57,7 @@ export declare class HttpServer {
         router: IRouterPluginOptions;
         baseUrl: string;
     }>;
-    stop(): Promise<void>;
+    stop(): Promise<unknown>;
     start(): Promise<void>;
     use(middleware: any): void;
 }

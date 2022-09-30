@@ -5,6 +5,7 @@ import Koa from 'koa';
 import {URL} from 'url';
 import Path from 'path';
 import Config from './data/config.js';
+import {Storage} from '@ijstech/storage';
 import {Queue} from '@ijstech/queue';
 
 async function request(method: string, path: string, data?: any): Promise<{statusCode:number|undefined, contentType:string|undefined, data: any, headers}>{
@@ -78,7 +79,7 @@ describe('HTTP Server', function() {
         });
     });
     after(async ()=>{
-        server.stop();
+        server.stop();        
     });
     it ('Simple router GET', async function(){
         let result = await get('http://localhost:8888/ok')        
@@ -127,13 +128,10 @@ describe('HTTP Server', function() {
     });
 });
 
-describe('HTTP Server with Job Queue', function() {  
+describe('HTTP Server with Job Queue', function() {
     this.timeout(6000);
     let queue: Queue;
-    let server: HttpServer;
-    after(async ()=>{
-        server.stop();
-    });
+    let server: HttpServer;    
     before(async ()=>{
         server = new HttpServer({
             port:8888,
@@ -171,6 +169,10 @@ describe('HTTP Server with Job Queue', function() {
         });
         queue.start();
     });
+    after(async ()=>{        
+        await queue.stop();
+        await server.stop();                
+    });
     it ('Simple router GET', async function(){
         let result = await get('http://localhost:8888/ok')        
         assert.strictEqual(result.statusCode, 200);
@@ -182,6 +184,85 @@ describe('HTTP Server with Job Queue', function() {
         let result = await post('http://localhost:8888/');
         assert.strictEqual(result.statusCode, 200);
         assert.strictEqual(result.data, 'post ok');
+    });
+    it ('Domain Package Router GET', async function(){
+        let result = await get('http://localhost:8888/pack1/hello');
+        assert.strictEqual(typeof(result.headers['job-id']), 'string');
+        assert.strictEqual(result.statusCode, 200);
+        assert.strictEqual(result.data.msg, 'GET hello');
+    });
+    it ('Domain Package Router GET 404', async function(){
+        let result = await get('http://localhost:8888/pack1/hello1');
+        assert.strictEqual(result.statusCode, 404);
+    });    
+    it ('Domain Package Router POST', async function(){
+        let result = await post('http://localhost:8888/pack1/hello/p1/p2');
+        assert.strictEqual(result.statusCode, 200);
+        assert.strictEqual(typeof(result.headers['job-id']), 'string');
+        assert.strictEqual(result.data.msg, 'POST hello');
+        assert.strictEqual(result.data.params.param1, 'p1');
+        assert.strictEqual(result.data.params.param2, 'p2');
+        assert.strictEqual(result.data.params.param3, 'default param3 value');
+    });
+    it ('Domain Package Router DB Plugin', async function(){
+        let result = await post('http://localhost:8888/pack1/hello/db');        
+        assert.strictEqual(typeof(result.headers['job-id']), 'string');
+        assert.strictEqual(typeof(result.data.dbResult[0].sysdate), 'string');
+        assert.strictEqual(result.statusCode, 200);
+        assert.strictEqual(result.data.msg, 'POST hello');        
+    });
+    it ('Domain Package Router Cache Plugin', async function(){
+        let result = await post('http://localhost:8888/pack1/hello/cache');        
+        assert.strictEqual(typeof(result.headers['job-id']), 'string');
+        assert.strictEqual(result.statusCode, 200);
+        assert.strictEqual(result.data.msg, 'POST hello');
+        assert.strictEqual(result.data.cacheResult, true);
+    });
+    it ('Domain Package Router PUT', async function(){
+        let result = await put('http://localhost:8888/pack1/hello');        
+        assert.strictEqual(result.statusCode, 404);
+    });
+});
+
+describe('HTTP Server with IPFS package', function() {  
+    this.timeout(6000);
+    let queue: Queue;
+    let server: HttpServer;
+    after(async ()=>{
+        await server.stop();
+        await queue.stop();
+    });
+    before(async ()=>{
+        server = new HttpServer({
+            port:8888,
+            worker: Config.worker,
+            storage: Config.storage,
+            domains: {
+                "localhost": [
+                    {
+                        baseUrl: '/pack1', 
+                        packagePath: 'bafybeic56uiu4tvih4lz36duhcsdrtefphsweozdqdm2s5nhfbbwq76pe4', 
+                        options: Config
+                    }
+                ]
+            }
+        });        
+        await server.start();
+        queue = new Queue({
+            jobQueue: Config.worker.jobQueue,
+            connection: Config.worker.connection,
+            storage: Config.storage,
+            domains: {
+                "localhost": {
+                    routers: [{
+                        baseUrl: '/pack1', 
+                        packagePath: 'bafybeic56uiu4tvih4lz36duhcsdrtefphsweozdqdm2s5nhfbbwq76pe4', 
+                        options: Config
+                    }]
+                }
+            }
+        });
+        queue.start();
     });
     it ('Domain Package Router GET', async function(){
         let result = await get('http://localhost:8888/pack1/hello');

@@ -6,6 +6,7 @@
     "scripts": {
         "build": "npm run clean && tsc",
         "clean": "rm -f tsconfig.tsbuildinfo && rm -rf lib && rm -rf types",
+        "sync": "ts-node test/sync.ts",
         "test": "mocha --exit --require ts-node/register test/*.spec.ts"
     }
 }

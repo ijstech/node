@@ -67,7 +67,9 @@ class HttpServer {
     ;
     async addDomainRouter(domain, router) {
         if (!this.packageManager)
-            this.packageManager = new package_1.PackageManager();
+            this.packageManager = new package_1.PackageManager({
+                storage: this.options.storage
+            });
         this.packageManager.addDomainRouter(domain, router);
     }
     ;
@@ -167,11 +169,17 @@ class HttpServer {
     }
     ;
     async stop() {
-        if (this.http)
-            this.http.close();
-        if (this.https)
-            this.https.close();
-        this.running = false;
+        return new Promise((resolve) => {
+            this.running = false;
+            if (this.http) {
+                this.http.close(() => {
+                    if (this.https)
+                        this.https.close(resolve);
+                });
+            }
+            else if (this.https)
+                this.https.close(resolve);
+        });
     }
     ;
     async start() {

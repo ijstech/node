@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PackageManager = exports.Package = exports.matchRoute = void 0;
 const tsc_1 = require("@ijstech/tsc");
+const storage_1 = require("@ijstech/storage");
 const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
 const pathToRegexp_1 = require("./pathToRegexp");
@@ -37,12 +38,7 @@ class Package {
     }
     ;
     async getFileContent(filePath) {
-        if (this.packagePath.indexOf('/') >= 0) {
-            return await fs_1.promises.readFile(path_1.default.join(this.packagePath, filePath), 'utf8');
-        }
-        else {
-        }
-        return;
+        return this.manager.getFileContent(this, filePath);
     }
     ;
     get name() {
@@ -52,6 +48,7 @@ class Package {
     get path() {
         return this.packagePath;
     }
+    ;
     get version() {
         return this.packageConfig.version || '*';
     }
@@ -119,6 +116,7 @@ class Package {
     ;
 }
 exports.Package = Package;
+;
 ;
 class PackageManager {
     constructor(options) {
@@ -188,6 +186,19 @@ class PackageManager {
         }
         ;
         return {};
+    }
+    ;
+    async getFileContent(pack, filePath) {
+        if (pack.path.indexOf('/') >= 0) {
+            return await fs_1.promises.readFile(path_1.default.join(pack.path, filePath), 'utf8');
+        }
+        else if (this.options.storage) {
+            if (!this.storage)
+                this.storage = new storage_1.Storage(this.options.storage);
+            return await this.storage.getFile(pack.path, filePath);
+        }
+        ;
+        return;
     }
     ;
     async getPackageWorker(pack, workerName) {

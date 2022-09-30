@@ -59,8 +59,13 @@ class JobQueue {
         this._queue.process(handler);
     }
     ;
-    stop() {
-        this._queue.close();
+    async stop() {
+        Queues = {};
+        return new Promise((resolve) => {
+            this._queue.close(() => {
+                resolve(null);
+            });
+        });
     }
     ;
 }
