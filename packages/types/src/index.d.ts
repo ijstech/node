@@ -275,12 +275,25 @@ export interface IDomainWorkerPackage{
     packagePath: string;
     options?: IDomainOptions
 }
+export interface IS3Options {
+    endpoint: string;
+    key: string;
+    secret: string;
+    bucket: string;
+}
+export interface IStorageOptions{
+    s3?: IS3Options;
+    web3Storage?: {endpoint?: string,token: string};
+    localCache?: {path: string};
+    log?: IDbConnectionOptions;
+}
 export interface IQueueOptions {
     jobQueue?: string;
     disabled?: boolean;
     connection?: IJobQueueConnectionOptions;
     module?: string;
     workers?: IQueuePluginOptions[];
+    storage?: IStorageOptions;
     domains?: {[domainName: string]: {
         routers?: IDomainRouterPackage[],
         workers?: IDomainWorkerPackage[]
