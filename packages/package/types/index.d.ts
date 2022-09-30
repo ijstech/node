@@ -113,7 +113,7 @@ export declare class PackageManager {
         options: IDomainOptions;
         params: any;
     }>;
-    getFileContent(pack: Package, filePath: string): Promise<string>;
+    getFileContent(packagePath: string, filePath: string): Promise<string>;
     getPackageWorker(pack: IDomainWorkerPackage, workerName: string): Promise<IWorker>;
     getScript(packageName: string, fileName?: string): Promise<IPackageScript>;
     getPackage(name: string, version?: string): Promise<Package>;

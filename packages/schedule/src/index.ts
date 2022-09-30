@@ -8,6 +8,7 @@ import {IWorkerPluginOptions, Worker} from '@ijstech/plugin';
 import CronParser from 'cron-parser';
 import {PackageManager, IDomainWorkerPackage} from '@ijstech/package';
 import {JobQueue, IWorkerOptions} from '@ijstech/queue'
+import {IStorageOptions} from '@ijstech/storage'
 
 export interface ISchdeulePluginOptions extends IWorkerPluginOptions{
     cron: string;
@@ -17,6 +18,7 @@ export interface ISchedulerOptions {
     module?: string;
     jobs?: ISchdeulePluginOptions[];
     worker?: IWorkerOptions;
+    storage?: IStorageOptions;
     domains?: {[domainName: string]: IDomainWorker[]}
 };
 export interface IScheduleJob extends ISchdeulePluginOptions{
@@ -35,7 +37,7 @@ export interface IDomainSchedule {
 };
 export interface IDomainWorker {
     pack: IDomainWorkerPackage;
-    schedules: IDomainSchedule[];
+    schedules?: IDomainSchedule[];
 };
 export class Scheduler {
     private options: ISchedulerOptions;
@@ -65,12 +67,15 @@ export class Scheduler {
             this.addJob(this.options.jobs[i], this.options.module);
     };
     async addDomainWorker(domain: string, worker: IDomainWorker){
-        if (!this.packageManager)
-            this.packageManager = new PackageManager();        
+        if (!this.packageManager){
+            this.packageManager = new PackageManager({
+                storage: this.options.storage
+            });        
+        };
         this.domainWorkers[domain] = this.domainWorkers[domain] || [];
         let domainWorkers = this.domainWorkers[domain];
-        domainWorkers.push(worker);
-        for (let i = 0; i < worker.schedules.length; i ++){
+        domainWorkers.push(worker);        
+        for (let i = 0; i < worker.schedules?.length; i ++){
             let schedule = worker.schedules[i];            
             let id = schedule.id || `${domain}:${schedule.worker}:${i}`
             this.jobs.push({
@@ -88,10 +93,36 @@ export class Scheduler {
             job.modulePath = module;
         this.jobs.push(job);
     };
-    start(){
+    async start(){        
         if (this.started)
             return;        
-        
+        for (let domain in this.domainWorkers){
+            let domainWorkers = this.domainWorkers[domain]
+            for (let i = 0; i < domainWorkers.length; i ++){
+                let worker = domainWorkers[i];
+                if (!worker.schedules){
+                    try{
+                        let scconfig = JSON.parse(await this.packageManager.getFileContent(worker.pack.packagePath, 'scconfig.json'));                
+                        worker.schedules = scconfig?.schedules || [];                
+                    }
+                    catch(err){}
+                    for (let i = 0; i < worker.schedules.length; i ++){
+                        let schedule = worker.schedules[i];            
+                        let id = schedule.id || `${domain}:${schedule.worker}:${i}`
+                        if (id){
+                            this.jobs.push({
+                                id: id, 
+                                domain: domain,
+                                cron: schedule.cron,
+                                pack: worker.pack,
+                                workerName: schedule.worker,
+                                params: schedule.params
+                            });
+                        }
+                    };
+                }
+            }
+        };
         if (this.jobs.length == 0)
             return;
         this.started = true; 
@@ -156,7 +187,7 @@ export class Scheduler {
             };
         };
     };
-    private processJobs(){
+    private processJobs(){        
         this.jobs.forEach(async (job: IScheduleJob)=>{
             if (!job.disabled && !job.processing){
                 this.runJob(job);

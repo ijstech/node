@@ -38,7 +38,7 @@ class Package {
     }
     ;
     async getFileContent(filePath) {
-        return this.manager.getFileContent(this, filePath);
+        return this.manager.getFileContent(this.packagePath, filePath);
     }
     ;
     get name() {
@@ -188,14 +188,14 @@ class PackageManager {
         return {};
     }
     ;
-    async getFileContent(pack, filePath) {
-        if (pack.path.indexOf('/') >= 0) {
-            return await fs_1.promises.readFile(path_1.default.join(pack.path, filePath), 'utf8');
+    async getFileContent(packagePath, filePath) {
+        if (packagePath.indexOf('/') >= 0) {
+            return await fs_1.promises.readFile(path_1.default.join(packagePath, filePath), 'utf8');
         }
         else if (this.options.storage) {
             if (!this.storage)
                 this.storage = new storage_1.Storage(this.options.storage);
-            return await this.storage.getFile(pack.path, filePath);
+            return await this.storage.getFile(packagePath, filePath);
         }
         ;
         return;

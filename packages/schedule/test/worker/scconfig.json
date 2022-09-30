@@ -28,5 +28,19 @@
                 
             }
         }
-    }
+    },
+    "schedules": [
+        {        
+            "id": "job:113",
+            "cron": "*/4 * * * * *", 
+            "worker": "worker2",
+            "params": {"param1": "db"}
+        },
+        {
+            "id": "job:115",
+            "cron": "*/4 * * * * *",
+            "worker": "worker2",
+            "params": {"param1": "cache"}
+        }
+    ]
 }

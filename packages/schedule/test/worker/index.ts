@@ -10,6 +10,7 @@ export default class Worker implements IWorkerPlugin {
             try{
                 let client = session.plugins.db.getConnection();            
                 result.dbResult = await client.query('select sysdate() as sysdate');
+                console.dir(result.dbResult)
             }
             catch(err){
                 console.dir(err)

@@ -92,7 +92,7 @@ export class Package{
         this.packagePath = packagePath;
     };
     async getFileContent(filePath: string): Promise<string>{
-        return this.manager.getFileContent(this, filePath);
+        return this.manager.getFileContent(this.packagePath, filePath);
     };
     get name(): string{
         return this.packageConfig.name || this.packagePath;
@@ -236,14 +236,14 @@ export class PackageManager{
         };
         return <any>{};
     };
-    async getFileContent(pack: Package, filePath: string): Promise<string>{
-        if (pack.path.indexOf('/') >=0){ //local package
-            return await Fs.readFile(Path.join(pack.path, filePath), 'utf8');
+    async getFileContent(packagePath: string, filePath: string): Promise<string>{
+        if (packagePath.indexOf('/') >=0){ //local package
+            return await Fs.readFile(Path.join(packagePath, filePath), 'utf8');
         }
         else if (this.options.storage){ //ipfs cid
             if (!this.storage)
                 this.storage = new Storage(this.options.storage);
-            return await this.storage.getFile(pack.path, filePath);
+            return await this.storage.getFile(packagePath, filePath);
         };
         return;
     };
