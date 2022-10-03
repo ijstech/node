@@ -105,7 +105,9 @@ export class Scheduler {
                         let scconfig = JSON.parse(await this.packageManager.getFileContent(worker.pack.packagePath, 'scconfig.json'));                
                         worker.schedules = scconfig?.schedules || [];                
                     }
-                    catch(err){}
+                    catch(err){
+                        worker.schedules = [];
+                    };
                     for (let i = 0; i < worker.schedules.length; i ++){
                         let schedule = worker.schedules[i];            
                         let id = schedule.id || `${domain}:${schedule.worker}:${i}`

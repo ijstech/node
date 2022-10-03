@@ -40,12 +40,17 @@ class Scheduler {
     }
     ;
     async addDomainWorker(domain, worker) {
-        if (!this.packageManager)
-            this.packageManager = new package_1.PackageManager();
+        var _a;
+        if (!this.packageManager) {
+            this.packageManager = new package_1.PackageManager({
+                storage: this.options.storage
+            });
+        }
+        ;
         this.domainWorkers[domain] = this.domainWorkers[domain] || [];
         let domainWorkers = this.domainWorkers[domain];
         domainWorkers.push(worker);
-        for (let i = 0; i < worker.schedules.length; i++) {
+        for (let i = 0; i < ((_a = worker.schedules) === null || _a === void 0 ? void 0 : _a.length); i++) {
             let schedule = worker.schedules[i];
             let id = schedule.id || `${domain}:${schedule.worker}:${i}`;
             this.jobs.push({
@@ -66,9 +71,41 @@ class Scheduler {
         this.jobs.push(job);
     }
     ;
-    start() {
+    async start() {
         if (this.started)
             return;
+        for (let domain in this.domainWorkers) {
+            let domainWorkers = this.domainWorkers[domain];
+            for (let i = 0; i < domainWorkers.length; i++) {
+                let worker = domainWorkers[i];
+                if (!worker.schedules) {
+                    try {
+                        let scconfig = JSON.parse(await this.packageManager.getFileContent(worker.pack.packagePath, 'scconfig.json'));
+                        worker.schedules = (scconfig === null || scconfig === void 0 ? void 0 : scconfig.schedules) || [];
+                    }
+                    catch (err) {
+                        worker.schedules = [];
+                    }
+                    ;
+                    for (let i = 0; i < worker.schedules.length; i++) {
+                        let schedule = worker.schedules[i];
+                        let id = schedule.id || `${domain}:${schedule.worker}:${i}`;
+                        if (id) {
+                            this.jobs.push({
+                                id: id,
+                                domain: domain,
+                                cron: schedule.cron,
+                                pack: worker.pack,
+                                workerName: schedule.worker,
+                                params: schedule.params
+                            });
+                        }
+                    }
+                    ;
+                }
+            }
+        }
+        ;
         if (this.jobs.length == 0)
             return;
         this.started = true;

@@ -7,6 +7,7 @@ import { IWorkerPluginOptions, Worker } from '@ijstech/plugin';
 import CronParser from 'cron-parser';
 import { IDomainWorkerPackage } from '@ijstech/package';
 import { IWorkerOptions } from '@ijstech/queue';
+import { IStorageOptions } from '@ijstech/storage';
 export interface ISchdeulePluginOptions extends IWorkerPluginOptions {
     cron: string;
     disabled?: boolean;
@@ -15,6 +16,7 @@ export interface ISchedulerOptions {
     module?: string;
     jobs?: ISchdeulePluginOptions[];
     worker?: IWorkerOptions;
+    storage?: IStorageOptions;
     domains?: {
         [domainName: string]: IDomainWorker[];
     };
@@ -35,7 +37,7 @@ export interface IDomainSchedule {
 }
 export interface IDomainWorker {
     pack: IDomainWorkerPackage;
-    schedules: IDomainSchedule[];
+    schedules?: IDomainSchedule[];
 }
 export declare class Scheduler {
     private options;
@@ -48,7 +50,7 @@ export declare class Scheduler {
     constructor(options?: ISchedulerOptions);
     addDomainWorker(domain: string, worker: IDomainWorker): Promise<void>;
     addJob(job: ISchdeulePluginOptions, module?: string): void;
-    start(): void;
+    start(): Promise<void>;
     stop(): void;
     private runJob;
     private processJobs;
