@@ -5,13 +5,14 @@
 *-----------------------------------------------------------*/
 
 import {IWallet, Wallet, IAccount} from '@ijstech/eth-wallet';
-import * as Types from '@ijstech/types';
+import {IWorker} from '@ijstech/types';
+import {IWalletLog, IWalletPlugin, IWalletRequiredPluginOptions, IWalletEventLog} from '@ijstech/types';
 function getWalletPlugin(): IWallet{
     return global.$$wallet_plugin;
 }
 export default getWalletPlugin();
 
-export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequiredPluginOptions): string | Types.IWalletPlugin{
+export function loadPlugin(worker: IWorker, options: IWalletRequiredPluginOptions): string | IWalletPlugin{
     worker.data = worker.data || {};
     let network = options.networks[options.chainId];
     worker.data.wallet = new Wallet(network.provider, options.accounts);    
@@ -27,10 +28,10 @@ export function loadPlugin(worker: Types.IWorker, options: Types.IWalletRequired
                 let result = wallet.createAccount();
                 return JSON.stringify(result);
             },
-            decode(abi:any, event:Types.IWalletEventLog, raw?:{data: string,topics: string[]}): string{
+            decode(abi:any, event:IWalletEventLog, raw?:{data: string,topics: string[]}): string{
                 return JSON.stringify(wallet.decode(abi, event, raw))
             },
-            async decodeEventData(data: Types.IWalletLog, events?: any): Promise<string>{
+            async decodeEventData(data: IWalletLog, events?: any): Promise<string>{
                 return JSON.stringify(await wallet.decodeEventData(data, events))
             },
             decodeLog(inputs: any, hexString: string, topics: any): string{

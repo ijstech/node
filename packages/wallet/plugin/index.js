@@ -170,6 +170,18 @@ define("plugin", ["require", "exports", "bignumber.js"], function (require, expo
             hexToUtf8(value) {
                 return global.$$wallet_plugin.utils_hexToUtf8(value);
             },
+            sha3(value) {
+                return global.$$wallet_plugin.sha3(value);
+            },
+            stringToBytes(value, nByte) {
+                return global.$$wallet_plugin.stringToBytes(value, nByte);
+            },
+            stringToBytes32(value) {
+                return global.$$wallet_plugin.stringToBytes32(value);
+            },
+            toString(value) {
+                return global.$$wallet_plugin.toString(value);
+            },
             toUtf8(value) {
                 return global.$$wallet_plugin.utils_toUtf8(value);
             },
