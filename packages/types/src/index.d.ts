@@ -108,9 +108,15 @@ export interface IWalletRequiredPluginOptions{
     networks: IWalletNetworks;
     accounts: IWalletAccount[];
 }
+type stringArray = string | _stringArray
+interface _stringArray extends Array<stringArray> { }
 export interface IWalletUtils{
     fromWei(value: any, unit?: string): string;
     hexToUtf8(value: string): string;
+    sha3(value: string): string;
+    stringToBytes(value: string | stringArray, nByte?: number): string | string[];
+    stringToBytes32(value: string | stringArray): string | string[];
+    toString(value: any): string;
     toUtf8(value: any): string;		
     toWei(value: string, unit?: string): string;
 }
@@ -220,15 +226,24 @@ export interface IWalletTokenInfo{
     totalSupply: BigNumber;
     decimals: number;	
 }
+export interface IContractMethod {
+    call: any;
+    estimateGas(...params:any[]): Promise<number>;
+    encodeABI(): string;
+}
+export interface IContract {
+    deploy(params: {data: string, arguments?: any[]}): IContractMethod;
+    methods: {[methodName: string]: (...params:any[]) => IContractMethod};
+}
 export interface IWalletPlugin {
     account: IWalletAccount;
     accounts: Promise<string[]>;
     address: string;
     balance: Promise<BigNumber>;
-    balanceOf(address: string): Promise<BigNumber>;
+    balanceOf(address: string): Promise<BigNumber>;    
     chainId: number;
     createAccount(): IWalletAccount;
-    decode(abi:any, event:IWalletLog|IWalletEventLog, raw?:{data: string,topics: string[]}): IWalletEvent;
+    decode(abi:any, event:IWalletLog|IWalletEventLog, raw?:{data: string,topics: string[]}): IWalletEvent;    
     decodeEventData(data: IWalletLog, events?: any): Promise<IWalletEvent>;
     decodeLog(inputs: any, hexString: string, topics: any): any;
     defaultAccount: string;
