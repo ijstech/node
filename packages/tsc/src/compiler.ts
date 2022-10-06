@@ -75,12 +75,20 @@ async function getPackageInfo(packName: string): Promise<IPackage>{
         let path = getPackageDir(packName);
         let pack = JSON.parse(await Fs.promises.readFile(Path.join(path, 'package.json'), 'utf8'));                
         let script: string;
-        if (packName != '@ijstech/plugin' && packName != '@ijstech/type' && pack.main){
-            if (!pack.main.endsWith('.js'))
-                script = await Fs.promises.readFile(Path.join(path, pack.main + '.js'), 'utf8');
-            else
-                script = await Fs.promises.readFile(Path.join(path, pack.main), 'utf8');
-        }
+        if (packName != '@ijstech/plugin' && packName != '@ijstech/type'){
+            if (pack.plugin){
+                if (!pack.plugin.endsWith('.js'))
+                    script = await Fs.promises.readFile(Path.join(path, pack.plugin + '.js'), 'utf8');
+                else
+                    script = await Fs.promises.readFile(Path.join(path, pack.plugin), 'utf8');
+            }
+            else if (pack.main){
+                if (!pack.main.endsWith('.js'))
+                    script = await Fs.promises.readFile(Path.join(path, pack.main + '.js'), 'utf8');
+                else
+                    script = await Fs.promises.readFile(Path.join(path, pack.main), 'utf8');
+            };
+        };
         let dts = await Fs.promises.readFile(Path.join(path, pack.pluginTypes || pack.types), 'utf8');
         return {
             version: pack.version,

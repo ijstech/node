@@ -63,12 +63,22 @@ async function getPackageInfo(packName) {
         let path = getPackageDir(packName);
         let pack = JSON.parse(await fs_1.default.promises.readFile(path_1.default.join(path, 'package.json'), 'utf8'));
         let script;
-        if (packName != '@ijstech/plugin' && packName != '@ijstech/type' && pack.main) {
-            if (!pack.main.endsWith('.js'))
-                script = await fs_1.default.promises.readFile(path_1.default.join(path, pack.main + '.js'), 'utf8');
-            else
-                script = await fs_1.default.promises.readFile(path_1.default.join(path, pack.main), 'utf8');
+        if (packName != '@ijstech/plugin' && packName != '@ijstech/type') {
+            if (pack.plugin) {
+                if (!pack.plugin.endsWith('.js'))
+                    script = await fs_1.default.promises.readFile(path_1.default.join(path, pack.plugin + '.js'), 'utf8');
+                else
+                    script = await fs_1.default.promises.readFile(path_1.default.join(path, pack.plugin), 'utf8');
+            }
+            else if (pack.main) {
+                if (!pack.main.endsWith('.js'))
+                    script = await fs_1.default.promises.readFile(path_1.default.join(path, pack.main + '.js'), 'utf8');
+                else
+                    script = await fs_1.default.promises.readFile(path_1.default.join(path, pack.main), 'utf8');
+            }
+            ;
         }
+        ;
         let dts = await fs_1.default.promises.readFile(path_1.default.join(path, pack.pluginTypes || pack.types), 'utf8');
         return {
             version: pack.version,
