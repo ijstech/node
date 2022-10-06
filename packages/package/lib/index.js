@@ -30,7 +30,6 @@ exports.matchRoute = matchRoute;
 ;
 ;
 ;
-;
 class Package {
     constructor(manager, packagePath) {
         this.scripts = {};

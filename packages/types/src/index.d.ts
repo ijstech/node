@@ -269,10 +269,28 @@ export interface IWalletPlugin {
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
     soliditySha3(...val: any[]): string;	
 }
-export interface IDomainOptions{
+export interface IDomainOptions {
     plugins?: {
-        db?: IDbConnectionOptions,
-        cache?: ICacheClientOptions
+        db?: {
+            mysql?: {
+                host: string;
+                user: string;
+                password: string;
+                database: string;
+            };
+        };
+        cache?: {
+            redis?: {
+                host: string;
+                password?: string;
+                db?: number;
+            };
+        };
+        wallet?: {
+            accounts?: IWalletAccount[];
+            chainId?: number;
+            networks?: IWalletNetworks;
+        };
     };
 }
 //Queue Plugin

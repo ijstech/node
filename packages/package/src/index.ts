@@ -2,7 +2,7 @@ import {Compiler, ICompilerResult, IPackage} from '@ijstech/tsc';
 import {IStorageOptions, Storage} from '@ijstech/storage';
 import {promises as Fs} from 'fs';
 import Path from 'path';
-import { IRouterPluginMethod, IWalletAccount, IWalletNetworks } from '@ijstech/types';
+import { IRouterPluginMethod, IDomainOptions} from '@ijstech/types';
 import {match} from './pathToRegexp';
 export {IPackage};
 
@@ -63,30 +63,6 @@ export interface IDomainRouterPackage{
 export interface IDomainWorkerPackage{
     packagePath: string;
     options?: IDomainOptions
-};
-export interface IDomainOptions{
-    plugins?: {
-        db?: {
-            mysql?: {
-                host: string,
-                user: string,
-                password: string,
-                database: string
-            }
-        },
-        cache?: {
-            redis?: {
-                host: string,
-                password?: string,
-                db?: number
-            }
-        },
-        wallet?: {
-            accounts?: IWalletAccount[],
-            chainId?: number,
-            networks?: IWalletNetworks
-        }
-    };
 };
 export class Package{
     private manager: PackageManager;    
