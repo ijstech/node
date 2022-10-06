@@ -101,11 +101,15 @@ export class Queue {
                                 plugins.db = {default: pack.options.plugins.db};
                             if (module.plugins?.wallet)
                                 plugins.wallet = pack.options.plugins.wallet;
-                            
+                            let params = {};
+                            for (let v in module.params)
+                                params[v] = module.params[v];
+                            for (let v in worker.params)
+                                params[v] = worker.params[v];
                             let plugin = new Worker({
                                 dependencies: module.moduleScript.dependencies,
                                 script: module.moduleScript.script,
-                                params: worker.params,
+                                params: params,
                                 plugins: plugins
                             });
                             let result = await plugin.process(worker.params);
@@ -133,6 +137,8 @@ export class Queue {
                                         plugins.db = {default: options.plugins.db};
                                     if (route.plugins?.cache)
                                         plugins.cache = options.plugins.cache;
+                                    if (route.plugins?.wallet)
+                                        plugins.wallet = options.plugins.wallet;
                                 };
                                 let method = request.method as Types.IRouterPluginMethod;
                                 plugin = new Router({

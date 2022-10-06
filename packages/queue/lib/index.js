@@ -80,7 +80,7 @@ class Queue {
                 jobQueue: this.options.jobQueue
             });
             this.queue.processJob(async (job) => {
-                var _a, _b, _c, _d, _e, _f, _g, _h;
+                var _a, _b, _c, _d, _e, _f, _g, _h, _j;
                 if ((_a = job.data) === null || _a === void 0 ? void 0 : _a.worker) {
                     let worker = job.data.worker;
                     let pack;
@@ -96,10 +96,15 @@ class Queue {
                                 plugins.db = { default: pack.options.plugins.db };
                             if ((_d = module.plugins) === null || _d === void 0 ? void 0 : _d.wallet)
                                 plugins.wallet = pack.options.plugins.wallet;
+                            let params = {};
+                            for (let v in module.params)
+                                params[v] = module.params[v];
+                            for (let v in worker.params)
+                                params[v] = worker.params[v];
                             let plugin = new plugin_1.Worker({
                                 dependencies: module.moduleScript.dependencies,
                                 script: module.moduleScript.script,
-                                params: worker.params,
+                                params: params,
                                 plugins: plugins
                             });
                             let result = await plugin.process(worker.params);
@@ -127,6 +132,8 @@ class Queue {
                                         plugins.db = { default: options.plugins.db };
                                     if ((_h = route.plugins) === null || _h === void 0 ? void 0 : _h.cache)
                                         plugins.cache = options.plugins.cache;
+                                    if ((_j = route.plugins) === null || _j === void 0 ? void 0 : _j.wallet)
+                                        plugins.wallet = options.plugins.wallet;
                                 }
                                 ;
                                 let method = request.method;
