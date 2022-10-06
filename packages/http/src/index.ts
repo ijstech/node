@@ -293,6 +293,8 @@ export class HttpServer {
                                             plugins.db = {default: options.plugins.db};
                                         if (route.plugins?.cache)
                                             plugins.cache = options.plugins.cache;
+                                        if (route.plugins?.wallet)
+                                            plugins.wallet = options.plugins.wallet;
                                     };
                                     let method = ctx.method as IRouterPluginMethod;
                                     plugin = new Router({

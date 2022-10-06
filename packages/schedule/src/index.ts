@@ -165,7 +165,10 @@ export class Scheduler {
                                 plugins.cache = job.pack.options.plugins.cache
                             if (worker.plugins?.db)
                                 plugins.db = {default: job.pack.options.plugins.db}
+                            if (worker.plugins?.wallet)
+                                plugins.wallet = job.pack.options.plugins.wallet
                             job.plugin = new Worker({
+                                plugins: plugins,
                                 dependencies: worker.moduleScript.dependencies,
                                 script: worker.moduleScript.script,
                                 params: worker.params                            

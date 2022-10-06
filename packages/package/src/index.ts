@@ -2,7 +2,7 @@ import {Compiler, ICompilerResult, IPackage} from '@ijstech/tsc';
 import {IStorageOptions, Storage} from '@ijstech/storage';
 import {promises as Fs} from 'fs';
 import Path from 'path';
-import { IRouterPluginMethod } from '@ijstech/types';
+import { IRouterPluginMethod, IWalletAccount, IWalletNetworks } from '@ijstech/types';
 import {match} from './pathToRegexp';
 export {IPackage};
 
@@ -16,6 +16,7 @@ export interface IRoute{
     plugins?: {
         cache?: boolean;
         db?: boolean;
+        wallet?: boolean;
     };
     dependencies?: {
         [packageName: string]: string;
@@ -28,6 +29,7 @@ export interface IWorker{
     plugins?: {
         cache?: boolean;
         db?: boolean;
+        wallet?: boolean;
     };
     dependencies?: {
         [packageName: string]: string;
@@ -78,6 +80,11 @@ export interface IDomainOptions{
                 password?: string,
                 db?: number
             }
+        },
+        wallet?: {
+            accounts?: IWalletAccount[],
+            chainId?: number,
+            networks?: IWalletNetworks
         }
     };
 };

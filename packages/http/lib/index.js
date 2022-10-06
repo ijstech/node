@@ -169,17 +169,23 @@ class HttpServer {
     }
     ;
     async stop() {
-        return new Promise((resolve) => {
-            this.running = false;
-            if (this.http) {
-                this.http.close(() => {
-                    if (this.https)
-                        this.https.close(resolve);
-                });
-            }
-            else if (this.https)
-                this.https.close(resolve);
-        });
+        if (this.running) {
+            return new Promise((resolve) => {
+                this.running = false;
+                if (this.http) {
+                    this.http.close(() => {
+                        if (this.https)
+                            this.https.close(resolve);
+                        else
+                            resolve(null);
+                    });
+                }
+                else if (this.https)
+                    this.https.close(resolve);
+                else
+                    resolve(null);
+            });
+        }
     }
     ;
     async start() {
@@ -206,7 +212,7 @@ class HttpServer {
             }
             ;
             this.app.use(async (ctx, next) => {
-                var _a, _b, _c, _d;
+                var _a, _b, _c, _d, _e;
                 if (this.options.cors) {
                     if (ctx.method == 'OPTIONS') {
                         ctx.set('Access-Control-Allow-Origin', '*');
@@ -279,6 +285,8 @@ class HttpServer {
                                             plugins.db = { default: options.plugins.db };
                                         if ((_d = route.plugins) === null || _d === void 0 ? void 0 : _d.cache)
                                             plugins.cache = options.plugins.cache;
+                                        if ((_e = route.plugins) === null || _e === void 0 ? void 0 : _e.wallet)
+                                            plugins.wallet = options.plugins.wallet;
                                     }
                                     ;
                                     let method = ctx.method;

@@ -1,6 +1,6 @@
 import { ICompilerResult, IPackage } from '@ijstech/tsc';
 import { IStorageOptions } from '@ijstech/storage';
-import { IRouterPluginMethod } from '@ijstech/types';
+import { IRouterPluginMethod, IWalletAccount, IWalletNetworks } from '@ijstech/types';
 export { IPackage };
 export interface IRoute {
     methods: IRouterPluginMethod[];
@@ -11,6 +11,7 @@ export interface IRoute {
     plugins?: {
         cache?: boolean;
         db?: boolean;
+        wallet?: boolean;
     };
     dependencies?: {
         [packageName: string]: string;
@@ -23,6 +24,7 @@ export interface IWorker {
     plugins?: {
         cache?: boolean;
         db?: boolean;
+        wallet?: boolean;
     };
     dependencies?: {
         [packageName: string]: string;
@@ -63,6 +65,11 @@ export interface IDomainOptions {
                 password?: string;
                 db?: number;
             };
+        };
+        wallet?: {
+            accounts?: IWalletAccount[];
+            chainId?: number;
+            networks?: IWalletNetworks;
         };
     };
 }

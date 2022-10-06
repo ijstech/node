@@ -99,6 +99,8 @@ export class Queue {
                                 plugins.cache = pack.options.plugins.cache;
                             if (module.plugins?.db)
                                 plugins.db = {default: pack.options.plugins.db};
+                            if (module.plugins?.wallet)
+                                plugins.wallet = pack.options.plugins.wallet;
                             
                             let plugin = new Worker({
                                 dependencies: module.moduleScript.dependencies,

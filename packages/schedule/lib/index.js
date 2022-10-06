@@ -120,7 +120,7 @@ class Scheduler {
     }
     ;
     async runJob(job) {
-        var _a, _b;
+        var _a, _b, _c;
         if (!job.next) {
             job.next = cron_parser_1.default.parseExpression(job.cron).next();
             console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id ? job.id : ''));
@@ -150,7 +150,10 @@ class Scheduler {
                                 plugins.cache = job.pack.options.plugins.cache;
                             if ((_b = worker.plugins) === null || _b === void 0 ? void 0 : _b.db)
                                 plugins.db = { default: job.pack.options.plugins.db };
+                            if ((_c = worker.plugins) === null || _c === void 0 ? void 0 : _c.wallet)
+                                plugins.wallet = job.pack.options.plugins.wallet;
                             job.plugin = new plugin_1.Worker({
+                                plugins: plugins,
                                 dependencies: worker.moduleScript.dependencies,
                                 script: worker.moduleScript.script,
                                 params: worker.params
