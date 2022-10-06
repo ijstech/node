@@ -6,6 +6,7 @@ import { IRouterPluginMethod } from '@ijstech/types';
 import {match} from './pathToRegexp';
 export {IPackage};
 
+const DefaultPlugins = ['@ijstech/crypto', '@ijstech/plugin', '@ijstech/wallet'];
 export interface IRoute{
     methods: IRouterPluginMethod[];
     url: string;
@@ -150,10 +151,15 @@ export class Package{
             else
                 content = await this.getFileContent('src/index.ts');
             if (content){
-                let compiler = new Compiler();        
-                await compiler.addPackage('@ijstech/plugin');
-                await compiler.addPackage('bignumber.js');
-                await compiler.addFileContent('index.ts', content, this.name, this.fileImporter.bind(this));
+                let compiler = new Compiler();
+                await compiler.addFileContent('index.ts', content, this.name, async (fileName: string, isPackage: boolean): Promise<{fileName: string, script: string, dts?: string}>=>{
+                    if (isPackage && DefaultPlugins.indexOf(fileName) > -1){
+                        await compiler.addPackage('bignumber.js');
+                        await compiler.addPackage(fileName)
+                    }
+                    else
+                        return await this.fileImporter(fileName, isPackage)
+                });
                 let result = await compiler.compile(true);            
                 this.scripts[fileName] = result;
             }

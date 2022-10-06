@@ -9,6 +9,7 @@ const storage_1 = require("@ijstech/storage");
 const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
 const pathToRegexp_1 = require("./pathToRegexp");
+const DefaultPlugins = ['@ijstech/crypto', '@ijstech/plugin', '@ijstech/wallet'];
 ;
 ;
 ;
@@ -103,9 +104,14 @@ class Package {
                 content = await this.getFileContent('src/index.ts');
             if (content) {
                 let compiler = new tsc_1.Compiler();
-                await compiler.addPackage('@ijstech/plugin');
-                await compiler.addPackage('bignumber.js');
-                await compiler.addFileContent('index.ts', content, this.name, this.fileImporter.bind(this));
+                await compiler.addFileContent('index.ts', content, this.name, async (fileName, isPackage) => {
+                    if (isPackage && DefaultPlugins.indexOf(fileName) > -1) {
+                        await compiler.addPackage('bignumber.js');
+                        await compiler.addPackage(fileName);
+                    }
+                    else
+                        return await this.fileImporter(fileName, isPackage);
+                });
                 let result = await compiler.compile(true);
                 this.scripts[fileName] = result;
             }
