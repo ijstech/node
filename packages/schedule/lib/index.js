@@ -123,7 +123,7 @@ class Scheduler {
         var _a, _b, _c;
         if (!job.next) {
             job.next = cron_parser_1.default.parseExpression(job.cron).next();
-            console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id ? job.id : ''));
+            console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id ? `${job.domain}:${job.id}` : ''));
         }
         ;
         if (job.next.getTime() < new Date().getTime()) {
@@ -139,7 +139,7 @@ class Scheduler {
                                 params: job.params
                             }
                         }, false, {
-                            id: job.id
+                            id: job.domain + ':' + job.id
                         });
                     }
                     else {

@@ -139,7 +139,7 @@ export class Scheduler {
     private async runJob(job: IScheduleJob){
         if (!job.next){
             job.next = CronParser.parseExpression(job.cron).next();
-            console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id?job.id:''));
+            console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id?`${job.domain}:${job.id}`:''));
         };
         if (job.next.getTime() < new Date().getTime()){
             job.processing = true;
@@ -154,7 +154,7 @@ export class Scheduler {
                                 params: job.params
                             }
                         }, false, {
-                            id: job.id
+                            id: job.domain + ':' + job.id
                         });
                     }
                     else{
