@@ -51,7 +51,7 @@ export class Scheduler {
     constructor(options?: ISchedulerOptions){
         this.jobs = [];
         this.options = options || {};                    
-        if (this.options.worker)
+        if (this.options.worker && this.options.worker.enabled !== false)
             this.queue = new JobQueue({
                 jobQueue: this.options.worker.jobQueue,
                 connection: this.options.worker.connection
