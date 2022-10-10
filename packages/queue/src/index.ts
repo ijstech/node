@@ -9,9 +9,21 @@ import {Message} from '@ijstech/message';
 import {getJobQueue, JobQueue, IJobQueueOptions} from './jobQueue';
 import * as Types from '@ijstech/types';
 import {PackageManager, IDomainRouterPackage, IDomainWorkerPackage} from '@ijstech/package';
-export {IQueueOptions} from '@ijstech/types';
 export {getJobQueue, JobQueue, IJobQueueOptions};
 
+export interface IQueueOptions {
+    jobQueue?: string;
+    disabled?: boolean;
+    connection?: Types.IJobQueueConnectionOptions;
+    module?: string;
+    packageManager?: PackageManager;
+    workers?: Types.IQueuePluginOptions[];
+    storage?: Types.IStorageOptions;    
+    domains?: {[domainName: string]: {
+        routers?: IDomainRouterPackage[],
+        workers?: IDomainWorkerPackage[]
+    }}
+}
 interface IQueueWorkerOptions extends Types.IQueuePluginOptions{
     plugin?: Worker;
     queue?: JobQueue;
@@ -29,8 +41,9 @@ export class Queue {
     private queue: JobQueue;
     private domainPackage: {[domain: string]: {[packPath: string]: IDomainWorkerPackage}} = {};
 
-    constructor(options: Types.IQueueOptions) {
-        options = JSON.parse(JSON.stringify(options || {}));
+    constructor(options?: IQueueOptions) {
+        options = options || {};
+        this.packageManager = options.packageManager;
         this.options = options;
         for (let domain in options.domains){
             let domainOptions = options.domains[domain];
@@ -93,6 +106,8 @@ export class Queue {
                         pack = this.domainPackage[worker.domain][worker.packagePath];
                     if (pack){          
                         let module = await this.packageManager.getPackageWorker(pack, worker.workerName);
+                        if (module.moduleScript.errors)
+                            console.error(module.moduleScript.errors)
                         if (module){
                             let plugins:any = {};
                             if (module.plugins?.cache)

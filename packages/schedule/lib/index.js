@@ -20,9 +20,10 @@ const queue_1 = require("@ijstech/queue");
 ;
 class Scheduler {
     constructor(options) {
-        this.domainWorkers = {};
+        this.domainPackages = {};
         this.jobs = [];
         this.options = options || {};
+        this.packageManager = options.packageManager;
         if (this.options.worker && this.options.worker.enabled !== false)
             this.queue = new queue_1.JobQueue({
                 jobQueue: this.options.worker.jobQueue,
@@ -31,7 +32,7 @@ class Scheduler {
         for (let domain in this.options.domains) {
             let domainWorkers = this.options.domains[domain];
             for (let i = 0; i < domainWorkers.length; i++) {
-                this.addDomainWorker(domain, domainWorkers[i]);
+                this.addDomainPackage(domain, domainWorkers[i]);
             }
         }
         this.options.jobs = this.options.jobs || [];
@@ -39,7 +40,7 @@ class Scheduler {
             this.addJob(this.options.jobs[i], this.options.module);
     }
     ;
-    async addDomainWorker(domain, worker) {
+    async addDomainPackage(domain, pack) {
         var _a;
         if (!this.packageManager) {
             this.packageManager = new package_1.PackageManager({
@@ -47,17 +48,17 @@ class Scheduler {
             });
         }
         ;
-        this.domainWorkers[domain] = this.domainWorkers[domain] || [];
-        let domainWorkers = this.domainWorkers[domain];
-        domainWorkers.push(worker);
-        for (let i = 0; i < ((_a = worker.schedules) === null || _a === void 0 ? void 0 : _a.length); i++) {
-            let schedule = worker.schedules[i];
+        this.domainPackages[domain] = this.domainPackages[domain] || [];
+        let domainPackages = this.domainPackages[domain];
+        domainPackages.push(pack);
+        for (let i = 0; i < ((_a = pack.schedules) === null || _a === void 0 ? void 0 : _a.length); i++) {
+            let schedule = pack.schedules[i];
             let id = schedule.id || `${domain}:${schedule.worker}:${i}`;
             this.jobs.push({
                 id: id,
                 domain: domain,
                 cron: schedule.cron,
-                pack: worker.pack,
+                pack: pack,
                 workerName: schedule.worker,
                 params: schedule.params
             });
@@ -74,28 +75,28 @@ class Scheduler {
     async start() {
         if (this.started)
             return;
-        for (let domain in this.domainWorkers) {
-            let domainWorkers = this.domainWorkers[domain];
-            for (let i = 0; i < domainWorkers.length; i++) {
-                let worker = domainWorkers[i];
-                if (!worker.schedules) {
+        for (let domain in this.domainPackages) {
+            let domainPackages = this.domainPackages[domain];
+            for (let i = 0; i < domainPackages.length; i++) {
+                let pack = domainPackages[i];
+                if (!pack.schedules) {
                     try {
-                        let scconfig = JSON.parse(await this.packageManager.getFileContent(worker.pack.packagePath, 'scconfig.json'));
-                        worker.schedules = (scconfig === null || scconfig === void 0 ? void 0 : scconfig.schedules) || [];
+                        let scconfig = JSON.parse(await this.packageManager.getFileContent(pack.packagePath, 'scconfig.json'));
+                        pack.schedules = (scconfig === null || scconfig === void 0 ? void 0 : scconfig.schedules) || [];
                     }
                     catch (err) {
-                        worker.schedules = [];
+                        pack.schedules = [];
                     }
                     ;
-                    for (let i = 0; i < worker.schedules.length; i++) {
-                        let schedule = worker.schedules[i];
+                    for (let i = 0; i < pack.schedules.length; i++) {
+                        let schedule = pack.schedules[i];
                         let id = schedule.id || `${domain}:${schedule.worker}:${i}`;
                         if (id) {
                             this.jobs.push({
                                 id: id,
                                 domain: domain,
                                 cron: schedule.cron,
-                                pack: worker.pack,
+                                pack: pack,
                                 workerName: schedule.worker,
                                 params: schedule.params
                             });
@@ -145,6 +146,8 @@ class Scheduler {
                     else {
                         if (!job.plugin) {
                             let worker = await this.packageManager.getPackageWorker(job.pack, job.workerName);
+                            if (worker.moduleScript.errors)
+                                console.error(worker.moduleScript.errors);
                             let plugins = {};
                             if ((_a = worker.plugins) === null || _a === void 0 ? void 0 : _a.cache)
                                 plugins.cache = job.pack.options.plugins.cache;

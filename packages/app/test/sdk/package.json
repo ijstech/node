@@ -1,0 +1,8 @@
+{
+    "name": "@demo/sdk",
+    "main": "lib/index.js",
+    "types": "types/index.d.ts",
+    "scripts": {
+        "build": "rm -rf lib && rm -rf types && sol2ts solconfig.json && tsc"
+    }
+}

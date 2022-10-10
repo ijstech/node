@@ -1,7 +1,6 @@
 {    
     "compilerOptions": {
-        "target": "ESNext",
-        "module": "ESNext",
+        "target": "ESNext",        
         "moduleResolution": "Node",
         "allowJs": false,
         "esModuleInterop": true,
@@ -12,8 +11,9 @@
         "declaration": false,
         "baseUrl": ".",        
         "paths": {
+            "@ijstech/node": ["../src"],
             "@ijstech/*": ["*", "../packages/*"]
         }
     },
-    "include": ["package"]
+    "include": [".","package1","package2"]
 }

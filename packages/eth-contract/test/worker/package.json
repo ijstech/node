@@ -1,0 +1,6 @@
+{
+    "name": "@demo/worker",
+    "scripts": {
+        "build": "rm -rf lib && rm -rf types && tsc"
+    }
+}

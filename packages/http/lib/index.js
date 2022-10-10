@@ -29,6 +29,7 @@ class HttpServer {
     constructor(options) {
         this.ssl = {};
         this.options = options;
+        this.packageManager = this.options.packageManager;
         if (this.options.worker)
             this.queue = queue_1.getJobQueue(this.options.worker);
         if (this.options.domains) {

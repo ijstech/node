@@ -3,6 +3,7 @@
         "declaration": true,             
         "declarationDir": "types",
         "emitDeclarationOnly": true,   
+        "allowSyntheticDefaultImports": true,
         "module": "CommonJS",
         "moduleResolution": "Node",
         "outDir": "lib",        

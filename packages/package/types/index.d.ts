@@ -53,9 +53,14 @@ export declare class Package {
     private manager;
     private scripts;
     private packageConfig;
+    private packageName;
+    private packageVersion;
     scconfig: ISCConfig;
     private packagePath;
-    constructor(manager: PackageManager, packagePath: string);
+    constructor(manager: PackageManager, packagePath: string, options?: {
+        name?: string;
+        version?: string;
+    });
     getFileContent(filePath: string): Promise<string>;
     get name(): string;
     get path(): string;
@@ -64,16 +69,24 @@ export declare class Package {
     private fileImporter;
     getScript(fileName?: string): Promise<ICompilerResult>;
 }
-interface IOptions {
+export interface IPackageOptions {
     storage?: IStorageOptions;
+    packages?: IPackages;
 }
 export declare type PackageImporter = (packageName: string, version?: string) => Promise<Package>;
 export interface IPackageScript {
+    errors?: any[];
     script?: string;
     dts?: string;
     dependencies?: {
         [name: string]: IPackage;
     };
+}
+export interface IPackages {
+    [name: string]: {
+        version?: string;
+        path: string;
+    }[];
 }
 export declare class PackageManager {
     private options;
@@ -82,10 +95,14 @@ export declare class PackageManager {
     private packagesByVersion;
     private packagesByName;
     private domainRouterPackages;
+    private packages;
     packageImporter?: PackageImporter;
-    constructor(options?: IOptions);
+    constructor(options?: IPackageOptions);
     addDomainRouter(domain: string, pack: IDomainRouterPackage): Promise<void>;
-    addPackage(packagePath: string): Promise<Package>;
+    addPackage(packagePath: string, packageOptions?: {
+        name?: string;
+        version?: string;
+    }): Promise<Package>;
     getDomainRouter(ctx: {
         domain: string;
         method: string;
@@ -100,4 +117,5 @@ export declare class PackageManager {
     getPackageWorker(pack: IDomainWorkerPackage, workerName: string): Promise<IWorker>;
     getScript(packageName: string, fileName?: string): Promise<IPackageScript>;
     getPackage(name: string, version?: string): Promise<Package>;
+    register(packages: IPackages): Promise<void>;
 }

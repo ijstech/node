@@ -6,7 +6,7 @@ import { IRouterPluginMethod, IDomainOptions} from '@ijstech/types';
 import {match} from './pathToRegexp';
 export {IPackage};
 
-const DefaultPlugins = ['@ijstech/crypto', '@ijstech/plugin', '@ijstech/wallet'];
+const DefaultPlugins = ['@ijstech/crypto', '@ijstech/plugin', '@ijstech/wallet', '@ijstech/eth-contract'];
 export interface IRoute{
     methods: IRouterPluginMethod[];
     url: string;
@@ -68,24 +68,31 @@ export class Package{
     private manager: PackageManager;    
     private scripts: {[name: string]: ICompilerResult} = {};    
     private packageConfig: any;    
+    private packageName: string;
+    private packageVersion: string;
     public scconfig: ISCConfig;
     private packagePath: string;
-    
-    constructor(manager: PackageManager, packagePath: string){
+        
+    constructor(manager: PackageManager, packagePath: string, options?: {
+        name?: string;
+        version?: string;
+    }){
         this.manager = manager;
         this.packagePath = packagePath;
+        this.packageName = options?.name;
+        this.packageVersion = options?.version;
     };
-    async getFileContent(filePath: string): Promise<string>{
+    async getFileContent(filePath: string): Promise<string>{        
         return this.manager.getFileContent(this.packagePath, filePath);
     };
     get name(): string{
-        return this.packageConfig.name || this.packagePath;
+        return this.packageName || this.packageConfig.name || this.packagePath;
     };
     get path(): string{
         return this.packagePath; 
     };
     get version(): string{
-        return this.packageConfig.version || '*';
+        return this.packageVersion || this.packageConfig.version || '*';
     };
     async init(){
         if (this.packageConfig == undefined){
@@ -96,90 +103,138 @@ export class Package{
                 this.packageConfig = {};
             }
             try{            
-                this.scconfig = JSON.parse(await this.getFileContent('scconfig.json'));
+                this.scconfig = JSON.parse(await this.getFileContent('scconfig.json'));                
             }
             catch(err){
                 this.scconfig = {};
             }
         }
     };
-    private async fileImporter(fileName: string, isPackage?: boolean): Promise<{fileName: string, script: string, dts?: string}>{                        
+    private async fileImporter(fileName: string, isPackage?: boolean): Promise<{fileName: string, script: string, dts?: string, dependencies?: {[name: string]: IPackage}}>{
         if (isPackage){ //package
-            let result = await this.manager.getScript(fileName);
+            let result = await this.manager.getScript(fileName);            
+            if (result.errors)
+                console.dir(result.errors);
+
             return {
                 fileName: 'index.d.ts',
                 script: result.script,
-                dts: result.dts
+                dts: result.dts,
+                dependencies: result.dependencies
             }
         }
-        else //file
+        else{ 
             return {
                 fileName: fileName + '.ts',
                 script: await this.getFileContent(fileName + '.ts')
             }
+        }
     };    
-    async getScript(fileName?: string): Promise<ICompilerResult>{
+    async getScript(fileName?: string): Promise<ICompilerResult>{        
         fileName = fileName || 'index.ts'; 
         if (!this.scripts[fileName]){          
             await this.init();
             let content = '';
-            if (this.scconfig.src){
-                if (this.scconfig.src.endsWith('.ts'))
-                    content = await this.getFileContent(this.scconfig.src)
-                else if (fileName)
-                    content = await this.getFileContent(Path.join(this.scconfig.src, fileName))
-                else
-                    content = await this.getFileContent(Path.join(this.scconfig.src, 'index.ts'))
+            let indexFile = 'index.ts';
+            try{
+                if (this.scconfig.src){
+                    if (this.scconfig.src.endsWith('.ts')){
+                        content = await this.getFileContent(fileName)
+                        indexFile = Path.join(Path.dirname(this.scconfig.src), 'index.ts');
+                    }
+                    else{                        
+                        content = await this.getFileContent(Path.join(this.scconfig.src, fileName));
+                        indexFile = Path.join(this.scconfig.src, indexFile);
+                    }
+                }
+                else{                    
+                    content = await this.getFileContent(Path.join('src', fileName))
+                    indexFile = 'src/index.ts';
+                };                
             }
-            else
-                content = await this.getFileContent('src/index.ts');
+            catch(err){
+                console.error(err);
+            };
             if (content){
-                let compiler = new Compiler();
-                await compiler.addFileContent('index.ts', content, this.name, async (fileName: string, isPackage: boolean): Promise<{fileName: string, script: string, dts?: string}>=>{
+                let compiler = new Compiler();//new Compiler();
+                await compiler.addFileContent(indexFile/*'index.ts'*/, content, this.name, async (fileName: string, isPackage: boolean): Promise<{fileName: string, script: string, dts?: string}>=>{
                     if (isPackage && DefaultPlugins.indexOf(fileName) > -1){
                         await compiler.addPackage('bignumber.js');
+                        if (fileName == '@ijstech/eth-contract'){                            
+                            await compiler.addPackage('@ijstech/wallet') 
+                        };
+                        if (fileName == '@ijstech/wallet'){
+                            await compiler.addPackage('bignumber.js');
+                        };
                         await compiler.addPackage(fileName)
                     }
-                    else
-                        return await this.fileImporter(fileName, isPackage)
+                    else{                        
+                        let result = await this.fileImporter(fileName, isPackage)
+                        if (isPackage){
+                            await compiler.addPackage(fileName, result)
+                            for (let p in result.dependencies){
+                                if (p == '@ijstech/eth-contract'){
+                                    await compiler.addPackage('bignumber.js');
+                                    await compiler.addPackage('@ijstech/wallet');
+                                    await compiler.addPackage(p);
+                                };
+                                if (p == '@ijstech/wallet'){
+                                    await compiler.addPackage('bignumber.js');
+                                    await compiler.addPackage(p);
+                                };
+                            };
+                        };                        
+                        return result;
+                    }
                 });
-                let result = await compiler.compile(true);            
+                let result = await compiler.compile(true);    
                 this.scripts[fileName] = result;
             }
         };
         return this.scripts[fileName];
     };
 };
-interface IOptions{
+export interface IPackageOptions{
     storage?: IStorageOptions;
+    packages?: IPackages;
 };
 export type PackageImporter = (packageName: string, version?: string) => Promise<Package>;
 export interface IPackageScript {
+    errors?: any[],
     script?: string;
     dts?: string;
     dependencies?: {[name: string]: IPackage}
 }
+export interface IPackages {
+    [name: string]: {
+        version?: string,
+        path: string,
+    }[]
+}
 export class PackageManager{
-    private options: IOptions;
+    private options: IPackageOptions;
     private storage: Storage;
     private packagesByPath: {[path: string]: Package} = {};
     private packagesByVersion: {[version: string]: Package} = {};
     private packagesByName: {[name: string]: Package} = {};
     private domainRouterPackages: {[name: string]:IDomainRouterPackage[]} = {};
+    private packages: IPackages = {};
 
     public packageImporter?: PackageImporter;
 
-    constructor(options?: IOptions){
+    constructor(options?: IPackageOptions){
         this.options = options;
+        if (this.options?.packages)
+            this.register(this.options.packages);
     };
     async addDomainRouter(domain: string, pack:IDomainRouterPackage){
         let packs = this.domainRouterPackages[domain] || [];
         packs.push(pack);
         this.domainRouterPackages[domain] = packs;
     };
-    async addPackage(packagePath: string): Promise<Package>{
+    async addPackage(packagePath: string, packageOptions?: {name?: string, version?: string}): Promise<Package>{
         if (!this.packagesByPath[packagePath]){
-            let result = new Package(this, packagePath);
+            let result = new Package(this, packagePath, packageOptions);
             await result.init();
             this.packagesByPath[packagePath] = result;
             this.packagesByVersion[`${result.name}@${result.version}`] = result;            
@@ -227,7 +282,10 @@ export class PackageManager{
     };
     async getFileContent(packagePath: string, filePath: string): Promise<string>{
         if (packagePath.indexOf('/') >=0){ //local package
-            return await Fs.readFile(Path.join(packagePath, filePath), 'utf8');
+            let path = Path.resolve(packagePath, filePath);
+            if (!path.startsWith(packagePath))                
+                return '';
+            return await Fs.readFile(path, 'utf8');
         }
         else if (this.options.storage){ //ipfs cid
             if (!this.storage)
@@ -253,20 +311,42 @@ export class PackageManager{
         if (pack)
             return await pack.getScript(fileName)
     };
-    async getPackage(name: string, version?: string): Promise<Package>{        
+    async getPackage(name: string, version?: string): Promise<Package>{
         try{
             let result: Package;
             if (version)
                 result = this.packagesByVersion[`${name}@${version}`]
             else
                 result = this.packagesByName[`${name}`];
-                
+            if (!result && this.packages[name]){
+                let packs = this.packages[name];
+                for (let i = 0; i < packs.length; i ++){
+                    let pack = packs[i];
+                    if (pack.version == '*' || pack.version == version){
+                        return await this.addPackage(pack.path, {
+                            name: name,
+                            version: pack.version
+                        });
+                    };
+                    pack = packs[0];
+                    return await this.addPackage(pack.path, {
+                        name: name,
+                        version: pack.version
+                    });
+                };
+            };
             if (!result && this.packageImporter)
                 result  = await this.packageImporter(name, version);
             return result;
         }
         catch(err){
             console.error(err)
+        };
+    };
+    async register(packages: IPackages){
+        for (let name in packages){
+            let items = packages[name];
+            this.packages[name] = items.concat(this.packages[name] || []);
         };
     };
 };

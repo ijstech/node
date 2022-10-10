@@ -17,7 +17,8 @@ const package_1 = require("@ijstech/package");
 class Queue {
     constructor(options) {
         this.domainPackage = {};
-        options = JSON.parse(JSON.stringify(options || {}));
+        options = options || {};
+        this.packageManager = options.packageManager;
         this.options = options;
         for (let domain in options.domains) {
             let domainOptions = options.domains[domain];
@@ -88,6 +89,8 @@ class Queue {
                         pack = this.domainPackage[worker.domain][worker.packagePath];
                     if (pack) {
                         let module = await this.packageManager.getPackageWorker(pack, worker.workerName);
+                        if (module.moduleScript.errors)
+                            console.error(module.moduleScript.errors);
                         if (module) {
                             let plugins = {};
                             if ((_b = module.plugins) === null || _b === void 0 ? void 0 : _b.cache)

@@ -141,7 +141,7 @@ class Compiler {
             outFile: 'index.js',
             module: typescript_1.default.ModuleKind.AMD,
             noEmitOnError: true,
-            target: typescript_1.default.ScriptTarget.ES5
+            target: typescript_1.default.ScriptTarget.ES2017
         };
         this.reset();
     }
@@ -309,10 +309,12 @@ class Compiler {
     ;
     getSourceFile(fileName, languageVersion, onError) {
         if (fileName == 'lib.d.ts') {
-            let lib = getLib('lib.es5.d.ts');
+            let lib = getLib('lib.d.ts');
             return typescript_1.default.createSourceFile(fileName, lib, languageVersion);
         }
         let content = this.packageFiles[fileName] || this.files[fileName];
+        if (!content)
+            console.error(`Failed to get source file: ${fileName}`);
         return typescript_1.default.createSourceFile(fileName, content, languageVersion);
     }
     ;
@@ -383,6 +385,7 @@ class WalletPluginCompiler extends PluginCompiler {
     async init() {
         await super.init();
         await this.addPackage('@ijstech/eth-contract');
+        await this.addPackage('@ijstech/wallet');
     }
     ;
     async compile(emitDeclaration) {

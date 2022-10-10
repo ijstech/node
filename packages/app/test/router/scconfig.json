@@ -1,0 +1,37 @@
+{
+    "src": ".",
+    "router": {
+        "routes": [
+            {
+                "methods": ["GET","POST"],
+                "url": "/hello",
+                "module": "index.ts",
+                "params": {
+                    "param1": "default param1 value"
+                },
+                "plugins": {
+                    "cache": false,
+                    "db": false
+                },
+                "dependencies": {
+                    
+                }
+            },
+            {
+                "methods": ["GET","POST"],
+                "url": "/hello/:param1/:param2?",
+                "module": "index.ts",
+                "params": {
+                    "param3": "default param3 value"
+                },
+                "plugins": {
+                    "cache": true,
+                    "db": true
+                },
+                "dependencies": {
+                    
+                }
+            }
+        ]
+    }
+}

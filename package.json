@@ -14,12 +14,12 @@
         "url": "https://github.com/ijstech/node"
     },
     "dependencies": {
+        "@ijstech/eth-wallet": "0.1.16",
         "@ijstech/app": "file:./packages/app",
         "@ijstech/cache": "file:./packages/cache",
         "@ijstech/crypto": "file:./packages/crypto",
         "@ijstech/db": "file:./packages/db",
-        "@ijstech/eth-contract": "git+https://github.com/ijstech/eth-contract",
-        "@ijstech/eth-wallet": "git+https://github.com/ijstech/eth-wallet",
+        "@ijstech/eth-contract": "file:packages/eth-contract",        
         "@ijstech/http": "file:./packages/http",
         "@ijstech/ipfs": "file:./packages/ipfs",
         "@ijstech/message": "file:./packages/message",

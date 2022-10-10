@@ -7,7 +7,7 @@
 import Koa from 'koa';
 import Tls from 'tls';
 import { IRouterPluginOptions } from '@ijstech/plugin';
-import { IDomainRouterPackage } from '@ijstech/package';
+import { PackageManager, IDomainRouterPackage } from '@ijstech/package';
 import { IJobQueueConnectionOptions } from '@ijstech/types';
 import { IStorageOptions } from '@ijstech/storage';
 export interface IPlugin {
@@ -38,6 +38,7 @@ export interface IHttpServerOptions {
     domains?: {
         [domainName: string]: IDomainRouterPackage[];
     };
+    packageManager?: PackageManager;
 }
 export declare class HttpServer {
     private app;

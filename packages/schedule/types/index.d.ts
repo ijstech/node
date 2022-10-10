@@ -5,8 +5,9 @@
 *-----------------------------------------------------------*/
 import { IWorkerPluginOptions, Worker } from '@ijstech/plugin';
 import CronParser from 'cron-parser';
-import { IDomainWorkerPackage } from '@ijstech/package';
+import { PackageManager, IDomainWorkerPackage } from '@ijstech/package';
 import { IWorkerOptions } from '@ijstech/queue';
+import { IDomainOptions } from '@ijstech/types';
 import { IStorageOptions } from '@ijstech/storage';
 export interface ISchdeulePluginOptions extends IWorkerPluginOptions {
     cron: string;
@@ -18,8 +19,9 @@ export interface ISchedulerOptions {
     worker?: IWorkerOptions;
     storage?: IStorageOptions;
     domains?: {
-        [domainName: string]: IDomainWorker[];
+        [domainName: string]: IDomainSchedulePackage[];
     };
+    packageManager?: PackageManager;
 }
 export interface IScheduleJob extends ISchdeulePluginOptions {
     id?: string;
@@ -35,6 +37,11 @@ export interface IDomainSchedule {
     worker: string;
     params?: any;
 }
+export interface IDomainSchedulePackage {
+    packagePath: string;
+    schedules?: IDomainSchedule[];
+    options?: IDomainOptions;
+}
 export interface IDomainWorker {
     pack: IDomainWorkerPackage;
     schedules?: IDomainSchedule[];
@@ -46,9 +53,9 @@ export declare class Scheduler {
     private jobs;
     private queue;
     private packageManager;
-    private domainWorkers;
+    private domainPackages;
     constructor(options?: ISchedulerOptions);
-    addDomainWorker(domain: string, worker: IDomainWorker): Promise<void>;
+    addDomainPackage(domain: string, pack: IDomainSchedulePackage): Promise<void>;
     addJob(job: ISchdeulePluginOptions, module?: string): void;
     start(): Promise<void>;
     stop(): void;

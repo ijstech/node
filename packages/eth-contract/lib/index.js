@@ -3,145 +3,32 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-define("index", ["require", "exports", "bignumber.js"], function (require, exports, bignumber_js_1) {
+///<amd-module name="@ijstech/eth-contract"/>
+define("@ijstech/eth-contract", ["require", "exports", "bignumber.js"], function (require, exports, bignumber_js_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.TAuthContract = exports.Contract = exports.Utils = exports.BigNumber = void 0;
+    exports.TAuthContract = exports.Contract = exports.nullAddress = exports.BigNumber = void 0;
     Object.defineProperty(exports, "BigNumber", { enumerable: true, get: function () { return bignumber_js_1.BigNumber; } });
     ;
     ;
-    class Utils {
-        constructor(wallet) {
-            this.nullAddress = "0x0000000000000000000000000000000000000000";
-            this.wallet = wallet;
-        }
-        ;
-        asciiToHex(str) {
-            if (!str)
-                return "0x00";
-            var hex = "";
-            for (var i = 0; i < str.length; i++) {
-                var code = str.charCodeAt(i);
-                var n = code.toString(16);
-                hex += n.length < 2 ? '0' + n : n;
-            }
-            ;
-            return "0x" + hex;
-        }
-        ;
-        sleep(millisecond) {
-            return new Promise(function (resolve) {
-                setTimeout(function () {
-                    resolve(null);
-                }, millisecond);
-            });
-        }
-        ;
-        numberToBytes32(value, prefix) {
-            let v = new bignumber_js_1.BigNumber(value).toString(16);
-            v = v.replace("0x", "");
-            v = this.padLeft(v, 64);
-            if (prefix)
-                v = '0x' + v;
-            return v;
-        }
-        ;
-        padLeft(string, chars, sign) {
-            return new Array(chars - string.length + 1).join(sign ? sign : "0") + string;
-        }
-        ;
-        padRight(string, chars, sign) {
-            return string + new Array(chars - string.length + 1).join(sign ? sign : "0");
-        }
-        ;
-        stringToBytes32(value) {
-            if (Array.isArray(value)) {
-                let result = [];
-                for (let i = 0; i < value.length; i++) {
-                    result.push(this.stringToBytes32(value[i]));
-                }
-                return result;
-            }
-            else {
-                if (value.length == 66 && value.startsWith('0x'))
-                    return value;
-                return this.padRight(this.asciiToHex(value), 64);
-            }
-        }
-        addressToBytes32(value, prefix) {
-            let v = value;
-            v = v.replace("0x", "");
-            v = this.padLeft(v, 64);
-            if (prefix)
-                v = '0x' + v;
-            return v;
-        }
-        ;
-        bytes32ToAddress(value) {
-            return '0x' + value.replace('0x000000000000000000000000', '');
-        }
-        ;
-        bytes32ToString(value) {
-            return this.wallet.utils.hexToUtf8(value);
-        }
-        ;
-        addressToBytes32Right(value, prefix) {
-            let v = value;
-            v = v.replace("0x", "");
-            v = this.padRight(v, 64);
-            if (prefix)
-                v = '0x' + v;
-            return v;
-        }
-        ;
-        toNumber(value) {
-            if (typeof (value) == 'number')
-                return value;
-            else if (typeof (value) == 'string')
-                return new bignumber_js_1.BigNumber(value).toNumber();
-            else
-                return value.toNumber();
-        }
-        ;
-        toDecimals(value, decimals) {
-            decimals = decimals || 18;
-            return new bignumber_js_1.BigNumber(value).shiftedBy(decimals);
-        }
-        ;
-        fromDecimals(value, decimals) {
-            decimals = decimals || 18;
-            return new bignumber_js_1.BigNumber(value).shiftedBy(-decimals);
-        }
-        ;
-        toString(value) {
-            if (Array.isArray(value)) {
-                let result = [];
-                for (let i = 0; i < value.length; i++) {
-                    if (typeof value[i] === "number" || bignumber_js_1.BigNumber.isBigNumber(value[i]))
-                        result.push(value[i].toString(10));
-                    else
-                        result.push(value[i]);
-                }
-                return result;
-            }
-            else if (typeof value === "number" || bignumber_js_1.BigNumber.isBigNumber(value))
-                return value.toString(10);
-            else
-                return value;
-        }
-        ;
-    }
-    exports.Utils = Utils;
+    ;
+    ;
+    ;
+    ;
+    ;
+    exports.nullAddress = "0x0000000000000000000000000000000000000000";
+    ;
     ;
     class Contract {
         constructor(wallet, address, abi, bytecode) {
             this.wallet = wallet;
+            if (abi)
+                this.abiHash = this.wallet.registerAbi(abi);
             if (typeof (abi) == 'string')
                 this._abi = JSON.parse(abi);
             else
                 this._abi = abi;
             this._bytecode = bytecode;
-            let self = this;
             if (address)
                 this._address = address;
         }
@@ -200,76 +87,91 @@ define("index", ["require", "exports", "bignumber.js"], function (require, expor
             }
             return result;
         }
-        methodsToUtf8(...args) {
-            let self = this;
-            return new Promise(async function (resolve, reject) {
-                let result = await self.methods.apply(self, args);
-                resolve(self.wallet.utils.toUtf8(result));
-            });
-        }
-        methodsToUtf8Array(...args) {
-            let self = this;
-            return new Promise(async function (resolve, reject) {
-                let result = await self.methods.apply(self, args);
-                let arr = [];
-                for (let i = 0; i < result.length; i++) {
-                    arr.push(self.wallet.utils.toUtf8(result[i]));
-                }
-                resolve(arr);
-            });
-        }
-        methodsFromWeiArray(...args) {
-            let self = this;
-            return new Promise(async function (resolve, reject) {
-                let result = await self.methods.apply(self, args);
-                let arr = [];
-                for (let i = 0; i < result.length; i++) {
-                    arr.push(new bignumber_js_1.BigNumber(self.wallet.utils.fromWei(result[i])));
-                }
-                resolve(arr);
-            });
-        }
-        methodsFromWei(...args) {
-            let self = this;
-            return new Promise(async function (resolve, reject) {
-                let result = await self.methods.apply(self, args);
-                return resolve(new bignumber_js_1.BigNumber(self.wallet.utils.fromWei(result)));
-            });
-        }
-        methods(...args) {
-            args.unshift(this._address);
-            args.unshift(this._abi);
-            return this.wallet.methods.apply(this.wallet, args);
-        }
-        getAbiTopics(eventNames) {
-            return this.wallet.getAbiTopics(this._abi, eventNames);
-        }
         getAbiEvents() {
-            if (!this._events)
-                this._events = this.wallet.getAbiEvents(this._abi);
+            if (!this._events) {
+                this._events = {};
+                let events = this._abi.filter(e => e.type == "event");
+                for (let i = 0; i < events.length; i++) {
+                    let topic = this.wallet.utils.sha3(events[i].name + "(" + events[i].inputs.map(e => e.type == "tuple" ? "(" + (e.components.map(f => f.type)) + ")" : e.type).join(",") + ")");
+                    this._events[topic] = events[i];
+                }
+            }
             return this._events;
         }
+        getAbiTopics(eventNames) {
+            if (!eventNames || eventNames.length == 0)
+                eventNames = null;
+            let result = [];
+            let events = this.getAbiEvents();
+            for (let topic in events) {
+                if (!eventNames || eventNames.includes(events[topic].name)) {
+                    result.push(topic);
+                }
+            }
+            if (result.length == 0 && eventNames && eventNames.length > 0)
+                return ['NULL'];
+            return [result];
+        }
+        // registerEvents(handler: any) {
+        //     if (this._address)
+        //         this.wallet.registerEvent(this.getAbiEvents(), this._address, handler);
+        // }
         scanEvents(fromBlock, toBlock, eventNames) {
             let topics = this.getAbiTopics(eventNames);
             let events = this.getAbiEvents();
             return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
         }
         ;
-        async _deploy(...args) {
-            if (typeof (args[args.length - 1]) == 'undefined')
-                args.pop();
-            args.unshift(this._bytecode);
-            args.unshift('deploy');
-            args.unshift(null);
-            args.unshift(this._abi);
-            this._address = await this.wallet.methods.apply(this.wallet, args);
-            return this._address;
+        async batchCall(batchObj, key, methodName, params, options) {
+            //TODO: implement the batch call
+            // let contract = await this.getContract();
+            // if (!contract.methods[methodName]) return;
+            // let method = <IContractMethod>contract.methods[methodName].apply(this, params);
+            // batchObj.promises.push(new Promise((resolve, reject) => {
+            //     batchObj.batch.add(method.call.request({from: this.wallet.address, ...options}, 
+            //         (e,v) => {
+            //             return resolve({
+            //                 key:key, 
+            //                 result:e ? null : v
+            //             });
+            //         }
+            //     ));
+            // }));
         }
-        ;
-        get utils() {
-            if (!this._utils)
-                this._utils = new Utils(this.wallet);
-            return this._utils;
+        async call(methodName, params, options) {
+            return await this.wallet._call(this.abiHash, this._address, methodName, params, options);
+        }
+        async _send(methodName, params, options) {
+            params = params || [];
+            if (!methodName)
+                params.unshift(this._bytecode);
+            return await this.wallet._send(this.abiHash, this._address, methodName, params, options);
+        }
+        async __deploy(params, options) {
+            let receipt = await this._send('', params, options);
+            this.address = receipt.contractAddress;
+            return this.address;
+        }
+        send(methodName, params, options) {
+            let receipt = this._send(methodName, params, options);
+            return receipt;
+        }
+        // backward compatability
+        _deploy(...params) {
+            return this.__deploy(params);
+        }
+        methods(methodName, ...params) {
+            let method = this._abi.find(e => e.name == methodName);
+            if (method.stateMutability == "view" || method.stateMutability == "pure") {
+                return this.call(methodName, params);
+            }
+            else if (method.stateMutability == 'payable') {
+                let value = params.pop();
+                return this.call(methodName, params, { value: value });
+            }
+            else {
+                return this.send(methodName, params);
+            }
         }
     }
     exports.Contract = Contract;
@@ -278,9 +180,11 @@ define("index", ["require", "exports", "bignumber.js"], function (require, expor
         rely(address) {
             return this.methods('rely', address);
         }
+        ;
         deny(address) {
             return this.methods('deny', address);
         }
+        ;
     }
     exports.TAuthContract = TAuthContract;
     ;

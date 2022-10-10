@@ -159,12 +159,13 @@ export interface IWalletUtils {
     toUtf8(value: any): string;
     toWei(value: string, unit?: string): string;
 }
-export interface IWalletPlugin {
+export interface IWallet {
     account: IWalletAccount;
     accounts: Promise<string[]>;
     address: string;
     balance: Promise<BigNumber>;
     balanceOf(address: string): Promise<BigNumber>;
+    _call(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
     chainId: number;
     createAccount(): IWalletAccount;
     decode(abi: any, event: IWalletLog | IWalletEventLog, raw?: {
@@ -188,6 +189,7 @@ export interface IWalletPlugin {
     registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
     registerAbiContracts(abiHash: string, address: string | string[], handler?: any): any;
     send(to: string, amount: number): Promise<IWalletTransactionReceipt>;
+    _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<IWalletTransactionReceipt>;
     scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<IWalletEvent[]>;
     signMessage(msg: string): Promise<string>;
     signTransaction(tx: any, privateKey?: string): Promise<string>;
@@ -196,5 +198,50 @@ export interface IWalletPlugin {
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
     soliditySha3(...val: any[]): string;
 }
-declare const Wallet: IWalletPlugin;
+export interface IWalletPluginObject {
+    balanceOf(address: string): Promise<string>;
+    _call(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
+    createAccount(): string;
+    decode(abi: any, event: IWalletLog | IWalletEventLog, raw?: {
+        data: string;
+        topics: string[];
+    }): string;
+    decodeEventData(data: IWalletLog, events?: any): Promise<string>;
+    decodeLog(inputs: any, hexString: string, topics: any): string;
+    getAbiEvents(abi: any[]): string;
+    getAbiTopics(abi: any[], eventNames: string[]): string;
+    getAccounts(): Promise<string>;
+    getAddress(): string;
+    getBalance(): Promise<string>;
+    getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<string>;
+    getDefaultAccount(): string;
+    methods(...args: any[]): Promise<string>;
+    getBlockNumber(): Promise<number>;
+    getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
+    getChainId(): number;
+    setPrivateKey(value: string): void;
+    recoverSigner(msg: string, signature: string): Promise<string>;
+    registerAbi(abi: any[] | string, address?: string | string[]): string;
+    registerAbiContracts(abiHash: string, address: string | string[]): void;
+    setChainId(value: number): void;
+    setDefaultAccount(value: string): void;
+    send(to: string, amount: number): Promise<string>;
+    _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<string>;
+    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<string>;
+    setAccount(value: IWalletAccount): void;
+    signMessage(msg: string): Promise<string>;
+    signTransaction(tx: any, privateKey?: string): Promise<string>;
+    tokenInfo(address: string): Promise<string>;
+    utils_fromWei(value: any, unit?: any): string;
+    utils_hexToUtf8(value: string): string;
+    utils_sha3(value: string): string;
+    utils_stringToBytes(value: string | stringArray, nByte?: number): string;
+    utils_stringToBytes32(value: string | stringArray): string;
+    utils_toString(value: any): string;
+    utils_toUtf8(value: any): string;
+    utils_toWei(value: string, unit?: any): string;
+    verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
+    soliditySha3(...val: any[]): string;
+}
+declare const Wallet: IWallet;
 export default Wallet;

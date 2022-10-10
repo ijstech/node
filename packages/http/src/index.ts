@@ -45,7 +45,8 @@ export interface IHttpServerOptions{
     securePort?: number;    
     worker?: IWorkerOptions;
     storage?: IStorageOptions;
-    domains?: {[domainName: string]: IDomainRouterPackage[]}
+    domains?: {[domainName: string]: IDomainRouterPackage[]};
+    packageManager?: PackageManager;
 };
 export class HttpServer {
     private app: Koa;
@@ -60,7 +61,8 @@ export class HttpServer {
     private queue: JobQueue;
 
     constructor(options: IHttpServerOptions){
-        this.options = options;        
+        this.options = options; 
+        this.packageManager = this.options.packageManager;
         if (this.options.worker)
             this.queue = getJobQueue(this.options.worker);
         if (this.options.domains){

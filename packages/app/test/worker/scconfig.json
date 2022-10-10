@@ -1,0 +1,53 @@
+{    
+    "workers": {
+        "worker1": {
+            "module": "index.ts",
+            "params": {
+                "param1": "default worker1 param1 value"
+            },
+            "plugins": {
+                "cache": false,
+                "db": false
+            },
+            "dependencies": {
+                
+            }
+        },
+        "worker2": {
+            "module": "index.ts",
+            "params": {
+                "param1": "default worker2 param1 value",
+                "db": true
+            },
+            "plugins": {
+                "cache": true,
+                "db": true
+            },
+            "dependencies": {
+                
+            }
+        }, 
+        "worker3": {
+            "module": "index.ts",
+            "params": {
+                "param1": "wallet"
+            },
+            "plugins": {
+                "cache": false,
+                "db": false,
+                "wallet": true
+            },
+            "dependencies": {
+                
+            }
+        }
+    },
+    "schedules": [
+        {        
+            "id": "job:worker3",
+            "cron": "*/4 * * * * *", 
+            "worker": "worker3",
+            "params": {"param1": "wallet"}
+        }
+    ]
+}

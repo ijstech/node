@@ -4,25 +4,35 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 
-import {IWallet, Wallet, IAccount} from '@ijstech/eth-wallet';
+import {Wallet, IAccount, IWallet} from '@ijstech/eth-wallet';
 import {IWorker} from '@ijstech/types';
-import {IWalletLog, IWalletPlugin, IWalletRequiredPluginOptions, IWalletEventLog} from '@ijstech/types';
+import {IWalletLog, IWalletRequiredPluginOptions, IWalletEventLog} from '@ijstech/types';
+import {IWalletPluginObject} from './plugin';
 function getWalletPlugin(): IWallet{
     return global.$$wallet_plugin;
 }
 export default getWalletPlugin();
-
-export function loadPlugin(worker: IWorker, options: IWalletRequiredPluginOptions): string | IWalletPlugin{
+export type stringArray = string | _stringArray;
+export interface _stringArray extends Array<stringArray> { };
+export async function loadPlugin(worker: IWorker, options: IWalletRequiredPluginOptions): Promise<string | IWallet>{
     worker.data = worker.data || {};
-    let network = options.networks[options.chainId];
-    worker.data.wallet = new Wallet(network.provider, options.accounts);    
-    let wallet: Wallet = worker.data.wallet;
+    let network = options.networks[options.chainId];    
+    let wallet = new Wallet(network.provider, options.accounts);
+    worker.data.wallet = wallet;
     wallet.chainId = options.chainId;
+    if (!wallet.defaultAccount){
+        let accounts = await wallet.accounts;
+        wallet.defaultAccount = accounts[0];
+    };
     if (worker.vm){
-        worker.vm.injectGlobalObject('$$wallet_plugin', {            
+        let plugin: IWalletPluginObject = {            
             async balanceOf(address: string): Promise<string>{
                 let result = await wallet.balanceOf(address);
                 return result.toString();
+            },
+            async _call(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<any>{
+                let result = await wallet._call(abiHash, address, methodName, params, options);
+                return JSON.stringify(result);
             },
             createAccount(): string{
                 let result = wallet.createAccount();
@@ -70,10 +80,10 @@ export function loadPlugin(worker: IWorker, options: IWalletRequiredPluginOption
             async getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>{
                 return await wallet.getBlockTimestamp(blockHashOrBlockNumber)
             },
-            getChainId(){   
+            getChainId():number{   
                 return wallet.chainId
             },
-            set privateKey(value: string){
+            setPrivateKey(value: string){
                 wallet.privateKey = value;
             },
             async recoverSigner(msg: string, signature: string): Promise<string>{
@@ -96,6 +106,9 @@ export function loadPlugin(worker: IWorker, options: IWalletRequiredPluginOption
             },
             async send(to: string, amount: number): Promise<string>{
                 return JSON.stringify(await wallet.send(to, amount));
+            },
+            async _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<string>{
+                return JSON.stringify(await wallet._send(abiHash, address, methodName, params, options));
             },
             async scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<string>{
                 let result = await wallet.scanEvents(fromBlock, toBlock, topics, events, address);
@@ -125,6 +138,18 @@ export function loadPlugin(worker: IWorker, options: IWalletRequiredPluginOption
             utils_hexToUtf8(value: string): string{          
                 return wallet.utils.hexToUtf8(value);
             },
+            utils_sha3(value: string): string{
+                return wallet.utils.sha3(value);
+            },
+            utils_stringToBytes(value: string, nByte?: number): string{
+                return JSON.stringify(wallet.utils.stringToBytes(value, nByte));
+            },
+            utils_stringToBytes32(value: string|stringArray): string{
+                return JSON.stringify(wallet.utils.stringToBytes32(value));
+            },
+            utils_toString(value: any): string{
+                return wallet.utils.toString(value);
+            },
             utils_toUtf8(value: any): string{
                 return wallet.utils.toUtf8(value);
             },
@@ -137,7 +162,8 @@ export function loadPlugin(worker: IWorker, options: IWalletRequiredPluginOption
             soliditySha3(...val: any[]): string{
                 return wallet.soliditySha3(...val);
             }                
-        });
+        };
+        worker.vm.injectGlobalObject('$$wallet_plugin', plugin);
         return `
             global.$$session.plugins.wallet = global._$$modules['@ijstech/wallet'].default;
         `

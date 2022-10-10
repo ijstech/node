@@ -3,26 +3,47 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
+/// <amd-module name="@ijstech/eth-contract" />
 import { BigNumber } from "bignumber.js";
 export { BigNumber };
+declare type stringArray = string | _stringArray;
+interface _stringArray extends Array<stringArray> {
+}
 export interface IWalletUtils {
     fromWei(value: any, unit?: string): string;
     hexToUtf8(value: string): string;
+    sha3(value: string): string;
+    stringToBytes(value: string | stringArray, nByte?: number): string | string[];
+    stringToBytes32(value: string | stringArray): string | string[];
+    toString(value: any): string;
     toUtf8(value: any): string;
     toWei(value: string, unit?: string): string;
+}
+export interface IBatchRequestResult {
+    key: string;
+    result: any;
+}
+export interface IBatchRequestObj {
+    batch: any;
+    promises: Promise<IBatchRequestResult>[];
+    execute: (batch: IBatchRequestObj, promises: Promise<IBatchRequestResult>[]) => Promise<IBatchRequestResult[]>;
 }
 export interface IWallet {
     address: string;
     balance: Promise<BigNumber>;
-    decode(abi: any, event: Log | EventLog, raw?: {
+    _call(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
+    decode(abi: any, event: IWalletLog | IWalletEventLog, raw?: {
         data: string;
         topics: string[];
     }): Event;
     decodeLog(inputs: any, hexString: string, topics: any): any;
     getAbiEvents(abi: any[]): any;
     getAbiTopics(abi: any[], eventNames: string[]): any[];
+    getChainId(): Promise<number>;
     methods(...args: any): Promise<any>;
+    registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
     send(to: string, amount: number): Promise<TransactionReceipt>;
+    _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
     scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
     utils: IWalletUtils;
 }
@@ -37,7 +58,7 @@ export interface Event {
     data: any;
     rawData: any;
 }
-export interface Log {
+export interface IWalletLog {
     address: string;
     data: string;
     topics: Array<string>;
@@ -48,7 +69,7 @@ export interface Log {
     type?: string;
     blockNumber: number;
 }
-export interface EventLog {
+export interface IWalletEventLog {
     event: string;
     address: string;
     returnValues: any;
@@ -72,9 +93,9 @@ export interface TransactionReceipt {
     contractAddress?: string;
     cumulativeGasUsed: number;
     gasUsed: number;
-    logs?: Array<Log>;
+    logs?: Array<IWalletLog>;
     events?: {
-        [eventName: string]: EventLog | EventLog[];
+        [eventName: string]: IWalletEventLog | IWalletEventLog[];
     };
     status: boolean;
 }
@@ -86,24 +107,23 @@ export interface Transaction {
 export interface EventType {
     name: string;
 }
-export declare class Utils {
-    private wallet;
-    nullAddress: string;
-    constructor(wallet: IWallet);
-    asciiToHex(str: string): string;
-    sleep(millisecond: number): Promise<unknown>;
-    numberToBytes32(value: number | BigNumber, prefix?: boolean): string;
-    padLeft(string: string, chars: number, sign?: string): string;
-    padRight(string: string, chars: number, sign?: string): string;
-    stringToBytes32(value: string | string[]): string | string[];
-    addressToBytes32(value: string, prefix?: boolean): string;
-    bytes32ToAddress(value: string): string;
-    bytes32ToString(value: string): string;
-    addressToBytes32Right(value: string, prefix?: boolean): string;
-    toNumber(value: string | number | BigNumber): number;
-    toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
-    fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
-    toString(value: any): any;
+export declare const nullAddress = "0x0000000000000000000000000000000000000000";
+export interface IContractMethod {
+    call: any;
+    estimateGas(...params: any[]): Promise<number>;
+    encodeABI(): string;
+}
+export interface IContract {
+    deploy(params: {
+        data: string;
+        arguments?: any[];
+    }): IContractMethod;
+    methods: {
+        [methodName: string]: (...params: any[]) => IContractMethod;
+    };
+}
+export interface EventType {
+    name: string;
 }
 export declare class Contract {
     wallet: IWallet;
@@ -111,8 +131,8 @@ export declare class Contract {
     _bytecode: any;
     _address: string;
     private _events;
-    private _utils;
     privateKey: string;
+    private abiHash;
     constructor(wallet: IWallet, address?: string, abi?: any, bytecode?: any);
     at(address: string): Contract;
     set address(value: string);
@@ -120,16 +140,16 @@ export declare class Contract {
     protected decodeEvents(receipt: TransactionReceipt): any[];
     protected parseEvents(receipt: TransactionReceipt, eventName: string): Event[];
     get events(): EventType[];
-    protected methodsToUtf8(...args: any[]): Promise<string>;
-    protected methodsToUtf8Array(...args: any[]): Promise<string[]>;
-    protected methodsFromWeiArray(...args: any[]): Promise<BigNumber[]>;
-    protected methodsFromWei(...args: any[]): Promise<BigNumber>;
-    protected methods(...args: any[]): Promise<any>;
-    protected getAbiTopics(eventNames?: string[]): any[];
     protected getAbiEvents(): any;
+    protected getAbiTopics(eventNames?: string[]): any[];
     scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
-    _deploy(...args: any[]): Promise<string>;
-    get utils(): Utils;
+    batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: any): Promise<void>;
+    protected call(methodName: string, params?: any[], options?: any): Promise<any>;
+    private _send;
+    protected __deploy(params?: any[], options?: any): Promise<string>;
+    protected send(methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
+    protected _deploy(...params: any[]): Promise<string>;
+    protected methods(methodName: string, ...params: any[]): Promise<any>;
 }
 export declare class TAuthContract extends Contract {
     rely(address: string): Promise<any>;

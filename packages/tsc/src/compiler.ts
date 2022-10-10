@@ -156,7 +156,7 @@ export class Compiler {
             outFile: 'index.js',
             module: TS.ModuleKind.AMD,
             noEmitOnError: true,
-            target: TS.ScriptTarget.ES5
+            target: TS.ScriptTarget.ES2017
         };
         this.reset();
     };
@@ -323,10 +323,12 @@ export class Compiler {
     };
     getSourceFile(fileName: string, languageVersion: TS.ScriptTarget, onError?: (message: string) => void) {
         if (fileName == 'lib.d.ts') {
-            let lib = getLib('lib.es5.d.ts');
+            let lib = getLib('lib.d.ts');
             return TS.createSourceFile(fileName, lib, languageVersion);
         }
         let content = this.packageFiles[fileName] || this.files[fileName];
+        if (!content)
+            console.error(`Failed to get source file: ${fileName}`)
         return TS.createSourceFile(fileName, content, languageVersion);
     };
     readFile(fileName: string): string | undefined {
@@ -386,6 +388,7 @@ export class WalletPluginCompiler extends PluginCompiler{
     async init(){
         await super.init();
         await this.addPackage('@ijstech/eth-contract');
+        await this.addPackage('@ijstech/wallet');
     };
     async compile(emitDeclaration?: boolean): Promise<ICompilerResult>{        
         await this.init();

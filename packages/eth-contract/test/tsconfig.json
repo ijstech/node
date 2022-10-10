@@ -1,0 +1,15 @@
+{    
+    "compilerOptions": {
+        "target": "ESNext",        
+        "moduleResolution": "Node",
+        "allowJs": false,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,        
+        "declaration": false,
+        "baseUrl": ".",        
+        "paths": {            
+            "@ijstech/*": ["*", "../../*"]
+        }
+    },
+    "include": ["."]
+}

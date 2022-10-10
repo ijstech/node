@@ -6,9 +6,23 @@
 import { Worker } from '@ijstech/plugin';
 import { getJobQueue, JobQueue, IJobQueueOptions } from './jobQueue';
 import * as Types from '@ijstech/types';
-import { IDomainRouterPackage, IDomainWorkerPackage } from '@ijstech/package';
-export { IQueueOptions } from '@ijstech/types';
+import { PackageManager, IDomainRouterPackage, IDomainWorkerPackage } from '@ijstech/package';
 export { getJobQueue, JobQueue, IJobQueueOptions };
+export interface IQueueOptions {
+    jobQueue?: string;
+    disabled?: boolean;
+    connection?: Types.IJobQueueConnectionOptions;
+    module?: string;
+    packageManager?: PackageManager;
+    workers?: Types.IQueuePluginOptions[];
+    storage?: Types.IStorageOptions;
+    domains?: {
+        [domainName: string]: {
+            routers?: IDomainRouterPackage[];
+            workers?: IDomainWorkerPackage[];
+        };
+    };
+}
 export interface IWorkerOptions {
     enabled: boolean;
     jobQueue: string;
@@ -20,7 +34,7 @@ export declare class Queue {
     private packageManager;
     private queue;
     private domainPackage;
-    constructor(options: Types.IQueueOptions);
+    constructor(options?: IQueueOptions);
     addDomainRouter(domain: string, router: IDomainRouterPackage): Promise<void>;
     addDomainWorker(domain: string, worker: IDomainWorkerPackage): Promise<void>;
     private runWorker;
