@@ -3,6 +3,7 @@ export default class Router implements IRouterPlugin {
     async route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean> {        
         let result:any = {
             msg: `${request.method} hello`,
+            session: session.params,
             params: request.params
         }
         if (request.params.param1 == 'db'){

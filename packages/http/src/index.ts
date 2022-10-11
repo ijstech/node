@@ -249,8 +249,9 @@ export class HttpServer {
                         try{
                             if (!(<any>router)._plugin){
                                 (<any>router)._plugin = new Router(router); 
-                                await (<any>router)._plugin.init(router.params);
+                                // await (<any>router)._plugin.init(router.params);
                             };
+                            (<any>router)._plugin.session.params = (<any>router)._plugin.session.params || router.params || {};
                             let result = await (<any>router)._plugin.route(ctx, baseUrl);                            
                             if (result)                           
                                 return;
@@ -304,19 +305,19 @@ export class HttpServer {
                                         methods: [method],
                                         script: script.script,
                                         dependencies: script.dependencies,
-                                        plugins: plugins
+                                        plugins: plugins,
+                                        params: route.params
                                     });
                                     (<any>route)._plugin = plugin;
+                                    // await plugin.init(route.params);
                                 };
                             };
                             if (plugin){                                                
                                 let request = RouterRequest(ctx);                                                
                                 if (params === true)
-                                    request.params = route.params
+                                    request.params = {}
                                 else{
                                     request.params = params || {};
-                                    for (let p in route.params)
-                                        request.params[p] = route.params[p];
                                 };
                                 await plugin.route(ctx, request);
                                 return;

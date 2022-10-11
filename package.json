@@ -1,7 +1,7 @@
 {
     "name": "@ijstech/node",
-    "description": "Secure Node Server",
-    "version": "0.1.1",
+    "description": "Secure Node",
+    "version": "0.1.7",
     "workspaces": [
         "packages/*"
     ],
@@ -42,7 +42,6 @@
         "koa": "2.13.0",
         "koa-bodyparser": "4.3.0",
         "mysql": "2.18.1",
-        "nyc": "^15.1.0",
         "redis": "3.1.2",
         "web3.storage": "4.4.0"
     },
@@ -56,9 +55,6 @@
         "mocha": "10.0.0",
         "ts-node": "10.9.1",
         "typescript": "4.3.5"
-    },
-    "overrides": {
-        "got": "12.1.0"
     },
     "scripts": {
         "build": "npm run build:modules && npm run build:node && npm run build:examples",
@@ -83,15 +79,6 @@
         "build:module:tsc": "cd packages/tsc && npm run build && cd ../../",
         "build:module:vm": "cd packages/vm && npm run build && cd ../../",
         "build:module:wallet": "cd packages/wallet && npm run build && cd ../../",
-        "build:node": "rm -rf ./lib && rm -rf ./types && rm -f tsconfig.tsbuildinfo && tsc",
-        "test:pdm": "mocha --exit --require ts-node/register packages/pdm/test/*.spec.ts",
-        "test:tableschema": "mocha --exit --require ts-node/register packages/pdm/test/table-schema.spec.ts",
-        "test:graphql": "mocha --exit --require ts-node/register packages/pdm/test/graphql.spec.ts",
-        "dev": "ts-node test/serve.ts",
-        "example:http": "node examples/app/lib/http",
-        "example:worker": "node examples/app/lib/workerOnly",
-        "serve:web": "node lib/web",
-        "serve:worker": "node lib/worker",
-        "serve:scheduler": "node lib/scheduler"
+        "build:node": "rm -rf ./lib && rm -rf ./types && rm -f tsconfig.tsbuildinfo && tsc"
     }
 }

@@ -108,7 +108,7 @@ describe('HTTP Server', function() {
         assert.strictEqual(result.data.msg, 'POST hello');
         assert.strictEqual(result.data.params.param1, 'p1');
         assert.strictEqual(result.data.params.param2, 'p2');
-        assert.strictEqual(result.data.params.param3, 'default param3 value');
+        assert.strictEqual(result.data.session.param3, 'default param3 value');
     });
     it ('Domain Package Router DB Plugin', async function(){
         let result = await post('http://localhost:8888/pack1/hello/db');        
@@ -202,7 +202,7 @@ describe('HTTP Server with Job Queue', function() {
         assert.strictEqual(result.data.msg, 'POST hello');
         assert.strictEqual(result.data.params.param1, 'p1');
         assert.strictEqual(result.data.params.param2, 'p2');
-        assert.strictEqual(result.data.params.param3, 'default param3 value');
+        assert.strictEqual(result.data.session.param3, 'default param3 value');
     });
     it ('Domain Package Router DB Plugin', async function(){
         let result = await post('http://localhost:8888/pack1/hello/db');        
@@ -241,7 +241,7 @@ describe('HTTP Server with IPFS package', function() {
                 "localhost": [
                     {
                         baseUrl: '/pack1', 
-                        packagePath: 'bafybeic56uiu4tvih4lz36duhcsdrtefphsweozdqdm2s5nhfbbwq76pe4', 
+                        packagePath: 'bafybeieo5znjszsc2khjosifrfswn52v5kfoikmjikfy2os54hc5noik3u', 
                         options: Config
                     }
                 ]
@@ -256,7 +256,7 @@ describe('HTTP Server with IPFS package', function() {
                 "localhost": {
                     routers: [{
                         baseUrl: '/pack1', 
-                        packagePath: 'bafybeic56uiu4tvih4lz36duhcsdrtefphsweozdqdm2s5nhfbbwq76pe4', 
+                        packagePath: 'bafybeieo5znjszsc2khjosifrfswn52v5kfoikmjikfy2os54hc5noik3u', 
                         options: Config
                     }]
                 }
@@ -281,7 +281,7 @@ describe('HTTP Server with IPFS package', function() {
         assert.strictEqual(result.data.msg, 'POST hello');
         assert.strictEqual(result.data.params.param1, 'p1');
         assert.strictEqual(result.data.params.param2, 'p2');
-        assert.strictEqual(result.data.params.param3, 'default param3 value');
+        assert.strictEqual(result.data.session.param3, 'default param3 value');
     });
     it ('Domain Package Router DB Plugin', async function(){
         let result = await post('http://localhost:8888/pack1/hello/db');        

@@ -42,7 +42,7 @@ export interface ISCConfig {
     };
     workers?: {[name: string]: IWorker};
 };
-export function matchRoute(pack: IDomainRouterPackage, route: IRoute, url: string): any{
+export function matchRoute(pack: IDomainRouterPackage, route: IRoute, url: string): any{        
     if (pack.baseUrl + route.url == url)
         return true;
     if (!(<any>route)._match){
@@ -254,17 +254,18 @@ export class PackageManager{
                 let pack = packs[i];
                 if (ctx.url.startsWith(pack.baseUrl)){
                     let p = await this.addPackage(pack.packagePath);
+                    let url = ctx.url;
+                    if (url.indexOf('?') > 0)
+                        url = url.split('?')[0];
                     for (let k = 0; k < p.scconfig?.router?.routes.length; k ++){
                         let route = p.scconfig.router.routes[k];                                    
                         if (route.methods.indexOf(method) > -1){
-                            let params = matchRoute(pack, route, ctx.url);
+                            let params = matchRoute(pack, route, url);
                             if (params !== false){
                                 if (params === true)
-                                    params = route.params
+                                    params = {}
                                 else{
                                     params = params || {};
-                                    for (let p in route.params)
-                                        params[p] = route.params[p];
                                 };                                                
                                 return {
                                     options: pack.options,

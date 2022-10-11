@@ -209,17 +209,18 @@ class PackageManager {
                 let pack = packs[i];
                 if (ctx.url.startsWith(pack.baseUrl)) {
                     let p = await this.addPackage(pack.packagePath);
+                    let url = ctx.url;
+                    if (url.indexOf('?') > 0)
+                        url = url.split('?')[0];
                     for (let k = 0; k < ((_b = (_a = p.scconfig) === null || _a === void 0 ? void 0 : _a.router) === null || _b === void 0 ? void 0 : _b.routes.length); k++) {
                         let route = p.scconfig.router.routes[k];
                         if (route.methods.indexOf(method) > -1) {
-                            let params = matchRoute(pack, route, ctx.url);
+                            let params = matchRoute(pack, route, url);
                             if (params !== false) {
                                 if (params === true)
-                                    params = route.params;
+                                    params = {};
                                 else {
                                     params = params || {};
-                                    for (let p in route.params)
-                                        params[p] = route.params[p];
                                 }
                                 ;
                                 return {

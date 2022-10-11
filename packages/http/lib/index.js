@@ -238,9 +238,9 @@ class HttpServer {
                         try {
                             if (!router._plugin) {
                                 router._plugin = new plugin_1.Router(router);
-                                await router._plugin.init(router.params);
                             }
                             ;
+                            router._plugin.session.params = router._plugin.session.params || router.params || {};
                             let result = await router._plugin.route(ctx, baseUrl);
                             if (result)
                                 return;
@@ -296,7 +296,8 @@ class HttpServer {
                                         methods: [method],
                                         script: script.script,
                                         dependencies: script.dependencies,
-                                        plugins: plugins
+                                        plugins: plugins,
+                                        params: route.params
                                     });
                                     route._plugin = plugin;
                                 }
@@ -306,11 +307,9 @@ class HttpServer {
                             if (plugin) {
                                 let request = plugin_1.RouterRequest(ctx);
                                 if (params === true)
-                                    request.params = route.params;
+                                    request.params = {};
                                 else {
                                     request.params = params || {};
-                                    for (let p in route.params)
-                                        request.params[p] = route.params[p];
                                 }
                                 ;
                                 await plugin.route(ctx, request);
