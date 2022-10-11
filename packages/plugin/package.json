@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/plugin",
-    "version": "0.1.5",
+    "version": "0.1.7",
     "main": "lib/index.js",
     "pluginTypes": "plugin/index.d.ts",
     "types": "types/index.d.ts",
