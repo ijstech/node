@@ -1,0 +1,36 @@
+{
+    "router": {
+        "routes": [
+            {
+                "methods": ["GET"],
+                "url": "/hello/:name",
+                "module": "index.ts",
+                "params": {
+                    "param1": "default session params"
+                },
+                "plugins": {
+                    "cache": false,
+                    "db": false
+                },
+                "dependencies": {
+                    
+                }
+            },
+            {
+                "methods": ["POST"],
+                "url": "/hello/:name",
+                "module": "index.ts",
+                "params": {
+                    "param1": "default session params"
+                },
+                "plugins": {
+                    "cache": false,
+                    "db": false
+                },
+                "dependencies": {
+                    
+                }
+            }
+        ]
+    }
+}

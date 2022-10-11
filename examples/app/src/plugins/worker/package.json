@@ -1,9 +1,0 @@
-{
-    "name": "worker",
-    "dependencies": {
-        "@pack/demo": "file:../../../demoPack"
-    },
-    "scripts": {
-        "build": "tsc"
-    }
-}
