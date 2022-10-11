@@ -1,3 +1,4 @@
+# @ijstech/plugin
 ## Usage
 ### Step 1: Create a new folder
 ```sh
@@ -15,13 +16,24 @@ e.g.: npx @ijstech/plugin init worker @scom/demo1
 ```sh
 npm i
 ```
- 
+or
+```sh
+docker-compose up install
+```
+
 ### Step 4: Run unit test
 ```sh
 npm run test
 ```
- 
+or
+```sh
+docker-compose up test
+```
 ### Step 5: Build plugin
 ```sh
 npm run build
+```
+or
+```sh
+docker-compose up build
 ```

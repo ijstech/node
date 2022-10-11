@@ -16,7 +16,9 @@ secure server which supports SSL protocol by default, and using only minimum set
   - set CPU limits, release the VM instance if runtime duration exceeds the limit
 - A bunch of packages (https://www.npmjs.com/org/ijstech) which is using the VM security model to wrap third-party npm packages to provide common functionalities in a secure way
 
-## Usage
+
+# Usage
+
 ### Step 1: Create a new folder
 ```sh
 mkdir demo
@@ -33,13 +35,24 @@ e.g.: npx @ijstech/plugin init worker @scom/demo1
 ```sh
 npm i
 ```
- 
+or
+```sh
+docker-compose up install
+```
+
 ### Step 4: Run unit test
 ```sh
 npm run test
 ```
- 
+or
+```sh
+docker-compose up test
+```
 ### Step 5: Build plugin
 ```sh
 npm run build
+```
+or
+```sh
+docker-compose up build
 ```
