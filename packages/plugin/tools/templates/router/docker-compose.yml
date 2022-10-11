@@ -1,0 +1,29 @@
+version: "3"
+services:
+  install:
+    user: node
+    image: node:18
+    volumes:
+      - .:/app
+    command: bash -c "cd /app && rm -rf node_modules && rm -f package-lock.json && npm i"
+  build: 
+    user: node
+    image: node:18
+    volumes:
+      - .:/app
+    command: bash -c "cd /app && npm run build"  
+  test:
+    user: node
+    image: node:18
+    volumes:
+      - .:/app
+    command: bash -c "cd /app && npm run test"            
+  dev:
+    #docker-compose run --rm dev bash
+    user: node
+    image: node:18
+    working_dir: /app
+    volumes:
+      - .:/app
+    tty: true
+    stdin_open: true

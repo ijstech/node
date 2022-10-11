@@ -1,9 +1,12 @@
 {
     "name": "@ijstech/plugin",
-    "version": "0.1.0",
+    "version": "0.1.5",
     "main": "lib/index.js",
     "pluginTypes": "plugin/index.d.ts",
-    "types": "types/index.d.ts",    
+    "types": "types/index.d.ts",
+    "bin": {
+        "plugin": "tools/cli.js"
+    },
     "scripts": {
         "build": "rm -rf lib && rm -rf types && rm -f tsconfig.tsbuildinfo && tsc && cp -rf src/lib lib",
         "test": "mocha --exit --require ts-node/register test/*.spec.ts"

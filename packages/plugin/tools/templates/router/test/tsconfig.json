@@ -1,0 +1,17 @@
+{    
+    "compilerOptions": {
+        "target": "ES2017",        
+        "moduleResolution": "Node",
+        "allowJs": false,
+        "esModuleInterop": true,
+        "experimentalDecorators": true,
+        "forceConsistentCasingInFileNames": true,        
+        "declaration": false,
+        "baseUrl": ".",        
+        "paths": {
+            "@ijstech/*":["*", "../node_modules/@ijstech/node/packages/*"]
+        }
+    },
+    "include": ["."],
+    "exclude": ["node_modules"]
+}

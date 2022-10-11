@@ -1,0 +1,26 @@
+{
+    "workers": {
+        "worker1": {
+            "module": "index.ts",
+            "params": {
+                "param1": "default worker1 session param value"
+            },
+            "plugins": {
+                "cache": false,
+                "db": false,
+                "wallet": false
+            },
+            "dependencies": {
+                
+            }
+        }
+    },
+    "schedules": [
+        {        
+            "id": "job:worker1",
+            "cron": "*/4 * * * * *", 
+            "worker": "worker1",
+            "params": {"param2": "worker param value"}
+        }
+    ]
+}
