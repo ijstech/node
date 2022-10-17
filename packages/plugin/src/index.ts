@@ -9,6 +9,7 @@ import Path from 'path';
 import Koa from 'koa';
 import {VM} from '@ijstech/vm';
 import * as Types from '@ijstech/types';
+export {Types};
 export {ResponseType} from '@ijstech/types';
 export {BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions} from '@ijstech/types';
 import {PluginCompiler, PluginScript} from '@ijstech/tsc';
