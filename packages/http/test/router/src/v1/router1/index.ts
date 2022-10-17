@@ -10,7 +10,7 @@ export default class Router implements IRouterPlugin {
         }
         if (request.params.param1 == 'db'){
             let client = session.plugins.db.getConnection();            
-            result.dbResult = await client.query('select sysdate() as sysdate');
+            result.dbResult = await getSysDate(client);
         };
         if (request.params.param1 == 'cache'){
             let value = new Date().getTime().toString();

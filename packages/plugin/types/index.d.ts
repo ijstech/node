@@ -5,10 +5,186 @@
 *-----------------------------------------------------------*/
 import Koa from 'koa';
 import { VM } from '@ijstech/vm';
-import { IPackageScript, BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions, IPlugins, IPluginOptions } from '@ijstech/types';
+import { IPackageScript, BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions, IPluginOptions } from '@ijstech/types';
 export { ResponseType } from '@ijstech/types';
 export { BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions };
 export declare namespace Types {
+    interface IWalletAccount {
+        address: string;
+        privateKey?: string;
+    }
+    interface IWalletLog {
+        address: string;
+        data: string;
+        topics: Array<string>;
+        logIndex: number;
+        transactionHash?: string;
+        transactionIndex: number;
+        blockHash?: string;
+        type?: string;
+        blockNumber: number;
+    }
+    interface IWalletEventLog {
+        event: string;
+        address: string;
+        returnValues: any;
+        logIndex: number;
+        transactionIndex: number;
+        transactionHash: string;
+        blockHash: string;
+        blockNumber: number;
+        raw?: {
+            data: string;
+            topics: string[];
+        };
+    }
+    interface IWalletEvent {
+        name: string;
+        address: string;
+        blockNumber: number;
+        logIndex: number;
+        topics: string[];
+        transactionHash: string;
+        transactionIndex: number;
+        data: any;
+        rawData: any;
+    }
+    interface IWalletTransaction {
+        hash: string;
+        nonce: number;
+        blockHash: string | null;
+        blockNumber: number | null;
+        transactionIndex: number | null;
+        from: string;
+        to: string | null;
+        value: string;
+        gasPrice: string;
+        maxPriorityFeePerGas?: number | string | BigNumber;
+        maxFeePerGas?: number | string | BigNumber;
+        gas: number;
+        input: string;
+    }
+    interface IWalletBlockTransactionObject {
+        number: number;
+        hash: string;
+        parentHash: string;
+        nonce: string;
+        sha3Uncles: string;
+        logsBloom: string;
+        transactionRoot: string;
+        stateRoot: string;
+        receiptsRoot: string;
+        miner: string;
+        extraData: string;
+        gasLimit: number;
+        gasUsed: number;
+        timestamp: number | string;
+        baseFeePerGas?: number;
+        size: number;
+        difficulty: number;
+        totalDifficulty: number;
+        uncles: string[];
+        transactions: IWalletTransaction[];
+    }
+    interface IWalletTransactionReceipt {
+        transactionHash: string;
+        transactionIndex: number;
+        blockHash: string;
+        blockNumber: number;
+        from: string;
+        to: string;
+        contractAddress?: string;
+        cumulativeGasUsed: number;
+        gasUsed: number;
+        logs?: Array<IWalletLog>;
+        events?: {
+            [eventName: string]: IWalletEventLog | IWalletEventLog[];
+        };
+        status: boolean;
+    }
+    interface IWalletTokenInfo {
+        name: string;
+        symbol: string;
+        totalSupply: BigNumber;
+        decimals: number;
+    }
+    type stringArray = string | _stringArray;
+    interface _stringArray extends Array<stringArray> {
+    }
+    interface IWalletUtils {
+        fromWei(value: any, unit?: string): string;
+        hexToUtf8(value: string): string;
+        sha3(value: string): string;
+        stringToBytes(value: string | stringArray, nByte?: number): string | string[];
+        stringToBytes32(value: string | stringArray): string | string[];
+        toString(value: any): string;
+        toUtf8(value: any): string;
+        toWei(value: string, unit?: string): string;
+    }
+    interface IWalletPlugin {
+        account: IWalletAccount;
+        accounts: Promise<string[]>;
+        address: string;
+        balance: Promise<BigNumber>;
+        balanceOf(address: string): Promise<BigNumber>;
+        chainId: number;
+        createAccount(): IWalletAccount;
+        decode(abi: any, event: IWalletLog | IWalletEventLog, raw?: {
+            data: string;
+            topics: string[];
+        }): IWalletEvent;
+        decodeEventData(data: IWalletLog, events?: any): Promise<IWalletEvent>;
+        decodeLog(inputs: any, hexString: string, topics: any): any;
+        defaultAccount: string;
+        getAbiEvents(abi: any[]): any;
+        getAbiTopics(abi: any[], eventNames: string[]): any[];
+        getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>;
+        getBlockNumber(): Promise<number>;
+        getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
+        getChainId(): Promise<number>;
+        getContractAbi(address: string): any;
+        getContractAbiEvents(address: string): any;
+        methods(...args: any): Promise<any>;
+        set privateKey(value: string);
+        recoverSigner(msg: string, signature: string): Promise<string>;
+        registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
+        registerAbiContracts(abiHash: string, address: string | string[], handler?: any): any;
+        send(to: string, amount: number): Promise<IWalletTransactionReceipt>;
+        scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<IWalletEvent[]>;
+        signMessage(msg: string): Promise<string>;
+        signTransaction(tx: any, privateKey?: string): Promise<string>;
+        tokenInfo(address: string): Promise<IWalletTokenInfo>;
+        utils: IWalletUtils;
+        verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
+        soliditySha3(...val: any[]): string;
+    }
+    interface ICachePlugin {
+        del(key: string): Promise<boolean>;
+        get(key: string): Promise<string>;
+        getValue(key: string): Promise<any>;
+        set(key: string, value: any, expires?: number): Promise<boolean>;
+    }
+    interface IDBPlugin {
+        getConnection(name?: string): IDBClient;
+    }
+    interface IQueueJob {
+        id: string;
+        progress: number;
+        status: string;
+    }
+    interface IQueuePlugin {
+        createJob(queue: string | number, data: any, waitForResult?: boolean, timeout?: number, retries?: number): Promise<IQueueJob>;
+    }
+    interface IMessagePlugin {
+        publish(channel: string | number, msg: string): void;
+    }
+    interface IPlugins {
+        cache?: ICachePlugin;
+        db?: IDBPlugin;
+        queue?: IQueuePlugin;
+        message?: IMessagePlugin;
+        wallet?: IWalletPlugin;
+    }
     interface IField {
         prop?: string;
         field?: string;
@@ -108,7 +284,7 @@ export declare abstract class IPlugin {
 }
 export interface ISession {
     params?: any;
-    plugins: IPlugins;
+    plugins: Types.IPlugins;
 }
 export declare abstract class IRouterPlugin extends IPlugin {
     route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;

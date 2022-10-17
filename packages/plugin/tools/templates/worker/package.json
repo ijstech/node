@@ -5,7 +5,7 @@
         "node": ">=18.0.0"
     },
     "devDependencies": {        
-        "@ijstech/node": "~0.1.11",
+        "@ijstech/node": "~0.1.12",
         "@types/mocha": "9.1.1",
         "@types/node": "18.8.4",
         "mocha": "10.0.0",

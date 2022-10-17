@@ -26,7 +26,7 @@
                 },
                 "plugins": {
                     "cache": false,
-                    "db": false
+                    "db": true
                 },
                 "dependencies": {
                     
