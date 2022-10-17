@@ -1,4 +1,43 @@
 import {BigNumber} from 'bignumber.js';
+export declare namespace Types{
+    interface IField{
+        prop?: string;
+        field?: string;
+        record?: string;
+        size?: number;
+        details?: any;
+        table?: string;
+        dataType?: 'key'|'ref'|'1toM'|'char'|'varchar'|'boolean'|'integer'|'decimal'|'date'|'dateTime'|'time'|'blob'|'text'|'mediumText'|'longText';
+    }
+    interface IFields{[name: string]: IField}    
+    interface IQueryData{[prop: string]: any}
+    export interface IQueryRecord{
+        a: 'i'|'d'|'u', //insert, delete/ update
+        k: string;
+        d: IQueryData;
+    }
+    export interface IQuery{
+        id: number;
+        table: string;
+        fields: IFields;
+        queries?: any[];
+        records?: IQueryRecord[];
+    }
+    export interface IQueryResult {
+        id?: number;
+        result?: any;
+        error?: string;
+    }
+    export interface IDBClient{
+        applyQueries(queries: IQuery[]): Promise<IQueryResult[]>;
+        query(sql: string, params?: any[]): Promise<any>;
+        resolve(table: string, fields: IFields, criteria: any, args: any): Promise<any>;
+        beginTransaction():Promise<boolean>;
+        checkTableExists(tableName: string): Promise<boolean>;
+        commit():Promise<boolean>;
+        rollback(): Promise<boolean>;
+    }
+}
 export interface ISession{
     params?: any;
     plugins: IPlugins;

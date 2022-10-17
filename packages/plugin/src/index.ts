@@ -8,11 +8,49 @@ import Fs from 'fs';
 import Path from 'path';
 import Koa from 'koa';
 import {VM} from '@ijstech/vm';
-import * as Types from '@ijstech/types';
-export {Types};
+import {IPackageScript, BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions, ResponseType, IPlugins, IPluginOptions, IDBClient} from '@ijstech/types';
 export {ResponseType} from '@ijstech/types';
-export {BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions} from '@ijstech/types';
+export {BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions};
 import {PluginCompiler, PluginScript} from '@ijstech/tsc';
+export declare namespace Types{
+    interface IField{
+        prop?: string;
+        field?: string;
+        record?: string;
+        size?: number;
+        details?: any;
+        table?: string;
+        dataType?: 'key'|'ref'|'1toM'|'char'|'varchar'|'boolean'|'integer'|'decimal'|'date'|'dateTime'|'time'|'blob'|'text'|'mediumText'|'longText';
+    }
+    interface IFields{[name: string]: IField}    
+    interface IQueryData{[prop: string]: any}
+    export interface IQueryRecord{
+        a: 'i'|'d'|'u', //insert, delete/ update
+        k: string;
+        d: IQueryData;
+    }
+    export interface IQuery{
+        id: number;
+        table: string;
+        fields: IFields;
+        queries?: any[];
+        records?: IQueryRecord[];
+    }
+    export interface IQueryResult {
+        id?: number;
+        result?: any;
+        error?: string;
+    }
+    export interface IDBClient{
+        applyQueries(queries: IQuery[]): Promise<IQueryResult[]>;
+        query(sql: string, params?: any[]): Promise<any>;
+        resolve(table: string, fields: IFields, criteria: any, args: any): Promise<any>;
+        beginTransaction():Promise<boolean>;
+        checkTableExists(tableName: string): Promise<boolean>;
+        commit():Promise<boolean>;
+        rollback(): Promise<boolean>;
+    }
+};
 
 const RootPath = process.cwd();
 let Modules = {};
@@ -104,7 +142,7 @@ function getPackageDir(pack: string): string{
     else
         return getPackageDir(dir);
 };
-export async function getPackageScript(packName: string, pack?: Types.IPackageScript): Promise<string>{
+export async function getPackageScript(packName: string, pack?: IPackageScript): Promise<string>{
     let result: string;
     let packPath = '';
     if (!pack){
@@ -173,7 +211,7 @@ export interface IRouterRequestData{
     headers?: {[key: string]: any};
 
 }
-export function RouterRequest(ctx: Koa.Context | IRouterRequestData): Types.IRouterRequest{
+export function RouterRequest(ctx: Koa.Context | IRouterRequestData): IRouterRequest{
     if (isContext(ctx)){
         return {
             method: ctx.method,
@@ -225,7 +263,7 @@ export interface IRouterResponseData{
 function isContext(object: any): object is Koa.Context {
     return typeof(object.cookies?.set) == 'function';
 }
-export function RouterResponse(ctx: Koa.Context | IRouterResponseData): Types.IRouterResponse{    
+export function RouterResponse(ctx: Koa.Context | IRouterResponseData): IRouterResponse{    
     if (isContext(ctx)){
         ctx.statusCode = 200;
         return {
@@ -238,7 +276,7 @@ export function RouterResponse(ctx: Koa.Context | IRouterResponseData): Types.IR
             cookie: function(name: string, value: string, option?: any){
                 ctx.cookies.set(name, value, option)
             },
-            end: function(value: any, contentType?: Types.ResponseType){       
+            end: function(value: any, contentType?: ResponseType){       
                 if (!contentType && typeof(value) == 'object')
                     contentType = 'application/json';
                 ctx.response.set('Content-Type', contentType || 'text/plain');
@@ -265,7 +303,7 @@ export function RouterResponse(ctx: Koa.Context | IRouterResponseData): Types.IR
                     option
                 }
             },
-            end: function(value: any, contentType?: Types.ResponseType){       
+            end: function(value: any, contentType?: ResponseType){       
                 ctx.contentType = contentType || 'application/json';
                 ctx.body = value;
             },
@@ -287,18 +325,18 @@ export declare abstract class IPlugin {
 };
 export interface ISession{
     params?: any;
-    plugins: Types.IPlugins;
+    plugins: IPlugins;
 };
 export declare abstract class IRouterPlugin extends IPlugin{
-    route(session: ISession, request: Types.IRouterRequest, response: Types.IRouterResponse): Promise<boolean>;    
+    route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>;    
 };
 export declare abstract class IWorkerPlugin extends IPlugin{    
     process(session: ISession, data: any): Promise<any>;
 };
 class PluginVM{
-    protected options: Types.IPluginOptions;
+    protected options: IPluginOptions;
     public vm: VM;        
-    constructor(options: Types.IPluginOptions){
+    constructor(options: IPluginOptions){
         this.options = options;        
         this.vm = new VM({
             logging: true,
@@ -311,7 +349,7 @@ class PluginVM{
         this.vm.injectGlobalScript(this.options.script);        
         return;
     };
-    private async loadPackage(name: string, pack?: Types.IPackageScript){
+    private async loadPackage(name: string, pack?: IPackageScript){
         let script = await getPackageScript(name, pack);
         if (script)
             this.vm.injectGlobalPackage(name, script);
@@ -378,7 +416,7 @@ class RouterPluginVM extends PluginVM implements IRouterPlugin{
             this.vm.injectGlobalValue('$$data', JSON.stringify(params));
         await this.vm.execute();
     };
-    async route(session: ISession, request: Types.IRouterRequest, response: Types.IRouterResponse): Promise<boolean>{
+    async route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>{
         this.vm.injectGlobalValue('$$request', request);
         this.vm.injectGlobalValue('$$response', response);
         let result = await this.vm.execute();
@@ -450,21 +488,21 @@ class WorkerPluginVM extends PluginVM implements IWorkerPlugin{
         return result;
     };
 };
-function Session(options: Types.IPluginOptions): ISession{
+function Session(options: IPluginOptions): ISession{
     return {
         params: options.params,
         plugins: {}
     };
 };
 class Plugin{
-    protected options: Types.IPluginOptions;
+    protected options: IPluginOptions;
     protected plugin: any;
     protected _session: ISession;
     protected pluginType: string;
     public vm: VM;
     public data: any;
 
-    constructor(options: Types.IPluginOptions){
+    constructor(options: IPluginOptions){
         this.options = options;   
     };
     async addPackage(packName: string, script?: string){
@@ -586,8 +624,8 @@ class Plugin{
 };
 export class Router extends Plugin{    
     protected plugin: IRouterPlugin;
-    protected options: Types.IRouterPluginOptions;    
-    constructor(options: Types.IRouterPluginOptions){
+    protected options: IRouterPluginOptions;    
+    constructor(options: IRouterPluginOptions){
         super(options);
         this.pluginType = 'worker';
     };
@@ -597,7 +635,7 @@ export class Router extends Plugin{
         await result.setup();
         return result;
     };
-    async route(ctx: Koa.Context, request?: Types.IRouterRequest, response?: Types.IRouterResponse): Promise<boolean>{
+    async route(ctx: Koa.Context, request?: IRouterRequest, response?: IRouterResponse): Promise<boolean>{
         if (ctx){
             ctx.origUrl = ctx.url;
             ctx.url = ctx.url.slice(this.options.baseUrl.length);        
@@ -617,8 +655,8 @@ export class Router extends Plugin{
 };
 export class Worker extends Plugin{
     protected plugin: IWorkerPlugin;
-    protected options: Types.IWorkerPluginOptions;    
-    constructor(options: Types.IWorkerPluginOptions){
+    protected options: IWorkerPluginOptions;    
+    constructor(options: IWorkerPluginOptions){
         super(options);
         this.pluginType = 'worker';
     };

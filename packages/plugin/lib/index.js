@@ -4,38 +4,18 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Worker = exports.Router = exports.RouterResponse = exports.RouterRequest = exports.loadModule = exports.getPackageScript = exports.resolveFilePath = exports.BigNumber = exports.Types = void 0;
+exports.Worker = exports.Router = exports.RouterResponse = exports.RouterRequest = exports.loadModule = exports.getPackageScript = exports.resolveFilePath = exports.BigNumber = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const vm_1 = require("@ijstech/vm");
-const Types = __importStar(require("@ijstech/types"));
-exports.Types = Types;
-var types_1 = require("@ijstech/types");
+const types_1 = require("@ijstech/types");
 Object.defineProperty(exports, "BigNumber", { enumerable: true, get: function () { return types_1.BigNumber; } });
 const tsc_1 = require("@ijstech/tsc");
+;
 const RootPath = process.cwd();
 let Modules = {};
 let LoadingPackageName = '';
