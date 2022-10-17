@@ -130,7 +130,8 @@ export class Package{
             }
         }
     };    
-    async getScript(fileName?: string): Promise<ICompilerResult>{        
+    async getScript(fileName?: string): Promise<ICompilerResult>{
+        let parentPath = Path.dirname(fileName);
         fileName = fileName || 'index.ts'; 
         if (!this.scripts[fileName]){          
             await this.init();
@@ -139,12 +140,12 @@ export class Package{
             try{
                 if (this.scconfig.src){
                     if (this.scconfig.src.endsWith('.ts')){
-                        content = await this.getFileContent(fileName)
-                        indexFile = Path.join(Path.dirname(this.scconfig.src), 'index.ts');
+                        content = await this.getFileContent(this.scconfig.src)
+                        indexFile = Path.join(Path.join(Path.dirname(this.scconfig.src), parentPath), 'index.ts');
                     }
                     else{                        
                         content = await this.getFileContent(Path.join(this.scconfig.src, fileName));
-                        indexFile = Path.join(this.scconfig.src, indexFile);
+                        indexFile = Path.join(Path.join(this.scconfig.src, parentPath), indexFile);
                     }
                 }
                 else{                    
@@ -157,7 +158,7 @@ export class Package{
             };
             if (content){
                 let compiler = new Compiler();//new Compiler();
-                await compiler.addFileContent(indexFile/*'index.ts'*/, content, this.name, async (fileName: string, isPackage: boolean): Promise<{fileName: string, script: string, dts?: string}>=>{
+                await compiler.addFileContent(indexFile/*'index.ts'*/, content, this.name, async (fileName: string, isPackage: boolean): Promise<{fileName: string, script: string, dts?: string}>=>{                    
                     if (isPackage && DefaultPlugins.indexOf(fileName) > -1){
                         await compiler.addPackage('bignumber.js');
                         if (fileName == '@ijstech/eth-contract'){                            
@@ -168,7 +169,7 @@ export class Package{
                         };
                         await compiler.addPackage(fileName)
                     }
-                    else{                        
+                    else{
                         let result = await this.fileImporter(fileName, isPackage)
                         if (isPackage){
                             await compiler.addPackage(fileName, result)

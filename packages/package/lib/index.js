@@ -93,6 +93,7 @@ class Package {
     }
     ;
     async getScript(fileName) {
+        let parentPath = path_1.default.dirname(fileName);
         fileName = fileName || 'index.ts';
         if (!this.scripts[fileName]) {
             await this.init();
@@ -101,12 +102,12 @@ class Package {
             try {
                 if (this.scconfig.src) {
                     if (this.scconfig.src.endsWith('.ts')) {
-                        content = await this.getFileContent(fileName);
-                        indexFile = path_1.default.join(path_1.default.dirname(this.scconfig.src), 'index.ts');
+                        content = await this.getFileContent(this.scconfig.src);
+                        indexFile = path_1.default.join(path_1.default.join(path_1.default.dirname(this.scconfig.src), parentPath), 'index.ts');
                     }
                     else {
                         content = await this.getFileContent(path_1.default.join(this.scconfig.src, fileName));
-                        indexFile = path_1.default.join(this.scconfig.src, indexFile);
+                        indexFile = path_1.default.join(path_1.default.join(this.scconfig.src, parentPath), indexFile);
                     }
                 }
                 else {

@@ -4,21 +4,6 @@
         "routes": [
             {
                 "methods": ["GET","POST"],
-                "url": "/hello",
-                "module": "router1.ts",
-                "params": {
-                    "param1": "default param1 value"
-                },
-                "plugins": {
-                    "cache": false,
-                    "db": false
-                },
-                "dependencies": {
-                    
-                }
-            },
-            {
-                "methods": ["GET","POST"],
                 "url": "/hello/:param1/:param2?",
                 "module": "router1.ts",
                 "params": {
@@ -27,6 +12,21 @@
                 "plugins": {
                     "cache": true,
                     "db": true
+                },
+                "dependencies": {
+                    
+                }
+            },
+            {
+                "methods": ["GET","POST"],
+                "url": "/hello",
+                "module": "src/v1/router1/index.ts",
+                "params": {
+                    "param1": "default param1 value"
+                },
+                "plugins": {
+                    "cache": false,
+                    "db": false
                 },
                 "dependencies": {
                     
