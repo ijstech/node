@@ -1,0 +1,20 @@
+{
+    "src": ".",
+    "workers": {
+        "worker1": {
+            "module": "index.ts",
+            "params": {
+                "param1": "default worker1 param1 value"
+            },
+            "plugins": {
+                "cache": false,
+                "db": false,
+                "fetch": true,
+                "wallet": false
+            },
+            "dependencies": {
+                
+            }
+        }
+    }
+}

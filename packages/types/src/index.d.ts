@@ -108,8 +108,9 @@ export interface IWalletRequiredPluginOptions{
     networks: IWalletNetworks;
     accounts: IWalletAccount[];
 }
+type IFetchMethods = 'GET'|'POST'
 export interface IFetchRequiredPluginOptions{
-    methods?: 'GET'|'POST'[];
+    methods?: IFetchMethods[];
     hosts?: string[];
 }
 type stringArray = string | _stringArray
