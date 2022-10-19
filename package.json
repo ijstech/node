@@ -1,7 +1,7 @@
 {
     "name": "@ijstech/node",
     "description": "Secure Node",
-    "version": "0.1.13",
+    "version": "0.1.14",
     "workspaces": [
         "packages/*"
     ],
@@ -20,6 +20,7 @@
         "@ijstech/crypto": "file:./packages/crypto",
         "@ijstech/db": "file:./packages/db",
         "@ijstech/eth-contract": "file:packages/eth-contract",        
+        "@ijstech/fetch": "file:packages/fetch",      
         "@ijstech/http": "file:./packages/http",
         "@ijstech/ipfs": "file:./packages/ipfs",
         "@ijstech/message": "file:./packages/message",
@@ -60,12 +61,13 @@
         "build": "npm run build:modules && npm run build:node",
         "build:examples": "npm run build:example:app",
         "build:example:app": "cd examples/app && npm run build && cd ../../",
-        "build:modules": "npm run build:module:mime&& npm run build:module:ipfs && npm run build:module:storage && npm run build:module:pdm && npm run build:module:wallet && npm run build:module:tsc && npm run build:module:crypto && npm run build:module:package && npm run build:module:plugin && npm run build:module:cache && npm run build:module:db && npm run build:module:message && npm run build:module:queue && npm run build:module:http && npm run build:module:schedule && npm run build:module:vm && npm run build:module:app && npm run build:module:eth-contract",
+        "build:modules": "npm run build:module:fetch && npm run build:module:mime && npm run build:module:ipfs && npm run build:module:storage && npm run build:module:pdm && npm run build:module:wallet && npm run build:module:tsc && npm run build:module:crypto && npm run build:module:package && npm run build:module:plugin && npm run build:module:cache && npm run build:module:db && npm run build:module:message && npm run build:module:queue && npm run build:module:http && npm run build:module:schedule && npm run build:module:vm && npm run build:module:app && npm run build:module:eth-contract",
         "build:module:app": "cd packages/app && npm run build && cd ../../",
         "build:module:cache": "cd packages/cache && npm run build && cd ../../",
         "build:module:crypto": "cd packages/crypto && npm run build && cd ../../",
         "build:module:db": "cd packages/db && npm run build && cd ../../",
         "build:module:eth-contract": "cd packages/eth-contract && npm run build && cd ../../",
+        "build:module:fetch": "cd packages/fetch && npm run build && cd ../../",
         "build:module:http": "cd packages/http && npm run build && cd ../../",
         "build:module:ipfs": "cd packages/ipfs && npm run build && cd ../../",
         "build:module:message": "cd packages/message && npm run build && cd ../../",

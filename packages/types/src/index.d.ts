@@ -108,6 +108,10 @@ export interface IWalletRequiredPluginOptions{
     networks: IWalletNetworks;
     accounts: IWalletAccount[];
 }
+export interface IFetchRequiredPluginOptions{
+    methods?: 'GET'|'POST'[];
+    hosts?: string[];
+}
 type stringArray = string | _stringArray
 interface _stringArray extends Array<stringArray> { }
 export interface IWalletUtils{
@@ -285,6 +289,10 @@ export interface IDomainOptions {
                 password?: string;
                 db?: number;
             };
+        };
+        fetch?: {
+            methods?: 'GET'|'POST'[];
+            hosts?: string[];
         };
         wallet?: {
             accounts?: IWalletAccount[];
@@ -479,5 +487,6 @@ export interface IRequiredPlugins{
     db?: IDBRequiredPluginOptions,
     queue?: IQueueRequiredPluginOptions,
     message?: IMessageRequiredPluginOptions,
-    wallet?: IWalletRequiredPluginOptions
+    wallet?: IWalletRequiredPluginOptions,
+    fetch?: IFetchRequiredPluginOptions,
 }

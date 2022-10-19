@@ -177,6 +177,8 @@ export class Scheduler {
                                 plugins.db = {default: job.pack.options.plugins.db}
                             if (worker.plugins?.wallet)
                                 plugins.wallet = job.pack.options.plugins.wallet
+                            if (worker.plugins?.fetch)
+                                plugins.fetch = job.pack.options.plugins.fetch || {methods: ['GET']}
                             job.plugin = new Worker({
                                 plugins: plugins,
                                 dependencies: worker.moduleScript.dependencies,

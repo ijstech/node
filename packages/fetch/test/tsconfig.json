@@ -1,0 +1,13 @@
+{   
+    "include": [
+        "."
+    ],
+    "compilerOptions": {
+        "baseUrl": ".",   
+		"rootDir": ".",
+        "esModuleInterop": true,
+		"paths": {
+            "@ijstech/*": ["../../*"]
+        }
+    }
+}

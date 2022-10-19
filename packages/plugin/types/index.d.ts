@@ -278,6 +278,7 @@ export interface IRequiredPlugins {
     queue?: QueueName[];
     cache?: boolean;
     db?: boolean;
+    fetch?: boolean;
 }
 export declare abstract class IPlugin {
     init?(session: ISession, params?: any): Promise<void>;

@@ -81,7 +81,7 @@ class Queue {
                 jobQueue: this.options.jobQueue
             });
             this.queue.processJob(async (job) => {
-                var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+                var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
                 if ((_a = job.data) === null || _a === void 0 ? void 0 : _a.worker) {
                     let worker = job.data.worker;
                     let pack;
@@ -99,6 +99,8 @@ class Queue {
                                 plugins.db = { default: pack.options.plugins.db };
                             if ((_d = module.plugins) === null || _d === void 0 ? void 0 : _d.wallet)
                                 plugins.wallet = pack.options.plugins.wallet;
+                            if ((_e = module.plugins) === null || _e === void 0 ? void 0 : _e.fetch)
+                                plugins.fetch = pack.options.plugins.fetch || { methods: ['GET'] };
                             let params = {};
                             for (let v in module.params)
                                 params[v] = module.params[v];
@@ -117,7 +119,7 @@ class Queue {
                         console.error('Domain package not found: ' + worker.domain);
                     return true;
                 }
-                else if (this.packageManager && ((_f = (_e = job.data) === null || _e === void 0 ? void 0 : _e.request) === null || _f === void 0 ? void 0 : _f.hostname)) {
+                else if (this.packageManager && ((_g = (_f = job.data) === null || _f === void 0 ? void 0 : _f.request) === null || _g === void 0 ? void 0 : _g.hostname)) {
                     let request = job.data.request;
                     let { options, pack, params, route } = await this.packageManager.getDomainRouter({
                         domain: request.hostname,
@@ -131,11 +133,11 @@ class Queue {
                             if (script) {
                                 let plugins = {};
                                 if (options && options.plugins) {
-                                    if ((_g = route.plugins) === null || _g === void 0 ? void 0 : _g.db)
+                                    if ((_h = route.plugins) === null || _h === void 0 ? void 0 : _h.db)
                                         plugins.db = { default: options.plugins.db };
-                                    if ((_h = route.plugins) === null || _h === void 0 ? void 0 : _h.cache)
+                                    if ((_j = route.plugins) === null || _j === void 0 ? void 0 : _j.cache)
                                         plugins.cache = options.plugins.cache;
-                                    if ((_j = route.plugins) === null || _j === void 0 ? void 0 : _j.wallet)
+                                    if ((_k = route.plugins) === null || _k === void 0 ? void 0 : _k.wallet)
                                         plugins.wallet = options.plugins.wallet;
                                 }
                                 ;

@@ -295,12 +295,18 @@ class PluginVM {
             this.vm.injectGlobalPackage(name, script);
     }
     async loadDependencies() {
-        if (this.options.plugins && this.options.plugins.db)
-            await this.loadPackage('@ijstech/pdm');
-        if (this.options.plugins && this.options.plugins.wallet) {
-            await this.loadPackage('bignumber.js');
-            await this.loadPackage('@ijstech/wallet');
-            await this.loadPackage('@ijstech/eth-contract');
+        if (this.options.plugins) {
+            if (this.options.plugins.db)
+                await this.loadPackage('@ijstech/pdm');
+            if (this.options.plugins.wallet) {
+                await this.loadPackage('bignumber.js');
+                await this.loadPackage('@ijstech/wallet');
+                await this.loadPackage('@ijstech/eth-contract');
+            }
+            ;
+            if (this.options.plugins.fetch) {
+                await this.loadPackage('@ijstech/fetch');
+            }
         }
         ;
         if (this.options.dependencies) {

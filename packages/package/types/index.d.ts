@@ -12,6 +12,7 @@ export interface IRoute {
         cache?: boolean;
         db?: boolean;
         wallet?: boolean;
+        fetch?: boolean;
     };
     dependencies?: {
         [packageName: string]: string;
@@ -25,6 +26,7 @@ export interface IWorker {
         cache?: boolean;
         db?: boolean;
         wallet?: boolean;
+        fetch?: boolean;
     };
     dependencies?: {
         [packageName: string]: string;

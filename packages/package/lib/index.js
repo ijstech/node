@@ -9,7 +9,7 @@ const storage_1 = require("@ijstech/storage");
 const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
 const pathToRegexp_1 = require("./pathToRegexp");
-const DefaultPlugins = ['@ijstech/crypto', '@ijstech/plugin', '@ijstech/wallet', '@ijstech/eth-contract'];
+const DefaultPlugins = ['@ijstech/crypto', '@ijstech/fetch', '@ijstech/plugin', '@ijstech/wallet', '@ijstech/eth-contract'];
 ;
 ;
 ;

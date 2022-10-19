@@ -8,7 +8,8 @@
             "plugins": {
                 "cache": false,
                 "db": false,
-                "wallet": false
+                "wallet": false,
+                "fetch": false
             },
             "dependencies": {
                 

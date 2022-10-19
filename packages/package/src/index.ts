@@ -6,7 +6,7 @@ import { IRouterPluginMethod, IDomainOptions} from '@ijstech/types';
 import {match} from './pathToRegexp';
 export {IPackage};
 
-const DefaultPlugins = ['@ijstech/crypto', '@ijstech/plugin', '@ijstech/wallet', '@ijstech/eth-contract'];
+const DefaultPlugins = ['@ijstech/crypto', '@ijstech/fetch', '@ijstech/plugin', '@ijstech/wallet', '@ijstech/eth-contract'];
 export interface IRoute{
     methods: IRouterPluginMethod[];
     url: string;
@@ -17,6 +17,7 @@ export interface IRoute{
         cache?: boolean;
         db?: boolean;
         wallet?: boolean;
+        fetch?: boolean;
     };
     dependencies?: {
         [packageName: string]: string;
@@ -30,6 +31,7 @@ export interface IWorker{
         cache?: boolean;
         db?: boolean;
         wallet?: boolean;
+        fetch?: boolean;
     };
     dependencies?: {
         [packageName: string]: string;

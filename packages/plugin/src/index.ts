@@ -492,6 +492,7 @@ export interface IRequiredPlugins{
     queue?: QueueName[];
     cache?: boolean;
     db?: boolean;
+    fetch?: boolean;
 };
 export declare abstract class IPlugin {    
     init?(session: ISession, params?: any):Promise<void>;
@@ -528,12 +529,17 @@ class PluginVM{
             this.vm.injectGlobalPackage(name, script);
     }
     async loadDependencies(){
-        if (this.options.plugins && this.options.plugins.db)
-            await this.loadPackage('@ijstech/pdm');
-        if (this.options.plugins && this.options.plugins.wallet){
-            await this.loadPackage('bignumber.js');
-            await this.loadPackage('@ijstech/wallet');
-            await this.loadPackage('@ijstech/eth-contract');
+        if (this.options.plugins){
+            if (this.options.plugins.db)
+                await this.loadPackage('@ijstech/pdm');
+            if (this.options.plugins.wallet){
+                await this.loadPackage('bignumber.js');
+                await this.loadPackage('@ijstech/wallet');
+                await this.loadPackage('@ijstech/eth-contract');
+            };  
+            if (this.options.plugins.fetch){
+                await this.loadPackage('@ijstech/fetch');
+            }
         };         
         if (this.options.dependencies){
             for (let packname in this.options.dependencies){
@@ -763,14 +769,14 @@ class Plugin{
             console.dir(err)
         }
     };
-    get session(): ISession{        
+    get session(): ISession{     
         if (this._session)
             return this._session;
         let result = Session(this.options);  
         let script = '';      
         this._session = result;
         if (this.options.plugins){
-            for (let v in this.options.plugins){                
+            for (let v in this.options.plugins){      
                 try{
                     let m = require('@ijstech/' + v);
                     let plugin = m.loadPlugin(this, this.options.plugins[v], this.plugin.vm);

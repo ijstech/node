@@ -4,11 +4,12 @@
         "worker1": {
             "module": "index.ts",
             "params": {
-                "param1": "default worker1 param1 value"
+                "param2": "default worker1 param2 value"
             },
             "plugins": {
                 "cache": false,
-                "db": false
+                "db": false,
+                "fetch": false
             },
             "dependencies": {
                 
@@ -17,12 +18,13 @@
         "worker2": {
             "module": "index.ts",
             "params": {
-                "param1": "default worker2 param1 value",
+                "param2": "default worker2 param2 value",
                 "db": true
             },
             "plugins": {
                 "cache": true,
-                "db": true
+                "db": true,
+                "fetch": true
             },
             "dependencies": {
                 
@@ -30,6 +32,12 @@
         }
     },
     "schedules": [
+        {        
+            "id": "job:111",
+            "cron": "*/4 * * * * *", 
+            "worker": "worker2",
+            "params": {"param1": "fetch"}
+        },
         {        
             "id": "job:113",
             "cron": "*/4 * * * * *", 

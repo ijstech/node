@@ -116,6 +116,8 @@ export class Queue {
                                 plugins.db = {default: pack.options.plugins.db};
                             if (module.plugins?.wallet)
                                 plugins.wallet = pack.options.plugins.wallet;
+                            if (module.plugins?.fetch)
+                                plugins.fetch = pack.options.plugins.fetch || {methods: ['GET']}
                             let params = {};
                             for (let v in module.params)
                                 params[v] = module.params[v];

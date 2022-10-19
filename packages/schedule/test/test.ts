@@ -36,10 +36,8 @@ async function test(){
         storage: Config.storage,
         domains: {
             "localhost": [{
-                pack: {
-                    packagePath: cid?cid:Path.resolve(__dirname, 'worker'), 
-                    options: Config
-                }
+                packagePath: cid?cid:Path.resolve(__dirname, 'worker'), 
+                options: Config
             }]
         }
     });    
@@ -50,10 +48,8 @@ async function test(){
         storage: Config.storage,
         domains: {
             "localhost": [{
-                pack: {
-                    packagePath: cid?cid:Path.resolve(__dirname, 'worker'), 
-                    options: Config
-                }
+                packagePath: cid?cid:Path.resolve(__dirname, 'worker'), 
+                options: Config
             }]
         }
     });     
