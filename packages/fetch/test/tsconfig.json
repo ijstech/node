@@ -1,11 +1,10 @@
 {   
     "include": [
         ".", 
-        "../src"
+        "../src5"
     ],
     "compilerOptions": {
-        "baseUrl": ".",   
-		"rootDir": ".",
+        "baseUrl": ".", 
         "esModuleInterop": true,
 		"paths": {
             "@ijstech/fetch": ["../src"],
