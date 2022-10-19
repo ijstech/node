@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {Fetch} from '../src';
+import {Fetch} from '@ijstech/fetch';
 
 describe('Fetch', function () {
   it('GET', async function(){
