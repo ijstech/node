@@ -4,7 +4,8 @@ export default class Router implements IRouterPlugin {
         let result:any = {
             msg: `${request.method} hello`,
             params: request.params
-        }
+        };
+        result.params.param3 = session.params.param3;
         if (request.params.param1 == 'db'){
             let client = session.plugins.db.getConnection();            
             result.dbResult = await client.query('select sysdate() as sysdate');
