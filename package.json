@@ -1,7 +1,7 @@
 {
     "name": "@ijstech/node",
     "description": "Secure Node",
-    "version": "0.1.14",
+    "version": "0.1.16",
     "engines": {
         "node": ">=18.0.0"
     },
@@ -17,12 +17,12 @@
         "url": "https://github.com/ijstech/node"
     },
     "dependencies": {
-        "@ijstech/eth-wallet": "0.1.16",
+        "@ijstech/eth-wallet": "0.1.20",
         "@ijstech/app": "file:./packages/app",
         "@ijstech/cache": "file:./packages/cache",
         "@ijstech/crypto": "file:./packages/crypto",
         "@ijstech/db": "file:./packages/db",
-        "@ijstech/eth-contract": "file:packages/eth-contract",        
+        "@ijstech/eth-contract": "file:packages/eth-contract",
         "@ijstech/fetch": "file:packages/fetch",      
         "@ijstech/http": "file:./packages/http",
         "@ijstech/ipfs": "file:./packages/ipfs",
@@ -55,7 +55,7 @@
         "@types/mysql": "2.15.20",
         "@types/node": "17.0.6",
         "@types/redis": "2.8.32",
-        "ganache": "^7.0.3",
+        "ganache": "^7.5.0",
         "mocha": "10.0.0",
         "ts-node": "10.9.1",
         "typescript": "4.3.5"

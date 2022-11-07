@@ -133,8 +133,8 @@ export class Package{
         }
     };    
     async getScript(fileName?: string): Promise<ICompilerResult>{
-        let parentPath = Path.dirname(fileName);
         fileName = fileName || 'index.ts'; 
+        let parentPath = Path.dirname(fileName);
         if (!this.scripts[fileName]){          
             await this.init();
             let content = '';

@@ -93,8 +93,8 @@ class Package {
     }
     ;
     async getScript(fileName) {
-        let parentPath = path_1.default.dirname(fileName);
         fileName = fileName || 'index.ts';
+        let parentPath = path_1.default.dirname(fileName);
         if (!this.scripts[fileName]) {
             await this.init();
             let content = '';
