@@ -118,6 +118,7 @@ export declare namespace Types{
         address: string;
         balance: Promise<BigNumber>;
         balanceOf(address: string): Promise<BigNumber>;    
+        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
         chainId: number;
         createAccount(): IWalletAccount;
         decode(abi:any, event:IWalletLog|IWalletEventLog, raw?:{data: string,topics: string[]}): IWalletEvent;    
@@ -138,6 +139,7 @@ export declare namespace Types{
         registerAbi(abi: any[] | string, address?: string|string[], handler?: any): string;
         registerAbiContracts(abiHash: string, address: string|string[], handler?: any): any;
         send(to: string, amount: number): Promise<IWalletTransactionReceipt>;		
+        _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<IWalletTransactionReceipt>;
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<IWalletEvent[]>;		
         signMessage(msg: string): Promise<string>;
         signTransaction(tx: any, privateKey?: string): Promise<string>;
