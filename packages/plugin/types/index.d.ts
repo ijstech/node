@@ -325,7 +325,7 @@ declare class Plugin {
     createVM(): any;
     createModule(): Promise<any>;
     init(params?: any): Promise<void>;
-    get session(): ISession;
+    getSession(): Promise<ISession>;
 }
 export declare class Router extends Plugin {
     protected plugin: IRouterPlugin;

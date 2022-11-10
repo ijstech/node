@@ -718,14 +718,14 @@ class Plugin{
             for (let v in this.options.plugins){  
                 if (v == 'db'){
                     let m = require('@ijstech/pdm');
-                    m.loadPlugin(this, this.options.plugins.db);                    
+                    await m.loadPlugin(this, this.options.plugins.db);                    
                     break;
                 };
             };
             for (let v in this.options.dependencies) {                
                 if (['@ijstech/crypto'].indexOf(v) > -1){
                     let m = require(v);
-                    m.loadPlugin(this);
+                    await m.loadPlugin(this);
                 }
             };
         };
@@ -763,13 +763,13 @@ class Plugin{
     async init(params?: any){
         try{
             await this.createPlugin();
-            await this.plugin.init(this.session, params);
+            await this.plugin.init(await this.getSession(), params);
         }
         catch(err){
             console.dir(err)
         }
     };
-    get session(): ISession{     
+    async getSession(): Promise<ISession>{     
         if (this._session)
             return this._session;
         let result = Session(this.options);  
@@ -779,14 +779,14 @@ class Plugin{
             for (let v in this.options.plugins){      
                 try{
                     let m = require('@ijstech/' + v);
-                    let plugin = m.loadPlugin(this, this.options.plugins[v], this.plugin.vm);
+                    let plugin = await m.loadPlugin(this, this.options.plugins[v], this.plugin.vm);
                     if (typeof(plugin) == 'string')
                         script += plugin
                     else if (plugin)
                         result.plugins[v] = plugin;
                     if (v == 'db'){
                         let m = require('@ijstech/pdm');
-                        let plugin = m.loadPlugin(this, this.options.plugins[v], this.plugin.vm);
+                        let plugin = await m.loadPlugin(this, this.options.plugins[v], this.plugin.vm);
                         if (typeof(plugin) == 'string')
                             script += plugin;
                     };
@@ -827,7 +827,7 @@ export class Router extends Plugin{
             request = request || RouterRequest(ctx)
             response = response || RouterResponse(ctx)
             if (request && response)
-                result = await this.plugin.route(this.session, request, response);
+                result = await this.plugin.route(await this.getSession(), request, response);
             return result;
         }
     };
@@ -848,7 +848,7 @@ export class Worker extends Plugin{
     async message(channel: string, msg: string){
         try{
             await this.createPlugin();
-            await this.plugin.process(this.session, {channel, msg});
+            await this.plugin.process(await this.getSession(), {channel, msg});
         }
         catch(err){
             console.dir(err)
@@ -859,7 +859,7 @@ export class Worker extends Plugin{
         this.options.processing = true;
         try{            
             await this.createPlugin();            
-            result = await this.plugin.process(this.session, data);
+            result = await this.plugin.process(await this.getSession(), data);
         }
         catch(err){
             console.dir(err)
