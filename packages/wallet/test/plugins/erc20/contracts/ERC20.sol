@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity =0.6.11;
+pragma solidity ^0.8.13;
 
 import './IERC20.sol';
 import './SafeMath.sol';
@@ -34,7 +34,7 @@ contract ERC20 is IERC20 {
     mapping (address => mapping (address => uint256)) public override allowance;
     uint256 public override totalSupply;
 
-    constructor(string memory _symbol, string memory _name, uint256 _initialSupply, uint256 _cap, uint8 _decimals) public {
+    constructor(string memory _symbol, string memory _name, uint256 _initialSupply, uint256 _cap, uint8 _decimals) {
         owners[msg.sender] = 1;
         emit Auth(msg.sender, 1);
         symbol = _symbol;

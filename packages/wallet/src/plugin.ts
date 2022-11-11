@@ -82,19 +82,19 @@ export interface IWalletEvent{
     rawData: any;
 }
 export interface IWalletTransaction {
-    hash: string;
+    hash?: string;
     nonce: number;
-    blockHash: string | null;
-    blockNumber: number | null;
-    transactionIndex: number | null;
-    from: string;
+    blockHash?: string | null;
+    blockNumber?: number | null;
+    transactionIndex?: number | null;
+    from?: string;
     to: string | null;
-    value: string;
-    gasPrice: string;
+    value?: string | number;
+    gasPrice: string | number;
     maxPriorityFeePerGas?: number | string | BigNumber;
     maxFeePerGas?: number | string | BigNumber;
     gas: number;
-    input: string;
+    input?: string;
 }
 export interface IWalletBlockTransactionObject{
     number: number;
@@ -175,6 +175,7 @@ export interface IWallet {
     getChainId(): Promise<number>;
     getContractAbi(address: string): any;
     getContractAbiEvents(address: string): any;
+    getTransaction(transactionHash: string): Promise<IWalletTransaction>;
     methods(...args: any): Promise<any>;
     set privateKey(value: string);
     recoverSigner(msg: string, signature: string): Promise<string>;		
@@ -228,6 +229,7 @@ export interface IWalletPluginObject{
     getBlockNumber(): Promise<number>;
     getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
     getChainId():number;
+    getTransaction(transactionHash: string): Promise<string>;
     setPrivateKey(value: string): void;
     recoverSigner(msg: string, signature: string): Promise<string>;
     registerAbi(abi: any[] | string, address?: string|string[]): string;
@@ -367,6 +369,11 @@ const Wallet: IWallet = {
             _abiEventDict[address] = events;
             return events;
         };
+    },
+    async getTransaction(transactionHash: string): Promise<IWalletTransaction>{
+        let wallet: IWalletPluginObject = global.$$wallet_plugin;
+        let result = await wallet.getTransaction(transactionHash);
+        return JSON.parse(result);
     },
     async methods(...args){
         let wallet: IWalletPluginObject = global.$$wallet_plugin;

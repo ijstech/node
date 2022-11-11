@@ -145,6 +145,7 @@ export declare namespace Types {
         getChainId(): Promise<number>;
         getContractAbi(address: string): any;
         getContractAbiEvents(address: string): any;
+        getTransaction(transactionHash: string): Promise<IWalletTransaction>;
         methods(...args: any): Promise<any>;
         set privateKey(value: string);
         recoverSigner(msg: string, signature: string): Promise<string>;

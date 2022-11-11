@@ -1,0 +1,236 @@
+define("erc20/ERC20.json.ts", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    ///<amd-module name='erc20/ERC20.json.ts'/> 
+    exports.default = {
+        "abi": [
+            { "inputs": [{ "internalType": "string", "name": "_symbol", "type": "string" }, { "internalType": "string", "name": "_name", "type": "string" }, { "internalType": "uint256", "name": "_initialSupply", "type": "uint256" }, { "internalType": "uint256", "name": "_cap", "type": "uint256" }, { "internalType": "uint8", "name": "_decimals", "type": "uint8" }], "stateMutability": "nonpayable", "type": "constructor" },
+            { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "spender", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" }], "name": "Approval", "type": "event" },
+            { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "account", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "auth", "type": "uint256" }], "name": "Auth", "type": "event" },
+            { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "from", "type": "address" }, { "indexed": true, "internalType": "address", "name": "to", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "value", "type": "uint256" }], "name": "Transfer", "type": "event" },
+            { "inputs": [{ "internalType": "address", "name": "", "type": "address" }, { "internalType": "address", "name": "", "type": "address" }], "name": "allowance", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+            { "inputs": [{ "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "value", "type": "uint256" }], "name": "approve", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "nonpayable", "type": "function" },
+            { "inputs": [{ "internalType": "address", "name": "", "type": "address" }], "name": "balanceOf", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+            { "inputs": [{ "internalType": "address", "name": "account", "type": "address" }, { "internalType": "uint256", "name": "value", "type": "uint256" }], "name": "burn", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+            { "inputs": [], "name": "cap", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+            { "inputs": [], "name": "decimals", "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }], "stateMutability": "view", "type": "function" },
+            { "inputs": [{ "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "subtractedValue", "type": "uint256" }], "name": "decreaseAllowance", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "nonpayable", "type": "function" },
+            { "inputs": [{ "internalType": "address", "name": "account", "type": "address" }], "name": "deny", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+            { "inputs": [{ "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "addedValue", "type": "uint256" }], "name": "increaseAllowance", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "nonpayable", "type": "function" },
+            { "inputs": [{ "internalType": "address", "name": "account", "type": "address" }, { "internalType": "uint256", "name": "value", "type": "uint256" }], "name": "mint", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+            { "inputs": [], "name": "name", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function" },
+            { "inputs": [{ "internalType": "address", "name": "", "type": "address" }], "name": "owners", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+            { "inputs": [{ "internalType": "address", "name": "account", "type": "address" }], "name": "rely", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+            { "inputs": [], "name": "symbol", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function" },
+            { "inputs": [], "name": "totalSupply", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+            { "inputs": [{ "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "value", "type": "uint256" }], "name": "transfer", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "nonpayable", "type": "function" },
+            { "inputs": [{ "internalType": "address", "name": "from", "type": "address" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "value", "type": "uint256" }], "name": "transferFrom", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "nonpayable", "type": "function" }
+        ],
+        "bytecode": "60a06040523480156200001157600080fd5b50604051620015013803806200150183398101604081905262000034916200018b565b336000818152602081815260409182902060019081905591519182527f881ab8a22f316bf86588be8193257d22bb9209d2b24689ab26fbd3be12b10b05910160405180910390a26001620000898682620002b3565b506002620000988582620002b3565b5060039190915560068290553360009081526004602052604090209190915560ff16608052506200037f9050565b634e487b7160e01b600052604160045260246000fd5b600082601f830112620000ee57600080fd5b81516001600160401b03808211156200010b576200010b620000c6565b604051601f8301601f19908116603f01168101908282118183101715620001365762000136620000c6565b816040528381526020925086838588010111156200015357600080fd5b600091505b8382101562000177578582018301518183018401529082019062000158565b600093810190920192909252949350505050565b600080600080600060a08688031215620001a457600080fd5b85516001600160401b0380821115620001bc57600080fd5b620001ca89838a01620000dc565b96506020880151915080821115620001e157600080fd5b50620001f088828901620000dc565b9450506040860151925060608601519150608086015160ff811681146200021657600080fd5b809150509295509295909350565b600181811c908216806200023957607f821691505b6020821081036200025a57634e487b7160e01b600052602260045260246000fd5b50919050565b601f821115620002ae57600081815260208120601f850160051c81016020861015620002895750805b601f850160051c820191505b81811015620002aa5782815560010162000295565b5050505b505050565b81516001600160401b03811115620002cf57620002cf620000c6565b620002e781620002e0845462000224565b8462000260565b602080601f8311600181146200031f5760008415620003065750858301515b600019600386901b1c1916600185901b178555620002aa565b600085815260208120601f198616915b8281101562000350578886015182559484019460019091019084016200032f565b50858210156200036f5787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b6080516111666200039b60003960006101ac01526111666000f3fe608060405234801561001057600080fd5b506004361061011b5760003560e01c806340c10f19116100b25780639c52a7f111610081578063a457c2d711610066578063a457c2d714610272578063a9059cbb14610285578063dd62ed3e1461029857600080fd5b80639c52a7f11461024c5780639dc29fac1461025f57600080fd5b806340c10f19146101fc57806365fae35e1461021157806370a082311461022457806395d89b411461024457600080fd5b806323b872dd116100ee57806323b872dd14610194578063313ce567146101a7578063355274ea146101e057806339509351146101e957600080fd5b8063022914a71461012057806306fdde0314610153578063095ea7b31461016857806318160ddd1461018b575b600080fd5b61014061012e366004610f68565b60006020819052908152604090205481565b6040519081526020015b60405180910390f35b61015b6102c3565b60405161014a9190610f83565b61017b610176366004610fef565b610351565b604051901515815260200161014a565b61014060065481565b61017b6101a2366004611019565b610368565b6101ce7f000000000000000000000000000000000000000000000000000000000000000081565b60405160ff909116815260200161014a565b61014060035481565b61017b6101f7366004610fef565b6103c6565b61020f61020a366004610fef565b610409565b005b61020f61021f366004610f68565b610627565b610140610232366004610f68565b60046020526000908152604090205481565b61015b610701565b61020f61025a366004610f68565b61070e565b61020f61026d366004610fef565b61085b565b61017b610280366004610fef565b610a12565b61017b610293366004610fef565b610a55565b6101406102a6366004611055565b600560209081526000928352604080842090915290825290205481565b600280546102d090611088565b80601f01602080910402602001604051908101604052809291908181526020018280546102fc90611088565b80156103495780601f1061031e57610100808354040283529160200191610349565b820191906000526020600020905b81548152906001019060200180831161032c57829003601f168201915b505050505081565b600061035e338484610a62565b5060015b92915050565b6000610375848484610c16565b73ffffffffffffffffffffffffffffffffffffffff84166000908152600560209081526040808320338085529252909120546103bc9186916103b79086610e29565b610a62565b5060019392505050565b33600081815260056020908152604080832073ffffffffffffffffffffffffffffffffffffffff87168452909152812054909161035e9185906103b79086610e72565b33600090815260208190526040902054600114610487576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601c60248201527f546f6b656e3a204e6f6e20617574686f72697a6564206163636573730000000060448201526064015b60405180910390fd5b73ffffffffffffffffffffffffffffffffffffffff8216610504576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601f60248201527f45524332303a206d696e7420746f20746865207a65726f206164647265737300604482015260640161047e565b6006546105119082610e72565b6006556003541580610527575060065460035410155b61058d576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601960248201527f45524332304361707065643a2063617020657863656564656400000000000000604482015260640161047e565b73ffffffffffffffffffffffffffffffffffffffff82166000908152600460205260409020546105bd9082610e72565b73ffffffffffffffffffffffffffffffffffffffff83166000818152600460205260408082209390935591519091907fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef9061061b9085815260200190565b60405180910390a35050565b336000908152602081905260409020546001146106a0576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601c60248201527f546f6b656e3a204e6f6e20617574686f72697a65642061636365737300000000604482015260640161047e565b73ffffffffffffffffffffffffffffffffffffffff81166000818152602081815260409182902060019081905591519182527f881ab8a22f316bf86588be8193257d22bb9209d2b24689ab26fbd3be12b10b0591015b60405180910390a250565b600180546102d090611088565b33600090815260208190526040902054600114610787576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601c60248201527f546f6b656e3a204e6f6e20617574686f72697a65642061636365737300000000604482015260640161047e565b3373ffffffffffffffffffffffffffffffffffffffff821603610806576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601660248201527f417574683a2043616e6e6f742073656c662064656e7900000000000000000000604482015260640161047e565b73ffffffffffffffffffffffffffffffffffffffff8116600081815260208181526040808320839055519182527f881ab8a22f316bf86588be8193257d22bb9209d2b24689ab26fbd3be12b10b0591016106f6565b336000908152602081905260409020546001146108d4576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601c60248201527f546f6b656e3a204e6f6e20617574686f72697a65642061636365737300000000604482015260640161047e565b73ffffffffffffffffffffffffffffffffffffffff8216610977576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602160248201527f45524332303a206275726e2066726f6d20746865207a65726f2061646472657360448201527f7300000000000000000000000000000000000000000000000000000000000000606482015260840161047e565b6006546109849082610e29565b60065573ffffffffffffffffffffffffffffffffffffffff82166000908152600460205260409020546109b79082610e29565b73ffffffffffffffffffffffffffffffffffffffff83166000818152600460205260408082209390935591517fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef9061061b9085815260200190565b33600081815260056020908152604080832073ffffffffffffffffffffffffffffffffffffffff87168452909152812054909161035e9185906103b79086610e29565b600061035e338484610c16565b73ffffffffffffffffffffffffffffffffffffffff8316610b04576040517f08c379a0000000000000000000000000000000000000000000000000000000008152602060048201526024808201527f45524332303a20617070726f76652066726f6d20746865207a65726f2061646460448201527f7265737300000000000000000000000000000000000000000000000000000000606482015260840161047e565b73ffffffffffffffffffffffffffffffffffffffff8216610ba7576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602260248201527f45524332303a20617070726f766520746f20746865207a65726f20616464726560448201527f7373000000000000000000000000000000000000000000000000000000000000606482015260840161047e565b73ffffffffffffffffffffffffffffffffffffffff83811660008181526005602090815260408083209487168084529482529182902085905590518481527f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b92591015b60405180910390a3505050565b73ffffffffffffffffffffffffffffffffffffffff8316610cb9576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602560248201527f45524332303a207472616e736665722066726f6d20746865207a65726f20616460448201527f6472657373000000000000000000000000000000000000000000000000000000606482015260840161047e565b73ffffffffffffffffffffffffffffffffffffffff8216610d5c576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602360248201527f45524332303a207472616e7366657220746f20746865207a65726f206164647260448201527f6573730000000000000000000000000000000000000000000000000000000000606482015260840161047e565b73ffffffffffffffffffffffffffffffffffffffff8316600090815260046020526040902054610d8c9082610e29565b73ffffffffffffffffffffffffffffffffffffffff8085166000908152600460205260408082209390935590841681522054610dc89082610e72565b73ffffffffffffffffffffffffffffffffffffffff80841660008181526004602052604090819020939093559151908516907fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef90610c099085815260200190565b6000610e6b83836040518060400160405280601e81526020017f536166654d6174683a207375627472616374696f6e206f766572666c6f770000815250610eeb565b9392505050565b600080610e7f838561110a565b905083811015610e6b576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601b60248201527f536166654d6174683a206164646974696f6e206f766572666c6f770000000000604482015260640161047e565b60008184841115610f29576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161047e9190610f83565b506000610f36848661111d565b95945050505050565b803573ffffffffffffffffffffffffffffffffffffffff81168114610f6357600080fd5b919050565b600060208284031215610f7a57600080fd5b610e6b82610f3f565b600060208083528351808285015260005b81811015610fb057858101830151858201604001528201610f94565b5060006040828601015260407fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0601f8301168501019250505092915050565b6000806040838503121561100257600080fd5b61100b83610f3f565b946020939093013593505050565b60008060006060848603121561102e57600080fd5b61103784610f3f565b925061104560208501610f3f565b9150604084013590509250925092565b6000806040838503121561106857600080fd5b61107183610f3f565b915061107f60208401610f3f565b90509250929050565b600181811c9082168061109c57607f821691505b6020821081036110d5577f4e487b7100000000000000000000000000000000000000000000000000000000600052602260045260246000fd5b50919050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b80820180821115610362576103626110db565b81810381811115610362576103626110db56fea2646970667358221220b54e1f3a046efb171e462b1f57cb53f1577344cbd414e20600f85f649219a93964736f6c63430008110033"
+    };
+});
+define("erc20/ERC20.ts", ["require", "exports", "@ijstech/eth-contract", "erc20/ERC20.json.ts"], function (require, exports, eth_contract_1, ERC20_json_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ERC20 = void 0;
+    class ERC20 extends eth_contract_1.Contract {
+        constructor(wallet, address) {
+            super(wallet, address, ERC20_json_1.default.abi, ERC20_json_1.default.bytecode);
+            this.assign();
+        }
+        deploy(params) {
+            return this.__deploy([params.symbol, params.name, this.wallet.utils.toString(params.initialSupply), this.wallet.utils.toString(params.cap), this.wallet.utils.toString(params.decimals)]);
+        }
+        parseApprovalEvent(receipt) {
+            return this.parseEvents(receipt, "Approval").map(e => this.decodeApprovalEvent(e));
+        }
+        decodeApprovalEvent(event) {
+            let result = event.data;
+            return {
+                owner: result.owner,
+                spender: result.spender,
+                value: new eth_contract_1.BigNumber(result.value),
+                _event: event
+            };
+        }
+        parseAuthEvent(receipt) {
+            return this.parseEvents(receipt, "Auth").map(e => this.decodeAuthEvent(e));
+        }
+        decodeAuthEvent(event) {
+            let result = event.data;
+            return {
+                account: result.account,
+                auth: new eth_contract_1.BigNumber(result.auth),
+                _event: event
+            };
+        }
+        parseTransferEvent(receipt) {
+            return this.parseEvents(receipt, "Transfer").map(e => this.decodeTransferEvent(e));
+        }
+        decodeTransferEvent(event) {
+            let result = event.data;
+            return {
+                from: result.from,
+                to: result.to,
+                value: new eth_contract_1.BigNumber(result.value),
+                _event: event
+            };
+        }
+        assign() {
+            let allowanceParams = (params) => [params.param1, params.param2];
+            let allowance_call = async (params) => {
+                let result = await this.call('allowance', allowanceParams(params));
+                return new eth_contract_1.BigNumber(result);
+            };
+            this.allowance = allowance_call;
+            let balanceOf_call = async (param1) => {
+                let result = await this.call('balanceOf', [param1]);
+                return new eth_contract_1.BigNumber(result);
+            };
+            this.balanceOf = balanceOf_call;
+            let cap_call = async () => {
+                let result = await this.call('cap');
+                return new eth_contract_1.BigNumber(result);
+            };
+            this.cap = cap_call;
+            let decimals_call = async () => {
+                let result = await this.call('decimals');
+                return new eth_contract_1.BigNumber(result);
+            };
+            this.decimals = decimals_call;
+            let name_call = async () => {
+                let result = await this.call('name');
+                return result;
+            };
+            this.name = name_call;
+            let owners_call = async (param1) => {
+                let result = await this.call('owners', [param1]);
+                return new eth_contract_1.BigNumber(result);
+            };
+            this.owners = owners_call;
+            let symbol_call = async () => {
+                let result = await this.call('symbol');
+                return result;
+            };
+            this.symbol = symbol_call;
+            let totalSupply_call = async () => {
+                let result = await this.call('totalSupply');
+                return new eth_contract_1.BigNumber(result);
+            };
+            this.totalSupply = totalSupply_call;
+            let approveParams = (params) => [params.spender, this.wallet.utils.toString(params.value)];
+            let approve_send = async (params) => {
+                let result = await this.send('approve', approveParams(params));
+                return result;
+            };
+            let approve_call = async (params) => {
+                let result = await this.call('approve', approveParams(params));
+                return result;
+            };
+            this.approve = Object.assign(approve_send, {
+                call: approve_call
+            });
+            let burnParams = (params) => [params.account, this.wallet.utils.toString(params.value)];
+            let burn_send = async (params) => {
+                let result = await this.send('burn', burnParams(params));
+                return result;
+            };
+            let burn_call = async (params) => {
+                let result = await this.call('burn', burnParams(params));
+                return;
+            };
+            this.burn = Object.assign(burn_send, {
+                call: burn_call
+            });
+            let decreaseAllowanceParams = (params) => [params.spender, this.wallet.utils.toString(params.subtractedValue)];
+            let decreaseAllowance_send = async (params) => {
+                let result = await this.send('decreaseAllowance', decreaseAllowanceParams(params));
+                return result;
+            };
+            let decreaseAllowance_call = async (params) => {
+                let result = await this.call('decreaseAllowance', decreaseAllowanceParams(params));
+                return result;
+            };
+            this.decreaseAllowance = Object.assign(decreaseAllowance_send, {
+                call: decreaseAllowance_call
+            });
+            let deny_send = async (account) => {
+                let result = await this.send('deny', [account]);
+                return result;
+            };
+            let deny_call = async (account) => {
+                let result = await this.call('deny', [account]);
+                return;
+            };
+            this.deny = Object.assign(deny_send, {
+                call: deny_call
+            });
+            let increaseAllowanceParams = (params) => [params.spender, this.wallet.utils.toString(params.addedValue)];
+            let increaseAllowance_send = async (params) => {
+                let result = await this.send('increaseAllowance', increaseAllowanceParams(params));
+                return result;
+            };
+            let increaseAllowance_call = async (params) => {
+                let result = await this.call('increaseAllowance', increaseAllowanceParams(params));
+                return result;
+            };
+            this.increaseAllowance = Object.assign(increaseAllowance_send, {
+                call: increaseAllowance_call
+            });
+            let mintParams = (params) => [params.account, this.wallet.utils.toString(params.value)];
+            let mint_send = async (params) => {
+                let result = await this.send('mint', mintParams(params));
+                return result;
+            };
+            let mint_call = async (params) => {
+                let result = await this.call('mint', mintParams(params));
+                return;
+            };
+            this.mint = Object.assign(mint_send, {
+                call: mint_call
+            });
+            let rely_send = async (account) => {
+                let result = await this.send('rely', [account]);
+                return result;
+            };
+            let rely_call = async (account) => {
+                let result = await this.call('rely', [account]);
+                return;
+            };
+            this.rely = Object.assign(rely_send, {
+                call: rely_call
+            });
+            let transferParams = (params) => [params.to, this.wallet.utils.toString(params.value)];
+            let transfer_send = async (params) => {
+                let result = await this.send('transfer', transferParams(params));
+                return result;
+            };
+            let transfer_call = async (params) => {
+                let result = await this.call('transfer', transferParams(params));
+                return result;
+            };
+            this.transfer = Object.assign(transfer_send, {
+                call: transfer_call
+            });
+            let transferFromParams = (params) => [params.from, params.to, this.wallet.utils.toString(params.value)];
+            let transferFrom_send = async (params) => {
+                let result = await this.send('transferFrom', transferFromParams(params));
+                return result;
+            };
+            let transferFrom_call = async (params) => {
+                let result = await this.call('transferFrom', transferFromParams(params));
+                return result;
+            };
+            this.transferFrom = Object.assign(transferFrom_send, {
+                call: transferFrom_call
+            });
+        }
+    }
+    exports.ERC20 = ERC20;
+});
+define("erc20", ["require", "exports", "erc20/ERC20.ts"], function (require, exports, ERC20_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ERC20 = void 0;
+    Object.defineProperty(exports, "ERC20", { enumerable: true, get: function () { return ERC20_1.ERC20; } });
+});

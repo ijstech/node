@@ -1,12 +1,15 @@
 {
     "name": "erc20",
-    "main": "lib",
-    "types": "types",
+    "main": "lib/index/js",
+    "types": "types/index.d.ts",
     "dependencies": {
-        "@ijstech/eth-contract": "github:ijstech/eth-contract"
+        "@ijstech/eth-contract": "^0.1.3"
     },
-    "scripts": {        
-        "build": "rm -rf lib && rm -rf types && tsc && tsc --p tsconfig.lib.json",
-        "compileContract": "npx github:ijstech/eth-contract 0.6.11 contract src"
+    "devDependencies": {
+        "@ijstech/compiler": "^0.1.15"
+    },
+    "scripts": {
+        "build": "rm -rf lib && rm -rf types && tsc && npx @ijstech/compiler",
+        "build:contract": "sol2ts solconfig.json"
     }
 }

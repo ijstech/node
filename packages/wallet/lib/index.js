@@ -82,6 +82,9 @@ async function loadPlugin(worker, options) {
             getChainId() {
                 return wallet.chainId;
             },
+            async getTransaction(transactionHash) {
+                return JSON.stringify(await wallet.getTransaction(transactionHash));
+            },
             setPrivateKey(value) {
                 wallet.privateKey = value;
             },

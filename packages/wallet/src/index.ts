@@ -7,7 +7,7 @@
 import {Wallet, IAccount, IWallet} from '@ijstech/eth-wallet';
 import {IWorker} from '@ijstech/types';
 import {IWalletLog, IWalletRequiredPluginOptions, IWalletEventLog} from '@ijstech/types';
-import {IWalletPluginObject} from './plugin';
+import {IWalletPluginObject, IWalletTransaction} from './plugin';
 function getWalletPlugin(): IWallet{
     return global.$$wallet_plugin;
 }
@@ -82,6 +82,9 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
             },
             getChainId():number{   
                 return wallet.chainId
+            },
+            async getTransaction(transactionHash: string): Promise<string>{
+                return JSON.stringify(await wallet.getTransaction(transactionHash));
             },
             setPrivateKey(value: string){
                 wallet.privateKey = value;

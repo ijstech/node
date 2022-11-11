@@ -178,19 +178,19 @@ export interface IWalletEvent{
     rawData: any;
 }
 export interface IWalletTransaction {
-    hash: string;
+    hash?: string;
     nonce: number;
-    blockHash: string | null;
-    blockNumber: number | null;
-    transactionIndex: number | null;
-    from: string;
+    blockHash?: string | null;
+    blockNumber?: number | null;
+    transactionIndex?: number | null;
+    from?: string;
     to: string | null;
-    value: string;
-    gasPrice: string;
+    value?: string | number;
+    gasPrice: string | number;
     maxPriorityFeePerGas?: number | string | BigNumber;
     maxFeePerGas?: number | string | BigNumber;
     gas: number;
-    input: string;
+    input?: string;
 }
 export interface IWalletBlockTransactionObject{
     number: number;
@@ -261,6 +261,7 @@ export interface IWalletPlugin {
     getChainId(): Promise<number>;
     getContractAbi(address: string): any;
     getContractAbiEvents(address: string): any;
+    getTransaction(transactionHash: string): Promise<IWalletTransaction>;
     methods(...args: any): Promise<any>;
     set privateKey(value: string);
     recoverSigner(msg: string, signature: string): Promise<string>;		

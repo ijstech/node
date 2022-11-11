@@ -145,6 +145,11 @@ define("plugin", ["require", "exports", "bignumber.js"], function (require, expo
             }
             ;
         },
+        async getTransaction(transactionHash) {
+            let wallet = global.$$wallet_plugin;
+            let result = await wallet.getTransaction(transactionHash);
+            return JSON.parse(result);
+        },
         async methods(...args) {
             let wallet = global.$$wallet_plugin;
             return JSON.parse(await wallet.methods.apply(this, args));
