@@ -17,7 +17,19 @@
         "url": "https://github.com/ijstech/node"
     },
     "dependencies": {
-        "@ijstech/eth-wallet": "^0.1.20",
+        "@ijstech/eth-wallet": "^0.1.23",
+        "bignumber.js": "9.0.1",
+        "cron-parser": "4.2.0",
+        "extract-zip": "2.0.1",
+        "graphql": "16.3.0",
+        "isolated-vm": "4.4.1",
+        "koa": "2.13.0",
+        "koa-bodyparser": "4.3.0",
+        "mysql": "2.18.1",
+        "redis": "3.1.2",
+        "web3.storage": "4.4.0"
+    },
+    "devDependencies": {
         "@ijstech/app": "file:./packages/app",
         "@ijstech/cache": "file:./packages/cache",
         "@ijstech/crypto": "file:./packages/crypto",
@@ -38,18 +50,6 @@
         "@ijstech/types": "file:./packages/types",
         "@ijstech/vm": "file:./packages/vm",
         "@ijstech/wallet": "file:./packages/wallet",
-        "bignumber.js": "9.0.1",
-        "cron-parser": "4.2.0",
-        "extract-zip": "2.0.1",
-        "graphql": "16.3.0",
-        "isolated-vm": "4.4.1",
-        "koa": "2.13.0",
-        "koa-bodyparser": "4.3.0",
-        "mysql": "2.18.1",
-        "redis": "3.1.2",
-        "web3.storage": "4.4.0"
-    },
-    "devDependencies": {
         "@types/koa": "2.13.4",
         "@types/mocha": "9.1.1",
         "@types/mysql": "2.15.20",
