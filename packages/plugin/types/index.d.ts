@@ -50,19 +50,19 @@ export declare namespace Types {
         rawData: any;
     }
     interface IWalletTransaction {
-        hash: string;
+        hash?: string;
         nonce: number;
-        blockHash: string | null;
-        blockNumber: number | null;
-        transactionIndex: number | null;
-        from: string;
+        blockHash?: string | null;
+        blockNumber?: number | null;
+        transactionIndex?: number | null;
+        from?: string;
         to: string | null;
-        value: string;
-        gasPrice: string;
+        value?: string | number;
+        gasPrice: string | number;
         maxPriorityFeePerGas?: number | string | BigNumber;
         maxFeePerGas?: number | string | BigNumber;
         gas: number;
-        input: string;
+        input?: string;
     }
     interface IWalletBlockTransactionObject {
         number: number;

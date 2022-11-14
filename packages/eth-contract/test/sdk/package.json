@@ -2,7 +2,16 @@
     "name": "@demo/sdk",
     "main": "lib/index.js",
     "types": "types/index.d.ts",
+    "dependencies": {
+        "@ijstech/eth-contract": "file:../../",
+        "bignumber.js": "9.1.0"
+    },
+    "devDependencies": {
+        "@ijstech/compiler": "^0.1.15"
+    },
     "scripts": {
-        "build": "rm -rf lib && rm -rf types && sol2ts solconfig.json && tsc"
+        "build": "rm -rf lib && rm -rf dist && rm -rf types && npm run build:contracts && npm run build:lib && npx @ijstech/compiler",
+        "build:contracts": "rm -rf src/contracts && node ../../tools/bin/compile solconfig.json",
+        "build:lib": "tsc"
     }
 }

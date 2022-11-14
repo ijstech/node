@@ -1,0 +1,18 @@
+{ 
+    "compilerOptions": {        
+        "declaration": true,
+        "module": "AMD",       
+        "moduleResolution": "Node",
+        "outFile": "dist/index.js",        
+        "rootDir": "src",
+        "baseUrl": ".",
+        "target": "ES2017"
+    },
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "node_modules",
+        "test"
+    ]
+}

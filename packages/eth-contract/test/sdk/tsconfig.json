@@ -1,19 +1,21 @@
-{    
+{ 
     "compilerOptions": {
-        "target": "ES6",    
-        "module": "CommonJS",    
-        "moduleResolution": "Node",
-        "allowJs": false,
-        "esModuleInterop": true,        
-        "declaration": true,
-        "declarationDir": "types",
+        "target": "es2017",
+        "module": "commonjs",
+        "esModuleInterop": true,
+        "removeComments": true,
+        "declaration": false,
         "outDir": "lib",
         "baseUrl": ".",
-        "rootDir": "src",
-        "composite": true,
         "paths": {
             "@ijstech/eth-contract":["../.."]
         }
     },
-    "include": ["src"]
-}
+    "include": [
+      "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "test"
+    ]
+  }

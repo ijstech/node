@@ -1,15 +1,13 @@
-{    
+{
+    "extends": "../../../tsconfig.build.json",
+    "include": [
+        "."
+    ],
     "compilerOptions": {
-        "target": "ESNext",        
-        "moduleResolution": "Node",
-        "allowJs": false,
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,        
-        "declaration": false,
-        "baseUrl": ".",        
-        "paths": {            
-            "@ijstech/*": ["*", "../../*"]
+        "baseUrl": ".",
+        "rootDir": ".",
+        "paths": {
+            "@ijstech/*": ["../../*"]
         }
-    },
-    "include": ["."]
+    }
 }

@@ -2,6 +2,6 @@
     "version": "0.8.17",
     "optimizerRuns": 999999,
     "sourceDir": "contracts",
-    "outputDir": "src",
+    "outputDir": "src/contracts",
     "outputObjects": "bytecode"
 }

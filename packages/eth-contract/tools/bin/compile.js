@@ -289,7 +289,7 @@ function main(configFilePath) {
             sourceDir = sourceDir + '/';
         if (!outputDir)
             outputDir = sourceDir;
-        fs.mkdirSync(path.join(RootPath, outputDir), { recursive: true });
+        fs.mkdirSync(outputDir, { recursive: true });
         _libMap = libMap;
         try {
             let solc = yield getSolc(version);
