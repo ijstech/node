@@ -35,6 +35,10 @@ e.g.: npx @ijstech/plugin init worker @scom/demo1
 ```sh
 npm i
 ```
+for npm 9.x
+```sh
+npm i --install-links=false
+```
 or
 ```sh
 docker-compose up install
