@@ -138,6 +138,9 @@ define("@ijstech/eth-contract", ["require", "exports", "bignumber.js"], function
             //     ));
             // }));
         }
+        async txData(methodName, params, options) {
+            return await this.wallet._txData(this.abiHash, this._address, methodName, params, options);
+        }
         async call(methodName, params, options) {
             return await this.wallet._call(this.abiHash, this._address, methodName, params, options);
         }

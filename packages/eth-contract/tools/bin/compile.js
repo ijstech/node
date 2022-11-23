@@ -262,9 +262,11 @@ function processOutput(sourceDir, output, outputDir, outputObjects, exclude, inc
                     fs.writeFileSync(outputDir + '/' + p + j + '.json.ts', "export default " + prettyPrint(JSON.stringify(file)));
                     let relPath = './';
                     let hasBatchCall = outputObjectsArr.includes("batchcall");
+                    let hasTxData = outputObjectsArr.includes("txData");
                     let options = {
                         outputBytecode,
-                        hasBatchCall
+                        hasBatchCall,
+                        hasTxData
                     };
                     let code = codeGen_1.default(j, relPath, abi, options);
                     fs.writeFileSync(outputDir + '/' + p + j + '.ts', code);

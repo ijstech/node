@@ -257,7 +257,7 @@ declare module "@ijstech/eth-contract" {
     export interface IWallet {
         address: string;
         balance: Promise<BigNumber>;
-        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
+        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
         decode(abi: any, event: IWalletLog | IWalletEventLog, raw?: {
             data: string;
             topics: string[];
@@ -269,9 +269,11 @@ declare module "@ijstech/eth-contract" {
         methods(...args: any): Promise<any>;
         registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
         send(to: string, amount: number): Promise<TransactionReceipt>;
-        _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
+        _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
         utils: IWalletUtils;
+        _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
+        _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
     }
     export interface Event {
         name: string;
@@ -326,9 +328,22 @@ declare module "@ijstech/eth-contract" {
         status: boolean;
     }
     export interface Transaction {
+        from?: string;
         to: string;
+        nonce: number;
         gas: number;
+        gasPrice: BigNumber;
         data: string;
+        value?: BigNumber;
+    }
+    export interface TransactionOptions {
+        from?: string;
+        nonce?: number;
+        gas?: number;
+        gasLimit?: number;
+        gasPrice?: BigNumber | number;
+        data?: string;
+        value?: BigNumber | number;
     }
     export interface EventType {
         name: string;
@@ -369,11 +384,12 @@ declare module "@ijstech/eth-contract" {
         protected getAbiEvents(): any;
         protected getAbiTopics(eventNames?: string[]): any[];
         scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
-        batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: any): Promise<void>;
-        protected call(methodName: string, params?: any[], options?: any): Promise<any>;
+        batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<void>;
+        protected txData(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
+        protected call(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
         private _send;
-        protected __deploy(params?: any[], options?: any): Promise<string>;
-        protected send(methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
+        protected __deploy(params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
+        protected send(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
         protected _deploy(...params: any[]): Promise<string>;
         protected methods(methodName: string, ...params: any[]): Promise<any>;
     }
