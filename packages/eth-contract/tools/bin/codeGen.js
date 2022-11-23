@@ -176,12 +176,10 @@ function default_1(name, abiPath, abi, options) {
             return result;
         };
         const payable = function (item) {
-            if (item.stateMutability == 'payable') {
-                return (item.inputs.length == 0 ? '' : ',') + '_value:number|BigNumber';
-            }
-            else {
-                return '';
-            }
+            return (item.inputs.length == 0 ? '' : ', ') +
+                ((item.stateMutability == 'payable') ?
+                    'options?: number|BigNumber|TransactionOptions' :
+                    'options?: TransactionOptions');
         };
         const returnOutputsItem = function (item, isEvent, objPath, indent) {
             let newLines;
@@ -251,46 +249,69 @@ function default_1(name, abiPath, abi, options) {
         let functionNames = {};
         const callFunction = function (name, item) {
             let input = "";
-            if (item.inputs.length == 1) {
+            if (item.inputs.length == 0) {
+                input = ",[]";
+            }
+            else if (item.inputs.length == 1) {
                 input = `,[${toSolidityInput(item)}]`;
             }
             else if (item.inputs.length > 1) {
-                input = `,${getParamsFunctionName(item.name)}(params)`;
+                input = `,${getParamsFunctionName(name)}(params)`;
             }
-            let _payable = item.stateMutability == 'payable' ? ((item.inputs.length == 0 ? ", []" : "") + ', {value:_value}') : '';
-            let args = `${inputs(item.name, item)}${payable(item)}`;
-            addLine(2, `let ${name} = async (${args}): Promise<${outputs(item.outputs)}> => {`);
-            addLine(3, `let result = await this.call('${item.name}'${input}${_payable});`);
+            let args = `${inputs(name, item)}${payable(item)}`;
+            addLine(2, `let ${name}_call = async (${args}): Promise<${outputs(item.outputs)}> => {`);
+            addLine(3, `let result = await this.call('${item.name}'${input},options);`);
             returnOutputs(item.outputs, true).forEach((e, i, a) => addLine(e.indent + 3, e.text));
             addLine(2, '}');
         };
         const batchCallFunction = function (name, item) {
             let input = "";
-            if (item.inputs.length == 1) {
+            if (item.inputs.length == 0) {
+                input = ",[]";
+            }
+            else if (item.inputs.length == 1) {
                 input = `,[${toSolidityInput(item)}]`;
             }
             else if (item.inputs.length > 1) {
-                input = `,${getParamsFunctionName(item.name)}(params)`;
+                input = `,${getParamsFunctionName(name)}(params)`;
             }
-            let _payable = item.stateMutability == 'payable' ? ((item.inputs.length == 0 ? ", []" : "") + ', {value:_value}') : '';
-            let args = `${inputs(item.name, item)}${payable(item)}`;
+            let args = `${inputs(name, item)}${payable(item)}`;
             let batchCallArgs = `batchObj: IBatchRequestObj, key: string` + (args.length == 0 ? '' : `, ${args}`);
-            addLine(2, `let ${name} = async (${batchCallArgs}): Promise<void> => {`);
-            addLine(3, `await this.batchCall(batchObj, key, '${item.name}'${input}${_payable});`);
+            addLine(2, `let ${name}_batchCall = async (${batchCallArgs}): Promise<void> => {`);
+            addLine(3, `await this.batchCall(batchObj, key, '${item.name}'${input},options);`);
             addLine(2, '}');
         };
         const sendFunction = function (name, item) {
             let input = "";
-            if (item.inputs.length == 1) {
+            if (item.inputs.length == 0) {
+                input = ",[]";
+            }
+            else if (item.inputs.length == 1) {
                 input = `,[${toSolidityInput(item)}]`;
             }
             else if (item.inputs.length > 1) {
-                input = `,${getParamsFunctionName(item.name)}(params)`;
+                input = `,${getParamsFunctionName(name)}(params)`;
             }
-            let _payable = item.stateMutability == 'payable' ? ((item.inputs.length == 0 ? ", []" : "") + ', {value:_value}') : '';
-            let args = `${inputs(item.name, item)}${payable(item)}`;
-            addLine(2, `let ${name} = async (${args}): Promise<TransactionReceipt> => {`);
-            addLine(3, `let result = await this.send('${item.name}'${input}${_payable});`);
+            let args = `${inputs(name, item)}${payable(item)}`;
+            addLine(2, `let ${name}_send = async (${args}): Promise<TransactionReceipt> => {`);
+            addLine(3, `let result = await this.send('${item.name}'${input},options);`);
+            addLine(3, 'return result;');
+            addLine(2, '}');
+        };
+        const dataFunction = function (name, item) {
+            let input = "";
+            if (item.inputs.length == 0) {
+                input = ",[]";
+            }
+            else if (item.inputs.length == 1) {
+                input = `,[${toSolidityInput(item)}]`;
+            }
+            else if (item.inputs.length > 1) {
+                input = `,${getParamsFunctionName(name)}(params)`;
+            }
+            let args = `${inputs(name, item)}${payable(item)}`;
+            addLine(2, `let ${name}_txData = async (${args}): Promise<string> => {`);
+            addLine(3, `let result = await this.txData('${item.name}'${input},options);`);
             addLine(3, 'return result;');
             addLine(2, '}');
         };
@@ -310,6 +331,9 @@ function default_1(name, abiPath, abi, options) {
                 addLine(2, `call: (${args}) => Promise<${outputs(item.outputs)}>;`);
                 if (options.hasBatchCall) {
                     addLine(2, `batchCall: (${batchCallArgs}) => Promise<void>;`);
+                }
+                if (options.hasTxData) {
+                    addLine(2, `txData: (${args}) => Promise<string>;`);
                 }
             }
             addLine(1, `}`);
@@ -331,15 +355,14 @@ function default_1(name, abiPath, abi, options) {
         const addDeployer = function (abi) {
             let item = abi.find(e => e.type == 'constructor');
             if (item) {
-                let input = (item.inputs.length > 0) ? `[${toSolidityInput(item)}]` : "";
-                let _payable = item.stateMutability == 'payable' ? ((item.inputs.length == 0 ? ", []" : "") + ', {value:_value}') : '';
+                let input = (item.inputs.length > 0) ? `[${toSolidityInput(item)}]` : "[]";
                 addLine(1, `deploy(${inputs(item.name, item)}${payable(item)}): Promise<string>{`);
-                addLine(2, `return this.__deploy(${input}${_payable});`);
+                addLine(2, `return this.__deploy(${input}, options);`);
                 addLine(1, `}`);
             }
             else {
-                addLine(1, `deploy(): Promise<string>{`);
-                addLine(2, `return this.__deploy();`);
+                addLine(1, `deploy(options?: number|BigNumber|TransactionOptions): Promise<string>{`);
+                addLine(2, `return this.__deploy([], options);`);
                 addLine(1, `}`);
             }
         };
@@ -366,7 +389,7 @@ function default_1(name, abiPath, abi, options) {
                 addLine(0, paramsInterface);
             }
         };
-        addLine(0, `import {IWallet, Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj} from "@ijstech/eth-contract";`);
+        addLine(0, `import {IWallet, Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions} from "@ijstech/eth-contract";`);
         addLine(0, `import Bin from "${abiPath}${name}.json";`);
         addLine(0, ``);
         for (let i = 0; i < abi.length; i++) {
@@ -393,9 +416,9 @@ function default_1(name, abiPath, abi, options) {
             let functionName = callFunctionNames[i];
             let abiItem = abiFunctionItemMap.get(functionName);
             paramsFunction(functionName, abiItem);
-            callFunction(functionName + "_call", abiItem);
+            callFunction(functionName, abiItem);
             if (options.hasBatchCall) {
-                batchCallFunction(functionName + "_batchCall", abiItem);
+                batchCallFunction(functionName, abiItem);
                 addLine(2, `this.${functionName} = Object.assign(${functionName}_call, {`);
                 addLine(3, `batchCall:${functionName}_batchCall`);
                 addLine(2, `});`);
@@ -409,17 +432,21 @@ function default_1(name, abiPath, abi, options) {
             let functionName = txFunctionNames[i];
             let abiItem = abiFunctionItemMap.get(functionName);
             paramsFunction(functionName, abiItem);
-            sendFunction(functionName + "_send", abiItem);
-            callFunction(functionName + "_call", abiItem);
+            sendFunction(functionName, abiItem);
+            callFunction(functionName, abiItem);
             if (options.hasBatchCall) {
-                batchCallFunction(functionName + "_batchCall", abiItem);
+                batchCallFunction(functionName, abiItem);
+            }
+            if (options.hasTxData) {
+                dataFunction(functionName, abiItem);
             }
             addLine(2, `this.${functionName} = Object.assign(${functionName}_send, {`);
+            addLine(3, `call:${functionName}_call`);
             if (options.hasBatchCall) {
-                addLine(3, `call:${functionName}_call, batchCall:${functionName}_batchCall`);
+                addLine(3, `, batchCall:${functionName}_batchCall`);
             }
-            else {
-                addLine(3, `call:${functionName}_call`);
+            if (options.hasTxData) {
+                addLine(3, `, txData:${functionName}_txData`);
             }
             addLine(2, `});`);
         }

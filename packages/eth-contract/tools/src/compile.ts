@@ -236,9 +236,11 @@ function processOutput(sourceDir: string, output:Output, outputDir: string, outp
 
                     let relPath = './';         
                     let hasBatchCall = outputObjectsArr.includes("batchcall");       
+                    let hasTxData = outputObjectsArr.includes("txData");       
                     let options: IUserDefinedOptions = {
                         outputBytecode,
-                        hasBatchCall
+                        hasBatchCall,
+                        hasTxData
                     }
                     let code = codeGen(j, relPath, abi, options);
                     fs.writeFileSync(outputDir + '/' + p + j +  '.ts', code);
