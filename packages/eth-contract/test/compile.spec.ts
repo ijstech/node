@@ -3,6 +3,7 @@ import assert from "assert";
 import fs from 'fs';
 import {execSync} from 'child_process'
 describe('compiler', function(){
+    this.timeout(600000);
     it('compiler', async function () {
         let list = fs.readdirSync("test/compiler").filter(e=>e.match(/solconfig\..*\.json/));
         for (let soldconfig of list) {
