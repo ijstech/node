@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.17;
-library Math{
+library Library {
 	function _pow(uint256 x, uint256 n, uint256 b) internal pure returns (uint256 z) {
 		assembly {
 			switch x 
@@ -121,7 +121,7 @@ abstract contract Abstract is Interface {
     }
 }
 contract Contract is Abstract{
-    using Math for uint256;
+    using Library for uint256;
     mapping(uint256 => ArrayStruct) internal _i2as;
     constructor(int256 _i256, uint256 _ui256, bytes32 _b32, bytes memory _b, string memory _s) {
         i256 = _i256;
@@ -134,8 +134,8 @@ contract Contract is Abstract{
         return _i2as[i];
     }
     // pure functions
-    function pow(uint256 x, uint256 n, uint256 b) external pure returns (uint256){
-        return x._pow(n, b);
+    function pow(uint256 x, uint256 n) external pure returns (uint256){
+        return x._pow(n, 18);
     }
     // payable functions with 0-2 parameters
     function pay() external payable returns (uint256) {
