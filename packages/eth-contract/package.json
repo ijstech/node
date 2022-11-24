@@ -15,6 +15,17 @@
         "build": "rm -rf lib && rm -rf types && tsc && npm run build:dist",
         "build:dist": "rm -rf dist && tsc --p tsconfig.dist.json && cat src/types/bignumber.d.ts dist/index.d.ts > dist/tmp && mv dist/tmp dist/index.d.ts",
         "build:tools": "rm -rf tools/bin && cd tools && rm -rf bin && tsc && cd ..",
-        "test": "mocha --exit --require ts-node/register test/*.spec.ts"
+        "test": "mocha --exit --require ts-node/register test/*.spec.ts",
+        "test:compile": "rm -rf test/compiler/src && npm run test:compile:default && npm run test:compile:old && npm run test:compile:bytecode && npm run test:compile:abi && npm run test:compile:both && npm run test:compile:no_bytecode && npm run test:compile:no_abi && npm run test:compile:no_no && npm run test:compile:txData && npm run test:compile:batchCall",
+        "test:compile:default": "tools/bin/compile.js test/compiler/solconfig.default.json",
+        "test:compile:old": "tools/bin/compile.js test/compiler/solconfig.old.json",
+        "test:compile:bytecode": "tools/bin/compile.js test/compiler/solconfig.bytecode.json",
+        "test:compile:abi": "tools/bin/compile.js test/compiler/solconfig.abi.json",
+        "test:compile:both": "tools/bin/compile.js test/compiler/solconfig.both.json",
+        "test:compile:no_bytecode": "tools/bin/compile.js test/compiler/solconfig.no_bytecode.json",
+        "test:compile:no_abi": "tools/bin/compile.js test/compiler/solconfig.no_abi.json",
+        "test:compile:no_no": "tools/bin/compile.js test/compiler/solconfig.no_no.json",
+        "test:compile:txData": "tools/bin/compile.js test/compiler/solconfig.txData.json",
+        "test:compile:batchCall": "tools/bin/compile.js test/compiler/solconfig.batchCall.json"
     }
 }
