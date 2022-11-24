@@ -204,8 +204,8 @@ interface Item { name: string; type: string; stateMutability: string; inputs?: T
 interface Output {[sourceFile:string]:{[contract:string]:{evm:{bytecode:{object:string}},abi:Item[]}}}
 
 // the compiled results of normal contracts have both abi and bytecode;
-// the compiled results of interfaces have abi only and without any bytecode;
-// the compiled results of contracts that contain internal / private functions only (e.g., library / abstract contracts) have bytecode and no abi
+// the compiled results of abstract contracts and interfaces have abi only and without any bytecode;
+// the compiled results of library contracts have bytecode and no abi
 interface OutputOptions {
     abi?: boolean; // default = compiled result has both abi and bytecode
     bytecode?: boolean; // default = compiled result has both abi and bytecode

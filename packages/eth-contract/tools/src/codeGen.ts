@@ -388,11 +388,13 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     const addParamsInterface = function(item: Item): void {
         let name = item.name;
         if (name) {
+            let _name = name;
             let counter = 1;
-            while(functionNames[name]){
-                name = name + "_" + counter;
+            while(functionNames[_name]){
+                _name = name + "_" + counter;
                 counter++;
             }
+            name = _name;
             functionNames[name] = true;
             let constantFunction = (item.stateMutability == 'view' || item.stateMutability == 'pure')
             abiFunctionItemMap.set(name, item);
@@ -408,7 +410,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             addLine(0, paramsInterface);
         } 
     }
-    addLine(0, `import {IWallet, Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions} from "@ijstech/eth-contract";`);
+    addLine(0, `import {IWallet, Contract as _Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions} from "@ijstech/eth-contract";`);
     addLine(0, `import Bin from "${abiPath}${name}.json";`);
     addLine(0, ``);
     if (abi)
@@ -416,7 +418,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         if (abi[i].type != 'function' && abi[i].type != 'constructor') continue;
         addParamsInterface(abi[i]);
     }
-    addLine(0, `export class ${name} extends Contract{`);
+    addLine(0, `export class ${name} extends _Contract{`);
     addLine(1, `constructor(wallet: IWallet, address?: string){`);
     addLine(2, options.outputBytecode ? `super(wallet, address, Bin.abi, Bin.bytecode);` : `super(wallet, address, Bin.abi);`);
     addLine(2, `this.assign()`);
