@@ -233,7 +233,7 @@ function prettyPrint(s) {
         }
     }).join('');
 }
-function processOutput(sourceDir, output, outputDir, outputObjects, exclude, include) {
+function processOutput(sourceDir, output, outputDir, outputOptions, exclude, include) {
     var _a, _b;
     let index = '';
     if (output.contracts) {
@@ -244,25 +244,26 @@ function processOutput(sourceDir, output, outputDir, outputObjects, exclude, inc
                 continue;
             let p = path.dirname(i.replace(/^contracts\//, ''));
             p = p == '.' ? '' : (p + '/');
+            outputOptions = outputOptions || {};
             for (let j in output.contracts[i]) {
                 let abi = output.contracts[i][j].abi;
                 let bytecode = (_b = (_a = output.contracts[i][j].evm) === null || _a === void 0 ? void 0 : _a.bytecode) === null || _b === void 0 ? void 0 : _b.object;
-                if ((outputObjects && outputObjects.startsWith("force")) || (bytecode && abi && abi.length)) {
+                let outputBytecode = (outputOptions.bytecode === undefined) ? (!!(bytecode && abi && abi.length)) : outputOptions.bytecode;
+                let outputAbi = (outputOptions.abi === undefined) ? (!!(bytecode && abi && abi.length)) : outputOptions.abi;
+                if ((outputBytecode && bytecode) || (outputAbi && abi && abi.length)) {
                     if (!fs.existsSync(outputDir + '/' + p))
                         fs.mkdirSync(outputDir + '/' + p, { recursive: true });
                     let file = {};
-                    if (abi && abi.length) {
+                    if (outputAbi && abi && abi.length) {
                         file["abi"] = abi;
                     }
-                    let outputObjectsArr = outputObjects ? outputObjects.split(',') : [];
-                    let outputBytecode = bytecode && outputObjectsArr.includes("bytecode");
-                    if (outputBytecode) {
+                    if (outputBytecode && bytecode) {
                         file["bytecode"] = bytecode;
                     }
                     fs.writeFileSync(outputDir + '/' + p + j + '.json.ts', "export default " + prettyPrint(JSON.stringify(file)));
                     let relPath = './';
-                    let hasBatchCall = outputObjectsArr.includes("batchcall");
-                    let hasTxData = outputObjectsArr.includes("txData");
+                    let hasBatchCall = outputOptions.batchCall;
+                    let hasTxData = outputOptions.txData;
                     let options = {
                         outputBytecode,
                         hasBatchCall,
@@ -280,17 +281,23 @@ function processOutput(sourceDir, output, outputDir, outputObjects, exclude, inc
 ;
 function main(configFilePath) {
     return __awaiter(this, void 0, void 0, function* () {
-        let config = JSON.parse(fs.readFileSync(configFilePath, "utf-8"));
+        let config = fs.existsSync(configFilePath) ? (fs.statSync(configFilePath).isFile() ? JSON.parse(fs.readFileSync(configFilePath, "utf-8")) : { sourceDir: configFilePath }) : {};
         let rootPath = process.cwd();
         let configPath = path.dirname(path.resolve(path.join(rootPath, configFilePath)));
-        let { version, optimizerRuns, sourceDir, outputDir, outputObjects, overrides, libMap } = config;
-        sourceDir = path.join(configPath, sourceDir || "contracts/");
-        if (outputDir)
-            outputDir = path.join(configPath, outputDir);
+        let { version, optimizerRuns, sourceDir, outputDir, outputOptions, overrides, libMap } = config;
+        if (!sourceDir) {
+            sourceDir = "contracts/";
+            if (!outputDir)
+                outputDir = "src/contracts/";
+        }
+        else {
+            if (!outputDir)
+                outputDir = sourceDir;
+        }
+        sourceDir = path.join(configPath, sourceDir);
         if (!sourceDir.endsWith('/') && !sourceDir.endsWith('.sol'))
             sourceDir = sourceDir + '/';
-        if (!outputDir)
-            outputDir = sourceDir;
+        outputDir = path.join(configPath, outputDir);
         fs.mkdirSync(outputDir, { recursive: true });
         _libMap = libMap;
         try {
@@ -300,7 +307,7 @@ function main(configFilePath) {
             let customSources = overrides && overrides.map(e => e.sources.map(f => (e.root || root) + f)).reduce((a, b) => a.concat(b), []);
             let input = buildInput(sourceDir, null, optimizerRuns, customSources);
             let output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
-            let index = processOutput(sourceDir, output, outputDir, outputObjects, customSources);
+            let index = processOutput(sourceDir, output, outputDir, outputOptions, customSources);
             if (output.errors) {
                 output.errors /*.filter(e=>e.severity!='warning')*/.forEach(e => console.log(e.formattedMessage));
             }
@@ -312,7 +319,7 @@ function main(configFilePath) {
                     _sourceDir = overrides[s].root || root;
                     input = buildInput(_sourceDir, overrides[s].sources, overrides[s].optimizerRuns || optimizerRuns);
                     output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
-                    index = index + processOutput(sourceDir, output, outputDir, outputObjects, [], overrides[s].sources.map(f => _sourceDir + f));
+                    index = index + processOutput(sourceDir, output, outputDir, overrides[s].outputOptions || outputOptions, [], overrides[s].sources.map(f => _sourceDir + f));
                     if (output.errors) {
                         output.errors /*.filter(e=>e.severity!='warning')*/.forEach(e => console.log(e.formattedMessage));
                     }

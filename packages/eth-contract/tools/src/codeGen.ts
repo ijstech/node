@@ -27,7 +27,6 @@ export interface IUserDefinedOptions {
     hasTxData: boolean;
 }
 export default function(name: string, abiPath: string, abi: Item[], options: IUserDefinedOptions){
-    if (abi.length) {
     let result = [];
     let events = {};
     let callFunctionNames: string[] = [];
@@ -412,6 +411,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     addLine(0, `import {IWallet, Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions} from "@ijstech/eth-contract";`);
     addLine(0, `import Bin from "${abiPath}${name}.json";`);
     addLine(0, ``);
+    if (abi)
     for (let i = 0; i < abi.length; i++) {
         if (abi[i].type != 'function' && abi[i].type != 'constructor') continue;
         addParamsInterface(abi[i]);
@@ -421,9 +421,9 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     addLine(2, options.outputBytecode ? `super(wallet, address, Bin.abi, Bin.bytecode);` : `super(wallet, address, Bin.abi);`);
     addLine(2, `this.assign()`);
     addLine(1, `}`);
-    if (options.outputBytecode)
+    if (abi && options.outputBytecode)
         addDeployer(abi);
-    let eventAbiItems = abi.filter(v => v.type == 'event');
+    let eventAbiItems = abi ? abi.filter(v => v.type == 'event') : [];
     for (let i = 0; i < eventAbiItems.length; i++) {
         addEvent(eventAbiItems[i]);
     }
@@ -477,5 +477,4 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
         addLine(0, `}`);
     }
     return result.join('\n');
-    }
 }
