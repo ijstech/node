@@ -164,7 +164,10 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
             }, 
             soliditySha3(...val: any[]): string{
                 return wallet.soliditySha3(...val);
-            }                
+            },     
+            toChecksumAddress(address: string): string{
+                return wallet.toChecksumAddress(address);
+            }           
         };
         worker.vm.injectGlobalObject('$$wallet_plugin', plugin);
         return `

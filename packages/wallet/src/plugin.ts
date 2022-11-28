@@ -190,6 +190,7 @@ export interface IWallet {
     utils: IWalletUtils;
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
     soliditySha3(...val: any[]): string;	
+    toChecksumAddress(address: string): string;	
 }
 interface IDictionary {
     [index: string]: any;
@@ -253,6 +254,7 @@ export interface IWalletPluginObject{
     utils_toWei(value: string, unit?: any): string;
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
     soliditySha3(...val: any[]): string;
+    toChecksumAddress(address: string): string;	
 }
 const Wallet: IWallet = {
     get account(): IWalletAccount{
@@ -477,6 +479,10 @@ const Wallet: IWallet = {
     soliditySha3(...val: any[]): string{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
         return wallet.soliditySha3(...val);
+    },
+    toChecksumAddress(address: string): string{
+        let wallet: IWalletPluginObject = global.$$wallet_plugin;
+        return wallet.toChecksumAddress(address);   
     }
 };
 export default Wallet;

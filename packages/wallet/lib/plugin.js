@@ -251,6 +251,10 @@ const Wallet = {
     soliditySha3(...val) {
         let wallet = global.$$wallet_plugin;
         return wallet.soliditySha3(...val);
+    },
+    toChecksumAddress(address) {
+        let wallet = global.$$wallet_plugin;
+        return wallet.toChecksumAddress(address);
     }
 };
 exports.default = Wallet;
