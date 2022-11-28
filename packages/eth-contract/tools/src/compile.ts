@@ -203,7 +203,16 @@ interface Type { name: string; type: string; components?: Type[]; internalType?:
 interface Item { name: string; type: string; stateMutability: string; inputs?: Type[]; outputs?: Type[];}
 interface Output {[sourceFile:string]:{[contract:string]:{evm:{bytecode:{object:string}},abi:Item[]}}}
 
-function processOutput(sourceDir: string, output:Output, outputDir: string, outputObjects: string, exclude?: string[], include?: string[]): string {
+// the compiled results of normal contracts have both abi and bytecode;
+// the compiled results of abstract contracts and interfaces have abi only and without any bytecode;
+// the compiled results of library contracts have bytecode and no abi
+interface OutputOptions {
+    abi?: boolean; // default = compiled result has both abi and bytecode
+    bytecode?: boolean; // default = compiled result has both abi and bytecode
+    batchCall?: boolean; //default false
+    txData?: boolean; //default false
+}
+function processOutput(sourceDir: string, output:Output, outputDir: string, outputOptions: OutputOptions, exclude?: string[], include?: string[]): string {
     let index = '';
     if (output.contracts) {
         for (let i in output.contracts) {
@@ -215,28 +224,31 @@ function processOutput(sourceDir: string, output:Output, outputDir: string, outp
             let p = path.dirname(i.replace(/^contracts\//,''));
             p = p=='.' ? '' : (p + '/');
 
+            outputOptions = outputOptions || {};
+
             for (let j in output.contracts[i]) {
                 let abi = output.contracts[i][j].abi;
                 let bytecode = output.contracts[i][j].evm?.bytecode?.object;
-                if ((outputObjects && outputObjects.startsWith("force")) || (bytecode && abi && abi.length)) {
+
+                let outputBytecode = (outputOptions.bytecode === undefined) ? (!!(bytecode && abi && abi.length)) : outputOptions.bytecode;
+                let outputAbi = (outputOptions.abi === undefined) ? (!!(bytecode && abi && abi.length)) : outputOptions.abi;
+
+                if ((outputBytecode && bytecode) || (outputAbi && abi && abi.length)) {
                     if (!fs.existsSync(outputDir + '/' + p))
                         fs.mkdirSync(outputDir + '/' + p, { recursive: true });
 
                     let file = {};
-                    if (abi && abi.length) {
+                    if (outputAbi && abi && abi.length) {
                         file["abi"] = abi;
                     }
-                    let outputObjectsArr = outputObjects ? outputObjects.split(',') : [];
-                    
-                    let outputBytecode = bytecode && outputObjectsArr.includes("bytecode");
-                    if (outputBytecode) {
+                    if (outputBytecode && bytecode) {
                         file["bytecode"] = bytecode;
                     }
                     fs.writeFileSync(outputDir + '/' + p + j +  '.json.ts', "export default " + prettyPrint(JSON.stringify(file)));
 
                     let relPath = './';         
-                    let hasBatchCall = outputObjectsArr.includes("batchcall");       
-                    let hasTxData = outputObjectsArr.includes("txData");       
+                    let hasBatchCall = outputOptions.batchCall;       
+                    let hasTxData = outputOptions.txData;       
                     let options: IUserDefinedOptions = {
                         outputBytecode,
                         hasBatchCall,
@@ -253,31 +265,35 @@ function processOutput(sourceDir: string, output:Output, outputDir: string, outp
     return index;
 }
 
-interface CompileOptions { version?: string; optimizerRuns?: number; }
+interface CompileOptions { version?: string; optimizerRuns?: number; outputOptions?: OutputOptions }
 interface Override extends CompileOptions { root?:string, sources:string[]; };
 interface Config extends CompileOptions {
     sourceDir?: string;
     outputDir?: string;
     output?: string;
-    outputObjects?: string;
     overrides?: Override[];
     libMap?: {[soource:string]:string};
 }
 
 async function main(configFilePath: string) {
-    let config:Config = JSON.parse(fs.readFileSync(configFilePath, "utf-8"));
+    let config:Config = fs.existsSync(configFilePath) ? (fs.statSync(configFilePath).isFile() ? JSON.parse(fs.readFileSync(configFilePath, "utf-8")) : {sourceDir:configFilePath}) : {};
     let rootPath = process.cwd();
     let configPath = path.dirname(path.resolve(path.join(rootPath, configFilePath)));
     
-    let {version, optimizerRuns, sourceDir, outputDir, outputObjects, overrides, libMap} = config;
+    let {version, optimizerRuns, sourceDir, outputDir, outputOptions, overrides, libMap} = config;
 
-    sourceDir = path.join(configPath, sourceDir || "contracts/");
-    if (outputDir)
-         outputDir = path.join(configPath, outputDir);
+    if (!sourceDir) {
+        sourceDir = "contracts/";
+        if (!outputDir)
+            outputDir = "src/contracts/";
+    } else {
+        if (!outputDir)
+            outputDir = sourceDir;
+    }
+    sourceDir = path.join(configPath, sourceDir);
     if (!sourceDir.endsWith('/') && !sourceDir.endsWith('.sol'))
         sourceDir = sourceDir + '/';
-    if (!outputDir)
-        outputDir = sourceDir;
+    outputDir = path.join(configPath, outputDir);
     fs.mkdirSync(outputDir, { recursive: true });
 
     _libMap = libMap;
@@ -289,7 +305,7 @@ async function main(configFilePath: string) {
         let customSources = overrides && overrides.map(e=>e.sources.map(f=>(e.root||root)+f)).reduce((a,b)=>a.concat(b),[]);
         let input = buildInput(sourceDir, null, optimizerRuns, customSources);
         let output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
-        let index = processOutput(sourceDir, output, outputDir, outputObjects, customSources);
+        let index = processOutput(sourceDir, output, outputDir, outputOptions, customSources);
         if (output.errors) {
             output.errors/*.filter(e=>e.severity!='warning')*/.forEach(e => console.log(e.formattedMessage));
         }
@@ -302,7 +318,7 @@ async function main(configFilePath: string) {
                 _sourceDir = overrides[s].root || root;
                 input = buildInput(_sourceDir, overrides[s].sources, overrides[s].optimizerRuns||optimizerRuns)
                 output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
-                index = index + processOutput(sourceDir, output, outputDir, outputObjects, [], overrides[s].sources.map(f=>_sourceDir+f));
+                index = index + processOutput(sourceDir, output, outputDir, overrides[s].outputOptions || outputOptions, [], overrides[s].sources.map(f=>_sourceDir+f));
                 if (output.errors) {
                     output.errors/*.filter(e=>e.severity!='warning')*/.forEach(e=>console.log(e.formattedMessage));
                 }
