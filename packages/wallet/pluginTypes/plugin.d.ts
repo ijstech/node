@@ -198,6 +198,7 @@ export interface IWallet {
     utils: IWalletUtils;
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
     soliditySha3(...val: any[]): string;
+    toChecksumAddress(address: string): string;
 }
 export interface IWalletPluginObject {
     balanceOf(address: string): Promise<string>;
@@ -244,6 +245,7 @@ export interface IWalletPluginObject {
     utils_toWei(value: string, unit?: any): string;
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
     soliditySha3(...val: any[]): string;
+    toChecksumAddress(address: string): string;
 }
 declare const Wallet: IWallet;
 export default Wallet;

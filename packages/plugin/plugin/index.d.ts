@@ -147,7 +147,8 @@ export declare namespace Types{
         tokenInfo(address: string): Promise<IWalletTokenInfo>;
         utils: IWalletUtils;
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
-        soliditySha3(...val: any[]): string;	
+        soliditySha3(...val: any[]): string;
+        toChecksumAddress(address: string): string;		
     }
     export interface ICachePlugin{
         del(key: string): Promise<boolean>;
@@ -403,6 +404,7 @@ export interface IWalletPlugin {
     utils: IWalletUtils;
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
     soliditySha3(...val: any[]): string;	
+    toChecksumAddress(address: string): string;	
 }
 export interface IMessagePlugin {
     publish(channel: string|number, msg: string):void;

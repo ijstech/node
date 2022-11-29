@@ -161,6 +161,7 @@ export declare namespace Types{
         utils: IWalletUtils;
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
         soliditySha3(...val: any[]): string;	
+        toChecksumAddress(address: string): string;	
     }
     export interface ICachePlugin{
         del(key: string): Promise<boolean>;
