@@ -179,17 +179,18 @@ export interface IWalletEvent{
 }
 export interface IWalletTransaction {
     hash?: string;
-    nonce: number;
+    nonce?: number;
     blockHash?: string | null;
     blockNumber?: number | null;
+    data?: string;
     transactionIndex?: number | null;
     from?: string;
-    to: string | null;
+    to?: string | null;
     value?: string | number;
-    gasPrice: string | number;
+    gasPrice?: string | number;
     maxPriorityFeePerGas?: number | string | BigNumber;
     maxFeePerGas?: number | string | BigNumber;
-    gas: number;
+    gas?: number;
     input?: string;
 }
 export interface IWalletBlockTransactionObject{
@@ -245,11 +246,14 @@ export interface IWalletPlugin {
     accounts: Promise<string[]>;
     address: string;
     balance: Promise<BigNumber>;
-    balanceOf(address: string): Promise<BigNumber>;    
+    balanceOf(address: string): Promise<BigNumber>;
     _call(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
     chainId: number;
     createAccount(): IWalletAccount;
-    decode(abi:any, event:IWalletLog|IWalletEventLog, raw?:{data: string,topics: string[]}): IWalletEvent;    
+    decode(abi: any, event: IWalletLog | IWalletEventLog, raw?: {
+        data: string;
+        topics: string[];
+    }): IWalletEvent;
     decodeEventData(data: IWalletLog, events?: any): Promise<IWalletEvent>;
     decodeLog(inputs: any, hexString: string, topics: any): any;
     defaultAccount: string;
@@ -264,18 +268,21 @@ export interface IWalletPlugin {
     getTransaction(transactionHash: string): Promise<IWalletTransaction>;
     methods(...args: any): Promise<any>;
     set privateKey(value: string);
-    recoverSigner(msg: string, signature: string): Promise<string>;		
-    registerAbi(abi: any[] | string, address?: string|string[], handler?: any): string;
-    registerAbiContracts(abiHash: string, address: string|string[], handler?: any): any;
-    send(to: string, amount: number): Promise<IWalletTransactionReceipt>;		
+    recoverSigner(msg: string, signature: string): Promise<string>;
+    registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
+    registerAbiContracts(abiHash: string, address: string | string[], handler?: any): any;
+    send(to: string, amount: number): Promise<IWalletTransactionReceipt>;
     _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<IWalletTransactionReceipt>;
-    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<IWalletEvent[]>;		
+    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<IWalletEvent[]>;
     signMessage(msg: string): Promise<string>;
     signTransaction(tx: any, privateKey?: string): Promise<string>;
     tokenInfo(address: string): Promise<IWalletTokenInfo>;
     utils: IWalletUtils;
-    verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
-    soliditySha3(...val: any[]): string;	
+    verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
+    soliditySha3(...val: any[]): string;
+    toChecksumAddress(address: string): string;
+    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransaction): Promise<IWalletTransaction>;
+    _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransaction): Promise<string>;
 }
 export interface IDomainOptions {
     plugins?: {

@@ -255,6 +255,14 @@ const Wallet = {
     toChecksumAddress(address) {
         let wallet = global.$$wallet_plugin;
         return wallet.toChecksumAddress(address);
+    },
+    _txObj(abiHash, address, methodName, params, options) {
+        let wallet = global.$$wallet_plugin;
+        return;
+    },
+    _txData(abiHash, address, methodName, params, options) {
+        let wallet = global.$$wallet_plugin;
+        return;
     }
 };
 exports.default = Wallet;

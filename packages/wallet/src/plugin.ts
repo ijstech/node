@@ -83,17 +83,18 @@ export interface IWalletEvent{
 }
 export interface IWalletTransaction {
     hash?: string;
-    nonce: number;
+    nonce?: number;
     blockHash?: string | null;
     blockNumber?: number | null;
+    data?: string;
     transactionIndex?: number | null;
     from?: string;
-    to: string | null;
+    to?: string | null;
     value?: string | number;
-    gasPrice: string | number;
+    gasPrice?: string | number;
     maxPriorityFeePerGas?: number | string | BigNumber;
     maxFeePerGas?: number | string | BigNumber;
-    gas: number;
+    gas?: number;
     input?: string;
 }
 export interface IWalletBlockTransactionObject{
@@ -191,6 +192,8 @@ export interface IWallet {
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
     soliditySha3(...val: any[]): string;	
     toChecksumAddress(address: string): string;	
+    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransaction): Promise<IWalletTransaction>;
+    _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransaction): Promise<string>;
 }
 interface IDictionary {
     [index: string]: any;
@@ -483,6 +486,14 @@ const Wallet: IWallet = {
     toChecksumAddress(address: string): string{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
         return wallet.toChecksumAddress(address);   
+    },
+    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransaction): Promise<IWalletTransaction>{
+        let wallet: IWalletPluginObject = global.$$wallet_plugin;
+        return;
+    },
+    _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransaction): Promise<string>{
+        let wallet: IWalletPluginObject = global.$$wallet_plugin;
+        return;
     }
 };
 export default Wallet;

@@ -199,6 +199,8 @@ export interface IWalletPlugin {
     utils: IWalletUtils;
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
     soliditySha3(...val: any[]): string;	
+    _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<IWalletTransaction>;
+    _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<string>;
 }
 export interface IMessagePlugin {
     publish(channel: string|number, msg: string):void;

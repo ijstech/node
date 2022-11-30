@@ -149,6 +149,8 @@ export declare namespace Types{
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
         soliditySha3(...val: any[]): string;
         toChecksumAddress(address: string): string;		
+        _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<IWalletTransaction>;
+        _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<string>;
     }
     export interface ICachePlugin{
         del(key: string): Promise<boolean>;
@@ -405,6 +407,8 @@ export interface IWalletPlugin {
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
     soliditySha3(...val: any[]): string;	
     toChecksumAddress(address: string): string;	
+    _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<IWalletTransaction>;
+    _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<string>;
 }
 export interface IMessagePlugin {
     publish(channel: string|number, msg: string):void;

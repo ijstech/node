@@ -56,17 +56,18 @@ export declare namespace Types{
     }
     export interface IWalletTransaction {
         hash?: string;
-        nonce: number;
+        nonce?: number;
         blockHash?: string | null;
         blockNumber?: number | null;
+        data?: string;
         transactionIndex?: number | null;
         from?: string;
-        to: string | null;
+        to?: string | null;
         value?: string | number;
-        gasPrice: string | number;
+        gasPrice?: string | number;
         maxPriorityFeePerGas?: number | string | BigNumber;
         maxFeePerGas?: number | string | BigNumber;
-        gas: number;
+        gas?: number;
         input?: string;
     }
     export interface IWalletBlockTransactionObject{
@@ -131,7 +132,7 @@ export declare namespace Types{
         address: string;
         balance: Promise<BigNumber>;
         balanceOf(address: string): Promise<BigNumber>;    
-        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
+        _call(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<any>;    
         chainId: number;
         createAccount(): IWalletAccount;
         decode(abi:any, event:IWalletLog|IWalletEventLog, raw?:{data: string,topics: string[]}): IWalletEvent;    
@@ -161,7 +162,9 @@ export declare namespace Types{
         utils: IWalletUtils;
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
         soliditySha3(...val: any[]): string;	
-        toChecksumAddress(address: string): string;	
+        toChecksumAddress(address: string): string;
+        _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<IWalletTransaction>;
+        _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<string>;
     }
     export interface ICachePlugin{
         del(key: string): Promise<boolean>;

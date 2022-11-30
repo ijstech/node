@@ -1,11 +1,13 @@
 {
     "name": "@ijstech/node",
     "description": "Secure Node",
-    "version": "0.1.26",
+    "version": "0.1.28",
     "engines": {
         "node": ">=18.0.0"
     },
-    "workspaces": ["packages/*"],
+    "workspaces": [
+        "packages/*"
+    ],
     "main": "./lib/index.js",
     "types": "./types/index.d.ts",
     "author": "https://ijs.network",
@@ -14,13 +16,13 @@
         "type": "git",
         "url": "https://github.com/ijstech/node"
     },
-    "dependencies": {        
-        "@ijstech/eth-wallet": "^0.1.23", 
+    "dependencies": {
         "@ijstech/app": "file:packages/app",
         "@ijstech/cache": "file:packages/cache",
         "@ijstech/crypto": "file:packages/crypto",
         "@ijstech/db": "file:packages/db",
-        "@ijstech/eth-contract": "file:packages/eth-contract",        
+        "@ijstech/eth-contract": "file:packages/eth-contract",
+        "@ijstech/eth-wallet": "^0.1.28",
         "@ijstech/fetch": "file:packages/fetch",
         "@ijstech/http": "file:packages/http",
         "@ijstech/ipfs": "file:packages/ipfs",
@@ -35,7 +37,7 @@
         "@ijstech/tsc": "file:packages/tsc",
         "@ijstech/types": "file:packages/types",
         "@ijstech/vm": "file:packages/vm",
-        "@ijstech/wallet": "file:packages/wallet",       
+        "@ijstech/wallet": "file:packages/wallet",
         "bignumber.js": "9.0.1",
         "cron-parser": "4.2.0",
         "extract-zip": "2.0.1",
@@ -47,7 +49,7 @@
         "redis": "3.1.2",
         "web3.storage": "4.4.0"
     },
-    "devDependencies": {        
+    "devDependencies": {
         "@types/koa": "2.13.4",
         "@types/mocha": "9.1.1",
         "@types/mysql": "2.15.20",

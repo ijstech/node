@@ -257,7 +257,7 @@ declare module "@ijstech/eth-contract" {
     export interface IWallet {
         address: string;
         balance: Promise<BigNumber>;
-        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
+        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
         decode(abi: any, event: IWalletLog | IWalletEventLog, raw?: {
             data: string;
             topics: string[];
@@ -269,11 +269,11 @@ declare module "@ijstech/eth-contract" {
         methods(...args: any): Promise<any>;
         registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
         send(to: string, amount: number): Promise<TransactionReceipt>;
-        _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
+        _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
         scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
         utils: IWalletUtils;
-        _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
-        _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
+        _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<Transaction>;
+        _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<string>;
     }
     export interface Event {
         name: string;
@@ -328,22 +328,20 @@ declare module "@ijstech/eth-contract" {
         status: boolean;
     }
     export interface Transaction {
-        from?: string;
-        to: string;
-        nonce: number;
-        gas: number;
-        gasPrice: BigNumber;
-        data: string;
-        value?: BigNumber;
-    }
-    export interface TransactionOptions {
-        from?: string;
+        hash?: string;
         nonce?: number;
-        gas?: number;
-        gasLimit?: number;
-        gasPrice?: BigNumber | number;
+        blockHash?: string | null;
+        blockNumber?: number | null;
         data?: string;
-        value?: BigNumber | number;
+        transactionIndex?: number | null;
+        from?: string;
+        to?: string | null;
+        value?: string | number;
+        gasPrice?: string | number;
+        maxPriorityFeePerGas?: number | string | BigNumber;
+        maxFeePerGas?: number | string | BigNumber;
+        gas?: number;
+        input?: string;
     }
     export interface EventType {
         name: string;
@@ -384,12 +382,12 @@ declare module "@ijstech/eth-contract" {
         protected getAbiEvents(): any;
         protected getAbiTopics(eventNames?: string[]): any[];
         scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
-        batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<void>;
-        protected txData(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
-        protected call(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
+        batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: number | BigNumber | Transaction): Promise<void>;
+        protected txData(methodName: string, params?: any[], options?: number | BigNumber | Transaction): Promise<string>;
+        protected call(methodName: string, params?: any[], options?: number | BigNumber | Transaction): Promise<any>;
         private _send;
-        protected __deploy(params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
-        protected send(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
+        protected __deploy(params?: any[], options?: number | BigNumber | Transaction): Promise<string>;
+        protected send(methodName: string, params?: any[], options?: number | BigNumber | Transaction): Promise<TransactionReceipt>;
         protected _deploy(...params: any[]): Promise<string>;
         protected methods(methodName: string, ...params: any[]): Promise<any>;
     }
