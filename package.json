@@ -22,7 +22,7 @@
         "@ijstech/crypto": "file:packages/crypto",
         "@ijstech/db": "file:packages/db",
         "@ijstech/eth-contract": "file:packages/eth-contract",
-        "@ijstech/eth-wallet": "^0.1.28",
+        "@ijstech/eth-wallet": "^0.1.29",
         "@ijstech/fetch": "file:packages/fetch",
         "@ijstech/http": "file:packages/http",
         "@ijstech/ipfs": "file:packages/ipfs",
