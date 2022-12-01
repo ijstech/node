@@ -111,8 +111,8 @@ export interface Transaction {
     transactionIndex?: number | null;
     from?: string;
     to?: string | null;
-    value?: string | number;
-    gasPrice?: string | number;
+    value?: BigNumber;
+    gasPrice?: BigNumber;
     maxPriorityFeePerGas?: number | string | BigNumber;
     maxFeePerGas?: number | string | BigNumber;
     gas?: number;
