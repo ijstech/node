@@ -4,6 +4,10 @@
     "main": "lib/index.js",
     "plugin": "plugin/index.js",
     "pluginTypes": "pluginTypes/plugin.d.ts",
+    "dependencies": {
+        "@ijstech/eth-wallet": "*",
+        "bignumber.js": "*"
+    },
     "types": "types/index.d.ts",
     "scripts": {
         "build": "rm -f *.tsbuildinfo && rm -rf plugin && rm -rf types && rm -rf lib && rm -rf pluginTypes && tsc && tsc --p tsconfig.plugin.json && tsc --p tsconfig.plugin.types.json",

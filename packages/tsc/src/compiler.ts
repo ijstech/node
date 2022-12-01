@@ -11,6 +11,7 @@ import TS from "typescript";
 import Path, { resolve } from 'path';
 const Libs = {};
 const RootPath = process.cwd();
+const PackageWhiteList = ['bignumber.js'];
 
 async function getPackageScriptDir(filePath: string): Promise<any>{
     let path = resolveFilePath([RootPath], filePath, true);
@@ -95,6 +96,7 @@ async function getPackageInfo(packName: string): Promise<IPackage>{
             name: packName,
             path: Path.dirname(Path.join(path, pack.pluginTypes || pack.types)),
             script: script,
+            dependencies: pack.dependencies,
             dts: dts//{"index.d.ts": content}
         };
     }
@@ -257,6 +259,12 @@ export class Compiler {
             if (!pack){
                 pack = await getPackageInfo(packName);
                 this.packages[packName] = pack;
+                if (pack.dependencies){
+                    for (let n in pack.dependencies){
+                        if (!this.packages[n] && (n.startsWith('@ijstech') || n.startsWith('@scom')))
+                            await this.addPackage(n);
+                    }
+                }
             };   
         }
         else
@@ -416,8 +424,39 @@ export async function PluginScript(plugin: IPluginOptions): Promise<string>{
         }
     }
     if (plugin.scriptPath.endsWith('.ts')){
-        if (plugin.scriptPath.startsWith('/'))
-            await compiler.addFile(plugin.scriptPath)
+        if (plugin.scriptPath.startsWith('/')){
+            let fileName = Path.basename(plugin.scriptPath);
+            let pathName = Path.dirname(plugin.scriptPath);
+            let content = await Fs.promises.readFile(plugin.scriptPath, 'utf8');
+            await compiler.addFileContent(fileName, content, '', async (name: string, isPackage: boolean)=>{
+                if (isPackage){
+                    let pack = await compiler.addPackage(name);
+                    return {
+                        fileName: 'index.d.ts',
+                        script: pack.script,
+                        dts: pack.dts
+                    }
+                }
+                else {
+                    if (Fs.existsSync(Path.join(pathName, name +'.ts')))
+                        return {
+                            fileName: name + '.ts',
+                            script: await Fs.promises.readFile(Path.join(pathName, name +'.ts'), 'utf-8')
+                        }
+                    else if (Fs.existsSync(Path.join(pathName, name +'.d.ts'))){
+                        return {
+                            fileName: name + '.d.ts',
+                            script: '',
+                            dts: await Fs.promises.readFile(Path.join(pathName, name +'.d.ts'), 'utf-8')
+                        }
+                    }
+                };
+                return {
+                    fileName: '',
+                    script: ''
+                }
+            });
+        }
         else if (plugin.modulePath)
             await compiler.addFile(resolveFilePath([RootPath, plugin.modulePath], plugin.scriptPath, true));
         else
