@@ -169,7 +169,7 @@ class Contract {
             return this.call(methodName, params);
         }
         else if (method.stateMutability == 'payable') {
-            let value = new bignumber_js_1.BigNumber(params.pop()).toString();
+            let value = params.pop();
             return this.call(methodName, params, { value: value });
         }
         else {

@@ -118,6 +118,15 @@ export interface Transaction {
     gas?: number;
     input?: string;
 }
+export interface TransactionOptions {
+    from?: string;
+    nonce?: number;
+    gas?: number;
+    gasLimit?: number;
+    gasPrice?: BigNumber | number;
+    data?: string;
+    value?: BigNumber | number;
+}
 export interface EventType{
     name: string
 };
@@ -248,7 +257,7 @@ export class Contract {
         let events = this.getAbiEvents();
         return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
     };
-    async batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?:number|BigNumber|Transaction){
+    async batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?:number|BigNumber|TransactionOptions){
         //TODO: implement the batch call
 
         // let contract = await this.getContract();
@@ -265,24 +274,24 @@ export class Contract {
         //     ));
         // }));
     }        
-    protected async txData(methodName:string, params?:any[], options?:number|BigNumber|Transaction): Promise<string>{
+    protected async txData(methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<string>{
         return await this.wallet._txData(this.abiHash, this._address, methodName, params, options);
     }
-    protected async call(methodName:string, params?:any[], options?:number|BigNumber|Transaction): Promise<any>{
+    protected async call(methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<any>{
         return await this.wallet._call(this.abiHash, this._address, methodName, params, options);
     }
-    private async _send(methodName:string, params?:any[], options?:number|BigNumber|Transaction): Promise<TransactionReceipt>{
+    private async _send(methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<TransactionReceipt>{
         params = params || [];         
         if (!methodName)   
             params.unshift(this._bytecode);
         return await this.wallet._send(this.abiHash, this._address, methodName, params, options);
     }
-    protected async __deploy(params?:any[], options?:number|BigNumber|Transaction): Promise<string>{                        
+    protected async __deploy(params?:any[], options?:number|BigNumber|TransactionOptions): Promise<string>{                        
         let receipt = await this._send('', params, options);
         this.address = receipt.contractAddress;
         return this.address;
     }
-    protected send(methodName:string, params?:any[], options?:number|BigNumber|Transaction): Promise<TransactionReceipt>{
+    protected send(methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<TransactionReceipt>{
         let receipt = this._send(methodName, params, options);
         return receipt;
     }
@@ -296,7 +305,7 @@ export class Contract {
         if (method.stateMutability == "view" || method.stateMutability == "pure") {
             return this.call(methodName, params);
         } else if (method.stateMutability=='payable') {
-            let value = new BigNumber(params.pop()).toString();
+            let value = params.pop();
             return this.call(methodName, params, {value:value});
         } else {
             return this.send(methodName, params);

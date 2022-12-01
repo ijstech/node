@@ -117,6 +117,15 @@ export interface Transaction {
     gas?: number;
     input?: string;
 }
+export interface TransactionOptions {
+    from?: string;
+    nonce?: number;
+    gas?: number;
+    gasLimit?: number;
+    gasPrice?: BigNumber | number;
+    data?: string;
+    value?: BigNumber | number;
+}
 export interface EventType {
     name: string;
 }
@@ -156,12 +165,12 @@ export declare class Contract {
     protected getAbiEvents(): any;
     protected getAbiTopics(eventNames?: string[]): any[];
     scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
-    batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: number | BigNumber | Transaction): Promise<void>;
-    protected txData(methodName: string, params?: any[], options?: number | BigNumber | Transaction): Promise<string>;
-    protected call(methodName: string, params?: any[], options?: number | BigNumber | Transaction): Promise<any>;
+    batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<void>;
+    protected txData(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
+    protected call(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
     private _send;
-    protected __deploy(params?: any[], options?: number | BigNumber | Transaction): Promise<string>;
-    protected send(methodName: string, params?: any[], options?: number | BigNumber | Transaction): Promise<TransactionReceipt>;
+    protected __deploy(params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
+    protected send(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
     protected _deploy(...params: any[]): Promise<string>;
     protected methods(methodName: string, ...params: any[]): Promise<any>;
 }

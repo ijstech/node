@@ -97,6 +97,15 @@ export interface IWalletTransaction {
     gas?: number;
     input?: string;
 }
+export interface IWalletTransactionOptions {
+    from?: string;
+    nonce?: number;
+    gas?: number;
+    gasLimit?: number;
+    gasPrice?: BigNumber | number;
+    data?: string;
+    value?: BigNumber | number;
+}
 export interface IWalletBlockTransactionObject{
     number: number;
     hash: string;
@@ -192,8 +201,8 @@ export interface IWallet {
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
     soliditySha3(...val: any[]): string;	
     toChecksumAddress(address: string): string;	
-    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransaction): Promise<IWalletTransaction>;
-    _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransaction): Promise<string>;
+    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<IWalletTransaction>;
+    _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<string>;
 }
 interface IDictionary {
     [index: string]: any;
@@ -487,11 +496,11 @@ const Wallet: IWallet = {
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
         return wallet.toChecksumAddress(address);   
     },
-    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransaction): Promise<IWalletTransaction>{
+    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<IWalletTransaction>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
         return;
     },
-    _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransaction): Promise<string>{
+    _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<string>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
         return;
     }

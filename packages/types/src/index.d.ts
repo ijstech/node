@@ -193,6 +193,15 @@ export interface IWalletTransaction {
     gas?: number;
     input?: string;
 }
+export interface IWalletTransactionOptions {
+    from?: string;
+    nonce?: number;
+    gas?: number;
+    gasLimit?: number;
+    gasPrice?: BigNumber | number;
+    data?: string;
+    value?: BigNumber | number;
+}
 export interface IWalletBlockTransactionObject{
     number: number;
     hash: string;
@@ -281,8 +290,8 @@ export interface IWalletPlugin {
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
     soliditySha3(...val: any[]): string;
     toChecksumAddress(address: string): string;
-    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransaction): Promise<IWalletTransaction>;
-    _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransaction): Promise<string>;
+    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<IWalletTransaction>;
+    _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<string>;
 }
 export interface IDomainOptions {
     plugins?: {
