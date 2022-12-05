@@ -8,7 +8,7 @@
         "plugin": "tools/cli.js"
     },
     "scripts": {
-        "build": "rm -rf lib && rm -rf types && rm -f tsconfig.tsbuildinfo && tsc && cp -rf src/lib lib",
+        "build": "rm -rf lib && rm -rf types && rm -f tsconfig.tsbuildinfo && tsc && cp -r src/lib/plugin.d.ts plugin/index.d.ts",
         "test": "mocha --exit --require ts-node/register test/*.spec.ts"
     }
 }

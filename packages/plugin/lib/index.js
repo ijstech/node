@@ -471,8 +471,12 @@ class Plugin {
             if (!this.options.script && this.options.scriptPath) {
                 if (this.options.scriptPath.endsWith('.js'))
                     this.options.script = await getScript(this.options.scriptPath, this.options.modulePath);
-                else
-                    this.options.script = await tsc_1.PluginScript(this.options);
+                else {
+                    let result = await tsc_1.PluginScript(this.options);
+                    console.dir('####');
+                    console.dir(result.dependencies);
+                    this.options.script = result.script;
+                }
             }
             if (this.options.isolated === false)
                 this.plugin = await this.createModule();

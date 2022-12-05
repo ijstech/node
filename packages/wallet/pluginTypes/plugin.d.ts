@@ -160,11 +160,13 @@ export interface IContract {
     };
 }
 export interface IWalletUtils {
+    fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     fromWei(value: any, unit?: string): string;
     hexToUtf8(value: string): string;
     sha3(value: string): string;
     stringToBytes(value: string | stringArray, nByte?: number): string | string[];
     stringToBytes32(value: string | stringArray): string | string[];
+    toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     toString(value: any): string;
     toUtf8(value: any): string;
     toWei(value: string, unit?: string): string;

@@ -10,13 +10,15 @@ export {BigNumber};
 type stringArray = string | _stringArray;
 interface _stringArray extends Array<stringArray> { };
 export interface IWalletUtils{    
+    fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     fromWei(value: any, unit?: string): string;
     hexToUtf8(value: string): string;
     sha3(value: string): string;
     stringToBytes(value: string | stringArray, nByte?: number): string | string[];
     stringToBytes32(value: string | stringArray): string | string[];
+    toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     toString(value: any): string;
-    toUtf8(value: any): string;
+    toUtf8(value: any): string;		
     toWei(value: string, unit?: string): string;
 };
 export interface IBatchRequestResult {
@@ -42,13 +44,12 @@ export interface IWallet {
     getChainId(): Promise<number>;
     methods(...args: any): Promise<any>;    
     registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
-    // registerEvent(eventMap: {[topics: string]: any;}, address: string, handler: any): void;
     send(to: string, amount: number): Promise<TransactionReceipt>;
     _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
-    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;            
-    utils: IWalletUtils;
+    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;     
+    _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<string>;      
     _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<Transaction>;
-    _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<string>;
+    utils: IWalletUtils;
 };
 export interface Event{
     name: string;

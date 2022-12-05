@@ -212,6 +212,10 @@ define("plugin", ["require", "exports", "bignumber.js"], function (require, expo
             return result;
         },
         utils: {
+            fromDecimals(value, decimals) {
+                decimals = decimals || 18;
+                return new bignumber_js_1.default(value).shiftedBy(-decimals);
+            },
             fromWei(value, unit) {
                 let wallet = global.$$wallet_plugin;
                 return wallet.utils_fromWei(value, unit);
@@ -232,7 +236,13 @@ define("plugin", ["require", "exports", "bignumber.js"], function (require, expo
                 let wallet = global.$$wallet_plugin;
                 return wallet.utils_stringToBytes32(value);
             },
+            toDecimals(value, decimals) {
+                decimals = decimals || 18;
+                return new bignumber_js_1.default(value).shiftedBy(decimals);
+            },
             toString(value) {
+                if (bignumber_js_1.default.isBigNumber(value))
+                    return new bignumber_js_1.default(value).toString(10);
                 let wallet = global.$$wallet_plugin;
                 return wallet.utils_toString(value);
             },

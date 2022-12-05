@@ -5,7 +5,7 @@
 *-----------------------------------------------------------*/
 
 // const TS = require("./lib/typescriptServices.js");
-import {IPluginOptions} from '@ijstech/types';
+import {IPluginOptions, IDependencies} from '@ijstech/types';
 import Fs from 'fs';
 import TS from "typescript";
 import Path, { resolve } from 'path';
@@ -140,7 +140,7 @@ export class Compiler {
         this.scriptOptions = {            
             allowJs: false,
             alwaysStrict: true,
-            declaration: false,      
+            declaration: true,      
             experimentalDecorators: true,      
             resolveJsonModule: false,
             module: TS.ModuleKind.AMD,
@@ -403,9 +403,12 @@ export class WalletPluginCompiler extends PluginCompiler{
         return super.compile(emitDeclaration);
     };
 };
-export async function PluginScript(plugin: IPluginOptions): Promise<string>{
+export async function PluginScript(plugin: IPluginOptions): Promise<{script: string,dependencies: IDependencies}>{
     if (plugin.script)
-        return plugin.script;
+        return {
+            script: plugin.script,
+            dependencies: plugin.dependencies
+        };
     let compiler = new PluginCompiler();    
     if (plugin.plugins){
         if (plugin.plugins.db)
@@ -473,8 +476,11 @@ export async function PluginScript(plugin: IPluginOptions): Promise<string>{
         else
             await compiler.addDirectory(plugin.scriptPath);
     };
-    let result = await compiler.compile();
+    let result = await compiler.compile(true);
     if (result.errors.length > 0)
-        console.dir(result.errors);
-    return result.script;
+        throw new Error(JSON.stringify(result.errors, null, 4));
+    return {
+        script: result.script,
+        dependencies: result.dependencies
+    };
 };

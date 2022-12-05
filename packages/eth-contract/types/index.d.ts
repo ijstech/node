@@ -10,11 +10,13 @@ declare type stringArray = string | _stringArray;
 interface _stringArray extends Array<stringArray> {
 }
 export interface IWalletUtils {
+    fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     fromWei(value: any, unit?: string): string;
     hexToUtf8(value: string): string;
     sha3(value: string): string;
     stringToBytes(value: string | stringArray, nByte?: number): string | string[];
     stringToBytes32(value: string | stringArray): string | string[];
+    toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     toString(value: any): string;
     toUtf8(value: any): string;
     toWei(value: string, unit?: string): string;
@@ -45,9 +47,9 @@ export interface IWallet {
     send(to: string, amount: number): Promise<TransactionReceipt>;
     _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
     scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
-    utils: IWalletUtils;
-    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<Transaction>;
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<string>;
+    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<Transaction>;
+    utils: IWalletUtils;
 }
 export interface Event {
     name: string;

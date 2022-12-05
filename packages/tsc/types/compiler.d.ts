@@ -3,7 +3,7 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-import { IPluginOptions } from '@ijstech/types';
+import { IPluginOptions, IDependencies } from '@ijstech/types';
 import TS from "typescript";
 export declare function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string;
 export interface ICompilerError {
@@ -69,4 +69,7 @@ export declare class WalletPluginCompiler extends PluginCompiler {
     init(): Promise<void>;
     compile(emitDeclaration?: boolean): Promise<ICompilerResult>;
 }
-export declare function PluginScript(plugin: IPluginOptions): Promise<string>;
+export declare function PluginScript(plugin: IPluginOptions): Promise<{
+    script: string;
+    dependencies: IDependencies;
+}>;

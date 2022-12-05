@@ -155,11 +155,13 @@ export interface IContract {
     methods: {[methodName: string]: (...params:any[]) => IContractMethod};
 }
 export interface IWalletUtils{
+    fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     fromWei(value: any, unit?: string): string;
     hexToUtf8(value: string): string;
     sha3(value: string): string;
     stringToBytes(value: string | stringArray, nByte?: number): string | string[];
     stringToBytes32(value: string | stringArray): string | string[];
+    toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
     toString(value: any): string;
     toUtf8(value: any): string;		
     toWei(value: string, unit?: string): string;
@@ -451,6 +453,10 @@ const Wallet: IWallet = {
         return result;
     },
     utils: {
+        fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber{
+            decimals = decimals || 18;
+            return new BigNumber(value).shiftedBy(-decimals);
+        },
         fromWei(value: any, unit?: string): string{
             let wallet: IWalletPluginObject = global.$$wallet_plugin;
             return wallet.utils_fromWei(value, unit);
@@ -471,7 +477,13 @@ const Wallet: IWallet = {
             let wallet: IWalletPluginObject = global.$$wallet_plugin;
             return wallet.utils_stringToBytes32(value);
         },
+        toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber{
+            decimals = decimals || 18;
+            return new BigNumber(value).shiftedBy(decimals);
+        },
         toString(value: any): string{
+            if (BigNumber.isBigNumber(value))
+                return new BigNumber(value).toString(10);
             let wallet: IWalletPluginObject = global.$$wallet_plugin;
             return wallet.utils_toString(value);
         },

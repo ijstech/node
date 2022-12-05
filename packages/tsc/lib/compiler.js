@@ -406,7 +406,10 @@ exports.WalletPluginCompiler = WalletPluginCompiler;
 ;
 async function PluginScript(plugin) {
     if (plugin.script)
-        return plugin.script;
+        return {
+            script: plugin.script,
+            dependencies: plugin.dependencies
+        };
     let compiler = new PluginCompiler();
     if (plugin.plugins) {
         if (plugin.plugins.db)
@@ -480,7 +483,11 @@ async function PluginScript(plugin) {
     let result = await compiler.compile();
     if (result.errors.length > 0)
         console.dir(result.errors);
-    return result.script;
+    console.dir(result.dependencies);
+    return {
+        script: result.script,
+        dependencies: result.dependencies
+    };
 }
 exports.PluginScript = PluginScript;
 ;
