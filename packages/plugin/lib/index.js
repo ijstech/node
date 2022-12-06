@@ -473,8 +473,11 @@ class Plugin {
                     this.options.script = await getScript(this.options.scriptPath, this.options.modulePath);
                 else {
                     let result = await tsc_1.PluginScript(this.options);
-                    console.dir('####');
-                    console.dir(result.dependencies);
+                    this.options.dependencies = this.options.dependencies || {};
+                    for (let n in result.dependencies) {
+                        if (result.dependencies[n].script)
+                            this.options.dependencies[n] = result.dependencies[n];
+                    }
                     this.options.script = result.script;
                 }
             }

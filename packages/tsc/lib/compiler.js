@@ -125,7 +125,7 @@ class Compiler {
         this.scriptOptions = {
             allowJs: false,
             alwaysStrict: true,
-            declaration: false,
+            declaration: true,
             experimentalDecorators: true,
             resolveJsonModule: false,
             module: typescript_1.default.ModuleKind.AMD,
@@ -480,10 +480,9 @@ async function PluginScript(plugin) {
             await compiler.addDirectory(plugin.scriptPath);
     }
     ;
-    let result = await compiler.compile();
+    let result = await compiler.compile(true);
     if (result.errors.length > 0)
-        console.dir(result.errors);
-    console.dir(result.dependencies);
+        throw new Error(JSON.stringify(result.errors, null, 4));
     return {
         script: result.script,
         dependencies: result.dependencies
