@@ -211,12 +211,13 @@ export declare namespace Types{
     }
     export interface IDBClient{
         applyQueries(queries: IQuery[]): Promise<IQueryResult[]>;
-        query(sql: string, params?: any[]): Promise<any>;
-        resolve(table: string, fields: IFields, criteria: any, args: any): Promise<any>;
         beginTransaction():Promise<boolean>;
         checkTableExists(tableName: string): Promise<boolean>;
         commit():Promise<boolean>;
+        query(sql: string, params?: any[]): Promise<any>;
+        resolve(table: string, fields: IFields, criteria: any, args: any): Promise<any>;
         rollback(): Promise<boolean>;
+        syncTableSchema(tableName: string, fields: IFields): Promise<boolean>;
     }
 }
 export interface ISession{
