@@ -49,6 +49,9 @@ function getPluginClient(vm, db, client) {
             },
             rollback() {
                 return client.rollback();
+            },
+            async syncTableSchema(tableName, fields) {
+                return await client.syncTableSchema(tableName, fields);
             }
         };
         plugin["$$query_json"] = true;

@@ -390,7 +390,7 @@ export class MySQLClient implements Types.IDBClient{
             });
         });
     };
-    private async syncTableSchema(tableName: string, fields: Types.IFields): Promise<boolean> {
+    async syncTableSchema(tableName: string, fields: Types.IFields): Promise<boolean> {
         try {
             const tableExists = await this.checkTableExists(tableName);
             if(!tableExists) {
@@ -553,12 +553,12 @@ export class MySQLClient implements Types.IDBClient{
                 if(columnBuilderPK.length > 0) {
                     const sql2 = `ALTER TABLE ${this.escape(tableName)} ${columnBuilderPK.join(',')}`;
                     await this.query(sql2);
-                }
-
-            }
+                };
+                return true;
+            };
         }
         catch(e) {
             // throw e;
-        }
-    }
+        };
+    };
 };

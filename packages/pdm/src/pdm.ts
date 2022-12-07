@@ -97,6 +97,24 @@ export class TContext {
             result[tableName] = fields;
         }
         return result;
+    };
+    _checkTableExists(tableName: string): Promise<boolean>{
+        return this._client.checkTableExists(tableName);  
+    };
+    async _initTables(): Promise<boolean>{
+        try{
+            for (let n in this.$$records){
+                let rs = this.$$records[n]; 
+                console.dir('### ' + rs.tableName)
+                let result = await this._client.syncTableSchema(rs.tableName, rs.recordSet.fields);
+                if (!result)
+                    return false;
+            };
+            return true;
+        }
+        catch(err){
+            return false;
+        }
     }
     private getApplyQueries(recordSet: IRecordSet): any[]{
         // if (!recordSet._id)

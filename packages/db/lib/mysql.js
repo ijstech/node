@@ -614,11 +614,16 @@ class MySQLClient {
                     const sql2 = `ALTER TABLE ${this.escape(tableName)} ${columnBuilderPK.join(',')}`;
                     await this.query(sql2);
                 }
+                ;
+                return true;
             }
+            ;
         }
         catch (e) {
         }
+        ;
     }
+    ;
 }
 exports.MySQLClient = MySQLClient;
 ;

@@ -6,6 +6,7 @@
     "types": "types/index.d.ts",    
     "scripts": {
         "build": "rm -f *.tsbuildinfo && rm -rf plugin &&  rm -rf types && rm -rf lib && rm -rf pluginTypes && tsc && tsc --p tsconfig.plugin.json && tsc --p tsconfig.plugin.types.json",
-        "test": "mocha --exit --require ts-node/register test/*.spec.ts"
+        "test": "mocha --exit --require ts-node/register test/*.spec.ts",
+        "test:pdm": "mocha --exit --require ts-node/register test/pdm.spec.ts"
     }
 }

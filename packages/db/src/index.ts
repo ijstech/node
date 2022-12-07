@@ -50,6 +50,9 @@ function getPluginClient(vm: VM, db: string, client: Types.IDBClient): Types.IDB
             },
             rollback(): Promise<boolean>{
                 return client.rollback();
+            },
+            async syncTableSchema(tableName: string, fields: Types.IFields): Promise<boolean>{
+                return await client.syncTableSchema(tableName, fields);
             }
         };
         (plugin as any)["$$query_json"] = true;

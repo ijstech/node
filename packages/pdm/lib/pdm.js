@@ -75,6 +75,27 @@ class TContext {
         }
         return result;
     }
+    ;
+    _checkTableExists(tableName) {
+        return this._client.checkTableExists(tableName);
+    }
+    ;
+    async _initTables() {
+        try {
+            for (let n in this.$$records) {
+                let rs = this.$$records[n];
+                console.dir('### ' + rs.tableName);
+                let result = await this._client.syncTableSchema(rs.tableName, rs.recordSet.fields);
+                if (!result)
+                    return false;
+            }
+            ;
+            return true;
+        }
+        catch (err) {
+            return false;
+        }
+    }
     getApplyQueries(recordSet) {
         let id = recordSet._id;
         if (!this._applyQueries[id])

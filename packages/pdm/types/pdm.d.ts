@@ -54,6 +54,8 @@ export declare class TContext {
     constructor(client?: Types.IDBClient | Types.IDbConnectionOptions);
     _getRecordSetId(): number;
     _getSchema(): ISchema;
+    _checkTableExists(tableName: string): Promise<boolean>;
+    _initTables(): Promise<boolean>;
     private getApplyQueries;
     private applyDelete;
     private applyInsert;
