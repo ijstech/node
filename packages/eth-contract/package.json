@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/eth-contract",
-    "version": "0.1.10",
+    "version": "0.1.11",
     "bin": {
         "sol2ts": "tools/bin/compile.js"
     },
@@ -12,7 +12,7 @@
         "solc": "0.8.12"
     },
     "scripts": {
-        "build": "rm -rf lib && rm -rf types && tsc && npm run build:dist",
+        "build": "rm -rf lib && rm -rf types && tsc && npm run build:dist && npm run build:tools",
         "build:dist": "rm -rf dist && tsc --p tsconfig.dist.json",
         "build:dist1": "rm -rf dist && tsc --p tsconfig.dist.json && cat src/types/bignumber.d.ts dist/index.d.ts > dist/tmp && mv dist/tmp dist/index.d.ts",
         "build:tools": "rm -rf tools/bin && cd tools && rm -rf bin && tsc && cd ..",
