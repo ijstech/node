@@ -412,14 +412,13 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
     }
     addLine(0, `import {IWallet, Contract as _Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions} from "@ijstech/eth-contract";`);
     addLine(0, `import Bin from "${abiPath}${name}.json";`);
-    addLine(0, `static _abi: any = Bin.abi;`);
     if (abi)
     for (let i = 0; i < abi.length; i++) {
         if (abi[i].type != 'function' && abi[i].type != 'constructor') continue;
         addParamsInterface(abi[i]);
     }
     addLine(0, `export class ${name} extends _Contract{`);
-    addLine(1, `constructor(wallet: IWallet, address?: string){`);
+    addLine(1, `static _abi: any = Bin.abi;`);
     addLine(1, `constructor(wallet: IWallet, address?: string){`);
     addLine(2, options.outputBytecode ? `super(wallet, address, Bin.abi, Bin.bytecode);` : `super(wallet, address, Bin.abi);`);
     addLine(2, `this.assign()`);
