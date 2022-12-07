@@ -85,7 +85,6 @@ define("pdm", ["require", "exports", "graphql", "@ijstech/db"], function (requir
             try {
                 for (let n in this.$$records) {
                     let rs = this.$$records[n];
-                    console.dir('### ' + rs.tableName);
                     let result = await this._client.syncTableSchema(rs.tableName, rs.recordSet.fields);
                     if (!result)
                         return false;

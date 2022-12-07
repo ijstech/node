@@ -104,8 +104,7 @@ export class TContext {
     async _initTables(): Promise<boolean>{
         try{
             for (let n in this.$$records){
-                let rs = this.$$records[n]; 
-                console.dir('### ' + rs.tableName)
+                let rs = this.$$records[n];
                 let result = await this._client.syncTableSchema(rs.tableName, rs.recordSet.fields);
                 if (!result)
                     return false;
