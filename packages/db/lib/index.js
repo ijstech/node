@@ -22,42 +22,43 @@ exports.getClient = getClient;
 ;
 function getPluginClient(vm, db, client) {
     let name = '$$plugin_db_' + db;
+    let plugin = {
+        async applyQueries(queries) {
+            let result = await client.applyQueries(queries);
+            return JSON.stringify(result);
+        },
+        beginTransaction() {
+            return client.beginTransaction();
+        },
+        async checkTableExists(tableName) {
+            let result = await client.checkTableExists(tableName);
+            return result;
+        },
+        commit() {
+            return client.commit();
+        },
+        async query(sql, params) {
+            let result = await client.query(sql, params);
+            return JSON.stringify(result);
+        },
+        async resolve(table, fields, criteria, args) {
+            let result = await client.resolve(table, fields, criteria, args);
+            return JSON.stringify(result);
+        },
+        rollback() {
+            return client.rollback();
+        },
+        async syncTableSchema(tableName, fields) {
+            return await client.syncTableSchema(tableName, fields);
+        }
+    };
+    plugin["$$query_json"] = true;
+    plugin["$$resolve_json"] = true;
     if (!vm.loadedPlugins[name]) {
         vm.loadedPlugins[name] = true;
-        let plugin = {
-            async applyQueries(queries) {
-                let result = await client.applyQueries(queries);
-                return result;
-            },
-            beginTransaction() {
-                return client.beginTransaction();
-            },
-            async checkTableExists(tableName) {
-                let result = await client.checkTableExists(tableName);
-                return result;
-            },
-            commit() {
-                return client.commit();
-            },
-            async query(sql, params) {
-                let result = await client.query(sql, params);
-                return JSON.stringify(result);
-            },
-            async resolve(table, fields, criteria, args) {
-                let result = await client.resolve(table, fields, criteria, args);
-                return JSON.stringify(result);
-            },
-            rollback() {
-                return client.rollback();
-            },
-            async syncTableSchema(tableName, fields) {
-                return await client.syncTableSchema(tableName, fields);
-            }
-        };
-        plugin["$$query_json"] = true;
-        plugin["$$resolve_json"] = true;
         vm.injectGlobalObject(name, plugin);
     }
+    ;
     return name;
 }
 function loadPlugin(plugin, options, vm) {

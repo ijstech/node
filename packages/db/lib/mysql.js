@@ -466,10 +466,10 @@ class MySQLClient {
                         switch (field.dataType) {
                             case 'key':
                                 pkName = fieldName;
-                                columnBuilder.push(`${this.escape(fieldName)} CHAR(36) NOT NULL`);
+                                columnBuilder.push(`${this.escape(fieldName)} VARCHAR(${field.size || 36}) NOT NULL`);
                                 break;
                             case 'ref':
-                                columnBuilder.push(`${this.escape(fieldName)} CHAR(36) NULL`);
+                                columnBuilder.push(`${this.escape(fieldName)} VARCHAR(${field.size || 36}) NULL`);
                             case '1toM':
                                 break;
                             case 'char':
@@ -538,11 +538,11 @@ class MySQLClient {
                     if (!currentField) {
                         switch (field.dataType) {
                             case 'key':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} CHAR(36) NOT NULL FIRST`);
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} VARCHAR(${field.size || 36}) NOT NULL FIRST`);
                                 columnBuilderPK.push(`ADD PRIMARY KEY (${this.escape(fieldName)})`);
                                 break;
                             case 'ref':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} CHAR(36) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
+                                columnBuilder.push(`ADD ${this.escape(fieldName)} VARCHAR(${field.size || 36}) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
                                 break;
                             case '1toM':
                                 break;
