@@ -42,13 +42,13 @@ describe('Table Schema', function() {
                let compareField = field.field;
                switch(field.dataType) {
                    case 'key':
-                       compareType = 'CHAR(36)';
+                       compareType = 'VARCHAR(36)';
                        compareField = fieldName;
                        break;
                    case '1toM':
                        break;
                    case 'ref':
-                       compareType = 'CHAR(36)';
+                       compareType = 'VARCHAR(36)';
                        break;
                    case 'char':
                        compareType = `CHAR(${field.size})`;
