@@ -128,7 +128,9 @@ export declare class TRecordSet<T> {
     }, options?: InsertOptions): void;
     applyDelete(): TQuery<T>;
     applyUpdate<TB extends keyof T>(data: {
-        [C in TB]: T[C];
+        [C in TB]?: T[C];
+    }, keys?: {
+        [C in TB]?: T[C];
     }): TQuery<T>;
     get context(): IContext;
     get count(): number;

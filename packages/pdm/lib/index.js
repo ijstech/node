@@ -31,15 +31,18 @@ function loadPlugin(worker, options) {
     const plugin = {
         async applyQueries(queries) {
             let result = await client.applyQueries(queries);
-            return JSON.stringify(result);
+            if (typeof (result) == 'string')
+                return JSON.stringify(result);
+            else
+                return result;
         },
         async graphQuery(schema, query) {
             let graphql = new PDM.TGraphQL(schema, client);
-            return JSON.stringify(await graphql.query(query));
+            return await graphql.query(query);
         },
         graphIntrospection(schema) {
             let graphql = new PDM.TGraphQL(schema, client);
-            return JSON.stringify(graphql.introspection);
+            return graphql.introspection;
         }
     };
     if (worker.vm) {

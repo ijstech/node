@@ -146,7 +146,10 @@ class TContext {
     async graphQuery(query) {
         if (global['$$pdm_plugin']) {
             let result = await global['$$pdm_plugin'].graphQuery(this._getSchema(), query);
-            return JSON.parse(result);
+            if (typeof (result) == 'string')
+                return JSON.parse(result);
+            else
+                return result;
         }
         else {
             if (!this._graphql)
@@ -158,7 +161,10 @@ class TContext {
     graphIntrospection() {
         if (global['$$pdm_plugin']) {
             let result = global['$$pdm_plugin'].graphIntrospection(this._getSchema());
-            return JSON.parse(result);
+            if (typeof (result) == 'string')
+                return JSON.parse(result);
+            else
+                return result;
         }
         else {
             if (!this._graphql)
@@ -278,6 +284,8 @@ class TContext {
             queries.push(data[i]);
         let client = this._client || global['$$pdm_plugin'];
         let result = await client.applyQueries(queries);
+        if (typeof (result) == 'string')
+            result = JSON.parse(result);
         if (result && result[0] && result[0].error)
             throw result[0].error;
         for (let i in this._modifiedRecords) {
@@ -364,11 +372,26 @@ class TRecordSet {
     }
     ;
     add(data) {
-        let result = data || {};
-        result.$$newRecord = true;
-        let fields = this.fields;
-        if (!result[this.keyField.field])
+        let result = {};
+        if (data) {
+            for (let n in data) {
+                if (!n.startsWith('$'))
+                    result[n] = data[n];
+            }
+            ;
+        }
+        ;
+        for (let prop in this.fields) {
+            let field = this._fields[prop];
+            if (field.field && prop != field.field) {
+                if (typeof (result[prop]) != 'undefined' && typeof (result[field.field]) == 'undefined')
+                    result[field.field] = result[prop];
+            }
+        }
+        ;
+        if (this.keyField && typeof (result[this.keyField.field]) == 'undefined')
             result[this.keyField.field] = generateUUID();
+        result.$$newRecord = true;
         this._records.push(result);
         return this.proxy(result);
     }
@@ -394,14 +417,24 @@ class TRecordSet {
         return result;
     }
     ;
-    applyUpdate(data) {
+    applyUpdate(data, keys) {
         let qry = [];
         for (let prop in this.fields) {
             let field = this._fields[prop];
             if (field.field && prop != field.field) {
                 if (typeof (data[prop]) != 'undefined' && typeof (data[field.field]) == 'undefined')
                     data[field.field] = data[prop];
+                if (keys) {
+                    if (typeof (keys[prop]) != 'undefined' && typeof (keys[field.field]) == 'undefined') {
+                        if (qry.length > 0)
+                            qry.push('and');
+                        qry.push([prop, '=', keys[prop]]);
+                    }
+                    ;
+                }
+                ;
             }
+            ;
         }
         ;
         this.context.applyUpdate(this, data, qry);

@@ -102,21 +102,34 @@ describe('PDM', function() {
         let cust = context.customer.first;
         assert.strictEqual(cust.customerName, custName);        
         //update
-        let newCustName = '$m' + custName;
+        let newCustName1 = '$m1' + custName;
         context.customer.applyUpdate({
-            'customerName': newCustName,
+            'customerName': newCustName1,
             'city': 'HK'
         }).where('customerName', '=', custName);
         await context.save();
-        context.customer.query.where('customerName', '=', newCustName);
+        context.customer.query.where('customerName', '=', newCustName1);
         await context.fetch();
-        assert.strictEqual(context.customer.first.customerName, newCustName);
+        assert.strictEqual(context.customer.first.customerName, newCustName1);
         assert.strictEqual(context.customer.first.customerName, cust.customerName);
+
+        //update with key values
+        let newCustName2 = '$m2' + custName;
+        context.customer.applyUpdate({
+            'customerName': newCustName2,
+            'city': 'HK'
+        }, {'customerName': newCustName1});
+        await context.save();
+        context.customer.query.where('customerName', '=', newCustName2);
+        await context.fetch();
+        assert.strictEqual(context.customer.first.customerName, newCustName2);
+        assert.strictEqual(context.customer.first.customerName, cust.customerName);
+        
         //delete
-        context.customer.applyDelete().where('customerName','=',newCustName);
+        context.customer.applyDelete().where('customerName','=',newCustName2);
         await context.save();
         context.reset();
-        context.customer.query.where('customerName', '=', newCustName);
+        context.customer.query.where('customerName', '=', newCustName2);
         await context.fetch();
         assert.strictEqual(context.customer.count, 0);
     });

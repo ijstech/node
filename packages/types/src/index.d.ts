@@ -444,7 +444,7 @@ export interface IMySQLConnection{
     database: string;
 }
 export interface IDBPlugin{
-    getConnection(name?: string): IDBClient;
+    getConnection(name?: string): IDBClient | string;
 }
 export interface IDBClient{
     applyQueries(queries: IQuery[]): Promise<IQueryResult[]>;
