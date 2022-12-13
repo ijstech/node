@@ -5,7 +5,7 @@
 *-----------------------------------------------------------*/
 import { IPluginOptions, IDependencies } from '@ijstech/types';
 import TS from "typescript";
-export declare function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string;
+export declare function resolveFilePath(rootPaths: string[] | string, filePath: string, allowsOutsideRootPath?: boolean): string;
 export interface ICompilerError {
     file: string;
     start: number;

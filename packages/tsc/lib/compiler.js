@@ -30,11 +30,16 @@ async function getPackageScriptDir(filePath) {
 }
 ;
 function resolveFilePath(rootPaths, filePath, allowsOutsideRootPath) {
+    if (!Array.isArray(rootPaths))
+        rootPaths = [rootPaths];
     let rootPath = path_1.default.resolve(...rootPaths);
-    let result = path_1.default.join(rootPath, filePath);
+    let result = path_1.default.resolve(rootPath, filePath);
     if (allowsOutsideRootPath)
         return result;
-    return result.startsWith(rootPath) ? result : undefined;
+    if (result.startsWith(rootPath))
+        return result;
+    else
+        throw new Error('Invalid file path!');
 }
 exports.resolveFilePath = resolveFilePath;
 ;
@@ -346,7 +351,7 @@ class Compiler {
                 readFile: this.readFile.bind(this)
             });
             if (result.resolvedModule) {
-                if (!moduleName.startsWith('./')) {
+                if (!moduleName.startsWith('.')) {
                     resolvedModules.push({
                         resolvedFileName: moduleName + '/index.d.ts',
                         extension: '.ts',
@@ -429,10 +434,19 @@ async function PluginScript(plugin) {
         }
     }
     if (plugin.scriptPath.endsWith('.ts')) {
-        if (plugin.scriptPath.startsWith('/')) {
-            let fileName = path_1.default.basename(plugin.scriptPath);
-            let pathName = path_1.default.dirname(plugin.scriptPath);
-            let content = await fs_1.default.promises.readFile(plugin.scriptPath, 'utf8');
+        if (plugin.modulePath || plugin.scriptPath.startsWith('/')) {
+            let fileName;
+            let pathName;
+            if (plugin.modulePath) {
+                pathName = plugin.modulePath;
+                fileName = plugin.scriptPath;
+            }
+            else {
+                pathName = path_1.default.dirname(plugin.scriptPath);
+                fileName = path_1.default.basename(plugin.scriptPath);
+            }
+            ;
+            let content = await fs_1.default.promises.readFile(resolveFilePath(pathName, fileName), 'utf8');
             await compiler.addFileContent(fileName, content, '', async (name, isPackage) => {
                 if (isPackage) {
                     let pack = await compiler.addPackage(name);
@@ -443,16 +457,16 @@ async function PluginScript(plugin) {
                     };
                 }
                 else {
-                    if (fs_1.default.existsSync(path_1.default.join(pathName, name + '.ts')))
+                    if (fs_1.default.existsSync(resolveFilePath(pathName, name + '.ts')))
                         return {
                             fileName: name + '.ts',
-                            script: await fs_1.default.promises.readFile(path_1.default.join(pathName, name + '.ts'), 'utf-8')
+                            script: await fs_1.default.promises.readFile(resolveFilePath(pathName, name + '.ts'), 'utf-8')
                         };
-                    else if (fs_1.default.existsSync(path_1.default.join(pathName, name + '.d.ts'))) {
+                    else if (fs_1.default.existsSync(resolveFilePath(pathName, name + '.d.ts'))) {
                         return {
                             fileName: name + '.d.ts',
                             script: '',
-                            dts: await fs_1.default.promises.readFile(path_1.default.join(pathName, name + '.d.ts'), 'utf-8')
+                            dts: await fs_1.default.promises.readFile(resolveFilePath(pathName, name + '.d.ts'), 'utf-8')
                         };
                     }
                 }

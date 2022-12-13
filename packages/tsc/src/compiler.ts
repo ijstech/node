@@ -26,12 +26,17 @@ async function getPackageScriptDir(filePath: string): Promise<any>{
     catch(err){}
     return path;
 };
-export function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string{    
+export function resolveFilePath(rootPaths: string[] |string, filePath: string, allowsOutsideRootPath?: boolean): string{    
+    if (!Array.isArray(rootPaths))
+        rootPaths = [rootPaths];
     let rootPath = Path.resolve(...rootPaths);    
-    let result = Path.join(rootPath, filePath);
+    let result = Path.resolve(rootPath, filePath);
     if (allowsOutsideRootPath)
         return result;
-    return result.startsWith(rootPath) ? result : undefined;
+    if (result.startsWith(rootPath))
+        return result
+    else
+        throw new Error('Invalid file path!');
 };
 function getLib(fileName: string): string {
     if (!Libs[fileName]){
@@ -357,7 +362,7 @@ export class Compiler {
                 readFile: this.readFile.bind(this)
             });
             if (result.resolvedModule) {
-                if (!moduleName.startsWith('./')){
+                if (!moduleName.startsWith('.')){
                     resolvedModules.push(<any>{
                         resolvedFileName: moduleName + '/index.d.ts',
                         extension: '.ts',
@@ -427,10 +432,18 @@ export async function PluginScript(plugin: IPluginOptions): Promise<{script: str
         }
     }
     if (plugin.scriptPath.endsWith('.ts')){
-        if (plugin.scriptPath.startsWith('/')){
-            let fileName = Path.basename(plugin.scriptPath);
-            let pathName = Path.dirname(plugin.scriptPath);
-            let content = await Fs.promises.readFile(plugin.scriptPath, 'utf8');
+        if (plugin.modulePath || plugin.scriptPath.startsWith('/')){
+            let fileName: string;
+            let pathName: string;
+            if (plugin.modulePath){
+                pathName = plugin.modulePath;
+                fileName = plugin.scriptPath;                
+            }
+            else{
+                pathName = Path.dirname(plugin.scriptPath);
+                fileName = Path. basename(plugin.scriptPath);                
+            };            
+            let content = await Fs.promises.readFile(resolveFilePath(pathName, fileName), 'utf8');
             await compiler.addFileContent(fileName, content, '', async (name: string, isPackage: boolean)=>{
                 if (isPackage){
                     let pack = await compiler.addPackage(name);
@@ -441,16 +454,16 @@ export async function PluginScript(plugin: IPluginOptions): Promise<{script: str
                     }
                 }
                 else {
-                    if (Fs.existsSync(Path.join(pathName, name +'.ts')))
+                    if (Fs.existsSync(resolveFilePath(pathName, name +'.ts')))
                         return {
                             fileName: name + '.ts',
-                            script: await Fs.promises.readFile(Path.join(pathName, name +'.ts'), 'utf-8')
+                            script: await Fs.promises.readFile(resolveFilePath(pathName, name +'.ts'), 'utf-8')
                         }
-                    else if (Fs.existsSync(Path.join(pathName, name +'.d.ts'))){
+                    else if (Fs.existsSync(resolveFilePath(pathName, name +'.d.ts'))){
                         return {
                             fileName: name + '.d.ts',
                             script: '',
-                            dts: await Fs.promises.readFile(Path.join(pathName, name +'.d.ts'), 'utf-8')
+                            dts: await Fs.promises.readFile(resolveFilePath(pathName, name +'.d.ts'), 'utf-8')
                         }
                     }
                 };
