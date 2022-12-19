@@ -11,6 +11,7 @@ import * as https from 'https';
 import * as http from 'http';
 
 import codeGen, {IUserDefinedOptions} from './codeGen';
+import flattenSolidityFile from './flatten';
 
 const SolcjsPath = path.resolve(__dirname, 'solcjs');
 if (!fs.existsSync(SolcjsPath))
@@ -273,6 +274,7 @@ interface Config extends CompileOptions {
     output?: string;
     overrides?: Override[];
     libMap?: {[soource:string]:string};
+    flattenFiles?: string[];
 }
 
 async function main(configFilePath: string) {
@@ -280,7 +282,7 @@ async function main(configFilePath: string) {
     let rootPath = process.cwd();
     let configPath = path.dirname(path.resolve(path.join(rootPath, configFilePath)));
     
-    let {version, optimizerRuns, sourceDir, outputDir, outputOptions, overrides, libMap} = config;
+    let {version, optimizerRuns, sourceDir, outputDir, outputOptions, overrides, libMap, flattenFiles} = config;
 
     if (!sourceDir) {
         sourceDir = "contracts/";
@@ -325,6 +327,18 @@ async function main(configFilePath: string) {
             }
         }
         fs.writeFileSync(outputDir + '/index.ts', index);
+        
+        if (flattenFiles) {
+            const flattenedDestDir = path.join(configPath, 'flattened/');
+            if (!fs.existsSync(flattenedDestDir)) {
+                fs.mkdirSync(flattenedDestDir);
+            }
+            for (let file of flattenFiles) {
+                const sourceFile = path.join(configPath, file);
+                const destFile = flattenedDestDir + path.basename(sourceFile);
+                await flattenSolidityFile(sourceFile, destFile);
+            }
+        }
     } catch (e) { console.log(e); }
 }
 

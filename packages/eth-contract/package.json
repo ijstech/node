@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/eth-contract",
-    "version": "0.1.13",
+    "version": "0.1.14",
     "bin": {
         "sol2ts": "tools/bin/compile.js"
     },
