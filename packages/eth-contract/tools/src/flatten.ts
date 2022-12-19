@@ -5,17 +5,25 @@ interface ICompiledContract {
     filePath: string;
     source: string;
     dependencies: Record<string, ICompiledContract>;
+    license?: string;
 }
 
 const importRegex = /^\s*import\s+(?:"([^"]+)"|'([^']+)')./gm;
+const licenseRegex = /\/\/\s+SPDX-License-Identifier:.*/gm;
 const compiledContracts: Record<string, ICompiledContract> = {};
 
-async function compileSolidityFile(filePath: string) {
+async function compileSolidityFile(filePath: string, isBaseFile: boolean = false) {
     if (compiledContracts[filePath]) {
         return compiledContracts[filePath];
     }
 
-    const sourceCode = fs.readFileSync(filePath, "utf8");
+    let sourceCode = fs.readFileSync(filePath, "utf8");
+    let license;
+    if (isBaseFile) {
+        const licenseMatch = licenseRegex.exec(sourceCode);
+        license = licenseMatch[0];
+    }
+    sourceCode = sourceCode.replace(licenseRegex, '');
 
     let importMatch;
     const imports = [];
@@ -42,6 +50,7 @@ async function compileSolidityFile(filePath: string) {
         filePath: filePath,
         source: sourceCode,
         dependencies: dependencies,
+        license: license
     };
 
     return compiledContracts[filePath];
@@ -49,7 +58,9 @@ async function compileSolidityFile(filePath: string) {
 
 export default async function flattenSolidityFile(sourcefilePath: string, targetFilePath: string) {
     let processedFilePath = [];
-    const contracts = await compileSolidityFile(sourcefilePath);
+    const contracts = await compileSolidityFile(sourcefilePath, true);
+    console.log('contracts[sourcefilePath]', contracts);
+    const license = contracts.license;
     const flattenDependencies = (contract) => {
         let sourceCode = "";
         for (const [importPath, dependency] of Object.entries(
@@ -64,15 +75,8 @@ export default async function flattenSolidityFile(sourcefilePath: string, target
         return sourceCode;
     };
 
-    let sourceCode = flattenDependencies(contracts);
+    let sourceCode = license + '\n' + flattenDependencies(contracts);
     sourceCode = sourceCode.replace(importRegex, '');
-    let count = 0;
-    const licenseRegex = /\/\/\s+SPDX-License-Identifier:.*/gm;
-    sourceCode = sourceCode.replace(licenseRegex, (match) => {
-        count++;
-        return count === 1 ? match : '';
-    });
-
     fs.writeFileSync(targetFilePath, sourceCode);
     return sourceCode;
 }
