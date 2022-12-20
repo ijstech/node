@@ -39,6 +39,7 @@ export interface IDomainSchedule {
 }
 export interface IDomainSchedulePackage {
     packagePath: string;
+    params?: any;
     schedules?: IDomainSchedule[];
     options?: IDomainOptions;
 }
@@ -59,6 +60,7 @@ export declare class Scheduler {
     addJob(job: ISchdeulePluginOptions, module?: string): void;
     start(): Promise<void>;
     stop(): void;
-    private runJob;
+    runJob(domain: string, workerName: string, params?: any): Promise<any>;
+    private processJob;
     private processJobs;
 }

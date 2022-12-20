@@ -120,19 +120,58 @@ class Scheduler {
         this.started = false;
     }
     ;
-    async runJob(job) {
+    async runJob(domain, workerName, params) {
+        var _a;
+        let domainPacks = this.domainPackages[domain];
+        for (let i = 0; i < (domainPacks === null || domainPacks === void 0 ? void 0 : domainPacks.length); i++) {
+            let pack = domainPacks[i];
+            for (let k = 0; k < ((_a = pack.schedules) === null || _a === void 0 ? void 0 : _a.length); k++) {
+                let schedule = pack.schedules[k];
+                if (schedule.worker == workerName) {
+                    params = params || {};
+                    for (let n in schedule.params)
+                        params = schedule.params[n];
+                    return await this.processJob({
+                        id: '#' + workerName,
+                        domain: domain,
+                        cron: '*',
+                        pack: pack,
+                        workerName: schedule.worker,
+                        params: schedule.params
+                    });
+                }
+                ;
+            }
+            ;
+        }
+        ;
+        if ((domainPacks === null || domainPacks === void 0 ? void 0 : domainPacks.length) == 1) {
+            return await this.processJob({
+                id: '#' + workerName,
+                domain: domain,
+                workerName: workerName,
+                cron: '*',
+                pack: domainPacks[0],
+                params: params
+            });
+        }
+        ;
+    }
+    ;
+    async processJob(job) {
         var _a, _b, _c, _d;
-        if (!job.next) {
+        if (job.cron != '*' && !job.next) {
             job.next = cron_parser_1.default.parseExpression(job.cron).next();
             console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id ? `${job.domain}:${job.id}` : ''));
         }
         ;
-        if (job.next.getTime() < new Date().getTime()) {
+        if (job.cron == '*' || job.next.getTime() < new Date().getTime()) {
             job.processing = true;
             try {
+                let result;
                 if (job.pack) {
                     if (this.queue) {
-                        let result = await this.queue.createJob({
+                        result = await this.queue.createJob({
                             worker: {
                                 domain: job.domain,
                                 packagePath: job.pack.packagePath,
@@ -163,9 +202,10 @@ class Scheduler {
                                 script: worker.moduleScript.script,
                                 params: worker.params
                             });
+                            await job.plugin.init(job.params || {});
                         }
                         ;
-                        let result = await job.plugin.process(job.params);
+                        result = await job.plugin.process(job.params);
                     }
                 }
                 else {
@@ -177,8 +217,12 @@ class Scheduler {
                     await job.plugin.process(job.params);
                 }
                 ;
-                job.next = cron_parser_1.default.parseExpression(job.cron).next();
-                console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id ? job.id : ''));
+                if (job.cron != '*') {
+                    job.next = cron_parser_1.default.parseExpression(job.cron).next();
+                    console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id ? job.id : ''));
+                }
+                ;
+                return result;
             }
             finally {
                 job.processing = false;
@@ -191,7 +235,7 @@ class Scheduler {
     processJobs() {
         this.jobs.forEach(async (job) => {
             if (!job.disabled && !job.processing) {
-                this.runJob(job);
+                this.processJob(job);
             }
             ;
         });
