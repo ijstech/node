@@ -294,32 +294,33 @@ export interface IWalletPlugin {
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<string>;
 }
 export interface IDomainOptions {
-    plugins?: {
-        db?: {
-            mysql?: {
-                host: string;
-                user: string;
-                password: string;
-                database: string;
-            };
-        };
-        cache?: {
-            redis?: {
-                host: string;
-                password?: string;
-                db?: number;
-            };
-        };
-        fetch?: {
-            methods?: 'GET'|'POST'[];
-            hosts?: string[];
-        };
-        wallet?: {
-            accounts?: IWalletAccount[];
-            chainId?: number;
-            networks?: IWalletNetworks;
-        };
-    };
+    plugins?: IRequiredPlugins
+    // {
+    //     db?: {
+    //         mysql?: {
+    //             host: string;
+    //             user: string;
+    //             password: string;
+    //             database: string;
+    //         };
+    //     };
+    //     cache?: {
+    //         redis?: {
+    //             host: string;
+    //             password?: string;
+    //             db?: number;
+    //         };
+    //     };
+    //     fetch?: {
+    //         methods?: 'GET'|'POST'[];
+    //         hosts?: string[];
+    //     };
+    //     wallet?: {
+    //         accounts?: IWalletAccount[];
+    //         chainId?: number;
+    //         networks?: IWalletNetworks;
+    //     };
+    // };
 }
 //Queue Plugin
 export interface IQueuePluginOptions extends IWorkerPluginOptions{
@@ -505,7 +506,7 @@ export interface IPluginOptions {
 }
 export interface IRequiredPlugins{
     cache?: ICacheClientOptions,
-    db?: IDBRequiredPluginOptions,
+    db?: IDbConnectionOptions, //IDBRequiredPluginOptions,
     queue?: IQueueRequiredPluginOptions,
     message?: IMessageRequiredPluginOptions,
     wallet?: IWalletRequiredPluginOptions,
