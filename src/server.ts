@@ -13,7 +13,7 @@ Config = Config || {};
 async function main(){
     let appServer = new AppServer({
         http: { 
-            port: Config.port || 8080,
+            port: Config.router?.port || 8080,
         },
         schedule: {
             
@@ -21,9 +21,9 @@ async function main(){
     });
     if (SCConfig.router)
         appServer.httpServer.addDomainPackage(Config.domain || 'localhost', {
-            baseUrl: SCConfig.router.baseUrl, 
+            baseUrl: Config.router?.baseUrl || SCConfig.router.baseUrl, 
             packagePath: Path.resolve(RootPath, './'),
-            params: SCConfig.router.params,
+            params: Config.router?.params || SCConfig.router.params,
             options: {
                 plugins: Config.plugins
             }
@@ -31,8 +31,8 @@ async function main(){
     if (SCConfig.scheduler)
         appServer.scheduler.addDomainPackage(Config.domain || 'localhost', {
             packagePath: Path.resolve(RootPath, './'),
-            params: SCConfig.scheduler.params,
-            schedules: SCConfig.scheduler.schedules || [],
+            params: Config.scheduler?.params || SCConfig.scheduler.params,
+            schedules: Config.scheduler?.schedules || SCConfig.scheduler.schedules || [],
             options: {
                 plugins: Config.plugins
             }
