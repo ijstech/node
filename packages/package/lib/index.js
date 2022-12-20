@@ -9,7 +9,7 @@ const storage_1 = require("@ijstech/storage");
 const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
 const pathToRegexp_1 = require("./pathToRegexp");
-const DefaultPlugins = ['@ijstech/crypto', '@ijstech/fetch', '@ijstech/plugin', '@ijstech/wallet', '@ijstech/eth-contract'];
+const DefaultPlugins = ['@ijstech/crypto', '@ijstech/eth-contract', '@ijstech/fetch', '@ijstech/pdm', '@ijstech/plugin', '@ijstech/wallet'];
 ;
 ;
 ;
@@ -43,6 +43,22 @@ class Package {
         return this.manager.getFileContent(this.packagePath, filePath);
     }
     ;
+    async getSourceContent(filePath) {
+        try {
+            return {
+                fileName: filePath + '.ts',
+                content: await this.manager.getFileContent(this.packagePath, filePath + '.ts')
+            };
+        }
+        catch (err) {
+            return {
+                fileName: filePath + '/index.ts',
+                content: await this.manager.getFileContent(this.packagePath, filePath + '/index.ts')
+            };
+        }
+        ;
+    }
+    ;
     get name() {
         return this.packageName || this.packageConfig.name || this.packagePath;
     }
@@ -73,9 +89,10 @@ class Package {
     }
     ;
     async fileImporter(fileName, isPackage) {
+        var _a;
         if (isPackage) {
             let result = await this.manager.getScript(fileName);
-            if (result.errors)
+            if (((_a = result.errors) === null || _a === void 0 ? void 0 : _a.length) > 0)
                 console.dir(result.errors);
             return {
                 fileName: 'index.d.ts',
@@ -85,9 +102,10 @@ class Package {
             };
         }
         else {
+            let file = await this.getSourceContent(fileName);
             return {
-                fileName: fileName + '.ts',
-                script: await this.getFileContent(fileName + '.ts')
+                fileName: file.fileName,
+                script: file.content
             };
         }
     }
@@ -123,18 +141,17 @@ class Package {
             if (content) {
                 let compiler = new tsc_1.Compiler();
                 await compiler.addFileContent(indexFile, content, this.name, async (fileName, isPackage) => {
+                    var _a;
                     if (isPackage && DefaultPlugins.indexOf(fileName) > -1) {
                         await compiler.addPackage('bignumber.js');
-                        if (fileName == '@ijstech/eth-contract') {
+                        if (fileName == '@ijstech/plugin')
+                            await compiler.addPackage('@ijstech/types');
+                        if (fileName == '@ijstech/eth-contract')
                             await compiler.addPackage('@ijstech/wallet');
-                        }
-                        ;
-                        if (fileName == '@ijstech/wallet') {
-                            await compiler.addPackage('bignumber.js');
-                        }
-                        ;
                         await compiler.addPackage(fileName);
                     }
+                    else if (isPackage && ((_a = this.packageConfig) === null || _a === void 0 ? void 0 : _a.dependencies) && this.packageConfig.dependencies[fileName])
+                        await compiler.addPackage(fileName);
                     else {
                         let result = await this.fileImporter(fileName, isPackage);
                         if (isPackage) {
@@ -154,13 +171,14 @@ class Package {
                             }
                             ;
                         }
-                        ;
                         return result;
                     }
+                    ;
                 });
                 let result = await compiler.compile(true);
                 this.scripts[fileName] = result;
             }
+            ;
         }
         ;
         return this.scripts[fileName];
@@ -215,9 +233,22 @@ class PackageManager {
                         url = url.split('?')[0];
                     for (let k = 0; k < ((_b = (_a = p.scconfig) === null || _a === void 0 ? void 0 : _a.router) === null || _b === void 0 ? void 0 : _b.routes.length); k++) {
                         let route = p.scconfig.router.routes[k];
-                        if (route.methods.indexOf(method) > -1) {
+                        if (!route.methods || route.methods.indexOf(method) > -1) {
                             let params = matchRoute(pack, route, url);
                             if (params !== false) {
+                                if (route.worker && p.scconfig.workers && p.scconfig.workers[route.worker]) {
+                                    let worker = p.scconfig.workers[route.worker];
+                                    route.module = worker.module;
+                                    let routePlugins = worker.plugins || {};
+                                    for (let n in route.plugins)
+                                        routePlugins[n] = route.plugins[n];
+                                    route.plugins = routePlugins;
+                                    let routeParams = worker.params || {};
+                                    for (let n in route.params)
+                                        routeParams[n] = route.params[n];
+                                    route.params = routeParams;
+                                }
+                                ;
                                 if (params === true)
                                     params = {};
                                 else {

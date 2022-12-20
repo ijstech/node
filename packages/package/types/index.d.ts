@@ -8,6 +8,7 @@ export interface IRoute {
     module: string;
     moduleScript?: ICompilerResult;
     params?: any;
+    worker?: string;
     plugins?: {
         cache?: boolean;
         db?: boolean;
@@ -22,6 +23,7 @@ export interface IWorker {
     module: string;
     moduleScript?: ICompilerResult;
     params?: any;
+    worker?: string;
     plugins?: {
         cache?: boolean;
         db?: boolean;
@@ -34,6 +36,14 @@ export interface IWorker {
 }
 export interface ISCConfig {
     src?: string;
+    scheduler?: {
+        schedules: [
+            {
+                id: string;
+                worker: string;
+            }
+        ];
+    };
     router?: {
         routes: IRoute[];
     };
@@ -45,6 +55,7 @@ export declare function matchRoute(pack: IDomainRouterPackage, route: IRoute, ur
 export interface IDomainRouterPackage {
     baseUrl: string;
     packagePath: string;
+    params?: any;
     options?: IDomainOptions;
 }
 export interface IDomainWorkerPackage {
@@ -64,6 +75,10 @@ export declare class Package {
         version?: string;
     });
     getFileContent(filePath: string): Promise<string>;
+    getSourceContent(filePath: string): Promise<{
+        fileName: string;
+        content: string;
+    }>;
     get name(): string;
     get path(): string;
     get version(): string;
