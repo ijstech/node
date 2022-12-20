@@ -140,6 +140,8 @@ export class Compiler {
     private fileNames: string[];
     private packages: {[index: string]: IPackage};
     private dependencies: {[index: string]: IPackage};
+    private fileNotExists: string;
+    private resolvedFileName: string;
 
     constructor() {
         this.scriptOptions = {            
@@ -310,36 +312,57 @@ export class Compiler {
             readFile: this.readFile.bind(this),
             resolveModuleNames: this.resolveModuleNames.bind(this)
         };
-        let program = TS.createProgram(this.fileNames, this.scriptOptions, host);
-        const emitResult = program.emit();
-        emitResult.diagnostics.forEach(item => {
-            result.errors.push({
-                category: item.category,
-                code: item.code,
-                file: item.file?item.file.fileName:null,
-                length: item.length,
-                message: item.messageText,
-                start: item.start
+        try{
+            let program = TS.createProgram(this.fileNames, this.scriptOptions, host);
+            const emitResult = program.emit();
+            emitResult.diagnostics.forEach(item => {
+                result.errors.push({
+                    category: item.category,
+                    code: item.code,
+                    file: item.file?item.file.fileName:null,
+                    length: item.length,
+                    message: item.messageText,
+                    start: item.start
+                });
             });
-        });
-        if (emitDeclaration){
-            program = TS.createProgram(this.fileNames, this.dtsOptions, host);
-            program.emit();
+            if (emitDeclaration){
+                program = TS.createProgram(this.fileNames, this.dtsOptions, host);
+                program.emit();
+            };
+        }
+        catch(err){
+            if (this.fileNotExists)
+                console.dir('File not exists: ' + this.fileNotExists)
+            else
+                console.trace(err)
         };
         return result;
     };
     fileExists(fileName: string): boolean {
         let result = this.fileNames.indexOf(fileName) > -1 || this.packageFiles[fileName] != undefined;
+        if (!result && fileName.endsWith('/index.d.ts')){
+            let packName = fileName.split('/').slice(0, -1).join('/');
+            result = this.packages[packName] != undefined;
+        }; 
         if (!result && fileName.endsWith('.ts'))
             result = this.packages[fileName.slice(0, -3)] != undefined;
-        return result
+        this.resolvedFileName = '';
+        if (!result && this.fileNames.indexOf(fileName.slice(0, -3) + '/index.ts') > -1){
+            result = true;
+            this.resolvedFileName = fileName.slice(0, -3) + '/index.ts'; 
+        };
+        if (!result)        
+            this.fileNotExists = fileName
+        else
+            this.fileNotExists = '';
+        return result;
     };
     getSourceFile(fileName: string, languageVersion: TS.ScriptTarget, onError?: (message: string) => void) {
         if (fileName == 'lib.d.ts') {
             let lib = getLib('lib.d.ts');
             return TS.createSourceFile(fileName, lib, languageVersion);
         }
-        let content = this.packageFiles[fileName] || this.files[fileName];
+        let content = this.packageFiles[fileName] || this.files[fileName] || this.files[fileName.slice(0, -3) + '/index.ts'];
         if (!content)
             console.error(`Failed to get source file: ${fileName}`)
         return TS.createSourceFile(fileName, content, languageVersion);
@@ -369,8 +392,17 @@ export class Compiler {
                         isExternalLibraryImport: true
                     });
                 }
-                else
-                    resolvedModules.push(result.resolvedModule);
+                else{
+                    if (this.resolvedFileName){
+                        resolvedModules.push(<any>{
+                            resolvedFileName: this.resolvedFileName,
+                            extension: '.ts',
+                            isExternalLibraryImport: false
+                        });
+                    }
+                    else
+                        resolvedModules.push(result.resolvedModule);
+                };
             };
         };
         return resolvedModules;

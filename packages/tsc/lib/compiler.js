@@ -293,21 +293,30 @@ class Compiler {
             readFile: this.readFile.bind(this),
             resolveModuleNames: this.resolveModuleNames.bind(this)
         };
-        let program = typescript_1.default.createProgram(this.fileNames, this.scriptOptions, host);
-        const emitResult = program.emit();
-        emitResult.diagnostics.forEach(item => {
-            result.errors.push({
-                category: item.category,
-                code: item.code,
-                file: item.file ? item.file.fileName : null,
-                length: item.length,
-                message: item.messageText,
-                start: item.start
+        try {
+            let program = typescript_1.default.createProgram(this.fileNames, this.scriptOptions, host);
+            const emitResult = program.emit();
+            emitResult.diagnostics.forEach(item => {
+                result.errors.push({
+                    category: item.category,
+                    code: item.code,
+                    file: item.file ? item.file.fileName : null,
+                    length: item.length,
+                    message: item.messageText,
+                    start: item.start
+                });
             });
-        });
-        if (emitDeclaration) {
-            program = typescript_1.default.createProgram(this.fileNames, this.dtsOptions, host);
-            program.emit();
+            if (emitDeclaration) {
+                program = typescript_1.default.createProgram(this.fileNames, this.dtsOptions, host);
+                program.emit();
+            }
+            ;
+        }
+        catch (err) {
+            if (this.fileNotExists)
+                console.dir('File not exists: ' + this.fileNotExists);
+            else
+                console.trace(err);
         }
         ;
         return result;
@@ -315,8 +324,23 @@ class Compiler {
     ;
     fileExists(fileName) {
         let result = this.fileNames.indexOf(fileName) > -1 || this.packageFiles[fileName] != undefined;
+        if (!result && fileName.endsWith('/index.d.ts')) {
+            let packName = fileName.split('/').slice(0, -1).join('/');
+            result = this.packages[packName] != undefined;
+        }
+        ;
         if (!result && fileName.endsWith('.ts'))
             result = this.packages[fileName.slice(0, -3)] != undefined;
+        this.resolvedFileName = '';
+        if (!result && this.fileNames.indexOf(fileName.slice(0, -3) + '/index.ts') > -1) {
+            result = true;
+            this.resolvedFileName = fileName.slice(0, -3) + '/index.ts';
+        }
+        ;
+        if (!result)
+            this.fileNotExists = fileName;
+        else
+            this.fileNotExists = '';
         return result;
     }
     ;
@@ -325,7 +349,7 @@ class Compiler {
             let lib = getLib('lib.d.ts');
             return typescript_1.default.createSourceFile(fileName, lib, languageVersion);
         }
-        let content = this.packageFiles[fileName] || this.files[fileName];
+        let content = this.packageFiles[fileName] || this.files[fileName] || this.files[fileName.slice(0, -3) + '/index.ts'];
         if (!content)
             console.error(`Failed to get source file: ${fileName}`);
         return typescript_1.default.createSourceFile(fileName, content, languageVersion);
@@ -358,8 +382,18 @@ class Compiler {
                         isExternalLibraryImport: true
                     });
                 }
-                else
-                    resolvedModules.push(result.resolvedModule);
+                else {
+                    if (this.resolvedFileName) {
+                        resolvedModules.push({
+                            resolvedFileName: this.resolvedFileName,
+                            extension: '.ts',
+                            isExternalLibraryImport: false
+                        });
+                    }
+                    else
+                        resolvedModules.push(result.resolvedModule);
+                }
+                ;
             }
             ;
         }

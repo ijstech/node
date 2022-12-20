@@ -46,6 +46,8 @@ export declare class Compiler {
     private fileNames;
     private packages;
     private dependencies;
+    private fileNotExists;
+    private resolvedFileName;
     constructor();
     addDirectory(dir: string, parentDir?: string, packName?: string): Promise<{}>;
     addFile(filePath: string, fileName?: string): Promise<void>;
