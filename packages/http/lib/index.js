@@ -36,7 +36,7 @@ class HttpServer {
             for (let domain in this.options.domains) {
                 let packages = this.options.domains[domain];
                 for (let i = 0; i < packages.length; i++)
-                    this.addDomainRouter(domain, packages[i]);
+                    this.addDomainPackage(domain, packages[i]);
             }
             ;
         }
@@ -66,12 +66,12 @@ class HttpServer {
         ;
     }
     ;
-    async addDomainRouter(domain, router) {
+    async addDomainPackage(domain, pack) {
         if (!this.packageManager)
             this.packageManager = new package_1.PackageManager({
                 storage: this.options.storage
             });
-        this.packageManager.addDomainRouter(domain, router);
+        this.packageManager.addDomainRouter(domain, pack);
     }
     ;
     getCert(domain) {

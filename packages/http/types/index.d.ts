@@ -52,7 +52,7 @@ export declare class HttpServer {
     private packageManager;
     private queue;
     constructor(options: IHttpServerOptions);
-    addDomainRouter(domain: string, router: IDomainRouterPackage): Promise<void>;
+    addDomainPackage(domain: string, pack: IDomainRouterPackage): Promise<void>;
     getCert(domain: string): Promise<Tls.SecureContext>;
     getRouter(ctx: Koa.Context): Promise<{
         router: IRouterPluginOptions;
