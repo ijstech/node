@@ -270,6 +270,9 @@ export interface IWalletPluginObject{
     soliditySha3(...val: any[]): string;
     toChecksumAddress(address: string): string;	
 }
+function parseJson(value: string): any{
+    return JSON.parse(value);
+};
 const Wallet: IWallet = {
     get account(): IWalletAccount{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
@@ -285,7 +288,7 @@ const Wallet: IWallet = {
         return new Promise(async (resolve)=>{
             let wallet: IWalletPluginObject = global.$$wallet_plugin;
             let result = await wallet.getAccounts()                   
-            resolve(JSON.parse(result));
+            resolve(parseJson(result));
         });
     },
     get address(): string{
@@ -310,7 +313,7 @@ const Wallet: IWallet = {
         return new Promise(async (resolve)=>{
             let wallet: IWalletPluginObject = global.$$wallet_plugin;
             let result = await wallet._call(abiHash, address, methodName, params, options)
-            resolve(JSON.parse(result));
+            resolve(parseJson(result));
         })
     },
     get chainId(): number{    
@@ -324,19 +327,19 @@ const Wallet: IWallet = {
     createAccount(): IWalletAccount{        
         let wallet: IWalletPluginObject = global.$$wallet_plugin;        
         let result = wallet.createAccount()
-        return JSON.parse(result);
+        return parseJson(result);
     },
     decode(abi:any, event:IWalletLog|IWalletEventLog, raw?:{data: string,topics: string[]}): IWalletEvent{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
-        return JSON.parse(wallet.decode(abi, event, raw))
+        return parseJson(wallet.decode(abi, event, raw))
     },
     async decodeEventData(data: IWalletLog, events?: any): Promise<IWalletEvent>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
-        return JSON.parse(await wallet.decodeEventData(data, events))
+        return parseJson(await wallet.decodeEventData(data, events))
     },
     decodeLog(inputs: any, hexString: string, topics: any): any{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
-        return JSON.parse(wallet.decodeLog(inputs, hexString, topics));
+        return parseJson(wallet.decodeLog(inputs, hexString, topics));
     },
     get defaultAccount(): string{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
@@ -348,15 +351,15 @@ const Wallet: IWallet = {
     },
     getAbiEvents(abi: any[]): any{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
-        return JSON.parse(wallet.getAbiEvents(abi));
+        return parseJson(wallet.getAbiEvents(abi));
     },
     getAbiTopics(abi: any[], eventNames: string[]): any[]{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
-        return JSON.parse(wallet.getAbiTopics(abi, eventNames));
+        return parseJson(wallet.getAbiTopics(abi, eventNames));
     },
     async getBlock(...args): Promise<IWalletBlockTransactionObject>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
-        return JSON.parse(await wallet.getBlock.apply(this, args));
+        return parseJson(await wallet.getBlock.apply(this, args));
     },
     async getBlockNumber(): Promise<number>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
@@ -381,7 +384,7 @@ const Wallet: IWallet = {
             return events;			
         let abi = _abiHashDict[_abiAddressDict[address]];
         if (abi){
-            events = JSON.parse(wallet.getAbiEvents(abi))
+            events = parseJson(wallet.getAbiEvents(abi))
             _abiEventDict[address] = events;
             return events;
         };
@@ -389,11 +392,11 @@ const Wallet: IWallet = {
     async getTransaction(transactionHash: string): Promise<IWalletTransaction>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
         let result = await wallet.getTransaction(transactionHash);
-        return JSON.parse(result);
+        return parseJson(result);
     },
     async methods(...args){
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
-        return JSON.parse(await wallet.methods.apply(this, args));
+        return parseJson(await wallet.methods.apply(this, args));
     },
     set privateKey(value: string){
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
@@ -418,15 +421,15 @@ const Wallet: IWallet = {
     },
     async send(to: string, amount: number): Promise<IWalletTransactionReceipt>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
-        return JSON.parse(await wallet.send(to, amount));
+        return parseJson(await wallet.send(to, amount));
     },
     async _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<IWalletTransactionReceipt>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
-        return JSON.parse(await wallet._send(abiHash, address, methodName, params, options));
+        return parseJson(await wallet._send(abiHash, address, methodName, params, options));
     },
     async scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<IWalletEvent[]>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
-        let result:IWalletEvent[] = JSON.parse(await wallet.scanEvents(fromBlock, toBlock, topics, events, address));
+        let result:IWalletEvent[] = parseJson(await wallet.scanEvents(fromBlock, toBlock, topics, events, address));
         if (_eventHandler){
             for (let i = 0; i < result.length; i ++){
                 let event = result[i];
@@ -447,7 +450,7 @@ const Wallet: IWallet = {
     },
     async tokenInfo(address: string): Promise<IWalletTokenInfo>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
-        let result = JSON.parse(await wallet.tokenInfo(address))        
+        let result = parseJson(await wallet.tokenInfo(address))        
         if (result.totalSupply)
             result.totalSupply = new BigNumber(result.totalSupply);        
         return result;
@@ -471,7 +474,7 @@ const Wallet: IWallet = {
         },
         stringToBytes(value: string | stringArray, nByte?: number): string | string[]{
             let wallet: IWalletPluginObject = global.$$wallet_plugin;
-            return JSON.parse(wallet.utils_stringToBytes(JSON.stringify(value), nByte));
+            return parseJson(wallet.utils_stringToBytes(JSON.stringify(value), nByte));
         },
         stringToBytes32(value: string | stringArray): string | string[]{
             let wallet: IWalletPluginObject = global.$$wallet_plugin;

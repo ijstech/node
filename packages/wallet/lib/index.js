@@ -12,6 +12,36 @@ function getWalletPlugin() {
 }
 exports.default = getWalletPlugin();
 ;
+function convertDataType(value) {
+    if (Array.isArray(value)) {
+        let keys = Object.keys(value);
+        if (keys.length > value.length) {
+            let result = {};
+            for (let i = 0; i < keys.length; i++)
+                result[keys[i]] = value[keys[i]];
+            return result;
+        }
+        else {
+            let result = [];
+            for (let i = 0; i < value.length; i++)
+                result.push(convertDataType(value[i]));
+            return result;
+        }
+    }
+    else if (typeof (value) == 'object') {
+        let result = {};
+        for (let n in value)
+            result[n] = convertDataType(value[n]);
+        return result;
+    }
+    else
+        return value;
+}
+;
+function stringifyJson(value) {
+    return JSON.stringify(convertDataType(value));
+}
+;
 async function loadPlugin(worker, options) {
     worker.data = worker.data || {};
     let network = options.networks[options.chainId];
@@ -27,51 +57,51 @@ async function loadPlugin(worker, options) {
         let plugin = {
             async balanceOf(address) {
                 let result = await wallet.balanceOf(address);
-                return result.toString();
+                return result.toString(10);
             },
             async _call(abiHash, address, methodName, params, options) {
                 let result = await wallet._call(abiHash, address, methodName, params, options);
-                return JSON.stringify(result);
+                return stringifyJson(result);
             },
             createAccount() {
                 let result = wallet.createAccount();
-                return JSON.stringify(result);
+                return stringifyJson(result);
             },
             decode(abi, event, raw) {
-                return JSON.stringify(wallet.decode(abi, event, raw));
+                return stringifyJson(wallet.decode(abi, event, raw));
             },
             async decodeEventData(data, events) {
-                return JSON.stringify(await wallet.decodeEventData(data, events));
+                return stringifyJson(await wallet.decodeEventData(data, events));
             },
             decodeLog(inputs, hexString, topics) {
-                return JSON.stringify(wallet.decodeLog(inputs, hexString, topics));
+                return stringifyJson(wallet.decodeLog(inputs, hexString, topics));
             },
             getAbiEvents(abi) {
-                return JSON.stringify(wallet.getAbiEvents(abi));
+                return stringifyJson(wallet.getAbiEvents(abi));
             },
             getAbiTopics(abi, eventNames) {
-                return JSON.stringify(wallet.getAbiTopics(abi, eventNames));
+                return stringifyJson(wallet.getAbiTopics(abi, eventNames));
             },
             async getAccounts() {
                 let result = await wallet.accounts;
-                return JSON.stringify(result);
+                return stringifyJson(result);
             },
             getAddress() {
                 return wallet.address;
             },
             async getBalance() {
                 let balance = await wallet.balance;
-                return balance.toString();
+                return balance.toString(10);
             },
             async getBlock(blockHashOrBlockNumber, returnTransactionObjects) {
                 let result = await wallet.getBlock(blockHashOrBlockNumber, returnTransactionObjects);
-                return JSON.stringify(result);
+                return stringifyJson(result);
             },
             getDefaultAccount() {
                 return wallet.defaultAccount;
             },
             async methods(...args) {
-                return JSON.stringify(await wallet.methods.apply(wallet, args));
+                return stringifyJson(await wallet.methods.apply(wallet, args));
             },
             async getBlockNumber() {
                 return await wallet.getBlockNumber();
@@ -83,7 +113,7 @@ async function loadPlugin(worker, options) {
                 return wallet.chainId;
             },
             async getTransaction(transactionHash) {
-                return JSON.stringify(await wallet.getTransaction(transactionHash));
+                return stringifyJson(await wallet.getTransaction(transactionHash));
             },
             setPrivateKey(value) {
                 wallet.privateKey = value;
@@ -107,14 +137,14 @@ async function loadPlugin(worker, options) {
                 wallet.defaultAccount = value;
             },
             async send(to, amount) {
-                return JSON.stringify(await wallet.send(to, amount));
+                return stringifyJson(await wallet.send(to, amount));
             },
             async _send(abiHash, address, methodName, params, options) {
-                return JSON.stringify(await wallet._send(abiHash, address, methodName, params, options));
+                return stringifyJson(await wallet._send(abiHash, address, methodName, params, options));
             },
             async scanEvents(fromBlock, toBlock, topics, events, address) {
                 let result = await wallet.scanEvents(fromBlock, toBlock, topics, events, address);
-                return JSON.stringify(result);
+                return stringifyJson(result);
             },
             setAccount(value) {
                 wallet.account = value;
@@ -127,11 +157,11 @@ async function loadPlugin(worker, options) {
             },
             async tokenInfo(address) {
                 let result = await wallet.tokenInfo(address);
-                return JSON.stringify({
+                return stringifyJson({
                     name: result.name,
                     symbol: result.symbol,
                     decimals: result.decimals,
-                    totalSupply: result.totalSupply.toString()
+                    totalSupply: result.totalSupply.toString(10)
                 });
             },
             utils_fromWei(value, unit) {
@@ -144,10 +174,10 @@ async function loadPlugin(worker, options) {
                 return wallet.utils.sha3(value);
             },
             utils_stringToBytes(value, nByte) {
-                return JSON.stringify(wallet.utils.stringToBytes(value, nByte));
+                return stringifyJson(wallet.utils.stringToBytes(value, nByte));
             },
             utils_stringToBytes32(value) {
-                return JSON.stringify(wallet.utils.stringToBytes32(value));
+                return stringifyJson(wallet.utils.stringToBytes32(value));
             },
             utils_toString(value) {
                 return wallet.utils.toString(value);

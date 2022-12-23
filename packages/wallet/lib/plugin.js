@@ -27,6 +27,10 @@ function _registerAbiContracts(abiHash, address, handler) {
     }
 }
 ;
+function parseJson(value) {
+    return JSON.parse(value);
+}
+;
 const Wallet = {
     get account() {
         let wallet = global.$$wallet_plugin;
@@ -42,7 +46,7 @@ const Wallet = {
         return new Promise(async (resolve) => {
             let wallet = global.$$wallet_plugin;
             let result = await wallet.getAccounts();
-            resolve(JSON.parse(result));
+            resolve(parseJson(result));
         });
     },
     get address() {
@@ -67,7 +71,7 @@ const Wallet = {
         return new Promise(async (resolve) => {
             let wallet = global.$$wallet_plugin;
             let result = await wallet._call(abiHash, address, methodName, params, options);
-            resolve(JSON.parse(result));
+            resolve(parseJson(result));
         });
     },
     get chainId() {
@@ -81,19 +85,19 @@ const Wallet = {
     createAccount() {
         let wallet = global.$$wallet_plugin;
         let result = wallet.createAccount();
-        return JSON.parse(result);
+        return parseJson(result);
     },
     decode(abi, event, raw) {
         let wallet = global.$$wallet_plugin;
-        return JSON.parse(wallet.decode(abi, event, raw));
+        return parseJson(wallet.decode(abi, event, raw));
     },
     async decodeEventData(data, events) {
         let wallet = global.$$wallet_plugin;
-        return JSON.parse(await wallet.decodeEventData(data, events));
+        return parseJson(await wallet.decodeEventData(data, events));
     },
     decodeLog(inputs, hexString, topics) {
         let wallet = global.$$wallet_plugin;
-        return JSON.parse(wallet.decodeLog(inputs, hexString, topics));
+        return parseJson(wallet.decodeLog(inputs, hexString, topics));
     },
     get defaultAccount() {
         let wallet = global.$$wallet_plugin;
@@ -105,15 +109,15 @@ const Wallet = {
     },
     getAbiEvents(abi) {
         let wallet = global.$$wallet_plugin;
-        return JSON.parse(wallet.getAbiEvents(abi));
+        return parseJson(wallet.getAbiEvents(abi));
     },
     getAbiTopics(abi, eventNames) {
         let wallet = global.$$wallet_plugin;
-        return JSON.parse(wallet.getAbiTopics(abi, eventNames));
+        return parseJson(wallet.getAbiTopics(abi, eventNames));
     },
     async getBlock(...args) {
         let wallet = global.$$wallet_plugin;
-        return JSON.parse(await wallet.getBlock.apply(this, args));
+        return parseJson(await wallet.getBlock.apply(this, args));
     },
     async getBlockNumber() {
         let wallet = global.$$wallet_plugin;
@@ -138,7 +142,7 @@ const Wallet = {
             return events;
         let abi = _abiHashDict[_abiAddressDict[address]];
         if (abi) {
-            events = JSON.parse(wallet.getAbiEvents(abi));
+            events = parseJson(wallet.getAbiEvents(abi));
             _abiEventDict[address] = events;
             return events;
         }
@@ -147,11 +151,11 @@ const Wallet = {
     async getTransaction(transactionHash) {
         let wallet = global.$$wallet_plugin;
         let result = await wallet.getTransaction(transactionHash);
-        return JSON.parse(result);
+        return parseJson(result);
     },
     async methods(...args) {
         let wallet = global.$$wallet_plugin;
-        return JSON.parse(await wallet.methods.apply(this, args));
+        return parseJson(await wallet.methods.apply(this, args));
     },
     set privateKey(value) {
         let wallet = global.$$wallet_plugin;
@@ -176,15 +180,15 @@ const Wallet = {
     },
     async send(to, amount) {
         let wallet = global.$$wallet_plugin;
-        return JSON.parse(await wallet.send(to, amount));
+        return parseJson(await wallet.send(to, amount));
     },
     async _send(abiHash, address, methodName, params, options) {
         let wallet = global.$$wallet_plugin;
-        return JSON.parse(await wallet._send(abiHash, address, methodName, params, options));
+        return parseJson(await wallet._send(abiHash, address, methodName, params, options));
     },
     async scanEvents(fromBlock, toBlock, topics, events, address) {
         let wallet = global.$$wallet_plugin;
-        let result = JSON.parse(await wallet.scanEvents(fromBlock, toBlock, topics, events, address));
+        let result = parseJson(await wallet.scanEvents(fromBlock, toBlock, topics, events, address));
         if (_eventHandler) {
             for (let i = 0; i < result.length; i++) {
                 let event = result[i];
@@ -205,7 +209,7 @@ const Wallet = {
     },
     async tokenInfo(address) {
         let wallet = global.$$wallet_plugin;
-        let result = JSON.parse(await wallet.tokenInfo(address));
+        let result = parseJson(await wallet.tokenInfo(address));
         if (result.totalSupply)
             result.totalSupply = new bignumber_js_1.default(result.totalSupply);
         return result;
@@ -229,7 +233,7 @@ const Wallet = {
         },
         stringToBytes(value, nByte) {
             let wallet = global.$$wallet_plugin;
-            return JSON.parse(wallet.utils_stringToBytes(JSON.stringify(value), nByte));
+            return parseJson(wallet.utils_stringToBytes(JSON.stringify(value), nByte));
         },
         stringToBytes32(value) {
             let wallet = global.$$wallet_plugin;

@@ -4,7 +4,7 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 
-import {Wallet, IAccount, IWallet} from '@ijstech/eth-wallet';
+import {Wallet, IAccount, IWallet, BigNumber} from '@ijstech/eth-wallet';
 import {IWorker} from '@ijstech/types';
 import {IWalletLog, IWalletRequiredPluginOptions, IWalletEventLog} from '@ijstech/types';
 import {IWalletPluginObject, IWalletTransaction} from './plugin';
@@ -14,6 +14,34 @@ function getWalletPlugin(): IWallet{
 export default getWalletPlugin();
 export type stringArray = string | _stringArray;
 export interface _stringArray extends Array<stringArray> { };
+function convertDataType(value: any): any{
+    if (Array.isArray(value)){
+        let keys = Object.keys(value);
+        if (keys.length > value.length){
+            let result = {};
+            for (let i = 0; i < keys.length; i++)
+                result[keys[i]] = value[keys[i]]
+            return result;
+        }
+        else{
+            let result = [];
+            for (let i = 0; i < value.length; i ++)
+                result.push(convertDataType(value[i]));
+            return result;
+        }
+    }
+    else if (typeof(value) == 'object'){
+        let result = {};
+        for (let n in value)
+            result[n] = convertDataType(value[n]);
+        return result;
+    }
+    else
+        return value;
+};
+function stringifyJson(value: any): string{
+    return JSON.stringify(convertDataType(value))
+};
 export async function loadPlugin(worker: IWorker, options: IWalletRequiredPluginOptions): Promise<string | IWallet>{
     worker.data = worker.data || {};
     let network = options.networks[options.chainId];    
@@ -28,51 +56,52 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
         let plugin: IWalletPluginObject = {            
             async balanceOf(address: string): Promise<string>{
                 let result = await wallet.balanceOf(address);
-                return result.toString();
+                return result.toString(10);
             },
             async _call(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<any>{
                 let result = await wallet._call(abiHash, address, methodName, params, options);
-                return JSON.stringify(result);
+
+                return stringifyJson(result);
             },
             createAccount(): string{
                 let result = wallet.createAccount();
-                return JSON.stringify(result);
+                return stringifyJson(result);
             },
             decode(abi:any, event:IWalletEventLog, raw?:{data: string,topics: string[]}): string{
-                return JSON.stringify(wallet.decode(abi, event, raw))
+                return stringifyJson(wallet.decode(abi, event, raw))
             },
             async decodeEventData(data: IWalletLog, events?: any): Promise<string>{
-                return JSON.stringify(await wallet.decodeEventData(data, events))
+                return stringifyJson(await wallet.decodeEventData(data, events))
             },
             decodeLog(inputs: any, hexString: string, topics: any): string{
-                return JSON.stringify(wallet.decodeLog(inputs, hexString, topics));
+                return stringifyJson(wallet.decodeLog(inputs, hexString, topics));
             },
             getAbiEvents(abi: any[]): string{
-                return JSON.stringify(wallet.getAbiEvents(abi));
+                return stringifyJson(wallet.getAbiEvents(abi));
             },
             getAbiTopics(abi: any[], eventNames: string[]): string{
-                return JSON.stringify(wallet.getAbiTopics(abi, eventNames));
+                return stringifyJson(wallet.getAbiTopics(abi, eventNames));
             },
             async getAccounts(): Promise<string>{
                 let result = await wallet.accounts;
-                return JSON.stringify(result);
+                return stringifyJson(result);
             },
             getAddress(): string{
                 return wallet.address
             },
             async getBalance(): Promise<string>{
                 let balance = await wallet.balance;
-                return balance.toString();
+                return balance.toString(10);
             },
             async getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<string>{
                 let result = await wallet.getBlock(blockHashOrBlockNumber, returnTransactionObjects);
-                return JSON.stringify(result);
+                return stringifyJson(result);
             },
             getDefaultAccount(): string{
                 return wallet.defaultAccount;
             },
             async methods(...args: any[]): Promise<string>{
-                return JSON.stringify(await wallet.methods.apply(wallet, args));
+                return stringifyJson(await wallet.methods.apply(wallet, args));
             },            
             async getBlockNumber(): Promise<number>{
                 return await wallet.getBlockNumber();
@@ -84,7 +113,7 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
                 return wallet.chainId
             },
             async getTransaction(transactionHash: string): Promise<string>{
-                return JSON.stringify(await wallet.getTransaction(transactionHash));
+                return stringifyJson(await wallet.getTransaction(transactionHash));
             },
             setPrivateKey(value: string){
                 wallet.privateKey = value;
@@ -108,14 +137,14 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
                 wallet.defaultAccount = value;
             },
             async send(to: string, amount: number): Promise<string>{
-                return JSON.stringify(await wallet.send(to, amount));
+                return stringifyJson(await wallet.send(to, amount));
             },
             async _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<string>{
-                return JSON.stringify(await wallet._send(abiHash, address, methodName, params, options));
+                return stringifyJson(await wallet._send(abiHash, address, methodName, params, options));
             },
             async scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<string>{
                 let result = await wallet.scanEvents(fromBlock, toBlock, topics, events, address);
-                return JSON.stringify(result);
+                return stringifyJson(result);
             },
             setAccount(value: IAccount){
                 wallet.account = value;
@@ -128,11 +157,11 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
             },
             async tokenInfo(address: string): Promise<string>{
                 let result = await wallet.tokenInfo(address);
-                return JSON.stringify({
+                return stringifyJson({
                     name: result.name,
                     symbol: result.symbol,
                     decimals: result.decimals,
-                    totalSupply: result.totalSupply.toString()
+                    totalSupply: result.totalSupply.toString(10)
                 });
             },
             utils_fromWei(value: any, unit?: any): string{
@@ -145,10 +174,10 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
                 return wallet.utils.sha3(value);
             },
             utils_stringToBytes(value: string, nByte?: number): string{
-                return JSON.stringify(wallet.utils.stringToBytes(value, nByte));
+                return stringifyJson(wallet.utils.stringToBytes(value, nByte));
             },
             utils_stringToBytes32(value: string|stringArray): string{
-                return JSON.stringify(wallet.utils.stringToBytes32(value));
+                return stringifyJson(wallet.utils.stringToBytes32(value));
             },
             utils_toString(value: any): string{
                 return wallet.utils.toString(value);
