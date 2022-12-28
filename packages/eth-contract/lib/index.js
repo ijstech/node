@@ -163,29 +163,29 @@ class Contract {
     _deploy(...params) {
         return this.__deploy(params);
     }
-    methods(methodName, ...params) {
+    async methods(methodName, ...params) {
         let method = this._abi.find(e => e.name == methodName);
         if (method.stateMutability == "view" || method.stateMutability == "pure") {
-            return this.call(methodName, params);
+            return await this.call(methodName, params);
         }
         else if (method.stateMutability == 'payable') {
             let value = params.pop();
-            return this.call(methodName, params, { value: value });
+            return await this.call(methodName, params, { value: value });
         }
         else {
-            return this.send(methodName, params);
+            return await this.send(methodName, params);
         }
     }
 }
 exports.Contract = Contract;
 ;
 class TAuthContract extends Contract {
-    rely(address) {
-        return this.methods('rely', address);
+    async rely(address) {
+        return await this.methods('rely', address);
     }
     ;
-    deny(address) {
-        return this.methods('deny', address);
+    async deny(address) {
+        return await this.methods('deny', address);
     }
     ;
 }

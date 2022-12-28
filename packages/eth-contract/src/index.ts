@@ -301,23 +301,23 @@ export class Contract {
     protected _deploy(...params:any[]): Promise<string>{            
         return this.__deploy(params);
     }
-    protected methods(methodName:string, ...params:any[]) {
+    protected async methods(methodName:string, ...params:any[]) {
         let method = this._abi.find(e=>e.name==methodName);
         if (method.stateMutability == "view" || method.stateMutability == "pure") {
-            return this.call(methodName, params);
+            return await this.call(methodName, params);
         } else if (method.stateMutability=='payable') {
             let value = params.pop();
-            return this.call(methodName, params, {value:value});
+            return await this.call(methodName, params, {value:value});
         } else {
-            return this.send(methodName, params);
+            return await this.send(methodName, params);
         }
     }
 };
 export class TAuthContract extends Contract {
-    rely(address: string): Promise<any>{
-        return this.methods('rely', address)
+    async rely(address: string): Promise<any>{
+        return await this.methods('rely', address)
     };
-    deny(address: string): Promise<any>{
-        return this.methods('deny', address)
+    async deny(address: string): Promise<any>{
+        return await this.methods('deny', address)
     };
 };

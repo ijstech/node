@@ -59,7 +59,6 @@ async function compileSolidityFile(filePath: string, isBaseFile: boolean = false
 export default async function flattenSolidityFile(sourcefilePath: string, targetFilePath: string) {
     let processedFilePath = [];
     const contracts = await compileSolidityFile(sourcefilePath, true);
-    console.log('contracts[sourcefilePath]', contracts);
     const license = contracts.license;
     const flattenDependencies = (contract) => {
         let sourceCode = "";
