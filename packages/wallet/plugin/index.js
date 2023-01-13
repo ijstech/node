@@ -278,7 +278,11 @@ define("plugin", ["require", "exports", "bignumber.js"], function (require, expo
         _txData(abiHash, address, methodName, params, options) {
             let wallet = global.$$wallet_plugin;
             return;
-        }
+        },
+        multiCall(calls, gasBuffer) {
+            let wallet = global.$$wallet_plugin;
+            return wallet.multiCall(calls, gasBuffer);
+        },
     };
     exports.default = Wallet;
 });

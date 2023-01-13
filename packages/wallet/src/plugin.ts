@@ -205,6 +205,7 @@ export interface IWallet {
     toChecksumAddress(address: string): string;	
     _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<IWalletTransaction>;
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<string>;
+    multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
 }
 interface IDictionary {
     [index: string]: any;
@@ -269,6 +270,7 @@ export interface IWalletPluginObject{
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
     soliditySha3(...val: any[]): string;
     toChecksumAddress(address: string): string;	
+    multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
 }
 function parseJson(value: string): any{
     return JSON.parse(value);
@@ -518,6 +520,10 @@ const Wallet: IWallet = {
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<string>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
         return;
-    }
+    },
+    multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>{
+        let wallet: IWalletPluginObject = global.$$wallet_plugin;
+        return wallet.multiCall(calls, gasBuffer);   
+    },    
 };
 export default Wallet;
