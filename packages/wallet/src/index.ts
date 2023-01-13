@@ -196,7 +196,10 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
             },     
             toChecksumAddress(address: string): string{
                 return wallet.toChecksumAddress(address);
-            }           
+            },
+            multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>{
+                return wallet.multiCall(calls, gasBuffer);   
+            }          
         };
         worker.vm.injectGlobalObject('$$wallet_plugin', plugin);
         return `

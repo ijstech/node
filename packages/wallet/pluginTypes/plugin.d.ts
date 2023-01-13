@@ -213,6 +213,13 @@ export interface IWallet {
     toChecksumAddress(address: string): string;
     _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<IWalletTransaction>;
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<string>;
+    multiCall(calls: {
+        to: string;
+        data: string;
+    }[], gasBuffer?: string): Promise<{
+        results: string[];
+        lastSuccessIndex: BigNumber;
+    }>;
 }
 export interface IWalletPluginObject {
     balanceOf(address: string): Promise<string>;
@@ -260,6 +267,13 @@ export interface IWalletPluginObject {
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
     soliditySha3(...val: any[]): string;
     toChecksumAddress(address: string): string;
+    multiCall(calls: {
+        to: string;
+        data: string;
+    }[], gasBuffer?: string): Promise<{
+        results: string[];
+        lastSuccessIndex: BigNumber;
+    }>;
 }
 declare const Wallet: IWallet;
 export default Wallet;

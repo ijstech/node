@@ -153,6 +153,7 @@ export declare namespace Types{
         toChecksumAddress(address: string): string;		
         _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<IWalletTransaction>;
         _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<string>;
+        multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
     }
     export interface ICachePlugin{
         del(key: string): Promise<boolean>;
@@ -412,6 +413,7 @@ export interface IWalletPlugin {
     toChecksumAddress(address: string): string;	
     _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<IWalletTransaction>;
     _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<string>;
+    multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
 }
 export interface IMessagePlugin {
     publish(channel: string|number, msg: string):void;

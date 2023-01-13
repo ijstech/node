@@ -196,6 +196,9 @@ async function loadPlugin(worker, options) {
             },
             toChecksumAddress(address) {
                 return wallet.toChecksumAddress(address);
+            },
+            multiCall(calls, gasBuffer) {
+                return wallet.multiCall(calls, gasBuffer);
             }
         };
         worker.vm.injectGlobalObject('$$wallet_plugin', plugin);

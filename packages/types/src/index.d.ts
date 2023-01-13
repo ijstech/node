@@ -292,6 +292,7 @@ export interface IWalletPlugin {
     toChecksumAddress(address: string): string;
     _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<IWalletTransaction>;
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<string>;
+    multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
 }
 export interface IDomainOptions {
     plugins?: IRequiredPlugins
