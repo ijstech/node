@@ -199,6 +199,9 @@ async function loadPlugin(worker, options) {
             },
             multiCall(calls, gasBuffer) {
                 return wallet.multiCall(calls, gasBuffer);
+            },
+            encodeFunctionCall(contract, methodName, params) {
+                return wallet.encodeFunctionCall(contract, methodName, params);
             }
         };
         worker.vm.injectGlobalObject('$$wallet_plugin', plugin);

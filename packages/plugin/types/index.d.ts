@@ -124,6 +124,9 @@ export declare namespace Types {
         toUtf8(value: any): string;
         toWei(value: string, unit?: string): string;
     }
+    interface IAbiDefinition {
+        _abi: any;
+    }
     interface IWalletPlugin {
         account: IWalletAccount;
         accounts: Promise<string[]>;
@@ -173,6 +176,9 @@ export declare namespace Types {
             results: string[];
             lastSuccessIndex: BigNumber;
         }>;
+        encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
+            [K in keyof T]: T[K] extends Function ? K : never;
+        }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
     }
     interface ICachePlugin {
         del(key: string): Promise<boolean>;

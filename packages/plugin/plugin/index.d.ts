@@ -154,6 +154,11 @@ export declare namespace Types{
         _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<IWalletTransaction>;
         _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<string>;
         multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
+        encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+            contract: T, 
+            methodName: F, 
+            params: string[]
+        ): string;
     }
     export interface ICachePlugin{
         del(key: string): Promise<boolean>;
@@ -376,6 +381,9 @@ export interface IWalletTokenInfo{
     totalSupply: BigNumber;
     decimals: number;	
 }
+export interface IAbiDefinition {
+    _abi: any;
+}
 export interface IWalletPlugin {
     account: IWalletAccount;
     accounts: Promise<string[]>;
@@ -414,6 +422,11 @@ export interface IWalletPlugin {
     _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<IWalletTransaction>;
     _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<string>;
     multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
+    encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+        contract: T, 
+        methodName: F, 
+        params: string[]
+    ): string;
 }
 export interface IMessagePlugin {
     publish(channel: string|number, msg: string):void;
