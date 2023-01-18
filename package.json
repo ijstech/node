@@ -1,7 +1,7 @@
 {
     "name": "@ijstech/node",
     "description": "Secure Node",
-    "version": "0.1.45",
+    "version": "0.1.46",
     "engines": {
         "node": ">=18.0.0"
     },
@@ -22,7 +22,7 @@
         "@ijstech/crypto": "file:packages/crypto",
         "@ijstech/db": "file:packages/db",
         "@ijstech/eth-contract": "file:packages/eth-contract",
-        "@ijstech/eth-wallet": "^0.1.39",
+        "@ijstech/eth-wallet": "^0.1.42",
         "@ijstech/fetch": "file:packages/fetch",
         "@ijstech/http": "file:packages/http",
         "@ijstech/ipfs": "file:packages/ipfs",
