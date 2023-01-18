@@ -250,6 +250,9 @@ export interface IContract {
     deploy(params: {data: string, arguments?: any[]}): IContractMethod;
     methods: {[methodName: string]: (...params:any[]) => IContractMethod};
 }
+export interface IAbiDefinition {
+    _abi: any;
+}
 export interface IWalletPlugin {
     account: IWalletAccount;
     accounts: Promise<string[]>;
@@ -293,6 +296,11 @@ export interface IWalletPlugin {
     _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<IWalletTransaction>;
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<string>;
     multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
+    encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+        contract: T, 
+        methodName: F, 
+        params: string[]
+    ): string;
 }
 export interface IDomainOptions {
     plugins?: IRequiredPlugins

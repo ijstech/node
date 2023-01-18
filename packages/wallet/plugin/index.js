@@ -283,6 +283,10 @@ define("plugin", ["require", "exports", "bignumber.js"], function (require, expo
             let wallet = global.$$wallet_plugin;
             return wallet.multiCall(calls, gasBuffer);
         },
+        encodeFunctionCall(contract, methodName, params) {
+            let wallet = global.$$wallet_plugin;
+            return wallet.encodeFunctionCall(contract, methodName, params);
+        }
     };
     exports.default = Wallet;
 });

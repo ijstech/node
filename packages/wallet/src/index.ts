@@ -6,8 +6,9 @@
 
 import {Wallet, IAccount, IWallet, BigNumber} from '@ijstech/eth-wallet';
 import {IWorker} from '@ijstech/types';
-import {IWalletLog, IWalletRequiredPluginOptions, IWalletEventLog} from '@ijstech/types';
+import {IWalletLog, IWalletRequiredPluginOptions, IWalletEventLog, IAbiDefinition} from '@ijstech/types';
 import {IWalletPluginObject, IWalletTransaction} from './plugin';
+
 function getWalletPlugin(): IWallet{
     return global.$$wallet_plugin;
 }
@@ -199,6 +200,13 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
             },
             multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>{
                 return wallet.multiCall(calls, gasBuffer);   
+            },          
+            encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+                contract: T, 
+                methodName: F, 
+                params: string[]
+            ): string {
+                return wallet.encodeFunctionCall(contract, methodName, params);
             }          
         };
         worker.vm.injectGlobalObject('$$wallet_plugin', plugin);

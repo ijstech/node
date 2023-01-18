@@ -171,6 +171,9 @@ export interface IWalletUtils {
     toUtf8(value: any): string;
     toWei(value: string, unit?: string): string;
 }
+export interface IAbiDefinition {
+    _abi: any;
+}
 export interface IWallet {
     account: IWalletAccount;
     accounts: Promise<string[]>;
@@ -220,6 +223,9 @@ export interface IWallet {
         results: string[];
         lastSuccessIndex: BigNumber;
     }>;
+    encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
+        [K in keyof T]: T[K] extends Function ? K : never;
+    }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
 }
 export interface IWalletPluginObject {
     balanceOf(address: string): Promise<string>;
@@ -274,6 +280,9 @@ export interface IWalletPluginObject {
         results: string[];
         lastSuccessIndex: BigNumber;
     }>;
+    encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
+        [K in keyof T]: T[K] extends Function ? K : never;
+    }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
 }
 declare const Wallet: IWallet;
 export default Wallet;

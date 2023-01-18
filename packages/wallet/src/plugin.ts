@@ -4,6 +4,7 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 
+import { Contract } from '@ijstech/eth-contract';
 import BigNumber from 'bignumber.js';
 export type stringArray = string | _stringArray;
 export interface _stringArray extends Array<stringArray> { }
@@ -166,6 +167,9 @@ export interface IWalletUtils{
     toUtf8(value: any): string;		
     toWei(value: string, unit?: string): string;
 }
+export interface IAbiDefinition {
+    _abi: any;
+}
 export interface IWallet {
     account: IWalletAccount;
     accounts: Promise<string[]>;
@@ -206,6 +210,11 @@ export interface IWallet {
     _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<IWalletTransaction>;
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<string>;
     multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
+    encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+        contract: T, 
+        methodName: F, 
+        params: string[]
+    ): string;
 }
 interface IDictionary {
     [index: string]: any;
@@ -271,6 +280,11 @@ export interface IWalletPluginObject{
     soliditySha3(...val: any[]): string;
     toChecksumAddress(address: string): string;	
     multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
+    encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+        contract: T, 
+        methodName: F, 
+        params: string[]
+    ): string;
 }
 function parseJson(value: string): any{
     return JSON.parse(value);
@@ -525,5 +539,13 @@ const Wallet: IWallet = {
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
         return wallet.multiCall(calls, gasBuffer);   
     },    
+    encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+        contract: T, 
+        methodName: F, 
+        params: string[]
+    ): string {
+        let wallet: IWalletPluginObject = global.$$wallet_plugin;
+        return wallet.encodeFunctionCall(contract, methodName, params);   
+    }
 };
 export default Wallet;
