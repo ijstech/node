@@ -17,13 +17,9 @@ async function compileSolidityFile(filePath, isBaseFile = false) {
     }
     sourceCode = sourceCode.replace(licenseRegex, '');
     let importMatch;
-    const imports = [];
+    const dependencies = {};
     while ((importMatch = importRegex.exec(sourceCode))) {
         const importPath = importMatch[1] || importMatch[2];
-        imports.push(importPath);
-    }
-    const dependencies = {};
-    await Promise.all(imports.map(async (importPath) => {
         let importFilePath;
         if (importPath.startsWith('.')) {
             importFilePath = path.resolve(path.dirname(filePath), importPath);
@@ -31,8 +27,11 @@ async function compileSolidityFile(filePath, isBaseFile = false) {
         else {
             importFilePath = path.resolve('./node_modules/' + importPath);
         }
-        dependencies[importPath] = await compileSolidityFile(importFilePath);
-    }));
+        if (!compiledContracts[importFilePath]) {
+            compiledContracts[importFilePath] = await compileSolidityFile(importFilePath);
+        }
+        dependencies[importPath] = compiledContracts[importFilePath];
+    }
     compiledContracts[filePath] = {
         filePath: filePath,
         source: sourceCode,
