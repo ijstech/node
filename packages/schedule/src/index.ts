@@ -210,8 +210,14 @@ export class Scheduler {
                                 plugins.cache = job.pack.options.plugins.cache
                             if (worker.plugins?.db)
                                 plugins.db = {default: job.pack.options.plugins.db}
-                            if (worker.plugins?.wallet)
-                                plugins.wallet = job.pack.options.plugins.wallet
+                            if (worker.plugins?.wallet) {
+                                if (job.params?.chainId) {
+                                    plugins.wallet = {...job.pack.options.plugins.wallet, chainId: job.params.chainId};
+                                }
+                                else {
+                                    plugins.wallet = job.pack.options.plugins.wallet;
+                                }
+                            }
                             if (worker.plugins?.fetch)
                                 plugins.fetch = job.pack.options.plugins.fetch || {methods: ['GET']}
                             job.plugin = new Worker({
