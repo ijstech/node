@@ -159,7 +159,7 @@ class Scheduler {
     }
     ;
     async processJob(job) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e;
         if (job.cron != '*' && !job.next) {
             job.next = cron_parser_1.default.parseExpression(job.cron).next();
             console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id ? `${job.domain}:${job.id}` : ''));
@@ -192,9 +192,15 @@ class Scheduler {
                                 plugins.cache = job.pack.options.plugins.cache;
                             if ((_b = worker.plugins) === null || _b === void 0 ? void 0 : _b.db)
                                 plugins.db = { default: job.pack.options.plugins.db };
-                            if ((_c = worker.plugins) === null || _c === void 0 ? void 0 : _c.wallet)
-                                plugins.wallet = job.pack.options.plugins.wallet;
-                            if ((_d = worker.plugins) === null || _d === void 0 ? void 0 : _d.fetch)
+                            if ((_c = worker.plugins) === null || _c === void 0 ? void 0 : _c.wallet) {
+                                if ((_d = job.params) === null || _d === void 0 ? void 0 : _d.chainId) {
+                                    plugins.wallet = Object.assign(Object.assign({}, job.pack.options.plugins.wallet), { chainId: job.params.chainId });
+                                }
+                                else {
+                                    plugins.wallet = job.pack.options.plugins.wallet;
+                                }
+                            }
+                            if ((_e = worker.plugins) === null || _e === void 0 ? void 0 : _e.fetch)
                                 plugins.fetch = job.pack.options.plugins.fetch || { methods: ['GET'] };
                             job.plugin = new plugin_1.Worker({
                                 plugins: plugins,
