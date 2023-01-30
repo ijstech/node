@@ -228,14 +228,14 @@ export class HttpServer {
             };
             this.app.use(async (ctx: Koa.Context, next)=>{
                 if (this.options.cors){
+                    ctx.set('Access-Control-Allow-Credentials', 'true');
+                    ctx.set('Access-Control-Allow-Origin', ctx.get('Origin') || '*');
                     if (ctx.method == 'OPTIONS'){
-                        ctx.set('Access-Control-Allow-Origin', '*');
                         ctx.set('Access-Control-Allow-Headers', 'content-type');
                         ctx.status = 200;
                         return;
                     }
                     else if (ctx.method == 'POST'){
-                        ctx.set('Access-Control-Allow-Origin', '*');
                         ctx.set('Access-Control-Allow-Headers', 'content-type');
                     };
                 };
