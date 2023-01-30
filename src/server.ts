@@ -14,6 +14,7 @@ async function main(){
     let appServer = new AppServer({
         http: { 
             port: Config.router?.port || 8080,
+            cors: Config.router?.cors || false
         },
         schedule: {
             
