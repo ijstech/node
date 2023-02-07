@@ -14,7 +14,8 @@ Config.localCache = {
     path: Path.join(__dirname, 'cache')
 }
 describe('Storage', function () {
-    this.timeout(1800000);    
+    this.timeout(1800000);
+    
     it('put Dir', async function(){
         let storage = new Storage(Config);
         let path = Path.join(__dirname, './dir');
@@ -69,5 +70,36 @@ describe('Storage', function () {
         assert.strictEqual(result, false);
         result = await s3.hasObject('hello.txt');
         assert.strictEqual(result, true);
+        await s3.deleteObject('hello.txt');
+        result = await s3.hasObject('hello.txt');
+        assert.strictEqual(result, false);
+    });
+    it ('s3.putObjectFrom', async function(){
+        let s3 = new S3(Config.s3)
+        await s3.deleteObject('file1.txt');
+        let result = await s3.putObjectFrom('file1.txt', Path.join(__dirname, 'dir/file1.txt'));
+        assert.strictEqual(result.Key, 'file1.txt');
+    });
+    it ('s3.getObjectSignedUrl', async function(){
+        let s3 = new S3(Config.s3)
+        let result = await s3.getObjectSignedUrl('file1.txt');
+        assert.strictEqual(typeof(result), 'string');;
+    });
+    it ('s3.putObjectSignedUrl', async function(){
+        let s3 = new S3(Config.s3)
+        let result = await s3.putObjectSignedUrl('file1.txt');
+        assert.strictEqual(typeof(result), 'string');;
+    });
+    it('s3.listObjects', async function(){
+        let s3 = new S3(Config.s3);
+        let result = await s3.listObjects({
+            maxKeys: 2
+        });
+        assert.strictEqual(result.Contents?.length, 2)
+        result = await s3.listObjects({
+            maxKeys: 100,
+            startAfter: result.Contents?.[1].Key
+        });
+        assert.strictEqual(result.Contents?.length, 3)
     });
 });

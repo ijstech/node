@@ -4,34 +4,51 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.S3 = void 0;
-const s3_js_1 = __importDefault(require("aws-sdk/clients/s3.js"));
+const client_s3_1 = require("@aws-sdk/client-s3");
+const lib_storage_1 = require("@aws-sdk/lib-storage");
+const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
 const fs_1 = require("fs");
 const mime_1 = __importDefault(require("@ijstech/mime"));
 const path_1 = __importDefault(require("path"));
 ;
-;
 class S3 {
     constructor(options) {
         this.options = options;
-        this.s3 = new s3_js_1.default({
+        this.s3 = new client_s3_1.S3Client({
+            region: options.region || 'auto',
             endpoint: options.endpoint,
-            accessKeyId: options.key,
-            secretAccessKey: options.secret
+            credentials: {
+                secretAccessKey: options.secret,
+                accessKeyId: options.key
+            }
         });
     }
     ;
-    async hasObject(key) {
-        return new Promise((resolve, reject) => {
-            this.s3.headObject({
-                Bucket: this.options.bucket,
-                Key: key
-            }, (err, res) => {
-                if (err)
-                    return resolve(false);
-                else
-                    return resolve(true);
-            });
+    deleteObject(key) {
+        const command = new client_s3_1.DeleteObjectCommand({
+            Bucket: this.options.bucket,
+            Key: key
         });
+        return this.s3.send(command);
+    }
+    ;
+    async hasObject(key) {
+        try {
+            await this.headObject(key);
+            return true;
+        }
+        catch (err) {
+            return false;
+        }
+        ;
+    }
+    ;
+    headObject(key) {
+        const command = new client_s3_1.HeadObjectCommand({
+            Bucket: this.options.bucket,
+            Key: key
+        });
+        return this.s3.send(command);
     }
     ;
     async syncFiles(sourceDir, targetDir, items) {
@@ -50,68 +67,58 @@ class S3 {
         ;
     }
     ;
-    async listObjects(prefix, maxKeys, startAfter) {
-        return await this.s3.listObjectsV2({
+    async listObjects(params) {
+        const command = new client_s3_1.ListObjectsV2Command({
             Bucket: this.options.bucket,
-            MaxKeys: maxKeys || 1000,
-            Prefix: prefix || '',
-            StartAfter: startAfter || ''
-        }).promise().then((data) => {
-            return {
-                data: data.Contents
-            };
-        }).catch((err) => {
-            return {
-                error: err
-            };
+            MaxKeys: (params === null || params === void 0 ? void 0 : params.maxKeys) || 1000,
+            Prefix: (params === null || params === void 0 ? void 0 : params.prefix) || '',
+            StartAfter: (params === null || params === void 0 ? void 0 : params.startAfter) || ''
         });
+        let result = await this.s3.send(command);
+        return result;
     }
     ;
     async getObject(key) {
-        return new Promise((resolve, reject) => {
-            this.s3.getObject({
-                Bucket: this.options.bucket,
-                Key: key,
-            }, (err, res) => {
-                if (err)
-                    return reject(err.message);
-                resolve(res.Body.toString('utf-8'));
-            });
+        const command = new client_s3_1.GetObjectCommand({
+            Bucket: this.options.bucket,
+            Key: key
         });
+        let result = await this.s3.send(command);
+        return result.Body.transformToString('utf-8');
     }
     ;
-    async putObject(key, content, acl) {
-        return new Promise((resolve) => {
-            this.s3.putObject({
-                Bucket: this.options.bucket,
-                Key: key,
-                ACL: acl,
-                ContentType: mime_1.default.getType(key) || 'application/octet-stream',
-                Body: content
-            }, (err, res) => {
-                resolve(res);
-            });
-        });
+    getObjectSignedUrl(key, expiresInSeconds) {
+        return s3_request_presigner_1.getSignedUrl(this.s3, new client_s3_1.GetObjectCommand({ Bucket: this.options.bucket, Key: key }), { expiresIn: expiresInSeconds || 3600 });
     }
     ;
-    async putObjectFrom(key, filePath, acl) {
-        return new Promise((resolve, reject) => {
-            var fileStream = fs_1.createReadStream(filePath);
-            fileStream.on('error', function (err) {
-                reject(err);
-            });
-            let params = { Bucket: this.options.bucket, Key: key, ContentType: mime_1.default.getType(filePath), Body: fileStream };
-            let options = { partSize: 1024 * 1024 * 1024, queueSize: 10 };
-            this.s3.upload(params, options)
-                .on('httpUploadProgress', function (evt) {
-            })
-                .send(function (err, data) {
-                if (err)
-                    reject(err);
-                else
-                    resolve(null);
-            });
+    putObject(key, content) {
+        const command = new client_s3_1.PutObjectCommand({
+            Bucket: this.options.bucket,
+            Key: key,
+            ContentType: mime_1.default.getType(key) || 'application/octet-stream',
+            Body: content
         });
+        return this.s3.send(command);
+    }
+    ;
+    putObjectSignedUrl(key, expiresInSeconds) {
+        return s3_request_presigner_1.getSignedUrl(this.s3, new client_s3_1.PutObjectCommand({ Bucket: this.options.bucket, Key: key }), { expiresIn: expiresInSeconds || 3600 });
+    }
+    ;
+    putObjectFrom(key, filePath, progressCallback) {
+        let fileStream = fs_1.createReadStream(filePath);
+        let params = { Bucket: this.options.bucket, Key: key, ContentType: mime_1.default.getType(filePath), Body: fileStream };
+        let upload = new lib_storage_1.Upload({
+            client: this.s3,
+            partSize: 1024 * 1024 * 1024,
+            queueSize: 10,
+            params: params
+        });
+        upload.on("httpUploadProgress", (progress) => {
+            if (progressCallback)
+                progressCallback(progress);
+        });
+        return upload.done();
     }
     ;
 }

@@ -1,24 +1,28 @@
-import S3Client from 'aws-sdk/clients/s3.js';
+import { CompleteMultipartUploadCommandOutput, DeleteObjectCommandOutput, ListObjectsV2CommandOutput, PutObjectCommandOutput, HeadObjectCommandOutput } from "@aws-sdk/client-s3";
 import { ICidInfo } from '@ijstech/ipfs';
 export interface IS3Options {
+    region?: string;
     endpoint: string;
     key: string;
     secret: string;
     bucket: string;
 }
-interface IListObjectsResult {
-    error?: any;
-    data?: S3Client.Object[];
-}
 export declare class S3 {
     private s3;
     private options;
     constructor(options: IS3Options);
+    deleteObject(key: string): Promise<DeleteObjectCommandOutput>;
     hasObject(key: string): Promise<boolean>;
+    headObject(key: string): Promise<HeadObjectCommandOutput>;
     syncFiles(sourceDir: string, targetDir: string, items: ICidInfo[]): Promise<void>;
-    listObjects(prefix?: string, maxKeys?: number, startAfter?: string): Promise<IListObjectsResult>;
+    listObjects(params?: {
+        prefix?: string;
+        maxKeys?: number;
+        startAfter?: string;
+    }): Promise<ListObjectsV2CommandOutput>;
     getObject(key: string): Promise<string>;
-    putObject(key: string, content: string, acl?: S3Client.ObjectCannedACL): Promise<S3Client.Types.PutObjectOutput>;
-    putObjectFrom(key: string, filePath: string, acl?: S3Client.ObjectCannedACL): Promise<unknown>;
+    getObjectSignedUrl(key: string, expiresInSeconds?: number): Promise<string>;
+    putObject(key: string, content: string): Promise<PutObjectCommandOutput>;
+    putObjectSignedUrl(key: string, expiresInSeconds?: number): Promise<string>;
+    putObjectFrom(key: string, filePath: string, progressCallback?: any): Promise<CompleteMultipartUploadCommandOutput>;
 }
-export {};
