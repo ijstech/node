@@ -24,12 +24,42 @@ class S3 {
         });
     }
     ;
-    deleteObject(key) {
-        const command = new client_s3_1.DeleteObjectCommand({
-            Bucket: this.options.bucket,
-            Key: key
-        });
-        return this.s3.send(command);
+    async copyObject(fromKey, toKey) {
+        try {
+            let exists = await this.hasObject(toKey);
+            if (!exists) {
+                const command = new client_s3_1.CopyObjectCommand({
+                    Bucket: this.options.bucket,
+                    CopySource: this.options.bucket + '/' + fromKey,
+                    Key: toKey
+                });
+                let result = await this.s3.send(command);
+                if (!result.CopyObjectResult.ETag)
+                    return false;
+            }
+            ;
+            return true;
+        }
+        catch (err) {
+            console.dir(err);
+            return false;
+        }
+        ;
+    }
+    ;
+    async deleteObject(key) {
+        try {
+            const command = new client_s3_1.DeleteObjectCommand({
+                Bucket: this.options.bucket,
+                Key: key
+            });
+            let result = await this.s3.send(command);
+            return true;
+        }
+        catch (err) {
+            return false;
+        }
+        ;
     }
     ;
     async hasObject(key) {
@@ -89,6 +119,19 @@ class S3 {
     ;
     getObjectSignedUrl(key, expiresInSeconds) {
         return s3_request_presigner_1.getSignedUrl(this.s3, new client_s3_1.GetObjectCommand({ Bucket: this.options.bucket, Key: key }), { expiresIn: expiresInSeconds || 3600 });
+    }
+    ;
+    async moveObject(fromKey, toKey) {
+        try {
+            let result = await this.copyObject(fromKey, toKey);
+            if (!result)
+                return false;
+            return this.deleteObject(fromKey);
+        }
+        catch (err) {
+            return false;
+        }
+        ;
     }
     ;
     putObject(key, content) {
