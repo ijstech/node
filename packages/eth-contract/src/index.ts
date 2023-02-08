@@ -46,7 +46,8 @@ export interface IWallet {
     registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
     send(to: string, amount: number): Promise<TransactionReceipt>;
     _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
-    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;     
+    scanEvents(fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;     
+    scanEvents(params: {fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string | string[]}): Promise<Event[]>;  
     _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<string>;      
     _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<Transaction>;
     utils: IWalletUtils;
@@ -253,10 +254,18 @@ export class Contract {
     //     if (this._address)
     //         this.wallet.registerEvent(this.getAbiEvents(), this._address, handler);
     // }
-    scanEvents(fromBlock: number, toBlock: number|string, eventNames?: string[]): Promise<Event[]>{
-        let topics = this.getAbiTopics(eventNames);
-        let events = this.getAbiEvents();
-        return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
+    scanEvents(fromBlock: number | {fromBlock: number, toBlock?: number|string, eventNames?: string[]}, toBlock?: number|string, eventNames?: string[]): Promise<Event[]>{
+        if (typeof(fromBlock) == 'number'){
+            let topics = this.getAbiTopics(eventNames);
+            let events = this.getAbiEvents();
+            return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
+        }
+        else{
+            let params = fromBlock;
+            let topics = this.getAbiTopics(params.eventNames);
+            let events = this.getAbiEvents();
+            return this.wallet.scanEvents(params.fromBlock, params.toBlock, topics, events, this._address);
+        };
     };
     async batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?:number|BigNumber|TransactionOptions){
         //TODO: implement the batch call

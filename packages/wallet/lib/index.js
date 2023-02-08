@@ -143,8 +143,15 @@ async function loadPlugin(worker, options) {
                 return stringifyJson(await wallet._send(abiHash, address, methodName, params, options));
             },
             async scanEvents(fromBlock, toBlock, topics, events, address) {
-                let result = await wallet.scanEvents(fromBlock, toBlock, topics, events, address);
-                return stringifyJson(result);
+                if (typeof (fromBlock) == 'number') {
+                    let result = await wallet.scanEvents(fromBlock, toBlock, topics, events, address);
+                    return stringifyJson(result);
+                }
+                else {
+                    let params = fromBlock;
+                    let result = await wallet.scanEvents(params.fromBlock, params.toBlock, params.topics, params.events, params.address);
+                    return stringifyJson(result);
+                }
             },
             setAccount(value) {
                 wallet.account = value;

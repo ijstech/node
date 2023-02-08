@@ -143,9 +143,16 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
             async _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<string>{
                 return stringifyJson(await wallet._send(abiHash, address, methodName, params, options));
             },
-            async scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string|string[]): Promise<string>{
-                let result = await wallet.scanEvents(fromBlock, toBlock, topics, events, address);
-                return stringifyJson(result);
+            async scanEvents(fromBlock: number | {fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string|string[]}, toBlock?: number | string, topics?: any, events?: any, address?: string|string[]): Promise<string>{
+                if (typeof(fromBlock) == 'number'){
+                    let result = await wallet.scanEvents(fromBlock, toBlock, topics, events, address);
+                    return stringifyJson(result);
+                }
+                else{
+                    let params = fromBlock;
+                    let result = await wallet.scanEvents(params.fromBlock, params.toBlock, params.topics, params.events, params.address);
+                    return stringifyJson(result);
+                }
             },
             setAccount(value: IAccount){
                 wallet.account = value;

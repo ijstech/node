@@ -46,7 +46,14 @@ export interface IWallet {
     registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
     send(to: string, amount: number): Promise<TransactionReceipt>;
     _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
-    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
+    scanEvents(fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
+    scanEvents(params: {
+        fromBlock: number;
+        toBlock?: number | string;
+        topics?: any;
+        events?: any;
+        address?: string | string[];
+    }): Promise<Event[]>;
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<string>;
     _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<Transaction>;
     utils: IWalletUtils;
@@ -166,7 +173,11 @@ export declare class Contract {
     get events(): EventType[];
     protected getAbiEvents(): any;
     protected getAbiTopics(eventNames?: string[]): any[];
-    scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
+    scanEvents(fromBlock: number | {
+        fromBlock: number;
+        toBlock?: number | string;
+        eventNames?: string[];
+    }, toBlock?: number | string, eventNames?: string[]): Promise<Event[]>;
     batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<void>;
     protected txData(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
     protected call(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;

@@ -1,6 +1,6 @@
 {
     "name": "@ijstech/eth-contract",
-    "version": "0.1.15",
+    "version": "0.1.16",
     "bin": {
         "sol2ts": "tools/bin/compile.js"
     },
@@ -8,6 +8,10 @@
     "types": "types/index.d.ts",
     "plugin": "dist/index.js",
     "pluginTypes": "dist/index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ijstech/node/tree/main/packages/eth-contract"
+    },
     "devDependencies": {
         "solc": "0.8.12"
     },

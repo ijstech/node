@@ -117,9 +117,18 @@ class Contract {
     //         this.wallet.registerEvent(this.getAbiEvents(), this._address, handler);
     // }
     scanEvents(fromBlock, toBlock, eventNames) {
-        let topics = this.getAbiTopics(eventNames);
-        let events = this.getAbiEvents();
-        return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
+        if (typeof (fromBlock) == 'number') {
+            let topics = this.getAbiTopics(eventNames);
+            let events = this.getAbiEvents();
+            return this.wallet.scanEvents(fromBlock, toBlock, topics, events, this._address);
+        }
+        else {
+            let params = fromBlock;
+            let topics = this.getAbiTopics(params.eventNames);
+            let events = this.getAbiEvents();
+            return this.wallet.scanEvents(params.fromBlock, params.toBlock, topics, events, this._address);
+        }
+        ;
     }
     ;
     async batchCall(batchObj, key, methodName, params, options) {

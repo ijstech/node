@@ -10,7 +10,7 @@ class Worker implements IWorkerPlugin {
         if (data.abi){
             let hash = wallet.registerAbi(data.abi, data.address, this.eventHandler.bind(this));
         }
-        let events = await wallet.scanEvents(data.fromBlock, data.toBlock);
+        let events = await wallet.scanEvents(data);
         return events;
     };
 };

@@ -4,6 +4,7 @@ import {PackageManager, Package} from '@ijstech/package';
 import Path from 'path';
 
 describe('Plugins', function() {    
+    this.timeout(60000);
     it('Worker Plugin', async function(){              
         let manager = new PackageManager();        
         manager.packageImporter = async (packName: string): Promise<Package>=>{

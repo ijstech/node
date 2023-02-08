@@ -188,16 +188,31 @@ const Wallet = {
     },
     async scanEvents(fromBlock, toBlock, topics, events, address) {
         let wallet = global.$$wallet_plugin;
-        let result = parseJson(await wallet.scanEvents(fromBlock, toBlock, topics, events, address));
-        if (_eventHandler) {
-            for (let i = 0; i < result.length; i++) {
-                let event = result[i];
-                let handler = _eventHandler[event.address];
-                if (handler)
-                    await handler(event);
+        if (typeof (fromBlock) == 'number') {
+            let result = parseJson(await wallet.scanEvents(fromBlock, toBlock, topics, events, address));
+            if (_eventHandler) {
+                for (let i = 0; i < result.length; i++) {
+                    let event = result[i];
+                    let handler = _eventHandler[event.address];
+                    if (handler)
+                        await handler(event);
+                }
             }
+            return result;
         }
-        return result;
+        else {
+            let params = fromBlock;
+            let result = parseJson(await wallet.scanEvents(params));
+            if (_eventHandler) {
+                for (let i = 0; i < result.length; i++) {
+                    let event = result[i];
+                    let handler = _eventHandler[event.address];
+                    if (handler)
+                        await handler(event);
+                }
+            }
+            return result;
+        }
     },
     async signMessage(msg) {
         let wallet = global.$$wallet_plugin;

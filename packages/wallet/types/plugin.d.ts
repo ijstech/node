@@ -206,7 +206,14 @@ export interface IWallet {
     registerAbiContracts(abiHash: string, address: string | string[], handler?: any): any;
     send(to: string, amount: number): Promise<IWalletTransactionReceipt>;
     _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<IWalletTransactionReceipt>;
-    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<IWalletEvent[]>;
+    scanEvents(fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string | string[]): Promise<IWalletEvent[]>;
+    scanEvents(params: {
+        fromBlock: number;
+        toBlock?: number | string;
+        topics?: any;
+        events?: any;
+        address?: string | string[];
+    }): Promise<IWalletEvent[]>;
     signMessage(msg: string): Promise<string>;
     signTransaction(tx: any, privateKey?: string): Promise<string>;
     tokenInfo(address: string): Promise<IWalletTokenInfo>;
@@ -257,7 +264,14 @@ export interface IWalletPluginObject {
     setDefaultAccount(value: string): void;
     send(to: string, amount: number): Promise<string>;
     _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<string>;
-    scanEvents(fromBlock: number, toBlock: number | string, topics?: any, events?: any, address?: string | string[]): Promise<string>;
+    scanEvents(fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string | string[]): Promise<string>;
+    scanEvents(params: {
+        fromBlock: number;
+        toBlock?: number | string;
+        topics?: any;
+        events?: any;
+        address?: string | string[];
+    }): Promise<string>;
     setAccount(value: IWalletAccount): void;
     signMessage(msg: string): Promise<string>;
     signTransaction(tx: any, privateKey?: string): Promise<string>;
