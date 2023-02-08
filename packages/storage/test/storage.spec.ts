@@ -5,7 +5,6 @@ import Config from './data/config.js';
 import Path from 'path';
 import {promises as Fs, rmSync} from 'fs';
 
-
 try{
     rmSync(Path.join(__dirname, 'cache'), { recursive: true, force: true });
 }
@@ -64,6 +63,16 @@ describe('Storage', function () {
         let result = await s3.getObject('hello.txt');
         assert.strictEqual(result, 'hello!');
     });
+    it('s3.copyObject', async function(){
+        let s3 = new S3(Config.s3)
+        await s3.copyObject('hello.txt', 'hello1.txt');
+        let exists = await s3.hasObject('hello1.txt');
+        assert.strictEqual(exists, true);
+        await s3.moveObject('hello1.txt', 'hello2.txt');
+        exists = await s3.hasObject('hello2.txt');
+        assert.strictEqual(exists, true);
+        await s3.deleteObject('hello2.txt');
+    });
     it('a3.hasObject', async function () {
         let s3 = new S3(Config.s3)
         let result = await s3.hasObject('not_exist_file.txt');
@@ -73,7 +82,7 @@ describe('Storage', function () {
         await s3.deleteObject('hello.txt');
         result = await s3.hasObject('hello.txt');
         assert.strictEqual(result, false);
-    });
+    });    
     it ('s3.putObjectFrom', async function(){
         let s3 = new S3(Config.s3)
         await s3.deleteObject('file1.txt');
@@ -87,8 +96,15 @@ describe('Storage', function () {
     });
     it ('s3.putObjectSignedUrl', async function(){
         let s3 = new S3(Config.s3)
-        let result = await s3.putObjectSignedUrl('file1.txt');
-        assert.strictEqual(typeof(result), 'string');;
+        let url = await s3.putObjectSignedUrl('file1-presign.txt');
+        assert.strictEqual(typeof(url), 'string');
+        let res = await fetch(url, {
+            method: 'PUT',
+            body: await Fs.readFile(Path.join(__dirname, 'dir/file1.txt'))
+        })
+        let exists = await s3.hasObject('file1-presign.txt');
+        assert.strictEqual(exists, true);
+        await s3.deleteObject('file1-presign.txt')
     });
     it('s3.listObjects', async function(){
         let s3 = new S3(Config.s3);
@@ -101,5 +117,5 @@ describe('Storage', function () {
             startAfter: result.Contents?.[1].Key
         });
         assert.strictEqual(result.Contents?.length, 3)
-    });
+    });    
 });

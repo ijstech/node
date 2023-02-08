@@ -1,4 +1,5 @@
-import {S3Client, AbortMultipartUploadCommandOutput, CompleteMultipartUploadCommandOutput, DeleteObjectCommand, DeleteObjectCommandOutput, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command, ListObjectsV2CommandOutput, PutObjectCommand, PutObjectCommandOutput, HeadObjectCommandOutput} from "@aws-sdk/client-s3";
+import {S3Client, CompleteMultipartUploadCommandOutput, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, 
+    ListObjectsV2Command, ListObjectsV2CommandOutput, CopyObjectCommand, PutObjectCommand, PutObjectCommandOutput, HeadObjectCommandOutput} from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createReadStream } from 'fs';
@@ -28,12 +29,38 @@ export class S3 {
             }
         });
     };
-    deleteObject(key: string): Promise<DeleteObjectCommandOutput>{
-        const command = new DeleteObjectCommand({
-            Bucket: this.options.bucket,
-            Key: key
-        });
-        return this.s3.send(command);
+    async copyObject(fromKey: string, toKey: string): Promise<boolean>{
+        try{
+            let exists = await this.hasObject(toKey);
+            if (!exists){
+                const command = new CopyObjectCommand({
+                    Bucket: this.options.bucket,
+                    CopySource: this.options.bucket + '/' + fromKey,
+                    Key: toKey
+                });
+                let result = await this.s3.send(command);
+                if (!result.CopyObjectResult.ETag)
+                    return false;
+            };
+            return true;
+        }
+        catch(err){
+            console.dir(err);
+            return false;
+        };        
+    };
+    async deleteObject(key: string): Promise<boolean>{
+        try{
+            const command = new DeleteObjectCommand({
+                Bucket: this.options.bucket,
+                Key: key
+            });
+            let result = await this.s3.send(command);
+            return true;
+        }
+        catch(err){
+            return false;
+        };
     };
     async hasObject(key: string): Promise<boolean>{
         try{
@@ -84,6 +111,17 @@ export class S3 {
     };
     getObjectSignedUrl(key: string, expiresInSeconds?: number): Promise<string>{
         return getSignedUrl(this.s3, new GetObjectCommand({Bucket: this.options.bucket, Key: key}), { expiresIn: expiresInSeconds || 3600 })
+    };
+    async moveObject(fromKey: string, toKey: string): Promise<boolean>{
+        try{
+            let result = await this.copyObject(fromKey, toKey);
+            if (!result)
+                return false;
+            return this.deleteObject(fromKey);
+        }
+        catch(err){
+            return false;
+        };        
     };
     putObject(key: string, content: string): Promise<PutObjectCommandOutput> {
         const command = new PutObjectCommand({
