@@ -14,7 +14,6 @@ Config.localCache = {
 }
 describe('Storage', function () {
     this.timeout(1800000);
-    
     it('put Dir', async function(){
         let storage = new Storage(Config);
         let path = Path.join(__dirname, './dir');
@@ -32,14 +31,23 @@ describe('Storage', function () {
         let storage = new Storage(Config);
         let result = await storage.putGithub({org:'ijstech',repo:'openswap-scbook',commit:'f1abac737421db53e507be21dafc6710a73c8c6f'}, {ipfs: true, s3: false});
         assert.strictEqual(result.cid, 'bafybeiabehpjuhbjnnrehsrl327pr5tp4fqhclp3th5ta4bxazlmmdkopq');
-    });
+    });    
     it('get File', async function(){
         let storage = new Storage(Config);
         let result = await storage.getFile('bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy', 'file1.txt')
         assert.strictEqual(result, 'file 1');
-        result = await storage.getFile('bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy', 'folder 1/file 2.txt')
-        assert.strictEqual(result, 'file 2');
+        result = await storage.getFile('bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy', 'file1.txt')
+        assert.strictEqual(result, 'file 1');
     });    
+    it('get File Path', async function(){
+        let storage = new Storage(Config);
+        let result = await storage.getLocalFilePath('bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy', 'folder 1/file 2.txt');
+        let content = await Fs.readFile(result, 'utf-8');
+        assert.strictEqual(content, 'file 2');
+        result = await storage.getLocalFilePath('bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy', 'folder 1/file 2.txt');
+        content = await Fs.readFile(result, 'utf-8');
+        assert.strictEqual(content, 'file 2');
+    });
     it('put File', async function(){
         let storage = new Storage(Config);
         let path = Path.join(__dirname, './dir/folder 1/file 2.txt');

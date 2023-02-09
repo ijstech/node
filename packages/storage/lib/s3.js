@@ -7,6 +7,7 @@ exports.S3 = void 0;
 const client_s3_1 = require("@aws-sdk/client-s3");
 const lib_storage_1 = require("@aws-sdk/lib-storage");
 const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
+const promises_1 = require("node:stream/promises");
 const fs_1 = require("fs");
 const mime_1 = __importDefault(require("@ijstech/mime"));
 const path_1 = __importDefault(require("path"));
@@ -115,6 +116,25 @@ class S3 {
         });
         let result = await this.s3.send(command);
         return result.Body.transformToString('utf-8');
+    }
+    ;
+    async downloadObject(key, targetFilePath) {
+        try {
+            const command = new client_s3_1.GetObjectCommand({
+                Bucket: this.options.bucket,
+                Key: key
+            });
+            let result = await this.s3.send(command);
+            if (result.Body) {
+                await promises_1.pipeline(result.Body, fs_1.createWriteStream(targetFilePath));
+                return true;
+            }
+            ;
+            return false;
+        }
+        catch (err) {
+            return false;
+        }
     }
     ;
     getObjectSignedUrl(key, expiresInSeconds) {

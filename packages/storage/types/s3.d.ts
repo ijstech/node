@@ -22,6 +22,7 @@ export declare class S3 {
         startAfter?: string;
     }): Promise<ListObjectsV2CommandOutput>;
     getObject(key: string): Promise<string>;
+    downloadObject(key: string, targetFilePath: string): Promise<boolean>;
     getObjectSignedUrl(key: string, expiresInSeconds?: number): Promise<string>;
     moveObject(fromKey: string, toKey: string): Promise<boolean>;
     putObject(key: string, content: string): Promise<PutObjectCommandOutput>;

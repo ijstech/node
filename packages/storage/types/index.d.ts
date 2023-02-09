@@ -26,9 +26,11 @@ export declare class Storage {
     constructor(options: IStorageOptions);
     private initDir;
     private localCacheExist;
+    private getLocalCachePath;
     private getLocalCache;
     private putLocalCache;
     getFile(cid: string, filePath: string | string[]): Promise<string>;
+    getLocalFilePath(cid: string, filePath: string | string[]): Promise<string>;
     putContent(fileContent: string, to?: {
         ipfs?: boolean;
         s3?: boolean;

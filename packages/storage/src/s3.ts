@@ -2,7 +2,9 @@ import {S3Client, CompleteMultipartUploadCommandOutput, DeleteObjectCommand, Get
     ListObjectsV2Command, ListObjectsV2CommandOutput, CopyObjectCommand, PutObjectCommand, PutObjectCommandOutput, HeadObjectCommandOutput} from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { createReadStream } from 'fs';
+import type { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { createReadStream, createWriteStream} from 'fs';
 import Mime from '@ijstech/mime';
 import Path from 'path';
 import {ICidInfo} from '@ijstech/ipfs';
@@ -108,6 +110,23 @@ export class S3 {
         });
         let result = await this.s3.send(command);
         return result.Body.transformToString('utf-8');
+    };
+    async downloadObject(key: string, targetFilePath: string): Promise<boolean> {
+        try{
+            const command = new GetObjectCommand({
+                Bucket: this.options.bucket,            
+                Key: key
+            });
+            let result = await this.s3.send(command);
+            if (result.Body){
+                await pipeline(result.Body as Readable, createWriteStream(targetFilePath))
+                return true;
+            };
+            return false;
+        }
+        catch(err){
+            return false
+        }        
     };
     getObjectSignedUrl(key: string, expiresInSeconds?: number): Promise<string>{
         return getSignedUrl(this.s3, new GetObjectCommand({Bucket: this.options.bucket, Key: key}), { expiresIn: expiresInSeconds || 3600 })
