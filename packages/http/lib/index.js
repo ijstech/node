@@ -12,6 +12,7 @@ exports.HttpServer = void 0;
 const koa_1 = __importDefault(require("koa"));
 const koa_bodyparser_1 = __importDefault(require("koa-bodyparser"));
 const fs_1 = __importDefault(require("fs"));
+const url_1 = __importDefault(require("url"));
 const tls_1 = __importDefault(require("tls"));
 const path_1 = __importDefault(require("path"));
 const http_1 = __importDefault(require("http"));
@@ -215,8 +216,17 @@ class HttpServer {
             this.app.use(async (ctx, next) => {
                 var _a, _b, _c, _d, _e;
                 if (this.options.cors) {
-                    ctx.set('Access-Control-Allow-Credentials', 'true');
-                    ctx.set('Access-Control-Allow-Origin', ctx.get('Origin') || '*');
+                    let origin = ctx.get('Origin');
+                    if (origin) {
+                        let hostname = url_1.default.parse(origin, false).hostname;
+                        if (hostname == ctx.hostname)
+                            ctx.set('Access-Control-Allow-Credentials', 'true');
+                        ctx.set('Access-Control-Allow-Origin', origin);
+                    }
+                    else {
+                        ctx.set('Access-Control-Allow-Origin', '*');
+                    }
+                    ;
                     if (ctx.method == 'OPTIONS') {
                         ctx.set('Access-Control-Allow-Headers', 'content-type');
                         ctx.status = 200;

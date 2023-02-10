@@ -7,6 +7,7 @@
 import Koa from 'koa';
 import BodyParser from 'koa-bodyparser';
 import Fs from 'fs';
+import URL from 'url'; 
 import Tls from 'tls';
 import Path from 'path';
 import Http from 'http';
@@ -228,8 +229,16 @@ export class HttpServer {
             };
             this.app.use(async (ctx: Koa.Context, next)=>{
                 if (this.options.cors){
-                    ctx.set('Access-Control-Allow-Credentials', 'true');
-                    ctx.set('Access-Control-Allow-Origin', ctx.get('Origin') || '*');
+                    let origin = ctx.get('Origin');
+                    if (origin){
+                        let hostname = URL.parse(origin, false).hostname;
+                        if (hostname == ctx.hostname)
+                            ctx.set('Access-Control-Allow-Credentials', 'true');
+                        ctx.set('Access-Control-Allow-Origin', origin);
+                    }
+                    else{
+                        ctx.set('Access-Control-Allow-Origin', '*');
+                    };                 
                     if (ctx.method == 'OPTIONS'){
                         ctx.set('Access-Control-Allow-Headers', 'content-type');
                         ctx.status = 200;
