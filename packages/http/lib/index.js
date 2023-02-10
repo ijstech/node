@@ -12,7 +12,6 @@ exports.HttpServer = void 0;
 const koa_1 = __importDefault(require("koa"));
 const koa_bodyparser_1 = __importDefault(require("koa-bodyparser"));
 const fs_1 = __importDefault(require("fs"));
-const url_1 = __importDefault(require("url"));
 const tls_1 = __importDefault(require("tls"));
 const path_1 = __importDefault(require("path"));
 const http_1 = __importDefault(require("http"));
@@ -218,8 +217,7 @@ class HttpServer {
                 if (this.options.cors) {
                     let origin = ctx.get('Origin');
                     if (origin) {
-                        let hostname = url_1.default.parse(origin, false).hostname;
-                        if (hostname == ctx.hostname)
+                        if (origin == ctx.host)
                             ctx.set('Access-Control-Allow-Credentials', 'true');
                         ctx.set('Access-Control-Allow-Origin', origin);
                     }

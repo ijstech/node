@@ -231,8 +231,8 @@ export class HttpServer {
                 if (this.options.cors){
                     let origin = ctx.get('Origin');
                     if (origin){
-                        let hostname = URL.parse(origin, false).hostname;
-                        if (hostname == ctx.hostname)
+                    //     let hostname = URL.parse(origin, false).hostname;
+                        if (origin == ctx.host)
                             ctx.set('Access-Control-Allow-Credentials', 'true');
                         ctx.set('Access-Control-Allow-Origin', origin);
                     }
