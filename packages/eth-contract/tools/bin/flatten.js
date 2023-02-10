@@ -12,12 +12,14 @@ async function compileSolidityFile(filePath, isBaseFile = false) {
     let sourceCode = fs.readFileSync(filePath, "utf8");
     let license;
     if (isBaseFile) {
+        licenseRegex.lastIndex = 0;
         const licenseMatch = licenseRegex.exec(sourceCode);
         license = licenseMatch[0];
     }
     sourceCode = sourceCode.replace(licenseRegex, '');
     let importMatch;
     const dependencies = {};
+    importRegex.lastIndex = 0;
     while ((importMatch = importRegex.exec(sourceCode))) {
         const importPath = importMatch[1] || importMatch[2];
         let importFilePath;
