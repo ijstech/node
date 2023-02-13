@@ -19,6 +19,8 @@ describe('Storage', function () {
         let path = Path.join(__dirname, './dir');
         let result = await storage.putDir(path, {s3: true, ipfs: true}, 'local test dir')
         assert.strictEqual(result.cid, 'bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy');
+        result = await storage.putItems(result.links);
+        assert.strictEqual(result.cid, 'bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy');
     });
     it('get Item', async function(){
         let storage = new Storage(Config);

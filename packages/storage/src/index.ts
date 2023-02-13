@@ -192,6 +192,8 @@ export class Storage{
     };
     async putContent(fileContent: string, to?: {ipfs?:boolean, s3?: boolean}, source?: string): Promise<IPFSUtils.ICidInfo>{
         let fileItem = await IPFSUtils.hashContent(fileContent);
+        fileItem.type = 'file';
+        fileItem.name = '';
         let exists: boolean;
         if (this.s3){
             exists = await this.s3.hasObject(`ipfs/${fileItem.cid}`);  
@@ -203,7 +205,7 @@ export class Storage{
                 cid: fileItem.cid,
                 name: 'file',
                 size: fileItem.size,
-                type: 'file'
+                type: fileItem.type
             }
         ])
         if ((!to || to.ipfs != false) && this.web3Storage){
@@ -239,18 +241,19 @@ export class Storage{
         return fileItem;
     };
     async putFile(filePath: string, to?: {ipfs?:boolean, s3?: boolean}, source?: string): Promise<IPFSUtils.ICidInfo>{
-        let fileItem = await IPFSUtils.hashFile(filePath);        
+        let fileItem: IPFSUtils.ICidInfo = await IPFSUtils.hashFile(filePath);      
+        fileItem.name = filePath.split('/').pop() || filePath;
+        fileItem.type = 'file';  
         let exists: boolean;
         if (this.s3){
             exists = await this.s3.hasObject(`ipfs/${fileItem.cid}`);  
             if (exists)
                 return fileItem;
         };
-        let fileName = filePath.split('/').pop();
         let folderItem = await IPFSUtils.hashItems([
             {
                 cid: fileItem.cid,
-                name: fileName,
+                name: fileItem.name,
                 size: fileItem.size,
                 links: [],
                 type: 'file'
@@ -274,12 +277,7 @@ export class Storage{
                 log.uploadDate = new Date();
                 log.size = fileItem.size;
             }
-            await this.putToS3(logContext, filePath, {
-                cid: fileItem.cid,
-                name: fileName,
-                size: fileItem.size, 
-                type: 'file'
-            }, folderItem);
+            await this.putToS3(logContext, filePath, fileItem, folderItem);
             if (logContext)
                 await logContext.save();
         };
@@ -317,8 +315,43 @@ export class Storage{
             return content;
         };
     };
+    async putItems(items: IPFSUtils.ICidInfo[], source?: string): Promise<IPFSUtils.ICidInfo>{
+        items.sort((item1, item2)=>{
+            item1.name = item1.name || item1.cid;
+            item2.name = item2.name || item2.cid;
+            if (item1.name > item2.name)
+                return 1;
+            else
+                return -1;
+        });
+        let hash = await IPFSUtils.hashItems(items, 1);
+        hash.name = '';
+        hash.type = 'dir';
+        hash.links = items;
+        let logContext: Context;
+        if (this.options.log){
+            logContext = new Context(this.options.log);
+            let log = logContext.uploadLog.add();
+            log.source = source;
+            log.uploadDate = new Date();
+            log.size = hash.size;
+        };
+        await this.putToS3(logContext, null, hash);
+        if (logContext){
+            await logContext.save();
+        };
+        return {
+            cid: hash.cid,
+            name: '',
+            size: hash.size,
+            type: 'dir',
+            links: items
+        };
+    };
     async putDir(path: string, to?: {ipfs?:boolean, s3?: boolean}, source?: string): Promise<IPFSUtils.ICidInfo>{
-        let hash = await IPFSUtils.hashDir(path, 1);        
+        let hash = await IPFSUtils.hashDir(path, 1);
+        hash.name = path.split('/').pop() || path;
+        hash.type = 'dir';
         let cid: string;
         if ((!to || to.ipfs != false) && this.web3Storage){
             let items = await Fs.readdir(path);
@@ -358,9 +391,10 @@ export class Storage{
         if (!exists){
             if (item.type == 'dir'){
                 if (item.links?.length > 0){
-                    for (let i = 0; i < item.links.length; i ++)
+                    if (sourcePath){
+                        for (let i = 0; i < item.links.length; i ++)
                         await this.putToS3(logContext, Path.join(sourcePath, item.links[i].name), item.links[i], item);
-
+                    };
                     let data: IPFSUtils.ICidInfo = JSON.parse(JSON.stringify(item));
                     for (let i = 0; i < data.links.length; i ++)
                         delete data.links[i].links;
@@ -376,7 +410,7 @@ export class Storage{
                     };
                 };
             }
-            else{
+            else if (sourcePath){
                 await this.s3.putObjectFrom(`ipfs/${item.cid}`, sourcePath);                
                 if (logContext){
                     logContext.uploadItem.applyInsert({

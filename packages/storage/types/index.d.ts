@@ -40,6 +40,7 @@ export declare class Storage {
         s3?: boolean;
     }, source?: string): Promise<IPFSUtils.ICidInfo>;
     getItem(cid: string): Promise<string>;
+    putItems(items: IPFSUtils.ICidInfo[], source?: string): Promise<IPFSUtils.ICidInfo>;
     putDir(path: string, to?: {
         ipfs?: boolean;
         s3?: boolean;
