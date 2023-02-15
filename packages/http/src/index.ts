@@ -227,7 +227,7 @@ export class HttpServer {
                 this.https = Https.createServer(SNIOptions, this.app.callback()).listen(this.options.securePort);            
                 console.log(`https server is running at ${this.options.securePort}`);
             };
-            this.app.use(async (ctx: Koa.Context, next)=>{
+            this.app.use(async (ctx: Koa.Context, next: Koa.Next)=>{
                 if (this.options.cors){
                     let origin = ctx.get('Origin');
                     if (origin){
@@ -338,7 +338,7 @@ export class HttpServer {
             });
         };
     };
-    use(middleware: any){     
+    use(middleware: (ctx: Koa.Context, next: Koa.Next)=>void){     
         this.withDefaultMiddleware = true;
         this.app.use(middleware);
     };

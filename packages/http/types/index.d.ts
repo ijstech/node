@@ -60,5 +60,5 @@ export declare class HttpServer {
     }>;
     stop(): Promise<unknown>;
     start(): Promise<void>;
-    use(middleware: any): void;
+    use(middleware: (ctx: Koa.Context, next: Koa.Next) => void): void;
 }
