@@ -468,7 +468,9 @@ export interface IDBClient{
     syncTableSchema(tableName: string, fields: IFields): Promise<boolean>;
 }
 export interface IDbConnectionOptions{
-    mysql?: IMySQLConnection
+    type?: string;
+    mysql?: IMySQLConnection;
+    connection?: IMySQLConnection;
 }
 export interface IDBRequiredPluginOptions{
     [name: string]: IDbConnectionOptions;
