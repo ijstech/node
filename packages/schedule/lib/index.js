@@ -4,15 +4,21 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Scheduler = void 0;
+exports.Scheduler = exports.parseCron = void 0;
 const plugin_1 = require("@ijstech/plugin");
-const cron_parser_1 = __importDefault(require("cron-parser"));
+const cron_parser_1 = require("cron-parser");
 const package_1 = require("@ijstech/package");
 const queue_1 = require("@ijstech/queue");
+function parseCron(expression) {
+    let cron = cron_parser_1.parseExpression(expression);
+    if (cron.hasNext())
+        return new Date(cron.next().getTime());
+    else
+        return new Date('9999-01-01');
+}
+exports.parseCron = parseCron;
+;
 ;
 ;
 ;
@@ -161,7 +167,7 @@ class Scheduler {
     async processJob(job) {
         var _a, _b, _c, _d, _e;
         if (job.cron != '*' && !job.next) {
-            job.next = cron_parser_1.default.parseExpression(job.cron).next();
+            job.next = parseCron(job.cron);
             console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id ? `${job.domain}:${job.id}` : ''));
         }
         ;
@@ -224,7 +230,7 @@ class Scheduler {
                 }
                 ;
                 if (job.cron != '*') {
-                    job.next = cron_parser_1.default.parseExpression(job.cron).next();
+                    job.next = parseCron(job.cron);
                     console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id ? job.id : ''));
                 }
                 ;

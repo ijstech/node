@@ -4,11 +4,11 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 import { IWorkerPluginOptions, Worker } from '@ijstech/plugin';
-import CronParser from 'cron-parser';
 import { PackageManager, IDomainWorkerPackage } from '@ijstech/package';
 import { IWorkerOptions } from '@ijstech/queue';
 import { IDomainOptions } from '@ijstech/types';
 import { IStorageOptions } from '@ijstech/storage';
+export declare function parseCron(expression: string): Date;
 export interface ISchdeulePluginOptions extends IWorkerPluginOptions {
     cron: string;
     disabled?: boolean;
@@ -25,7 +25,7 @@ export interface ISchedulerOptions {
 }
 export interface IScheduleJob extends ISchdeulePluginOptions {
     id?: string;
-    next?: CronParser.CronDate;
+    next?: Date;
     domain?: string;
     pack?: IDomainWorkerPackage;
     workerName?: string;

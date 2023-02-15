@@ -5,13 +5,19 @@
 *-----------------------------------------------------------*/
 
 import {IWorkerPluginOptions, Worker} from '@ijstech/plugin';
-import CronParser from 'cron-parser';
+import {parseExpression} from 'cron-parser';
 import {PackageManager, IDomainWorkerPackage} from '@ijstech/package';
-import {PluginScript} from '@ijstech/tsc';
 import {JobQueue, IWorkerOptions} from '@ijstech/queue';
 import {IDomainOptions} from '@ijstech/types';
 import {IStorageOptions} from '@ijstech/storage'
 
+export function parseCron(expression: string): Date{
+    let cron = parseExpression(expression);
+    if (cron.hasNext())
+        return new Date(cron.next().getTime())
+    else
+        return new Date('9999-01-01')
+};
 export interface ISchdeulePluginOptions extends IWorkerPluginOptions{
     cron: string;
     disabled?: boolean;
@@ -26,7 +32,7 @@ export interface ISchedulerOptions {
 };
 export interface IScheduleJob extends ISchdeulePluginOptions{
     id?: string;
-    next?: CronParser.CronDate;
+    next?: Date;
     domain?: string;
     pack?: IDomainWorkerPackage;
     workerName?: string;
@@ -180,7 +186,7 @@ export class Scheduler {
     };
     private async processJob(job: IScheduleJob){
         if (job.cron != '*' && !job.next){
-            job.next = CronParser.parseExpression(job.cron).next();
+            job.next = parseCron(job.cron);
             console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id?`${job.domain}:${job.id}`:''));
         };
         if (job.cron == '*' || job.next.getTime() < new Date().getTime()){
@@ -239,7 +245,7 @@ export class Scheduler {
                     await job.plugin.process(job.params);
                 };
                 if (job.cron != '*'){
-                    job.next = CronParser.parseExpression(job.cron).next();
+                    job.next = parseCron(job.cron);
                     console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id?job.id:''));
                 };  
                 return result;              
