@@ -10,13 +10,21 @@ const mysql_1 = require("./mysql");
 let Clients = {};
 ;
 function getClient(options) {
-    if (options.mysql) {
+    if (options.type == 'mysql') {
+        let opt = options.connection || options.mysql;
+        let id = opt.host + ':' + opt.user + ':' + opt.database;
+        if (!Clients[id])
+            Clients[id] = new mysql_1.MySQLClient(opt);
+        return Clients[id];
+    }
+    else if (options.mysql) {
         let opt = options.mysql;
         let id = opt.host + ':' + opt.user + ':' + opt.database;
         if (!Clients[id])
             Clients[id] = new mysql_1.MySQLClient(opt);
         return Clients[id];
     }
+    ;
 }
 exports.getClient = getClient;
 ;

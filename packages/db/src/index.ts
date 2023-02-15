@@ -13,13 +13,20 @@ export interface IClient extends Types.IDBClient{
     import(sql: string): Promise<boolean>;
 };
 export function getClient(options?: Types.IDbConnectionOptions): IClient{
-    if (options.mysql){
-        let opt = options.mysql;
+    if (options.type == 'mysql' ){
+        let opt = options.connection || options.mysql;
         let id = opt.host + ':' + opt.user + ':' + opt.database;
         if (!Clients[id])
             Clients[id] = new MySQLClient(opt);
         return Clients[id];
     }
+    else if (options.mysql){
+        let opt = options.mysql;
+        let id = opt.host + ':' + opt.user + ':' + opt.database;
+        if (!Clients[id])
+            Clients[id] = new MySQLClient(opt);
+        return Clients[id];
+    };
 };
 function getPluginClient(vm: VM, db: string, client: Types.IDBClient): string{
     let name = '$$plugin_db_' + db;
