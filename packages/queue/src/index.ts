@@ -99,12 +99,12 @@ export class Queue {
                 jobQueue: this.options.jobQueue
             });            
             this.queue.processJob(async (job) =>{                                
-                if (job.data?.worker){                    
-                    let worker = job.data.worker;  
+                if (job.data?.worker){
+                    let worker = job.data.worker;
                     let pack: IDomainWorkerPackage;
                     if (this.domainPackage[worker.domain])
                         pack = this.domainPackage[worker.domain][worker.packagePath];
-                    if (pack){          
+                    if (pack){
                         let module = await this.packageManager.getPackageWorker(pack, worker.workerName);
                         if (module.moduleScript.errors)
                             console.error(module.moduleScript.errors)
