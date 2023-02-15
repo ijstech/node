@@ -1,12 +1,23 @@
 import Path from 'path';
+import Fs from 'fs';
 const RootPath = process.cwd();
 import {AppServer} from './index'
 var Config: any;
 var SCConfig: any;
 try{
-    if (process.argv[2])
-        Config = require(Path.join(RootPath, process.argv[2]));
     SCConfig = require(Path.join(RootPath, 'scconfig.json'));
+    let configPath: string = process.argv[2] || SCConfig.config;
+    if (configPath){
+        configPath = Path.resolve(RootPath, configPath);
+        if (configPath.startsWith(RootPath)){
+            if (configPath && configPath.endsWith('.js'))
+                Config = require(configPath)
+            else if (configPath && configPath.endsWith('.json')){
+                let content = Fs.readFileSync(configPath, 'utf8');
+                Config = JSON.parse(content);
+            };
+        };
+    };
 }
 catch(err){};
 Config = Config || {};
