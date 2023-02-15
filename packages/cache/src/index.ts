@@ -8,6 +8,7 @@ import {LocalCache} from './local';
 import {RedisCache} from './redis';
 import {VM} from '@ijstech/vm';
 import {ICachePlugin, ICacheClientOptions} from '@ijstech/types';
+export{ ICachePlugin as ICacheClient, ICacheClientOptions };
 
 let Clients = {};
 export function getClient(options?: ICacheClientOptions): ICachePlugin{
