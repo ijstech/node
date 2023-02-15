@@ -103,7 +103,9 @@ export class Storage{
             await Fs.writeFile(filePath, content);
         };
     };
-    async getFile(cid: string, filePath: string|string[]): Promise<string>{
+    async getFile(rootPath: string, filePath: string|string[]): Promise<string>{
+        if (rootPath.startsWith('/') && typeof(filePath) == 'string')
+            return await Fs.readFile(Path.join(rootPath, filePath), 'utf8'); 
         if (typeof(filePath) == 'string' && filePath[0] == '/')
             filePath = filePath.substring(1);        
         let paths: string[];
@@ -113,17 +115,17 @@ export class Storage{
             paths = filePath.split('/');
 
         let item:IPFSUtils.ICidInfo;
-        if (await this.localCacheExist('stat', cid)){
-            item = JSON.parse(await this.getLocalCache('stat', cid));
+        if (await this.localCacheExist('stat', rootPath)){
+            item = JSON.parse(await this.getLocalCache('stat', rootPath));
         }
         else if (this.s3){
-            let content = await this.s3.getObject(`stat/${cid}`);
+            let content = await this.s3.getObject(`stat/${rootPath}`);
             if (!content)
                 throw new Error('File not found');
             item = JSON.parse(content);
-            if ((await IPFSUtils.hashItems(item.links)).cid != cid)
+            if ((await IPFSUtils.hashItems(item.links)).cid != rootPath)
                 throw new Error('CID not match');
-            await this.putLocalCache('stat', cid, content);
+            await this.putLocalCache('stat', rootPath, content);
         };
         let path = paths.shift();        
         for (let i = 0; i < item.links.length; i++){
@@ -144,7 +146,10 @@ export class Storage{
             };
         };
     };
-    async getLocalFilePath(cid: string, filePath: string |string[]): Promise<string>{
+    async getLocalFilePath(rootPath: string, filePath: string |string[]): Promise<string>{
+        if (rootPath.startsWith('/') && typeof(filePath) == 'string')
+            return Path.join(rootPath, filePath);
+
         if (typeof(filePath) == 'string' && filePath[0] == '/')
             filePath = filePath.substring(1);        
         let paths: string[];
@@ -155,16 +160,16 @@ export class Storage{
         
         let item:IPFSUtils.ICidInfo;
         let localCache: boolean;
-        if (await this.localCacheExist('stat', cid)){
-            item = JSON.parse(await this.getLocalCache('stat', cid))
+        if (await this.localCacheExist('stat', rootPath)){
+            item = JSON.parse(await this.getLocalCache('stat', rootPath))
             localCache = true;
         }
         else if (this.s3){
-            let content = await this.s3.getObject(`stat/${cid}`)
+            let content = await this.s3.getObject(`stat/${rootPath}`)
             item = JSON.parse(content);
-            if ((await IPFSUtils.hashItems(item.links)).cid != cid)
+            if ((await IPFSUtils.hashItems(item.links)).cid != rootPath)
                 throw new Error('CID not match');
-            await this.putLocalCache('stat', cid, content);
+            await this.putLocalCache('stat', rootPath, content);
         };
         
         let path = paths.shift();

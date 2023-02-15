@@ -29,8 +29,8 @@ export declare class Storage {
     private getLocalCachePath;
     private getLocalCache;
     private putLocalCache;
-    getFile(cid: string, filePath: string | string[]): Promise<string>;
-    getLocalFilePath(cid: string, filePath: string | string[]): Promise<string>;
+    getFile(rootPath: string, filePath: string | string[]): Promise<string>;
+    getLocalFilePath(rootPath: string, filePath: string | string[]): Promise<string>;
     putContent(fileContent: string, to?: {
         ipfs?: boolean;
         s3?: boolean;
