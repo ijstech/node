@@ -321,14 +321,6 @@ export class Storage{
         };
     };
     async putItems(items: IPFSUtils.ICidInfo[], source?: string): Promise<IPFSUtils.ICidInfo>{
-        items.sort((item1, item2)=>{
-            item1.name = item1.name || item1.cid;
-            item2.name = item2.name || item2.cid;
-            if (item1.name > item2.name)
-                return 1;
-            else
-                return -1;
-        });
         let hash = await IPFSUtils.hashItems(items, 1);
         hash.name = '';
         hash.type = 'dir';

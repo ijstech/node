@@ -3290,7 +3290,7 @@
         Tsize: item.size
       })
     };
-
+    Links.sort(linkComparator);
     try {
       const dirUnixFS = new UnixFS({
         type: 'directory',
