@@ -195,6 +195,9 @@ export class Storage{
             };
         };
     };
+    async getUploadUrl(path: string, expiresInSeconds?: number): Promise<string>{
+        return this.s3.putObjectSignedUrl(path, expiresInSeconds);
+    };
     async putContent(fileContent: string, to?: {ipfs?:boolean, s3?: boolean}, source?: string): Promise<IPFSUtils.ICidInfo>{
         let fileItem = await IPFSUtils.hashContent(fileContent);
         fileItem.type = 'file';

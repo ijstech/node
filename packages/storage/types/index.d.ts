@@ -31,6 +31,7 @@ export declare class Storage {
     private putLocalCache;
     getFile(rootPath: string, filePath: string | string[]): Promise<string>;
     getLocalFilePath(rootPath: string, filePath: string | string[]): Promise<string>;
+    getUploadUrl(path: string, expiresInSeconds?: number): Promise<string>;
     putContent(fileContent: string, to?: {
         ipfs?: boolean;
         s3?: boolean;

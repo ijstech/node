@@ -224,6 +224,10 @@ class Storage {
         ;
     }
     ;
+    async getUploadUrl(path, expiresInSeconds) {
+        return this.s3.putObjectSignedUrl(path, expiresInSeconds);
+    }
+    ;
     async putContent(fileContent, to, source) {
         let fileItem = await IPFSUtils.hashContent(fileContent);
         fileItem.type = 'file';
