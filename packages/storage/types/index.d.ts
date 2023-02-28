@@ -29,7 +29,7 @@ export declare class Storage {
     private getLocalCachePath;
     private getLocalCache;
     private putLocalCache;
-    getFile(rootPath: string, filePath: string | string[]): Promise<string>;
+    getFile(rootCid: string, filePath?: string | string[]): Promise<string>;
     getLocalFilePath(rootPath: string, filePath: string | string[]): Promise<string>;
     getUploadUrl(path: string, expiresInSeconds?: number): Promise<string>;
     putContent(fileContent: string, to?: {
