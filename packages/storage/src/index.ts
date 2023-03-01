@@ -1,4 +1,4 @@
-import {promises as Fs, createWriteStream, unlink, mkdirSync} from 'fs';
+import {promises as Fs, createReadStream, createWriteStream, unlink, mkdirSync} from 'fs';
 import Path from 'path';
 import Https from 'https';
 import Crypto from 'crypto';
@@ -46,7 +46,7 @@ export interface IStorageOptions{
     localCache?: {path: string};
     log?: IDbConnectionOptions;
 };
-export type IItemType = 'stat' | 'ipfs';
+export type IItemType = 'stat' | 'ipfs' | 'tmp';
 export class Storage{
     private options: IStorageOptions;
     private s3: S3;
@@ -65,6 +65,7 @@ export class Storage{
             if (this.options.localCache?.path){
                 await Fs.mkdir(Path.join(this.options.localCache.path, 'stat'), { recursive: true });
                 await Fs.mkdir(Path.join(this.options.localCache.path, 'ipfs'), { recursive: true });
+                await Fs.mkdir(Path.join(this.options.localCache.path, 'tmp'), { recursive: true });
             };
             this._initDir = true;
         };
@@ -104,8 +105,32 @@ export class Storage{
         };
     };
     async getFile(rootCid: string, filePath?: string|string[]): Promise<string>{
+        let path = await this.getLocalFilePath(rootCid, filePath);
+        if (path)
+            return await Fs.readFile(path, 'utf8');
+    };
+    private moveFile(sourcePath: string, destPath: string): Promise<boolean>{
+        return new Promise((resolve, reject)=>{
+            const readStream = createReadStream(sourcePath);
+            const writeStream = createWriteStream(destPath);
+
+            readStream.on('error', err => {
+                reject(err);
+            });
+            writeStream.on('error', err => {
+                reject(err);
+            });
+            writeStream.on('finish', () => {
+                Fs.rm(sourcePath);
+                resolve(true)
+            });
+            readStream.pipe(writeStream);
+        });
+    };
+    async getLocalFilePath(rootCid: string, filePath?: string |string[]): Promise<string>{
         if (rootCid.startsWith('/') && typeof(filePath) == 'string')
-            return await Fs.readFile(Path.join(rootCid, filePath), 'utf8'); 
+            return Path.join(rootCid, filePath);
+
         if (typeof(filePath) == 'string' && filePath[0] == '/')
             filePath = filePath.substring(1);        
         let paths: string[];
@@ -114,91 +139,47 @@ export class Storage{
                 paths = filePath
             else
                 paths = filePath.split('/');
-        };
+        };        
         let item:IPFSUtils.ICidInfo;
         if (await this.localCacheExist('stat', rootCid)){
-            item = JSON.parse(await this.getLocalCache('stat', rootCid));
+            item = JSON.parse(await this.getLocalCache('stat', rootCid))
         }
         else if (this.s3){
-            let content = await this.s3.getObject(`stat/${rootCid}`);
-            if (!content)
-                throw new Error('File not found');
+            let content = await this.s3.getObject(`stat/${rootCid}`)
             item = JSON.parse(content);
             if ((await IPFSUtils.hashItems(item.links)).cid != rootCid)
                 throw new Error('CID not match');
             await this.putLocalCache('stat', rootCid, content);
-        };
+        };        
         if (paths?.length > 0){
-            let path = paths.shift();        
+            let path = paths.shift();
             for (let i = 0; i < item.links.length; i++){
                 if (item.links[i].name == path){
                     if (item.links[i].type == 'dir')
-                        return await this.getFile(item.links[i].cid, paths)
+                        return await this.getLocalFilePath(item.links[i].cid, paths)
                     else{
-                        if (await this.localCacheExist('ipfs', item.links[i].cid))
-                            return this.getLocalCache('ipfs', item.links[i].cid);
-
-                        let content = await this.s3.getObject(`ipfs/${item.links[i].cid}`);
-                        let {cid} = await IPFSUtils.hashContent(content);
-                        if (cid != item.links[i].cid)
-                            throw new Error('CID not match');
-                        await this.putLocalCache('ipfs', item.links[i].cid, content);
-                        return content;
-                    };
-                };
-            };
-        }
-        else
-            return JSON.stringify(item)
-    };
-    async getLocalFilePath(rootPath: string, filePath: string |string[]): Promise<string>{
-        if (rootPath.startsWith('/') && typeof(filePath) == 'string')
-            return Path.join(rootPath, filePath);
-
-        if (typeof(filePath) == 'string' && filePath[0] == '/')
-            filePath = filePath.substring(1);        
-        let paths: string[];
-        if (Array.isArray(filePath))
-            paths = filePath
-        else
-            paths = filePath.split('/');
-        
-        let item:IPFSUtils.ICidInfo;
-        let localCache: boolean;
-        if (await this.localCacheExist('stat', rootPath)){
-            item = JSON.parse(await this.getLocalCache('stat', rootPath))
-            localCache = true;
-        }
-        else if (this.s3){
-            let content = await this.s3.getObject(`stat/${rootPath}`)
-            item = JSON.parse(content);
-            if ((await IPFSUtils.hashItems(item.links)).cid != rootPath)
-                throw new Error('CID not match');
-            await this.putLocalCache('stat', rootPath, content);
-        };
-        
-        let path = paths.shift();
-        for (let i = 0; i < item.links.length; i++){
-            if (item.links[i].name == path){
-                if (item.links[i].type == 'dir')
-                    return await this.getLocalFilePath(item.links[i].cid, paths)
-                else{
-                    let targetFilePath = await this.getLocalCachePath('ipfs', item.links[i].cid);
-                    if (targetFilePath){
-                        if (await this.localCacheExist('ipfs', item.links[i].cid))
+                        let targetFilePath = await this.getLocalCachePath('ipfs', item.links[i].cid);                        
+                        if (targetFilePath){
+                            if (await this.localCacheExist('ipfs', item.links[i].cid))
+                                return targetFilePath;
+                            let tmpFilePath = await this.getLocalCachePath('tmp', item.links[i].cid);    
+                            let success = await this.s3.downloadObject(`ipfs/${item.links[i].cid}`, tmpFilePath);
+                            if (!success)
+                                throw new Error('Failed to download file');
+                            let {cid} = await IPFSUtils.hashFile(tmpFilePath);
+                            if (cid != item.links[i].cid){
+                                await Fs.rm(tmpFilePath);
+                                throw new Error('CID not match');
+                            };
+                            await this.moveFile(tmpFilePath, targetFilePath);
                             return targetFilePath;
-                            
-                        let success = await this.s3.downloadObject(`ipfs/${item.links[i].cid}`, targetFilePath);
-                        if (!success)
-                            throw new Error('Failed to download file');
-                        let {cid} = await IPFSUtils.hashFile(targetFilePath);
-                        if (cid != item.links[i].cid)
-                            throw new Error('CID not match');
-                        return targetFilePath;
+                        };
                     };
                 };
             };
-        };
+        }
+        else
+            return await this.getLocalCachePath('stat', rootCid);
     };
     async getUploadUrl(path: string, expiresInSeconds?: number): Promise<string>{
         return this.s3.putObjectSignedUrl(path, expiresInSeconds);

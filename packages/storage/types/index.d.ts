@@ -17,7 +17,7 @@ export interface IStorageOptions {
     };
     log?: IDbConnectionOptions;
 }
-export declare type IItemType = 'stat' | 'ipfs';
+export declare type IItemType = 'stat' | 'ipfs' | 'tmp';
 export declare class Storage {
     private options;
     private s3;
@@ -30,7 +30,8 @@ export declare class Storage {
     private getLocalCache;
     private putLocalCache;
     getFile(rootCid: string, filePath?: string | string[]): Promise<string>;
-    getLocalFilePath(rootPath: string, filePath: string | string[]): Promise<string>;
+    private moveFile;
+    getLocalFilePath(rootCid: string, filePath?: string | string[]): Promise<string>;
     getUploadUrl(path: string, expiresInSeconds?: number): Promise<string>;
     putContent(fileContent: string, to?: {
         ipfs?: boolean;
