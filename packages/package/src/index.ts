@@ -329,7 +329,10 @@ export class PackageManager{
         else if (this.options.storage){ //ipfs cid
             if (!this.storage)
                 this.storage = new Storage(this.options.storage);
-            return await this.storage.getFile(packagePath, filePath);
+            let result = await this.storage.getFile(packagePath, filePath);
+            if (typeof(result) != 'string')
+                throw new Error('File not exists');
+            return result;
         };
         return;
     };
