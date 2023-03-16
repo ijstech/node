@@ -48,13 +48,7 @@ class VM {
     }
     ;
     getCpuTime() {
-        if (this.isolate) {
-            return (this.isolate.cpuTime[0] + this.isolate.cpuTime[1] / 1e9) * 1000;
-        }
-        else {
-            return this.cpuTime;
-        }
-        ;
+        return this.cpuTime;
     }
     ;
     functionToReference(obj) {
@@ -257,6 +251,7 @@ class VM {
         if (!this.context)
             this.setupContext();
         this.executing = true;
+        let cpuStart = this.isolate.cpuTime;
         try {
             if (this.timeLimit) {
                 clearTimeout(this.timeLimitTimer);
@@ -268,7 +263,7 @@ class VM {
             let result;
             try {
                 result = await this.compiledScript.apply(undefined, [], { reference: true, result: { copy: true, promise: true } });
-                this.cpuTime = (this.isolate.cpuTime[0] + this.isolate.cpuTime[1] / 1e9) * 1000;
+                this.cpuTime = Number(this.isolate.cpuTime - cpuStart);
                 clearTimeout(this.timeLimitTimer);
             }
             catch (err) {

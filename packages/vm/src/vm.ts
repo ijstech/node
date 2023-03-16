@@ -76,12 +76,12 @@ export class VM {
             this.script = options.script;
     };
     getCpuTime(): number {
-        if(this.isolate){
-            return (this.isolate.cpuTime[0] + this.isolate.cpuTime[1] / 1e9) * 1000;
-        }
-        else{
+        // if(this.isolate){
+        //     return (this.isolate.cpuTime[0] + this.isolate.cpuTime[1] / 1e9) * 1000;
+        // }
+        // else{
             return this.cpuTime;
-        };
+        // };
     };
     functionToReference(obj: any){
         return new Ivm.Reference(function (...args) {
@@ -269,18 +269,19 @@ export class VM {
         if (!this.context)
             this.setupContext();
         this.executing = true;
+        let cpuStart = this.isolate.cpuTime;
         try{
             if (this.timeLimit){
                 clearTimeout(this.timeLimitTimer);
                 this.timeLimitTimer = setTimeout(()=>{
                     this.emitEvent('timeout')
-                    this.resetContext();                    
+                    this.resetContext();
                 }, this.timeLimit);
             }
             let result: any;
             try{
                 result = await this.compiledScript.apply(undefined, [], {reference: true, result: {copy: true, promise: true } });
-                this.cpuTime = (this.isolate.cpuTime[0] + this.isolate.cpuTime[1] / 1e9) * 1000;
+                this.cpuTime = Number(this.isolate.cpuTime - cpuStart);
                 clearTimeout(this.timeLimitTimer);
             }
             catch(err){                       
