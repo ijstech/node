@@ -10,8 +10,9 @@
         "@ijstech/compiler": "^0.1.15"
     },
     "scripts": {
-        "build": "rm -rf lib && rm -rf dist && rm -rf types && npm run build:contracts && npm run build:lib && npx @ijstech/compiler",
+        "build": "rm -rf lib && rm -rf dist && rm -rf types && npm run build:contracts && npm run build:lib && npm run build:dist",
         "build:contracts": "rm -rf src/contracts && node ../../tools/bin/compile solconfig.json",
-        "build:lib": "tsc"
+        "build:lib": "tsc",
+        "build:dist": "npx @ijstech/compiler"
     }
 }

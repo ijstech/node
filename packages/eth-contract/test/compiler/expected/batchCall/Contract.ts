@@ -1,6 +1,5 @@
 import {IWallet, Contract as _Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions} from "@ijstech/eth-contract";
 import Bin from "./Contract.json";
-
 export interface IDeployParams {i256:number|BigNumber;ui256:number|BigNumber;b32:string;b:string;s:string}
 export interface IPay_2Params {to:string;amount:number|BigNumber}
 export interface IPowParams {x:number|BigNumber;n:number|BigNumber}
@@ -9,6 +8,7 @@ export interface ISetParams {b:string;ns:{ss:{i256:number|BigNumber,ui256:number
 export interface ISet_1Params {i:number|BigNumber;ss:{i256:number|BigNumber,ui256:number|BigNumber,b32:string,b:string,s:string}}
 export interface ISet_2Params {s:string;nsa:{ss:{i256:number|BigNumber,ui256:number|BigNumber,b32:string,b:string,s:string}}[]}
 export class Contract extends _Contract{
+    static _abi: any = Bin.abi;
     constructor(wallet: IWallet, address?: string){
         super(wallet, address, Bin.abi, Bin.bytecode);
         this.assign()
