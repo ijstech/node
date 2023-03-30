@@ -45,7 +45,7 @@ function scriptPath(filePath: string): string {
 async function runWorker(filePath: string, data?: any): Promise<any> {
     if (!WorkerConfig.dependencies['@demo/sdk'].script){
         WorkerConfig.dependencies['@demo/sdk'].script = await getFileContent(Path.join(__dirname, 'sdk/dist/index.js'))
-        WorkerConfig.dependencies['@demo/sdk'].dts = await getFileContent(Path.join(__dirname, 'sdk/types/index.d.ts'))
+        WorkerConfig.dependencies['@demo/sdk'].dts = await getFileContent(Path.join(__dirname, 'sdk/pluginTypes/index.d.ts'))
     };
     WorkerConfig.scriptPath = scriptPath(filePath);
     WorkerConfig.script = null;
