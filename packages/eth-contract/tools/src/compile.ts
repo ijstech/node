@@ -116,7 +116,7 @@ function recursiveAdd(root: string, srcPath: string, sources: Source, exclude: s
     }
     return sources;
 }
-function buildInput(root: string, source: string[], optimizerRuns: number, exclude?: string[]): Input {
+function buildInput(root: string, source: string[], optimizerRuns: number, viaIR:boolean, exclude?: string[]): Input {
     let input = {
         language: "Solidity",
         sources: {},
@@ -127,6 +127,7 @@ function buildInput(root: string, source: string[], optimizerRuns: number, exclu
                 enabled: true,
                 runs: optimizerRuns || 999999
             } : undefined,
+            viaIR: viaIR,
             // evmVersion: "istanbul",//"constantinople",//"byzantium",
             outputSelection: {
                 "*": {
@@ -266,7 +267,7 @@ function processOutput(sourceDir: string, output:Output, outputDir: string, outp
     return index;
 }
 
-interface CompileOptions { version?: string; optimizerRuns?: number; outputOptions?: OutputOptions }
+interface CompileOptions { version?: string; optimizerRuns?: number; viaIR?:boolean, outputOptions?: OutputOptions }
 interface Override extends CompileOptions { root?:string, sources:string[]; };
 interface Config extends CompileOptions {
     sourceDir?: string;
@@ -282,7 +283,7 @@ async function main(configFilePath: string) {
     let rootPath = process.cwd();
     let configPath = path.dirname(path.resolve(path.join(rootPath, configFilePath)));
     
-    let {version, optimizerRuns, sourceDir, outputDir, outputOptions, overrides, libMap, flattenFiles} = config;
+    let {version, optimizerRuns, viaIR, sourceDir, outputDir, outputOptions, overrides, libMap, flattenFiles} = config;
 
     if (!sourceDir) {
         sourceDir = "contracts/";
@@ -305,7 +306,7 @@ async function main(configFilePath: string) {
         let root = sourceDir;
         _sourceDir = sourceDir;
         let customSources = overrides && overrides.map(e=>e.sources.map(f=>(e.root||root)+f)).reduce((a,b)=>a.concat(b),[]);
-        let input = buildInput(sourceDir, null, optimizerRuns, customSources);
+        let input = buildInput(sourceDir, null, optimizerRuns, viaIR, customSources);
         let output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
         let index = processOutput(sourceDir, output, outputDir, outputOptions, customSources);
         if (output.errors) {
@@ -318,7 +319,7 @@ async function main(configFilePath: string) {
                     solc = await getSolc(overrides[s].version);
                 }
                 _sourceDir = overrides[s].root || root;
-                input = buildInput(_sourceDir, overrides[s].sources, overrides[s].optimizerRuns||optimizerRuns)
+                input = buildInput(_sourceDir, overrides[s].sources, overrides[s].optimizerRuns||optimizerRuns, viaIR)
                 output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
                 index = index + processOutput(sourceDir, output, outputDir, overrides[s].outputOptions || outputOptions, [], overrides[s].sources.map(f=>_sourceDir+f));
                 if (output.errors) {
