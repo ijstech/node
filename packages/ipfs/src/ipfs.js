@@ -676,7 +676,7 @@
   const from = ({ name, code, encode }) => new Hasher(name, code, encode)
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/src/hashes/sha2.js#L7
-  s_sha256 = from({
+  const s_sha256 = from({
     name: 'sha2-256',
     code: 18,
     //encode: (input) => coerce(crypto__default["default"].createHash('sha256').update(input).digest())
@@ -1254,21 +1254,21 @@
   };
 
   //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/util/minimal.js#L402
-  util_configure = function () {
-    var Buffer = util_Buffer;
-    if (!Buffer) {
-      util_Buffer_from = util_Buffer_allocUnsafe = null;
-      return;
-    }
-    util_Buffer_from = Buffer.from !== Uint8Array.from && Buffer.from ||
-      function Buffer_from(value, encoding) {
-        return new Buffer(value, encoding);
-      };
-    util_Buffer_allocUnsafe = Buffer.allocUnsafe ||
-      function Buffer_allocUnsafe(size) {
-        return new Buffer(size);
-      };
-  };
+  // util_configure = function () {
+  //   var Buffer = util_Buffer;
+  //   if (!Buffer) {
+  //     util_Buffer_from = util_Buffer_allocUnsafe = null;
+  //     return;
+  //   }
+  //   util_Buffer_from = Buffer.from !== Uint8Array.from && Buffer.from ||
+  //     function Buffer_from(value, encoding) {
+  //       return new Buffer(value, encoding);
+  //     };
+  //   util_Buffer_allocUnsafe = Buffer.allocUnsafe ||
+  //     function Buffer_allocUnsafe(size) {
+  //       return new Buffer(size);
+  //     };
+  // };
 
   protobuf.rpc = {};
   protobuf.roots = {};
@@ -1276,7 +1276,7 @@
 
   //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/index-minimal.js#L29
   function configure() {
-    util_configure();
+    // util_configure();
     Writer._configure(BufferWriter);
     Reader._configure(BufferReader);
   }
