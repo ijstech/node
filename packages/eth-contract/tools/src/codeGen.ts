@@ -101,7 +101,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             for (let i = 0; i < items.length; i ++){
                 if (i > 0)
                     result +=',';
-                result += ((items[i].name ||`param${i+1}`)) + ':' + outputDataType(items[i]);
+                result += paramName(items[i].name,i) + ':' + outputDataType(items[i]);
             }
             if (isEvent) {
                 if (items.length > 0)
@@ -237,7 +237,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
                 let item = items[i];
                 let objPath = parent + (item.name ? `.${item.name}` : `[${i}]`);
                 let newLines = returnOutputsItem(items[i], isEvent, objPath, indent);
-                newLines[0].text = (item.name || `param${i + 1}`) + ": " + newLines[0].text;
+                newLines[0].text = paramName(item.name,i) + ": " + newLines[0].text;
                 if ((addReturn && isEvent) || i < items.length -1)
                     newLines[newLines.length-1].text+=','
                 lines = [...lines, ...newLines];
@@ -254,7 +254,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
                 newLines[0].text = "return " + (newLines.length>1?"(":"") + newLines[0].text;
                 newLines[newLines.length-1].text = newLines[newLines.length-1].text + (newLines.length>1?")":"") + ";"
             } else {
-                newLines[0].text =  "{" + (item.name ? `${item.name}` : `param1`) + ": " + newLines[0].text;
+                newLines[0].text =  "{" + paramName(item.name,0) + ": " + newLines[0].text;
                 newLines[newLines.length-1].text = newLines[newLines.length-1].text + "}"
             }
             lines = newLines;
@@ -380,7 +380,7 @@ export default function(name: string, abiPath: string, abi: Item[], options: IUs
             addLine(2, `return this.__deploy(${input}, options);`);
             addLine(1, `}`);
         } else {
-            addLine(1, `deploy(options?: number|BigNumber|TransactionOptions): Promise<string>{`);
+            addLine(1, `deploy(options?: TransactionOptions): Promise<string>{`);
             addLine(2, `return this.__deploy([], options);`);
             addLine(1, `}`);
         }
