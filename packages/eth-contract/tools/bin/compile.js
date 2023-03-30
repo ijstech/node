@@ -132,7 +132,7 @@ function recursiveAdd(root, srcPath, sources, exclude) {
     }
     return sources;
 }
-function buildInput(root, source, optimizerRuns, exclude) {
+function buildInput(root, source, optimizerRuns, viaIR, exclude) {
     let input = {
         language: "Solidity",
         sources: {},
@@ -142,6 +142,7 @@ function buildInput(root, source, optimizerRuns, exclude) {
                 enabled: true,
                 runs: optimizerRuns || 999999
             } : undefined,
+            viaIR: viaIR,
             // evmVersion: "istanbul",//"constantinople",//"byzantium",
             outputSelection: {
                 "*": {
@@ -271,7 +272,7 @@ async function main(configFilePath) {
     let config = fs.existsSync(configFilePath) ? (fs.statSync(configFilePath).isFile() ? JSON.parse(fs.readFileSync(configFilePath, "utf-8")) : { sourceDir: configFilePath }) : {};
     let rootPath = process.cwd();
     let configPath = path.dirname(path.resolve(path.join(rootPath, configFilePath)));
-    let { version, optimizerRuns, sourceDir, outputDir, outputOptions, overrides, libMap, flattenFiles } = config;
+    let { version, optimizerRuns, viaIR, sourceDir, outputDir, outputOptions, overrides, libMap, flattenFiles } = config;
     if (!sourceDir) {
         sourceDir = "contracts/";
         if (!outputDir)
@@ -292,7 +293,7 @@ async function main(configFilePath) {
         let root = sourceDir;
         _sourceDir = sourceDir;
         let customSources = overrides && overrides.map(e => e.sources.map(f => (e.root || root) + f)).reduce((a, b) => a.concat(b), []);
-        let input = buildInput(sourceDir, null, optimizerRuns, customSources);
+        let input = buildInput(sourceDir, null, optimizerRuns, viaIR, customSources);
         let output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
         let index = processOutput(sourceDir, output, outputDir, outputOptions, customSources);
         if (output.errors) {
@@ -304,7 +305,7 @@ async function main(configFilePath) {
                     solc = await getSolc(overrides[s].version);
                 }
                 _sourceDir = overrides[s].root || root;
-                input = buildInput(_sourceDir, overrides[s].sources, overrides[s].optimizerRuns || optimizerRuns);
+                input = buildInput(_sourceDir, overrides[s].sources, overrides[s].optimizerRuns || optimizerRuns, viaIR);
                 output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
                 index = index + processOutput(sourceDir, output, outputDir, overrides[s].outputOptions || outputOptions, [], overrides[s].sources.map(f => _sourceDir + f));
                 if (output.errors) {
