@@ -19,7 +19,7 @@
         "build": "rm -rf lib && rm -rf types && tsc && npm run build:dist && npm run build:tools",
         "build:dist": "rm -rf dist && tsc --p tsconfig.dist.json",
         "build:dist1": "rm -rf dist && tsc --p tsconfig.dist.json && cat src/types/bignumber.d.ts dist/index.d.ts > dist/tmp && mv dist/tmp dist/index.d.ts",
-        "build:tools": "rm -rf tools/bin && cd tools && rm -rf bin && tsc && cd ..",
+        "build:tools": "cd tools && rm -rf bin && tsc && chmod 744 bin/compile.js && cd ..",
         "test": "mocha --exit --require ts-node/register test/*.spec.ts",
         "test:compile": "rm -rf test/compiler/src && (for i in `ls test/compiler/solconfig.*.json` ; do echo $i ; tools/bin/compile.js $i ; done) && if diff -r test/compiler/expected test/compiler/src ; then echo \"results are the same as expcted\" ; else echo \"results are different than the expected\"; fi"
     }
