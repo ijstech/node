@@ -287,10 +287,8 @@ class PackageManager {
             if (!this.storage)
                 this.storage = new storage_1.Storage(this.options.storage);
             let result = await this.storage.getFile(packagePath, filePath);
-            if (typeof (result) != 'string'){
-                console.dir('## not exists: ' + filePath)
+            if (typeof (result) != 'string')
                 throw new Error('File not exists');
-            }
             return result;
         }
         ;
