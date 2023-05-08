@@ -5,7 +5,9 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.OneToMany = exports.BlobField = exports.TimeField = exports.DateTimeField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.RecordSet = exports.TRecordSet = exports.TRecord = exports.TContext = void 0;
+exports.OneToMany = exports.BlobField = exports.TimeField = exports.DateTimeField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.RecordSet = exports.TRecordSet = exports.TRecord = exports.TContext = exports.DBClient = void 0;
+var dbClient_1 = require("./dbClient");
+Object.defineProperty(exports, "DBClient", { enumerable: true, get: function () { return dbClient_1.DBClient; } });
 function generateUUID() {
     var d = new Date().getTime();
     var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now() * 1000)) || 0;

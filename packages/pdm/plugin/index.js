@@ -26,15 +26,52 @@ define("types", ["require", "exports"], function (require, exports) {
     ;
     ;
 });
+define("dbClient", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.DBClient = void 0;
+    class DBClient {
+        constructor(options) {
+            this._options = options;
+        }
+        ;
+        applyQueries(queries) {
+            return new Promise(async (resolve) => {
+                var _a;
+                let data = await fetch(((_a = this._options) === null || _a === void 0 ? void 0 : _a.url) || '/pdm', {
+                    method: 'POST',
+                    body: JSON.stringify(queries),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                let result = await data.json();
+                resolve(result);
+            });
+        }
+        ;
+        checkTableExists(tableName) {
+            return new Promise(resolve => resolve(true));
+        }
+        ;
+        syncTableSchema(tableName, fields) {
+            return new Promise(resolve => resolve(true));
+        }
+        ;
+    }
+    exports.DBClient = DBClient;
+    ;
+});
 /*!-----------------------------------------------------------
 * Copyright (c) IJS Technologies. All rights reserved.
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-define("pdm", ["require", "exports"], function (require, exports) {
+define("pdm", ["require", "exports", "dbClient"], function (require, exports, dbClient_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.OneToMany = exports.BlobField = exports.TimeField = exports.DateTimeField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.RecordSet = exports.TRecordSet = exports.TRecord = exports.TContext = void 0;
+    exports.OneToMany = exports.BlobField = exports.TimeField = exports.DateTimeField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.RecordSet = exports.TRecordSet = exports.TRecord = exports.TContext = exports.DBClient = void 0;
+    Object.defineProperty(exports, "DBClient", { enumerable: true, get: function () { return dbClient_1.DBClient; } });
     function generateUUID() {
         var d = new Date().getTime();
         var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now() * 1000)) || 0;
@@ -784,40 +821,4 @@ define("plugin", ["require", "exports", "pdm"], function (require, exports, PDM)
     Object.defineProperty(exports, "__esModule", { value: true });
     PDM = __importStar(PDM);
     exports.default = PDM;
-});
-define("dbClient", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.DBClient = void 0;
-    class DBClient {
-        constructor(options) {
-            this._options = options;
-        }
-        ;
-        applyQueries(queries) {
-            return new Promise(async (resolve) => {
-                var _a;
-                let data = await fetch(((_a = this._options) === null || _a === void 0 ? void 0 : _a.url) || '/pdm', {
-                    method: 'POST',
-                    body: JSON.stringify(queries),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                let result = await data.json();
-                resolve(result);
-            });
-        }
-        ;
-        checkTableExists(tableName) {
-            return new Promise(resolve => resolve(true));
-        }
-        ;
-        syncTableSchema(tableName, fields) {
-            return new Promise(resolve => resolve(true));
-        }
-        ;
-    }
-    exports.DBClient = DBClient;
-    ;
 });

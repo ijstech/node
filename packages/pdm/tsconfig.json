@@ -12,7 +12,8 @@
         }
     },
     "include": [
-        "src/graphql.ts",
+        "src/dbClient.ts",
+        "src/graphql.ts",        
         "src/index.ts",
         "src/pdm.ts",
         "src/types.ts"

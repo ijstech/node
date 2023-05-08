@@ -13,9 +13,9 @@
         }
     },
     "include": [
+        "src/dbClient.ts",
         "src/plugin.ts",
         "src/pdm.ts",
-        "src/types.ts",
-        "src/dbClient.ts"
+        "src/types.ts"
     ]
 }

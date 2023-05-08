@@ -4,6 +4,7 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 import { IField, IFields, ISchema, IDBClient, IQueryData } from './types';
+export { DBClient } from './dbClient';
 export interface IRefField extends IField {
     record: string;
 }
@@ -172,4 +173,3 @@ export declare function DateTimeField(fieldType?: IDateField): (target: TRecord,
 export declare function TimeField(fieldType?: IDateField): (target: TRecord, propName: string) => void;
 export declare function BlobField(fieldType?: IField): (target: TRecord, propName: string) => void;
 export declare function OneToMany<T>(record: typeof TRecord, prop: keyof T, tableName: string, fieldName: string): (target: TRecord, propName: string) => void;
-export {};

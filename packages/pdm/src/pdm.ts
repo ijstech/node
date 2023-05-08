@@ -5,6 +5,7 @@
 *-----------------------------------------------------------*/
 // import * as Types from '@ijstech/types';
 import {IField, IFields, ISchema, IDBClient, IQuery, IQueryData, IQueryRecord} from './types';
+export {DBClient} from './dbClient';
 
 function generateUUID() { // Public Domain/MIT
     var d = new Date().getTime();//Timestamp
