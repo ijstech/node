@@ -816,7 +816,12 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
     exports.OneToMany = OneToMany;
     ;
 });
-define("plugin", ["require", "exports", "pdm"], function (require, exports, PDM) {
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+define("@ijstech/pdm", ["require", "exports", "pdm"], function (require, exports, PDM) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     PDM = __importStar(PDM);
