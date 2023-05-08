@@ -1,5 +1,5 @@
 import * as DB from "@ijstech/db";
-import * as Config from "./config";
+import * as Config from "./data/config";
 import Types from '@ijstech/types';
 import assert from "assert";
 import Context from "./model/sample.pdm";

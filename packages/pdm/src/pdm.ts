@@ -3,9 +3,8 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-import * as Types from '@ijstech/types';
-import * as GraphQL from "graphql";
-import * as DB from '@ijstech/db';
+// import * as Types from '@ijstech/types';
+import {IField, IFields, ISchema, IDBClient, IQuery, IQueryData, IQueryRecord} from './types';
 
 function generateUUID() { // Public Domain/MIT
     var d = new Date().getTime();//Timestamp
@@ -22,16 +21,6 @@ function generateUUID() { // Public Domain/MIT
         return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
     });
 };
-export interface IField{
-    prop?: string;
-    field?: string;
-    record?: string;
-    size?: number;
-    details?: any;
-    table?: string;
-    dataType?: 'key'|'ref'|'1toM'|'char'|'varchar'|'boolean'|'integer'|'decimal'|'date'|'dateTime'|'time'|'blob'|'text'|'mediumText'|'longText';
-}
-export interface IFields{[name: string]: IField}
 export interface IRefField extends IField{
     record: string;
 }
@@ -44,7 +33,6 @@ export interface IRecordSet{
     mergeRecords(data: any): any[];
     reset(): void;
 };
-export interface ISchema {[tableName: string]: IFields};
 
 interface IRecord {
     $$record: any;
@@ -57,12 +45,6 @@ interface IRecord {
     $$origValues: {[prop: string]: any};
     $$modifies: {[prop: string]: any};
 };
-interface IQuery{
-
-}
-function isDBClient(object: any): object is Types.IDBClient {
-    return 'query' in object;
-}
 export class TContext {
     private $$records: {[name: string]: {
         tableName: string,
@@ -70,22 +52,16 @@ export class TContext {
         recordSetType: typeof TRecordSet,
         recordSet?: IRecordSet
     }};
-    private _client: Types.IDBClient;
+    private _client: IDBClient;
     private _recordSets:{[id: number]: IRecordSet} = {};
     private _recordSetIdxCount = 1;
     private _recordIdxCount = 1;
     private _modifiedRecords:{[id: number]: IRecord} = {};
-    private _applyQueries:{[id: number]: Types.IQuery} = {};
+    private _applyQueries:{[id: number]: IQuery} = {};
     private _deletedRecords = {};
-    private _graphql: TGraphQL;
-    constructor(client?: Types.IDBClient | Types.IDbConnectionOptions){
+    constructor(client: IDBClient){
         this.initRecordsets();
-        if (client){
-            if (isDBClient(client))
-                this._client = client
-            else
-                this._client = DB.getClient(client);
-        };
+        this._client = client;
     };
     _getRecordSetId(): number{
         return this._recordSetIdxCount++;
@@ -128,21 +104,21 @@ export class TContext {
             }
         return this._applyQueries[id].queries;
     }
-    private applyDelete(recordSet: IRecordSet, query: any[]){
+    protected applyDelete(recordSet: IRecordSet, query: any[]){
         let queries = this.getApplyQueries(recordSet);
         queries.push({
             a: 'd',
             q: query
         })
     };
-    private applyInsert(recordSet: IRecordSet, data: any){
+    protected applyInsert(recordSet: IRecordSet, data: any){
         let queries = this.getApplyQueries(recordSet);
         queries.push({
             a: 'i',
             d: data
         })
     };
-    private applyUpdate(recordSet: IRecordSet, data: Types.IQueryData, query: any[]){
+    protected applyUpdate(recordSet: IRecordSet, data: IQueryData, query: any[]){
         let queries = this.getApplyQueries(recordSet);
         queries.push({
             a: 'u',
@@ -160,34 +136,32 @@ export class TContext {
             t.recordSet = this[n];
         };
     };
-    async graphQuery(query: string): Promise<any>{        
-        if (global['$$pdm_plugin']){
-            let result = await global['$$pdm_plugin'].graphQuery(this._getSchema(), query);
-            if (typeof(result) == 'string')
-                return JSON.parse(result)
-            else
-                return result;
-        }
-        else{
-            if (!this._graphql)
-                this._graphql = new TGraphQL(this._getSchema(), this._client);
-            return await this._graphql.query(query);
-        }
-    };
-    graphIntrospection(): any{
-        if (global['$$pdm_plugin']){
-            let result = global['$$pdm_plugin'].graphIntrospection(this._getSchema());
-            if (typeof(result) == 'string')
-                return JSON.parse(result)
-            else
-                return result;
-        }
-        else{
-            if (!this._graphql)
-                this._graphql = new TGraphQL(this._getSchema(), this._client);
-            return this._graphql.introspection;
-        }
-    };
+    // async graphQuery(query: string): Promise<any>{        
+    //     if (global['$$pdm_plugin']){
+    //         let result = await global['$$pdm_plugin'].graphQuery(this._getSchema(), query);
+    //         if (typeof(result) == 'string')
+    //             return JSON.parse(result)
+    //         else
+    //             return result;
+    //     }
+    //     else{
+    //         if (this._graphql)
+    //             return await this._graphql.query(query);
+    //     }
+    // };
+    // graphIntrospection(): any{
+    //     if (global['$$pdm_plugin']){
+    //         let result = global['$$pdm_plugin'].graphIntrospection(this._getSchema());
+    //         if (typeof(result) == 'string')
+    //             return JSON.parse(result)
+    //         else
+    //             return result;
+    //     }
+    //     else{
+    //         if (this._graphql)
+    //             return this._graphql.introspection;
+    //     }
+    // };
     async fetch(recordSet?: IRecordSet): Promise<any>{
         let queries = [];
         let self = this;
@@ -261,7 +235,7 @@ export class TContext {
             let record = this._modifiedRecords[i];
             let id = record.$$recordSet._id;
             if (!data[id]){
-                data[id] = <Types.IQuery>{
+                data[id] = <IQuery>{
                     fields: record.$$recordSet.fields,
                     id: id,
                     table: record.$$recordSet.tableName,
@@ -269,7 +243,7 @@ export class TContext {
                 }
             };
             let records = data[id].records;
-            records.push(<Types.IQueryRecord>{
+            records.push(<IQueryRecord>{
                 a: record.$$newRecord?'i':record.$$deleted?'d':'u',
                 k: record.$$keyValue,
                 d: record.$$deleted?undefined:record.$$modifies
@@ -279,7 +253,7 @@ export class TContext {
             let query = this._applyQueries[i];
             let id = query.id;
             if (!data[id]){
-                data[id] = <Types.IQuery>{
+                data[id] = <IQuery>{
                     fields: query.fields,
                     id: id,
                     table: query.table,
@@ -373,7 +347,7 @@ interface InsertOptions{
     ignoreOnDuplicate?: boolean;
 };
 export class TRecord {
-    private $$fields: Types.IFields;
+    private $$fields: IFields;
     private data: any;
     private recordSet: TRecordSet<any>;
     constructor(recordSet: TRecordSet<any>, data: any){
@@ -384,14 +358,14 @@ export class TRecord {
 interface IContext{
     applyDelete(recordSet: IRecordSet, query: any[]): void;
     applyInsert(recordSet: IRecordSet, data: any): void;
-    applyUpdate(recordSet: IRecordSet, data: Types.IQueryData, query: any[]): void;
+    applyUpdate(recordSet: IRecordSet, data: IQueryData, query: any[]): void;
     modifyRecord(record: any): void;
 };
 export class TRecordSet<T>{
     private _id: number;
     private _recordType: any;
-    private _fields: Types.IFields;
-    private _keyField: Types.IField;
+    private _fields: IFields;
+    private _keyField: IField;
     protected _queries = [];
     protected _recordsIdx = {};
     protected _records: T[] = [];
@@ -499,7 +473,7 @@ export class TRecordSet<T>{
             resolve(result)
         })
     };
-    get fields(): Types.IFields{
+    get fields(): IFields{
         if (!this._fields){
             let rd = new this._recordType();
             this._fields = rd.$$fields;
@@ -540,7 +514,7 @@ export class TRecordSet<T>{
             this._currIdx++
         return this.proxy(<any>this._records[this._currIdx]);
     }
-    protected get keyField(): Types.IField{
+    protected get keyField(): IField{
         if (this._keyField)
             return this._keyField;
         let fields = this.fields;
@@ -659,105 +633,7 @@ export class TRecordSet<T>{
         return result;
     }
 };
-export class TGraphQL {
-    private _schema: GraphQL.GraphQLSchema;
-    private _introspection: any;    
-    private _client: Types.IDBClient;
-    
-    constructor(schema: ISchema, client: Types.IDBClient) {        
-        this._client = client;
-        this._schema = this.buildSchema(schema);
-    };
-    private buildSchema(schema: ISchema): GraphQL.GraphQLSchema {
-        const rootQueryTypeFields = {};
-        for(const tableName in schema) {
-            const fields = schema[tableName];
-            const fieldObject = {};
-            const criteria = {};
-            for(const prop in fields) {
-                const field = fields[prop];
-                const fieldName = field.field;
-                let type:any;
-                switch(field.dataType) {
-                    case 'key':
-                    case 'char':
-                    case 'varchar':
-                    case 'date':
-                    case 'dateTime':
-                    case 'time':
-                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLString);
-                        criteria[prop] = { type: GraphQL.GraphQLString };
-                        break;
-                    case 'ref':
-                    case '1toM':
-                        break;
-                    case 'boolean':
-                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLBoolean);
-                        criteria[prop] = { type: GraphQL.GraphQLBoolean };
-                        break;
-                    case 'integer':
-                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLInt);
-                        criteria[prop] = { type: GraphQL.GraphQLInt };
-                        break;
-                    case 'decimal':
-                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLFloat);
-                        criteria[prop] = { type: GraphQL.GraphQLFloat };
-                        break;
-                    case 'blob':
-                    case 'text':
-                    case 'mediumText':
-                    case 'longText':
-                        type = GraphQL.GraphQLString;
-                        criteria[prop] = { type: GraphQL.GraphQLString };
-                        break;
-                }
-                if(type) {
-                    type.field = fieldName;
-                    fieldObject[prop] = { type };
-                    criteria[prop]['dataType'] = field.dataType;
-                }
-            }
-            const tableType = new GraphQL.GraphQLObjectType({
-                name: tableName,
-                fields: () => fieldObject,
-            });
-            rootQueryTypeFields[tableName] = {
-                type: new GraphQL.GraphQLList(tableType),
-                args: criteria,
-                resolve: async (parent, args) => {
-                    let result = await this._client.resolve(tableName, fields, criteria, args);
-                    if (typeof(result) == 'string')
-                        result = JSON.parse(result);
-                    return result;
-                }
-            }
-        }
-        const rootQueryType = new GraphQL.GraphQLObjectType({
-            name: 'Query',
-            description: 'Root query',
-            fields: () => rootQueryTypeFields
-        });
-        return new GraphQL.GraphQLSchema({
-            query: rootQueryType
-        })
-    };
-    query(source: string): Promise<any> {
-        return new Promise((resolve, reject) => {
-            GraphQL.graphql({
-                schema: this._schema,
-                source: source
-            }).then(data => resolve(data.data)).catch(e => {
-                throw e;
-            });
-        });
-    };
-    get introspection(): any {
-        if(!this._introspection) {
-            this._introspection = GraphQL.introspectionFromSchema(this._schema);
-        }
-        return this._introspection;
-    }
-};
+
 export interface IRefField extends IField{
     record: string;
 };

@@ -12,7 +12,9 @@
         }
     },
     "include": [
+        "src/graphql.ts",
         "src/index.ts",
-        "src/pdm.ts"
+        "src/pdm.ts",
+        "src/types.ts"
     ]
 }

@@ -22,10 +22,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.loadPlugin = void 0;
 const PDM = __importStar(require("./pdm"));
 const DB = __importStar(require("@ijstech/db"));
+const graphql_1 = require("./graphql");
 exports.default = PDM;
 function loadPlugin(worker, options) {
     let client;
-    let graphql;
     if (!client)
         client = DB.getClient(options[Object.keys(options)[0]]);
     const plugin = {
@@ -37,11 +37,11 @@ function loadPlugin(worker, options) {
                 return result;
         },
         async graphQuery(schema, query) {
-            let graphql = new PDM.TGraphQL(schema, client);
+            let graphql = new graphql_1.TGraphQL(schema, client);
             return await graphql.query(query);
         },
         graphIntrospection(schema) {
-            let graphql = new PDM.TGraphQL(schema, client);
+            let graphql = new graphql_1.TGraphQL(schema, client);
             return graphql.introspection;
         }
     };

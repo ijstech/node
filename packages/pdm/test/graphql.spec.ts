@@ -1,8 +1,9 @@
 import * as DB from "@ijstech/db";
-import * as Config from "./config";
+import * as Config from "./data/config";
 import Types from '@ijstech/types';
 import assert from "assert";
 import Context from "./model/sample.pdm";
+import { TGraphQL } from "../src/graphql";
 
 describe('GraphQL', function() {
     this.timeout(20000);
@@ -29,7 +30,8 @@ describe('GraphQL', function() {
     })
     it('GraphQL query by columns', async function(){
         let context = new Context(client);
-        const data = await context.graphQuery(`
+        let graphql = new TGraphQL(context._getSchema(), client);
+        const data = await graphql.query(`
         {
             demo {
                 guid
@@ -62,7 +64,8 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by key field', async function() {
         let context = new Context(client);
-        const data = await context.graphQuery(`
+        let graphql = new TGraphQL(context._getSchema(), client);
+        const data = await graphql.query(`
         {
             demo(guid: "e41bf3e9-93bf-11ec-9918-0242ac120002") {
                 guid
@@ -93,7 +96,8 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by integer field', async function() {
         let context = new Context(client);
-        const data = await context.graphQuery(`
+        let graphql = new TGraphQL(context._getSchema(), client);
+        const data = await graphql.query(`
         {
             demo(integer: 2) {
                 guid
@@ -115,7 +119,8 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by decimal field', async function() {
         let context = new Context(client);
-        const data = await context.graphQuery(`
+        let graphql = new TGraphQL(context._getSchema(), client);
+        const data = await graphql.query(`
         {
             demo(decimal: 1.5) {
                 guid
@@ -137,7 +142,8 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by boolean field', async function() {
         let context = new Context(client);
-        const data = await context.graphQuery(`
+        let graphql = new TGraphQL(context._getSchema(), client);
+        const data = await graphql.query(`
         {
             demo(boolean: true) {
                 guid
@@ -159,7 +165,8 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by date field', async function() {
         let context = new Context(client);
-        const data = await context.graphQuery(`
+        let graphql = new TGraphQL(context._getSchema(), client);
+        const data = await graphql.query(`
         {
             demo(date: "2022-02-25") {
                 guid
@@ -181,7 +188,8 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by text field', async function() {
         let context = new Context(client);
-        const data = await context.graphQuery(`
+        let graphql = new TGraphQL(context._getSchema(), client);
+        const data = await graphql.query(`
         {
             demo(text: "Test") {
                 guid
@@ -205,7 +213,8 @@ describe('GraphQL', function() {
     });
     it('GraphQL query search by multiple fields', async function() {
         let context = new Context(client);
-        const data = await context.graphQuery(`
+        let graphql = new TGraphQL(context._getSchema(), client);
+        const data = await graphql.query(`
         {
             demo(text: "Test", size: "13") {
                 guid
@@ -228,7 +237,8 @@ describe('GraphQL', function() {
     });
     it('Validate GraphQL introspection query', async function() {
         let context = new Context(client);
-        const introspection = context.graphIntrospection();
+        let graphql = new TGraphQL(context._getSchema(), client);
+        const introspection = graphql.introspection;
         const types = introspection.__schema.types;
         const tables = context['$$records'];
         const tableNames = Object.keys(context['$$records']);

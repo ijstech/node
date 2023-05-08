@@ -1,27 +1,11 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.OneToMany = exports.BlobField = exports.TimeField = exports.DateTimeField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.RecordSet = exports.TGraphQL = exports.TRecordSet = exports.TRecord = exports.TContext = void 0;
-const GraphQL = __importStar(require("graphql"));
-const DB = __importStar(require("@ijstech/db"));
+exports.OneToMany = exports.BlobField = exports.TimeField = exports.DateTimeField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.RecordSet = exports.TRecordSet = exports.TRecord = exports.TContext = void 0;
 function generateUUID() {
     var d = new Date().getTime();
     var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now() * 1000)) || 0;
@@ -41,10 +25,6 @@ function generateUUID() {
 ;
 ;
 ;
-;
-function isDBClient(object) {
-    return 'query' in object;
-}
 class TContext {
     constructor(client) {
         this._recordSets = {};
@@ -54,13 +34,7 @@ class TContext {
         this._applyQueries = {};
         this._deletedRecords = {};
         this.initRecordsets();
-        if (client) {
-            if (isDBClient(client))
-                this._client = client;
-            else
-                this._client = DB.getClient(client);
-        }
-        ;
+        this._client = client;
     }
     ;
     _getRecordSetId() {
@@ -141,36 +115,6 @@ class TContext {
             t.recordSet = this[n];
         }
         ;
-    }
-    ;
-    async graphQuery(query) {
-        if (global['$$pdm_plugin']) {
-            let result = await global['$$pdm_plugin'].graphQuery(this._getSchema(), query);
-            if (typeof (result) == 'string')
-                return JSON.parse(result);
-            else
-                return result;
-        }
-        else {
-            if (!this._graphql)
-                this._graphql = new TGraphQL(this._getSchema(), this._client);
-            return await this._graphql.query(query);
-        }
-    }
-    ;
-    graphIntrospection() {
-        if (global['$$pdm_plugin']) {
-            let result = global['$$pdm_plugin'].graphIntrospection(this._getSchema());
-            if (typeof (result) == 'string')
-                return JSON.parse(result);
-            else
-                return result;
-        }
-        else {
-            if (!this._graphql)
-                this._graphql = new TGraphQL(this._getSchema(), this._client);
-            return this._graphql.introspection;
-        }
     }
     ;
     async fetch(recordSet) {
@@ -653,106 +597,6 @@ class TRecordSet {
     }
 }
 exports.TRecordSet = TRecordSet;
-;
-class TGraphQL {
-    constructor(schema, client) {
-        this._client = client;
-        this._schema = this.buildSchema(schema);
-    }
-    ;
-    buildSchema(schema) {
-        const rootQueryTypeFields = {};
-        for (const tableName in schema) {
-            const fields = schema[tableName];
-            const fieldObject = {};
-            const criteria = {};
-            for (const prop in fields) {
-                const field = fields[prop];
-                const fieldName = field.field;
-                let type;
-                switch (field.dataType) {
-                    case 'key':
-                    case 'char':
-                    case 'varchar':
-                    case 'date':
-                    case 'dateTime':
-                    case 'time':
-                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLString);
-                        criteria[prop] = { type: GraphQL.GraphQLString };
-                        break;
-                    case 'ref':
-                    case '1toM':
-                        break;
-                    case 'boolean':
-                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLBoolean);
-                        criteria[prop] = { type: GraphQL.GraphQLBoolean };
-                        break;
-                    case 'integer':
-                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLInt);
-                        criteria[prop] = { type: GraphQL.GraphQLInt };
-                        break;
-                    case 'decimal':
-                        type = new GraphQL.GraphQLNonNull(GraphQL.GraphQLFloat);
-                        criteria[prop] = { type: GraphQL.GraphQLFloat };
-                        break;
-                    case 'blob':
-                    case 'text':
-                    case 'mediumText':
-                    case 'longText':
-                        type = GraphQL.GraphQLString;
-                        criteria[prop] = { type: GraphQL.GraphQLString };
-                        break;
-                }
-                if (type) {
-                    type.field = fieldName;
-                    fieldObject[prop] = { type };
-                    criteria[prop]['dataType'] = field.dataType;
-                }
-            }
-            const tableType = new GraphQL.GraphQLObjectType({
-                name: tableName,
-                fields: () => fieldObject,
-            });
-            rootQueryTypeFields[tableName] = {
-                type: new GraphQL.GraphQLList(tableType),
-                args: criteria,
-                resolve: async (parent, args) => {
-                    let result = await this._client.resolve(tableName, fields, criteria, args);
-                    if (typeof (result) == 'string')
-                        result = JSON.parse(result);
-                    return result;
-                }
-            };
-        }
-        const rootQueryType = new GraphQL.GraphQLObjectType({
-            name: 'Query',
-            description: 'Root query',
-            fields: () => rootQueryTypeFields
-        });
-        return new GraphQL.GraphQLSchema({
-            query: rootQueryType
-        });
-    }
-    ;
-    query(source) {
-        return new Promise((resolve, reject) => {
-            GraphQL.graphql({
-                schema: this._schema,
-                source: source
-            }).then(data => resolve(data.data)).catch(e => {
-                throw e;
-            });
-        });
-    }
-    ;
-    get introspection() {
-        if (!this._introspection) {
-            this._introspection = GraphQL.introspectionFromSchema(this._schema);
-        }
-        return this._introspection;
-    }
-}
-exports.TGraphQL = TGraphQL;
 ;
 ;
 ;

@@ -1,16 +1,9 @@
-import * as Types from '@ijstech/types';
-export interface IField {
-    prop?: string;
-    field?: string;
-    record?: string;
-    size?: number;
-    details?: any;
-    table?: string;
-    dataType?: 'key' | 'ref' | '1toM' | 'char' | 'varchar' | 'boolean' | 'integer' | 'decimal' | 'date' | 'dateTime' | 'time' | 'blob' | 'text' | 'mediumText' | 'longText';
-}
-export interface IFields {
-    [name: string]: IField;
-}
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+import { IField, IFields, ISchema, IDBClient, IQueryData } from './types';
 export interface IRefField extends IField {
     record: string;
 }
@@ -22,9 +15,6 @@ export interface IRecordSet {
     tableName: string;
     mergeRecords(data: any): any[];
     reset(): void;
-}
-export interface ISchema {
-    [tableName: string]: IFields;
 }
 interface IRecord {
     $$record: any;
@@ -50,19 +40,16 @@ export declare class TContext {
     private _modifiedRecords;
     private _applyQueries;
     private _deletedRecords;
-    private _graphql;
-    constructor(client?: Types.IDBClient | Types.IDbConnectionOptions);
+    constructor(client: IDBClient);
     _getRecordSetId(): number;
     _getSchema(): ISchema;
     _checkTableExists(tableName: string): Promise<boolean>;
     _initTables(): Promise<boolean>;
     private getApplyQueries;
-    private applyDelete;
-    private applyInsert;
-    private applyUpdate;
+    protected applyDelete(recordSet: IRecordSet, query: any[]): void;
+    protected applyInsert(recordSet: IRecordSet, data: any): void;
+    protected applyUpdate(recordSet: IRecordSet, data: IQueryData, query: any[]): void;
     private initRecordsets;
-    graphQuery(query: string): Promise<any>;
-    graphIntrospection(): any;
     fetch(recordSet?: IRecordSet): Promise<any>;
     private modifyRecord;
     reset(): void;
@@ -102,7 +89,7 @@ export declare class TRecord {
 interface IContext {
     applyDelete(recordSet: IRecordSet, query: any[]): void;
     applyInsert(recordSet: IRecordSet, data: any): void;
-    applyUpdate(recordSet: IRecordSet, data: Types.IQueryData, query: any[]): void;
+    applyUpdate(recordSet: IRecordSet, data: IQueryData, query: any[]): void;
     modifyRecord(record: any): void;
 }
 export declare class TRecordSet<T> {
@@ -137,11 +124,11 @@ export declare class TRecordSet<T> {
     get current(): T;
     delete(record: T): void;
     fetch(): Promise<T[]>;
-    get fields(): Types.IFields;
+    get fields(): IFields;
     get first(): T;
     protected mergeRecords(records: any[]): any[];
     get next(): T;
-    protected get keyField(): Types.IField;
+    protected get keyField(): IField;
     private proxy;
     get query(): TQuery<T>;
     queryRecord(keyValue: string): Promise<T>;
@@ -150,15 +137,6 @@ export declare class TRecordSet<T> {
     get tableName(): string;
     private validateFieldValue;
     values<FieldName extends keyof T>(field: FieldName): T[FieldName][];
-}
-export declare class TGraphQL {
-    private _schema;
-    private _introspection;
-    private _client;
-    constructor(schema: ISchema, client: Types.IDBClient);
-    private buildSchema;
-    query(source: string): Promise<any>;
-    get introspection(): any;
 }
 export interface IRefField extends IField {
     record: string;

@@ -6,11 +6,12 @@
 import * as PDM from './pdm';
 import * as Types from '@ijstech/types';
 import * as DB from '@ijstech/db';
+import {TGraphQL} from './graphql';
+import {ISchema} from './types';
 export default PDM;
 
 export function loadPlugin(worker: Types.IWorker, options: any): any{    
     let client: DB.IClient;
-    let graphql: PDM.TGraphQL;
     if (!client)
         client = DB.getClient(options[Object.keys(options)[0]]);
     const plugin = {
@@ -21,12 +22,12 @@ export function loadPlugin(worker: Types.IWorker, options: any): any{
             else
                 return result;
         },
-        async graphQuery(schema: PDM.ISchema, query: string): Promise<any>{
-            let graphql = new PDM.TGraphQL(schema, client);
+        async graphQuery(schema: ISchema, query: string): Promise<any>{
+            let graphql = new TGraphQL(schema, client);
             return await graphql.query(query);
         },
-        graphIntrospection(schema: PDM.ISchema): any{
-            let graphql = new PDM.TGraphQL(schema, client);
+        graphIntrospection(schema: ISchema): any{
+            let graphql = new TGraphQL(schema, client);
             return graphql.introspection;
         }
     }
