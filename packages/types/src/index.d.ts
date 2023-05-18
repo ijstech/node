@@ -357,7 +357,7 @@ export interface IStorageOptions{
     s3?: IS3Options;
     web3Storage?: {endpoint?: string,token: string};
     localCache?: {path: string};
-    log?: IDBClient;
+    log?: IDbConnectionOptions;
 }
 export interface IQueueOptions {
     jobQueue?: string;

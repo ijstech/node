@@ -1,6 +1,6 @@
 import * as IPFSUtils from '@ijstech/ipfs';
 import { IS3Options } from './s3';
-import { IDBClient } from '@ijstech/types';
+import { IDbConnectionOptions } from '@ijstech/types';
 export interface IGithubRepo {
     org: string;
     repo: string;
@@ -15,7 +15,7 @@ export interface IStorageOptions {
     localCache?: {
         path: string;
     };
-    log?: IDBClient;
+    log?: IDbConnectionOptions;
 }
 export declare type IItemType = 'stat' | 'ipfs' | 'tmp';
 export declare class Storage {

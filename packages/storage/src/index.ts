@@ -7,7 +7,8 @@ import * as IPFSUtils from '@ijstech/ipfs';
 import {IS3Options, S3} from './s3';
 import Extract from 'extract-zip';
 import { Web3Storage, getFilesFromPath, File} from 'web3.storage';
-import {IDBClient} from '@ijstech/types';
+import {getClient} from '@ijstech/db';
+import {IDbConnectionOptions} from '@ijstech/types';
 import {Context} from './log.pdm';
 
 const appPrefix = 'sc';
@@ -44,7 +45,7 @@ export interface IStorageOptions{
     s3?: IS3Options;
     web3Storage?: {endpoint?: string,token: string};
     localCache?: {path: string};
-    log?: IDBClient;
+    log?: IDbConnectionOptions;
 };
 export type IItemType = 'stat' | 'ipfs' | 'tmp';
 export class Storage{
@@ -215,7 +216,8 @@ export class Storage{
         if (!to || to.s3 != false){    
             let logContext: Context;
             if (this.options.log){
-                logContext = new Context(this.options.log);
+                let client = getClient(this.options.log);
+                logContext = new Context(client);
                 let log = logContext.uploadLog.add();
                 log.source = source;
                 log.uploadDate = new Date();
@@ -265,7 +267,8 @@ export class Storage{
         if (!to || to.s3 != false){
             let logContext: Context;
             if (this.options.log){
-                logContext = new Context(this.options.log);
+                let client = getClient(this.options.log);
+                logContext = new Context(client);
                 let log = logContext.uploadLog.add();
                 log.source = source;
                 log.uploadDate = new Date();
@@ -316,7 +319,8 @@ export class Storage{
         hash.links = items;
         let logContext: Context;
         if (this.options.log){
-            logContext = new Context(this.options.log);
+            let client = getClient(this.options.log);
+            logContext = new Context(client);
             let log = logContext.uploadLog.add();
             log.source = source;
             log.uploadDate = new Date();
@@ -353,7 +357,8 @@ export class Storage{
         if (!to || to.s3 != false){
             let logContext: Context;
             if (this.options.log){
-                logContext = new Context(this.options.log);
+                let client = getClient(this.options.log);
+                logContext = new Context(client);
                 let log = logContext.uploadLog.add();
                 log.source = source;
                 log.uploadDate = new Date();

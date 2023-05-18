@@ -32,6 +32,7 @@ const IPFSUtils = __importStar(require("@ijstech/ipfs"));
 const s3_1 = require("./s3");
 const extract_zip_1 = __importDefault(require("extract-zip"));
 const web3_storage_1 = require("web3.storage");
+const db_1 = require("@ijstech/db");
 const log_pdm_1 = require("./log.pdm");
 const appPrefix = 'sc';
 async function download(url, dest) {
@@ -250,7 +251,8 @@ class Storage {
         if (!to || to.s3 != false) {
             let logContext;
             if (this.options.log) {
-                logContext = new log_pdm_1.Context(this.options.log);
+                let client = db_1.getClient(this.options.log);
+                logContext = new log_pdm_1.Context(client);
                 let log = logContext.uploadLog.add();
                 log.source = source;
                 log.uploadDate = new Date();
@@ -302,7 +304,8 @@ class Storage {
         if (!to || to.s3 != false) {
             let logContext;
             if (this.options.log) {
-                logContext = new log_pdm_1.Context(this.options.log);
+                let client = db_1.getClient(this.options.log);
+                logContext = new log_pdm_1.Context(client);
                 let log = logContext.uploadLog.add();
                 log.source = source;
                 log.uploadDate = new Date();
@@ -360,7 +363,8 @@ class Storage {
         hash.links = items;
         let logContext;
         if (this.options.log) {
-            logContext = new log_pdm_1.Context(this.options.log);
+            let client = db_1.getClient(this.options.log);
+            logContext = new log_pdm_1.Context(client);
             let log = logContext.uploadLog.add();
             log.source = source;
             log.uploadDate = new Date();
@@ -401,7 +405,8 @@ class Storage {
         if (!to || to.s3 != false) {
             let logContext;
             if (this.options.log) {
-                logContext = new log_pdm_1.Context(this.options.log);
+                let client = db_1.getClient(this.options.log);
+                logContext = new log_pdm_1.Context(client);
                 let log = logContext.uploadLog.add();
                 log.source = source;
                 log.uploadDate = new Date();
