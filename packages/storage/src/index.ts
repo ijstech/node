@@ -7,7 +7,7 @@ import * as IPFSUtils from '@ijstech/ipfs';
 import {IS3Options, S3} from './s3';
 import Extract from 'extract-zip';
 import { Web3Storage, getFilesFromPath, File} from 'web3.storage';
-import {IDbConnectionOptions} from '@ijstech/types';
+import {IDBClient} from '@ijstech/types';
 import {Context} from './log.pdm';
 
 const appPrefix = 'sc';
@@ -44,7 +44,7 @@ export interface IStorageOptions{
     s3?: IS3Options;
     web3Storage?: {endpoint?: string,token: string};
     localCache?: {path: string};
-    log?: IDbConnectionOptions;
+    log?: IDBClient;
 };
 export type IItemType = 'stat' | 'ipfs' | 'tmp';
 export class Storage{
