@@ -293,7 +293,10 @@ class PluginVM {
         let script = await getPackageScript(name, pack);
         if (script)
             this.vm.injectGlobalPackage(name, script);
+        else
+            throw new Error('#Failed to load package: ' + name);
     }
+    ;
     async loadDependencies() {
         if (this.options.plugins) {
             if (this.options.plugins.db)
@@ -315,6 +318,7 @@ class PluginVM {
                     let pack = this.options.dependencies[packname];
                     await this.loadPackage(packname, pack);
                 }
+                ;
             }
             ;
         }
