@@ -7,7 +7,7 @@ export interface ISet_2Params {s:string;nsa:{ss:{i256:number|BigNumber,ui256:num
 export class Abstract extends _Contract{
     static _abi: any = Bin.abi;
     constructor(wallet: IWallet, address?: string){
-        super(wallet, address, Bin.abi);
+        super(wallet, address, Bin.abi, undefined);
         this.assign()
     }
     parseSet1Event(receipt: TransactionReceipt): Abstract.Set1Event[]{

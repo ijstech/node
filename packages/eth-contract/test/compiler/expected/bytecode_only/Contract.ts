@@ -8,9 +8,8 @@ export interface ISetParams {b:string;ns:{ss:{i256:number|BigNumber,ui256:number
 export interface ISet_1Params {i:number|BigNumber;ss:{i256:number|BigNumber,ui256:number|BigNumber,b32:string,b:string,s:string}}
 export interface ISet_2Params {s:string;nsa:{ss:{i256:number|BigNumber,ui256:number|BigNumber,b32:string,b:string,s:string}}[]}
 export class Contract extends _Contract{
-    static _abi: any = Bin.abi;
     constructor(wallet: IWallet, address?: string){
-        super(wallet, address, Bin.abi, Bin.bytecode);
+        super(wallet, address, undefined, Bin.bytecode);
         this.assign()
     }
     deploy(params: IDeployParams, options?: TransactionOptions): Promise<string>{

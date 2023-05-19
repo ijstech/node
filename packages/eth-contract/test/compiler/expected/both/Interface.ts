@@ -7,11 +7,8 @@ export interface ISet_2Params {s:string;nsa:{ss:{i256:number|BigNumber,ui256:num
 export class Interface extends _Contract{
     static _abi: any = Bin.abi;
     constructor(wallet: IWallet, address?: string){
-        super(wallet, address, Bin.abi, Bin.bytecode);
+        super(wallet, address, Bin.abi, undefined);
         this.assign()
-    }
-    deploy(options?: TransactionOptions): Promise<string>{
-        return this.__deploy([], options);
     }
     parseSet1Event(receipt: TransactionReceipt): Interface.Set1Event[]{
         return this.parseEvents(receipt, "Set1").map(e=>this.decodeSet1Event(e));
