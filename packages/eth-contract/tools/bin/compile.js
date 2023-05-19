@@ -237,16 +237,16 @@ function processOutput(sourceDir, output, outputDir, outputOptions, exclude, inc
             for (let j in output.contracts[i]) {
                 let abi = output.contracts[i][j].abi;
                 let bytecode = (_b = (_a = output.contracts[i][j].evm) === null || _a === void 0 ? void 0 : _a.bytecode) === null || _b === void 0 ? void 0 : _b.object;
-                let outputBytecode = (outputOptions.bytecode === undefined) ? (!!(bytecode && abi && abi.length)) : outputOptions.bytecode;
-                let outputAbi = (outputOptions.abi === undefined) ? (!!(bytecode && abi && abi.length)) : outputOptions.abi;
-                if ((outputBytecode && bytecode) || (outputAbi && abi && abi.length)) {
+                let outputBytecode = (outputOptions.bytecode === undefined) ? (!!(bytecode && abi && abi.length)) : (outputOptions.bytecode && bytecode);
+                let outputAbi = (outputOptions.abi === undefined) ? (!!(bytecode && abi && abi.length)) : (outputOptions.abi && abi && abi.length);
+                if (outputBytecode || outputAbi) {
                     if (!fs.existsSync(outputDir + '/' + p))
                         fs.mkdirSync(outputDir + '/' + p, { recursive: true });
                     let file = {};
-                    if (outputAbi && abi && abi.length) {
+                    if (outputAbi) {
                         file["abi"] = abi;
                     }
-                    if (outputBytecode && bytecode) {
+                    if (outputBytecode) {
                         file["bytecode"] = bytecode;
                     }
                     fs.writeFileSync(outputDir + '/' + p + j + '.json.ts', "export default " + prettyPrint(JSON.stringify(file)));
@@ -254,6 +254,7 @@ function processOutput(sourceDir, output, outputDir, outputOptions, exclude, inc
                     let hasBatchCall = outputOptions.batchCall;
                     let hasTxData = outputOptions.txData;
                     let options = {
+                        outputAbi,
                         outputBytecode,
                         hasBatchCall,
                         hasTxData

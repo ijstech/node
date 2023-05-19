@@ -390,6 +390,7 @@ function default_1(name, abiPath, abi, options) {
             addLine(0, paramsInterface);
         }
     };
+    const hasAbi = options.outputAbi && abi && abi.length;
     addLine(0, `import {IWallet, Contract as _Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions} from "@ijstech/eth-contract";`);
     addLine(0, `import Bin from "${abiPath}${name}.json";`);
     if (abi)
@@ -399,9 +400,10 @@ function default_1(name, abiPath, abi, options) {
             addParamsInterface(abi[i]);
         }
     addLine(0, `export class ${name} extends _Contract{`);
-    addLine(1, `static _abi: any = Bin.abi;`);
+    if (hasAbi)
+        addLine(1, `static _abi: any = Bin.abi;`);
     addLine(1, `constructor(wallet: IWallet, address?: string){`);
-    addLine(2, options.outputBytecode ? `super(wallet, address, Bin.abi, Bin.bytecode);` : `super(wallet, address, Bin.abi);`);
+    addLine(2, `super(wallet, address, ${hasAbi ? "Bin.abi" : "undefined"}, ${options.outputBytecode ? "Bin.bytecode" : "undefined"});`);
     addLine(2, `this.assign()`);
     addLine(1, `}`);
     if (abi && options.outputBytecode)

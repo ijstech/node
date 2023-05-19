@@ -232,18 +232,18 @@ function processOutput(sourceDir: string, output:Output, outputDir: string, outp
                 let abi = output.contracts[i][j].abi;
                 let bytecode = output.contracts[i][j].evm?.bytecode?.object;
 
-                let outputBytecode = (outputOptions.bytecode === undefined) ? (!!(bytecode && abi && abi.length)) : outputOptions.bytecode;
-                let outputAbi = (outputOptions.abi === undefined) ? (!!(bytecode && abi && abi.length)) : outputOptions.abi;
+                let outputBytecode = (outputOptions.bytecode === undefined) ? (!!(bytecode && abi && abi.length)) : (outputOptions.bytecode && bytecode);
+                let outputAbi = (outputOptions.abi === undefined) ? (!!(bytecode && abi && abi.length)) : (outputOptions.abi && abi && abi.length);
 
-                if ((outputBytecode && bytecode) || (outputAbi && abi && abi.length)) {
+                if (outputBytecode || outputAbi) {
                     if (!fs.existsSync(outputDir + '/' + p))
                         fs.mkdirSync(outputDir + '/' + p, { recursive: true });
 
                     let file = {};
-                    if (outputAbi && abi && abi.length) {
+                    if (outputAbi) {
                         file["abi"] = abi;
                     }
-                    if (outputBytecode && bytecode) {
+                    if (outputBytecode) {
                         file["bytecode"] = bytecode;
                     }
                     fs.writeFileSync(outputDir + '/' + p + j +  '.json.ts', "export default " + prettyPrint(JSON.stringify(file)));
@@ -252,6 +252,7 @@ function processOutput(sourceDir: string, output:Output, outputDir: string, outp
                     let hasBatchCall = outputOptions.batchCall;       
                     let hasTxData = outputOptions.txData;       
                     let options: IUserDefinedOptions = {
+                        outputAbi,
                         outputBytecode,
                         hasBatchCall,
                         hasTxData
