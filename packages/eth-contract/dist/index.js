@@ -179,7 +179,7 @@ define("@ijstech/eth-contract", ["require", "exports", "bignumber.js"], function
             }
             else if (method.stateMutability == 'payable') {
                 let value = params.pop();
-                return await this.call(methodName, params, { value: value });
+                return await this.send(methodName, params, { value: value });
             }
             else {
                 return await this.send(methodName, params);
