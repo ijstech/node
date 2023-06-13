@@ -1,7 +1,7 @@
 {
     "name": "@ijstech/node",
     "description": "Secure Node",
-    "version": "0.1.60",
+    "version": "0.1.61",
     "engines": {
         "node": ">=18.0.0"
     },
@@ -41,7 +41,7 @@
         "@ijstech/types": "file:packages/types",
         "@ijstech/vm": "file:packages/vm",
         "@ijstech/wallet": "file:packages/wallet",
-        "bignumber.js": "9.0.1",
+        "bignumber.js": "9.1.1",
         "cron-parser": "4.2.0",
         "extract-zip": "2.0.1",
         "graphql": "16.3.0",
