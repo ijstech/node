@@ -15,9 +15,7 @@ export interface IRoute {
         wallet?: boolean;
         fetch?: boolean;
     };
-    dependencies?: {
-        [packageName: string]: string;
-    };
+    dependencies?: string[];
 }
 export interface IWorker {
     module: string;

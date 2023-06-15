@@ -20,9 +20,7 @@ export interface IRoute{
         wallet?: boolean;
         fetch?: boolean;
     };
-    dependencies?: {
-        [packageName: string]: string;
-    };
+    dependencies?: string[];
 };
 export interface IWorker{
     module: string;
@@ -290,6 +288,7 @@ export class PackageManager{
                                 if (route.worker && p.scconfig.workers && p.scconfig.workers[route.worker]){
                                     let worker = p.scconfig.workers[route.worker];
                                     route.module = worker.module;
+                                    route.dependencies = worker.dependencies || [];
                                     let routePlugins = worker.plugins || {};
                                     for (let n in route.plugins)
                                         routePlugins[n] = route.plugins[n];
