@@ -18,6 +18,7 @@ import {PackageManager, IDomainRouterPackage} from '@ijstech/package';
 import { IRouterPluginMethod, IJobQueueConnectionOptions } from '@ijstech/types';
 import {getJobQueue, JobQueue} from '@ijstech/queue';
 import {IStorageOptions} from '@ijstech/storage';
+import { ICompilerResult } from '@ijstech/tsc/types';
 
 const RootPath = process.cwd();
 
@@ -297,7 +298,19 @@ export class HttpServer {
                         else{
                             let plugin: Router = (<any>route)._plugin;
                             if (!plugin){
-                                let script = await pack.getScript(route.module);
+                                let script: ICompilerResult;
+                                if (route.module.endsWith('.js')){               
+                                    let s = '';                     
+                                    for (let i = 0; i < route.dependencies?.length; i ++)
+                                        s += await pack.getFileContent('libs/' + route.dependencies[i] + '/index.js');
+                                    s += await pack.getFileContent('workers/' + route.module);
+                                    script = {
+                                        errors: [],
+                                        script: s
+                                    };
+                                }
+                                else
+                                    script = await pack.getScript(route.module);
                                 if (script){
                                     let plugins:any = {};
                                     if (options && options.plugins){
