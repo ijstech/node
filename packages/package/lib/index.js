@@ -296,14 +296,27 @@ class PackageManager {
     }
     ;
     async getPackageWorker(pack, workerName) {
-        var _a;
+        var _a, _b;
         let p = await this.addPackage(pack.packagePath);
         let workers = (_a = p.scconfig) === null || _a === void 0 ? void 0 : _a.workers;
         if (workers) {
             let w = workers[workerName];
             if (w) {
-                if (!w.moduleScript)
-                    w.moduleScript = await p.getScript(w.module);
+                if (!w.moduleScript && w.module) {
+                    if (w.module.endsWith('.js') && ((_b = p.scconfig) === null || _b === void 0 ? void 0 : _b.type) == 'worker') {
+                        let script = '';
+                        for (let i = 0; i < w.dependencies.length; i++)
+                            script += await p.getFileContent('libs/' + w.dependencies[i] + '/index.js');
+                        script += await p.getFileContent('workers/' + w.module);
+                        w.moduleScript = {
+                            errors: [],
+                            script: script
+                        };
+                    }
+                    else
+                        w.moduleScript = await p.getScript(w.module);
+                }
+                ;
                 return w;
             }
             ;

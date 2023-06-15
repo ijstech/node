@@ -30,12 +30,11 @@ export interface IWorker {
         wallet?: boolean;
         fetch?: boolean;
     };
-    dependencies?: {
-        [packageName: string]: string;
-    };
+    dependencies?: string[];
 }
 export interface ISCConfig {
     src?: string;
+    type?: string;
     scheduler?: {
         schedules: [
             {

@@ -35,12 +35,11 @@ export interface IWorker{
         wallet?: boolean;
         fetch?: boolean;
     };
-    dependencies?: {
-        [packageName: string]: string;
-    };
+    dependencies?: string[];
 };
 export interface ISCConfig {
     src?: string;
+    type?: string;
     scheduler?: {
         schedules: [{
             id: string;
@@ -342,8 +341,20 @@ export class PackageManager{
         if (workers){
             let w = workers[workerName];            
             if (w){
-                if (!w.moduleScript)
-                    w.moduleScript = await p.getScript(w.module);
+                if (!w.moduleScript && w.module){
+                    if (w.module.endsWith('.js') && p.scconfig?.type == 'worker'){
+                        let script = '';
+                        for (let i = 0; i < w.dependencies.length; i ++)
+                            script += await p.getFileContent('libs/' + w.dependencies[i] + '/index.js');
+                        script += await p.getFileContent('workers/' + w.module);
+                        w.moduleScript = {
+                            errors: [],
+                            script: script
+                        };
+                    }
+                    else
+                        w.moduleScript = await p.getScript(w.module);
+                };
                 return w;
             };
         };
