@@ -129,6 +129,10 @@ export interface TransactionOptions {
     data?: string;
     value?: BigNumber | number;
 }
+export interface DeployOptions extends TransactionOptions {
+    linkReferences?: {[file:string]:{[contract:string]:{length:number; start:number;}[]}};
+    libraries?: {[file:string]:{[contract:string]:string}};
+}
 export interface EventType{
     name: string
 };
@@ -292,11 +296,22 @@ export class Contract {
     }
     private async _send(methodName:string, params?:any[], options?:number|BigNumber|TransactionOptions): Promise<TransactionReceipt>{
         params = params || [];         
-        if (!methodName)   
-            params.unshift(this._bytecode);
         return await this.wallet._send(this.abiHash, this._address, methodName, params, options);
     }
-    protected async __deploy(params?:any[], options?:number|BigNumber|TransactionOptions): Promise<string>{                        
+    protected async __deploy(params?:any[], options?:number|BigNumber|DeployOptions): Promise<string>{                        
+        let bytecode = this._bytecode;
+        let libraries = (<DeployOptions>options)?.libraries;
+        let linkReferences = (<DeployOptions>options)?.linkReferences;
+        if (libraries && linkReferences){
+            for (let file in libraries) {
+                for (let contract in libraries[file]) {
+                    for (let offset of linkReferences[file][contract]) {
+                        bytecode = bytecode.substring(0, offset.start * 2 + 2) + libraries[file][contract].replace("0x","") + bytecode.substring(offset.start * 2 + 2 + offset.length * 2)
+                    }
+                }
+            }
+        }
+        params.unshift(bytecode);
         let receipt = await this._send('', params, options);
         this.address = receipt.contractAddress;
         return this.address;

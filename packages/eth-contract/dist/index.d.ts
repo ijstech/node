@@ -136,6 +136,21 @@ declare module "@ijstech/eth-contract" {
         data?: string;
         value?: BigNumber | number;
     }
+    export interface DeployOptions extends TransactionOptions {
+        linkReferences?: {
+            [file: string]: {
+                [contract: string]: {
+                    length: number;
+                    start: number;
+                }[];
+            };
+        };
+        libraries?: {
+            [file: string]: {
+                [contract: string]: string;
+            };
+        };
+    }
     export interface EventType {
         name: string;
     }
@@ -183,7 +198,7 @@ declare module "@ijstech/eth-contract" {
         protected txData(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
         protected call(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
         private _send;
-        protected __deploy(params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
+        protected __deploy(params?: any[], options?: number | BigNumber | DeployOptions): Promise<string>;
         protected send(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
         protected _deploy(...params: any[]): Promise<string>;
         protected methods(methodName: string, ...params: any[]): Promise<any>;
