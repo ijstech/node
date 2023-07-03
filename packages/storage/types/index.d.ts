@@ -31,7 +31,7 @@ export declare class Storage {
     private putLocalCache;
     getFile(rootCid: string, filePath?: string | string[]): Promise<string>;
     private moveFile;
-    getLocalFilePath(rootCid: string, filePath?: string | string[]): Promise<string>;
+    getLocalFilePath(rootCid: string, filePath?: string | string[], returnIndex?: boolean): Promise<string>;
     getUploadUrl(path: string, expiresInSeconds?: number): Promise<string>;
     putContent(fileContent: string, to?: {
         ipfs?: boolean;

@@ -153,7 +153,7 @@ class Storage {
         });
     }
     ;
-    async getLocalFilePath(rootCid, filePath) {
+    async getLocalFilePath(rootCid, filePath, returnIndex) {
         if (rootCid.startsWith('/') && typeof (filePath) == 'string')
             return path_1.default.join(rootCid, filePath);
         if (typeof (filePath) == 'string' && filePath[0] == '/')
@@ -183,7 +183,7 @@ class Storage {
             for (let i = 0; i < item.links.length; i++) {
                 if (item.links[i].name == path) {
                     if (item.links[i].type == 'dir')
-                        return await this.getLocalFilePath(item.links[i].cid, paths);
+                        return await this.getLocalFilePath(item.links[i].cid, paths, returnIndex);
                     else {
                         let targetFilePath = await this.getLocalCachePath('ipfs', item.links[i].cid);
                         if (targetFilePath) {
@@ -210,8 +210,11 @@ class Storage {
             }
             ;
         }
-        else
+        else {
+            if (returnIndex && item.type == 'dir')
+                return await this.getLocalFilePath(item.cid, ['index.html']);
             return await this.getLocalCachePath('stat', rootCid);
+        }
     }
     ;
     async getUploadUrl(path, expiresInSeconds) {

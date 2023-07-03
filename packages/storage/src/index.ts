@@ -128,7 +128,7 @@ export class Storage{
             readStream.pipe(writeStream);
         });
     };
-    async getLocalFilePath(rootCid: string, filePath?: string |string[]): Promise<string>{
+    async getLocalFilePath(rootCid: string, filePath?: string |string[], returnIndex?: boolean): Promise<string>{
         if (rootCid.startsWith('/') && typeof(filePath) == 'string')
             return Path.join(rootCid, filePath);
 
@@ -157,7 +157,7 @@ export class Storage{
             for (let i = 0; i < item.links.length; i++){
                 if (item.links[i].name == path){
                     if (item.links[i].type == 'dir')
-                        return await this.getLocalFilePath(item.links[i].cid, paths)
+                        return await this.getLocalFilePath(item.links[i].cid, paths, returnIndex)
                     else{
                         let targetFilePath = await this.getLocalCachePath('ipfs', item.links[i].cid);                        
                         if (targetFilePath){
@@ -179,8 +179,11 @@ export class Storage{
                 };
             };
         }
-        else
+        else{
+            if (returnIndex && item.type == 'dir')
+                return await this.getLocalFilePath(item.cid, ['index.html']);
             return await this.getLocalCachePath('stat', rootCid);
+        }
     };
     async getUploadUrl(path: string, expiresInSeconds?: number): Promise<string>{
         return this.s3.putObjectSignedUrl(path, expiresInSeconds);
