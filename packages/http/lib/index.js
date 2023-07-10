@@ -213,7 +213,6 @@ class HttpServer {
             }
             ;
             this.app.use(async (ctx, next) => {
-                var _a, _b, _c, _d, _e, _f;
                 if (this.options.cors) {
                     let origin = ctx.get('Origin');
                     if (origin) {
@@ -238,10 +237,10 @@ class HttpServer {
                 ;
                 if (this.options.router && this.options.router.routes) {
                     let matched = await this.getRouter(ctx);
-                    if (matched === null || matched === void 0 ? void 0 : matched.router) {
+                    if (matched?.router) {
                         let router = matched.router;
                         let baseUrl = matched.baseUrl;
-                        if ((_b = (_a = this.options) === null || _a === void 0 ? void 0 : _a.router) === null || _b === void 0 ? void 0 : _b.module)
+                        if (this.options?.router?.module)
                             router.modulePath = this.options.router.module;
                         try {
                             if (!router._plugin) {
@@ -289,7 +288,7 @@ class HttpServer {
                                 let script;
                                 if (route.module.endsWith('.js')) {
                                     let s = '';
-                                    for (let i = 0; i < ((_c = route.dependencies) === null || _c === void 0 ? void 0 : _c.length); i++)
+                                    for (let i = 0; i < route.dependencies?.length; i++)
                                         s += await pack.getFileContent('libs/' + route.dependencies[i] + '/index.js');
                                     s += await pack.getFileContent('workers/' + route.module);
                                     script = {
@@ -302,11 +301,11 @@ class HttpServer {
                                 if (script) {
                                     let plugins = {};
                                     if (options && options.plugins) {
-                                        if ((_d = route.plugins) === null || _d === void 0 ? void 0 : _d.db)
+                                        if (route.plugins?.db)
                                             plugins.db = { default: options.plugins.db };
-                                        if ((_e = route.plugins) === null || _e === void 0 ? void 0 : _e.cache)
+                                        if (route.plugins?.cache)
                                             plugins.cache = options.plugins.cache;
-                                        if ((_f = route.plugins) === null || _f === void 0 ? void 0 : _f.wallet)
+                                        if (route.plugins?.wallet)
                                             plugins.wallet = options.plugins.wallet;
                                     }
                                     ;
