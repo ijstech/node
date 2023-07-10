@@ -136,7 +136,7 @@ class Compiler {
             module: typescript_1.default.ModuleKind.AMD,
             noEmitOnError: true,
             outFile: 'index.js',
-            target: typescript_1.default.ScriptTarget.ES2017
+            target: typescript_1.default.ScriptTarget.ES2020
         };
         this.dtsOptions = {
             allowJs: false,
@@ -148,7 +148,7 @@ class Compiler {
             outFile: 'index.js',
             module: typescript_1.default.ModuleKind.AMD,
             noEmitOnError: true,
-            target: typescript_1.default.ScriptTarget.ES2017
+            target: typescript_1.default.ScriptTarget.ES2020
         };
         this.reset();
     }
@@ -187,7 +187,7 @@ class Compiler {
     async importDependencies(fileName, content, fileImporter, result) {
         if (!content)
             return;
-        let ast = typescript_1.default.createSourceFile(fileName, content, typescript_1.default.ScriptTarget.ES2017, true);
+        let ast = typescript_1.default.createSourceFile(fileName, content, typescript_1.default.ScriptTarget.ES2020, true);
         result = result || [];
         for (let i = 0; i < ast.statements.length; i++) {
             let node = ast.statements[i];
@@ -336,6 +336,10 @@ class Compiler {
             result = true;
             this.resolvedFileName = fileName.slice(0, -3) + '/index.ts';
         }
+        else if (!result && this.fileNames.indexOf(fileName.slice(0, -3) + '/index.d.ts') > -1) {
+            result = true;
+            this.resolvedFileName = fileName.slice(0, -3) + '/index.d.ts';
+        }
         ;
         if (!result)
             this.fileNotExists = fileName;
@@ -349,7 +353,7 @@ class Compiler {
             let lib = getLib('lib.d.ts');
             return typescript_1.default.createSourceFile(fileName, lib, languageVersion);
         }
-        let content = this.packageFiles[fileName] || this.files[fileName] || this.files[fileName.slice(0, -3) + '/index.ts'];
+        let content = this.packageFiles[fileName] || this.files[fileName] || this.files[fileName.slice(0, -3) + '/index.ts'] || this.files[fileName.slice(0, -3) + '/index.d.ts'];
         if (!content)
             console.error(`Failed to get source file: ${fileName}`);
         return typescript_1.default.createSourceFile(fileName, content, languageVersion);

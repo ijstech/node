@@ -153,7 +153,7 @@ export class Compiler {
             module: TS.ModuleKind.AMD,
             noEmitOnError: true,
             outFile: 'index.js',
-            target: TS.ScriptTarget.ES2017
+            target: TS.ScriptTarget.ES2020
         };
         this.dtsOptions = {            
             allowJs: false,
@@ -165,7 +165,7 @@ export class Compiler {
             outFile: 'index.js',
             module: TS.ModuleKind.AMD,
             noEmitOnError: true,
-            target: TS.ScriptTarget.ES2017
+            target: TS.ScriptTarget.ES2020
         };
         this.reset();
     };
@@ -203,7 +203,7 @@ export class Compiler {
         let ast = TS.createSourceFile(
             fileName,
             content,
-            TS.ScriptTarget.ES2017,
+            TS.ScriptTarget.ES2020,
             true
         );
         result = result || [];
@@ -350,6 +350,10 @@ export class Compiler {
         if (!result && this.fileNames.indexOf(fileName.slice(0, -3) + '/index.ts') > -1){
             result = true;
             this.resolvedFileName = fileName.slice(0, -3) + '/index.ts'; 
+        }
+        else if (!result && this.fileNames.indexOf(fileName.slice(0, -3) + '/index.d.ts') > -1){
+            result = true;
+            this.resolvedFileName = fileName.slice(0, -3) + '/index.d.ts'; 
         };
         if (!result)        
             this.fileNotExists = fileName
@@ -362,7 +366,7 @@ export class Compiler {
             let lib = getLib('lib.d.ts');
             return TS.createSourceFile(fileName, lib, languageVersion);
         }
-        let content = this.packageFiles[fileName] || this.files[fileName] || this.files[fileName.slice(0, -3) + '/index.ts'];
+        let content = this.packageFiles[fileName] || this.files[fileName] || this.files[fileName.slice(0, -3) + '/index.ts'] || this.files[fileName.slice(0, -3) + '/index.d.ts'];
         if (!content)
             console.error(`Failed to get source file: ${fileName}`)
         return TS.createSourceFile(fileName, content, languageVersion);
