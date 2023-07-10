@@ -10,7 +10,7 @@ exports.Fetch = {
         };
     },
     async post(url, data) {
-        if ((data === null || data === void 0 ? void 0 : data.body) && typeof (data.body) == 'object') {
+        if (data?.body && typeof (data.body) == 'object') {
             if (!data.headers || !data.headers['content-type']) {
                 data.headers = data.headers || {};
                 data.headers['content-type'] = 'application/json';
@@ -39,7 +39,7 @@ const FetchPluginObject = {
         });
     },
     async post(url, data) {
-        if ((data === null || data === void 0 ? void 0 : data.body) && typeof (data.body) != 'string')
+        if (data?.body && typeof (data.body) != 'string')
             data.body = JSON.stringify(data.body);
         let result = await fetch(url, {
             method: 'POST',
