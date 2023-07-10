@@ -1,7 +1,7 @@
 {
     "name": "@ijstech/node",
     "description": "Secure Node",
-    "version": "0.1.65",
+    "version": "0.1.66",
     "engines": {
         "node": ">=18.0.0"
     },
@@ -17,7 +17,7 @@
         "url": "https://github.com/ijstech/node"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "3.348.0",
+        "@aws-sdk/client-s3": "^3.367.0",
         "@aws-sdk/lib-storage": "3.266.0",
         "@aws-sdk/s3-request-presigner": "3.266.0",
         "@ijstech/app": "file:packages/app",
@@ -50,7 +50,7 @@
         "koa-bodyparser": "4.3.0",
         "mysql": "2.18.1",
         "redis": "3.1.2",
-        "web3.storage": "4.4.0"
+        "web3": "4.0.2"
     },
     "devDependencies": {
         "@types/koa": "2.13.4",
