@@ -47,7 +47,6 @@ class Scheduler {
     }
     ;
     async addDomainPackage(domain, pack) {
-        var _a;
         if (!this.packageManager) {
             this.packageManager = new package_1.PackageManager({
                 storage: this.options.storage
@@ -57,7 +56,7 @@ class Scheduler {
         this.domainPackages[domain] = this.domainPackages[domain] || [];
         let domainPackages = this.domainPackages[domain];
         domainPackages.push(pack);
-        for (let i = 0; i < ((_a = pack.schedules) === null || _a === void 0 ? void 0 : _a.length); i++) {
+        for (let i = 0; i < pack.schedules?.length; i++) {
             let schedule = pack.schedules[i];
             let id = schedule.id || `${domain}:${schedule.worker}:${i}`;
             this.jobs.push({
@@ -88,7 +87,7 @@ class Scheduler {
                 if (!pack.schedules) {
                     try {
                         let scconfig = JSON.parse(await this.packageManager.getFileContent(pack.packagePath, 'scconfig.json'));
-                        pack.schedules = (scconfig === null || scconfig === void 0 ? void 0 : scconfig.schedules) || [];
+                        pack.schedules = scconfig?.schedules || [];
                     }
                     catch (err) {
                         pack.schedules = [];
@@ -127,11 +126,10 @@ class Scheduler {
     }
     ;
     async runJob(domain, workerName, params) {
-        var _a;
         let domainPacks = this.domainPackages[domain];
-        for (let i = 0; i < (domainPacks === null || domainPacks === void 0 ? void 0 : domainPacks.length); i++) {
+        for (let i = 0; i < domainPacks?.length; i++) {
             let pack = domainPacks[i];
-            for (let k = 0; k < ((_a = pack.schedules) === null || _a === void 0 ? void 0 : _a.length); k++) {
+            for (let k = 0; k < pack.schedules?.length; k++) {
                 let schedule = pack.schedules[k];
                 if (schedule.worker == workerName) {
                     params = params || {};
@@ -151,7 +149,7 @@ class Scheduler {
             ;
         }
         ;
-        if ((domainPacks === null || domainPacks === void 0 ? void 0 : domainPacks.length) == 1) {
+        if (domainPacks?.length == 1) {
             return await this.processJob({
                 id: '#' + workerName,
                 domain: domain,
@@ -165,7 +163,6 @@ class Scheduler {
     }
     ;
     async processJob(job) {
-        var _a, _b, _c, _d, _e;
         if (job.cron != '*' && !job.next) {
             job.next = parseCron(job.cron);
             console.log('Next Schedule: ' + job.next.toString() + ' ' + (job.id ? `${job.domain}:${job.id}` : ''));
@@ -194,19 +191,19 @@ class Scheduler {
                             if (worker.moduleScript.errors)
                                 console.error(worker.moduleScript.errors);
                             let plugins = {};
-                            if ((_a = worker.plugins) === null || _a === void 0 ? void 0 : _a.cache)
+                            if (worker.plugins?.cache)
                                 plugins.cache = job.pack.options.plugins.cache;
-                            if ((_b = worker.plugins) === null || _b === void 0 ? void 0 : _b.db)
+                            if (worker.plugins?.db)
                                 plugins.db = { default: job.pack.options.plugins.db };
-                            if ((_c = worker.plugins) === null || _c === void 0 ? void 0 : _c.wallet) {
-                                if ((_d = job.params) === null || _d === void 0 ? void 0 : _d.chainId) {
-                                    plugins.wallet = Object.assign(Object.assign({}, job.pack.options.plugins.wallet), { chainId: job.params.chainId });
+                            if (worker.plugins?.wallet) {
+                                if (job.params?.chainId) {
+                                    plugins.wallet = { ...job.pack.options.plugins.wallet, chainId: job.params.chainId };
                                 }
                                 else {
                                     plugins.wallet = job.pack.options.plugins.wallet;
                                 }
                             }
-                            if ((_e = worker.plugins) === null || _e === void 0 ? void 0 : _e.fetch)
+                            if (worker.plugins?.fetch)
                                 plugins.fetch = job.pack.options.plugins.fetch || { methods: ['GET'] };
                             job.plugin = new plugin_1.Worker({
                                 plugins: plugins,
