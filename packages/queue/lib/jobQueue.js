@@ -25,7 +25,7 @@ class JobQueue {
     ;
     async createJob(data, waitForResult, options) {
         return new Promise(async (resolve) => {
-            let job = this._queue.createJob(data).retries((options === null || options === void 0 ? void 0 : options.retries) || 5);
+            let job = this._queue.createJob(data).retries(options?.retries || 5);
             job.on('succeeded', (result) => {
                 if (waitForResult)
                     resolve({
@@ -43,7 +43,7 @@ class JobQueue {
                         status: 'failed'
                     });
             });
-            if (options === null || options === void 0 ? void 0 : options.id)
+            if (options?.id)
                 job.setId(options.id);
             let result = await job.save();
             if (!waitForResult)
