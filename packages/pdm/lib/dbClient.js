@@ -8,8 +8,7 @@ class DBClient {
     ;
     applyQueries(queries) {
         return new Promise(async (resolve) => {
-            var _a;
-            let data = await fetch(((_a = this._options) === null || _a === void 0 ? void 0 : _a.url) || '/pdm', {
+            let data = await fetch(this._options?.url || '/pdm', {
                 method: 'POST',
                 body: JSON.stringify(queries),
                 headers: {
