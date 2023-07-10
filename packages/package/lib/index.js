@@ -35,8 +35,8 @@ class Package {
         this.scripts = {};
         this.manager = manager;
         this.packagePath = packagePath;
-        this.packageName = options === null || options === void 0 ? void 0 : options.name;
-        this.packageVersion = options === null || options === void 0 ? void 0 : options.version;
+        this.packageName = options?.name;
+        this.packageVersion = options?.version;
     }
     ;
     async getFileContent(filePath) {
@@ -89,10 +89,9 @@ class Package {
     }
     ;
     async fileImporter(fileName, isPackage) {
-        var _a;
         if (isPackage) {
             let result = await this.manager.getScript(fileName);
-            if (((_a = result.errors) === null || _a === void 0 ? void 0 : _a.length) > 0)
+            if (result.errors?.length > 0)
                 console.dir(result.errors);
             return {
                 fileName: 'index.d.ts',
@@ -141,7 +140,6 @@ class Package {
             if (content) {
                 let compiler = new tsc_1.Compiler();
                 await compiler.addFileContent(indexFile, content, this.name, async (fileName, isPackage) => {
-                    var _a;
                     if (isPackage && DefaultPlugins.indexOf(fileName) > -1) {
                         await compiler.addPackage('bignumber.js');
                         if (fileName == '@ijstech/plugin')
@@ -150,7 +148,7 @@ class Package {
                             await compiler.addPackage('@ijstech/wallet');
                         await compiler.addPackage(fileName);
                     }
-                    else if (isPackage && ((_a = this.packageConfig) === null || _a === void 0 ? void 0 : _a.dependencies) && this.packageConfig.dependencies[fileName])
+                    else if (isPackage && this.packageConfig?.dependencies && this.packageConfig.dependencies[fileName])
                         await compiler.addPackage(fileName);
                     else {
                         let result = await this.fileImporter(fileName, isPackage);
@@ -190,14 +188,13 @@ exports.Package = Package;
 ;
 class PackageManager {
     constructor(options) {
-        var _a;
         this.packagesByPath = {};
         this.packagesByVersion = {};
         this.packagesByName = {};
         this.domainRouterPackages = {};
         this.packages = {};
         this.options = options;
-        if ((_a = this.options) === null || _a === void 0 ? void 0 : _a.packages)
+        if (this.options?.packages)
             this.register(this.options.packages);
     }
     ;
@@ -220,7 +217,6 @@ class PackageManager {
     }
     ;
     async getDomainRouter(ctx) {
-        var _a, _b;
         let packs = this.domainRouterPackages[ctx.domain];
         if (packs) {
             let method = ctx.method;
@@ -231,7 +227,7 @@ class PackageManager {
                     let url = ctx.url;
                     if (url.indexOf('?') > 0)
                         url = url.split('?')[0];
-                    for (let k = 0; k < ((_b = (_a = p.scconfig) === null || _a === void 0 ? void 0 : _a.router) === null || _b === void 0 ? void 0 : _b.routes.length); k++) {
+                    for (let k = 0; k < p.scconfig?.router?.routes.length; k++) {
                         let route = p.scconfig.router.routes[k];
                         if (!route.methods || route.methods.indexOf(method) > -1) {
                             let params = matchRoute(pack, route, url);
@@ -297,14 +293,13 @@ class PackageManager {
     }
     ;
     async getPackageWorker(pack, workerName) {
-        var _a, _b;
         let p = await this.addPackage(pack.packagePath);
-        let workers = (_a = p.scconfig) === null || _a === void 0 ? void 0 : _a.workers;
+        let workers = p.scconfig?.workers;
         if (workers) {
             let w = workers[workerName];
             if (w) {
                 if (!w.moduleScript && w.module) {
-                    if (w.module.endsWith('.js') && ((_b = p.scconfig) === null || _b === void 0 ? void 0 : _b.type) == 'worker') {
+                    if (w.module.endsWith('.js') && p.scconfig?.type == 'worker') {
                         let script = '';
                         for (let i = 0; i < w.dependencies.length; i++)
                             script += await p.getFileContent('libs/' + w.dependencies[i] + '/index.js');
