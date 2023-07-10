@@ -1,6 +1,16 @@
 import {BigNumber} from 'bignumber.js';
 
 export declare namespace Types{
+    export interface IWalletTransactionOptions {
+        from?: string;
+        to?: string;
+        nonce?: number;
+        gas?: number;
+        gasLimit?: number;
+        gasPrice?: BigNumber | number;
+        data?: string;
+        value?: BigNumber | number;
+    }
     export interface IWalletAccount {
         address: string;
         privateKey?: string;
@@ -9,22 +19,22 @@ export declare namespace Types{
         address: string;
         data: string;
         topics: Array <string>;
-        logIndex: number;
+        logIndex: BigInt;
         transactionHash?: string;
-        transactionIndex: number;
+        transactionIndex: BigInt;
         blockHash?: string;
         type?: string;
-        blockNumber: number;
+        blockNumber: BigInt;
     }
     export interface IWalletEventLog {
         event: string
         address: string
         returnValues: any
-        logIndex: number
-        transactionIndex: number
+        logIndex: BigInt
+        transactionIndex: BigInt
         transactionHash: string
         blockHash: string
-        blockNumber: number
+        blockNumber: BigInt
         raw ? : {
             data: string,
             topics: string[]
@@ -33,31 +43,31 @@ export declare namespace Types{
     export interface IWalletEvent{
         name: string;
         address: string;
-        blockNumber: number;
-        logIndex: number;
+        blockNumber: BigInt;
+        logIndex: BigInt;
         topics: string[];
         transactionHash: string;
-        transactionIndex: number;        
+        transactionIndex: BigInt;        
         data: any;
         rawData: any;
     }
     export interface IWalletTransaction {
         hash: string;
-        nonce: number;
+        nonce: BigInt;
         blockHash: string | null;
-        blockNumber: number | null;
-        transactionIndex: number | null;
+        blockNumber: BigInt | null;
+        transactionIndex: BigInt | null;
         from: string;
         to: string | null;
         value: BigNumber;
         gasPrice: BigNumber;
-        maxPriorityFeePerGas?: number | string | BigNumber;
-        maxFeePerGas?: number | string | BigNumber;
-        gas: number;
+        maxPriorityFeePerGas?: BigInt | string | BigNumber;
+        maxFeePerGas?: BigInt | string | BigNumber;
+        gas: BigInt;
         input: string;
     }
     export interface IWalletBlockTransactionObject{
-        number: number;
+        number: BigInt;
         hash: string;
         parentHash: string;
         nonce: string;
@@ -68,31 +78,31 @@ export declare namespace Types{
         receiptsRoot: string;
         miner: string;
         extraData: string;
-        gasLimit: number;
-        gasUsed: number;
-        timestamp: number | string;
-        baseFeePerGas?: number;
-        size: number;
-        difficulty: number;
-        totalDifficulty: number;
+        gasLimit: BigInt;
+        gasUsed: BigInt;
+        timestamp: BigInt | string;
+        baseFeePerGas?: BigInt;
+        size: BigInt;
+        difficulty: BigInt;
+        totalDifficulty: BigInt;
         uncles: string[];
         transactions: IWalletTransaction[];
     }
     export interface IWalletTransactionReceipt{
         transactionHash: string;
-        transactionIndex: number;
+        transactionIndex: BigInt;
         blockHash: string;
-        blockNumber: number;
+        blockNumber: BigInt;
         from: string;
         to: string;
         contractAddress?: string;
-        cumulativeGasUsed: number;
-        gasUsed: number;
+        cumulativeGasUsed: BigInt;
+        gasUsed: BigInt;
         logs ? : Array <IWalletLog>;
         events ? : {
             [eventName: string]: IWalletEventLog | IWalletEventLog[]
         };
-        status: boolean;
+        status: BigInt;
     }
     export interface IWalletTokenInfo{
         name: string;
@@ -152,7 +162,7 @@ export declare namespace Types{
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
         soliditySha3(...val: any[]): string;
         toChecksumAddress(address: string): string;		
-        _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<IWalletTransaction>;
+        _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<IWalletTransactionOptions>;
         _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<string>;
         multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
         encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(

@@ -212,8 +212,7 @@ function RouterRequest(ctx) {
 exports.RouterRequest = RouterRequest;
 ;
 function isContext(object) {
-    var _a;
-    return typeof ((_a = object.cookies) === null || _a === void 0 ? void 0 : _a.set) == 'function';
+    return typeof (object.cookies?.set) == 'function';
 }
 function RouterResponse(ctx) {
     if (isContext(ctx)) {
