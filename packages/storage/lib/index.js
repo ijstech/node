@@ -31,9 +31,11 @@ const os_1 = __importDefault(require("os"));
 const IPFSUtils = __importStar(require("@ijstech/ipfs"));
 const s3_1 = require("./s3");
 const extract_zip_1 = __importDefault(require("extract-zip"));
-const web3_storage_1 = require("web3.storage");
 const db_1 = require("@ijstech/db");
 const log_pdm_1 = require("./log.pdm");
+let Web3Storage;
+let getFilesFromPath;
+let File;
 const appPrefix = 'sc';
 async function download(url, dest) {
     return new Promise((resolve, reject) => {
@@ -64,18 +66,24 @@ async function download(url, dest) {
 ;
 class Storage {
     constructor(options) {
-        var _a;
         this.options = options;
         if (this.options.s3)
             this.s3 = new s3_1.S3(this.options.s3);
-        if ((_a = this.options.web3Storage) === null || _a === void 0 ? void 0 : _a.token)
-            this.web3Storage = new web3_storage_1.Web3Storage({ token: this.options.web3Storage.token });
+        if (this.options.web3Storage?.token) {
+            if (!Web3Storage) {
+                let Lib = require('web3.storage');
+                Web3Storage = Lib.Web3Storage;
+                getFilesFromPath = Lib.getFilesFromPath;
+                File = Lib.File;
+            }
+            ;
+            this.web3Storage = new Web3Storage({ token: this.options.web3Storage.token });
+        }
     }
     ;
     async initDir() {
-        var _a;
         if (!this._initDir) {
-            if ((_a = this.options.localCache) === null || _a === void 0 ? void 0 : _a.path) {
+            if (this.options.localCache?.path) {
                 await fs_1.promises.mkdir(path_1.default.join(this.options.localCache.path, 'stat'), { recursive: true });
                 await fs_1.promises.mkdir(path_1.default.join(this.options.localCache.path, 'ipfs'), { recursive: true });
                 await fs_1.promises.mkdir(path_1.default.join(this.options.localCache.path, 'tmp'), { recursive: true });
@@ -87,8 +95,7 @@ class Storage {
     }
     ;
     async localCacheExist(type, key) {
-        var _a;
-        if ((_a = this.options.localCache) === null || _a === void 0 ? void 0 : _a.path) {
+        if (this.options.localCache?.path) {
             await this.initDir();
             try {
                 let filePath = path_1.default.join(this.options.localCache.path, type, key);
@@ -104,8 +111,7 @@ class Storage {
     }
     ;
     async getLocalCachePath(type, key) {
-        var _a;
-        if ((_a = this.options.localCache) === null || _a === void 0 ? void 0 : _a.path) {
+        if (this.options.localCache?.path) {
             await this.initDir();
             return path_1.default.join(this.options.localCache.path, type, key);
         }
@@ -178,7 +184,7 @@ class Storage {
             await this.putLocalCache('stat', rootCid, content);
         }
         ;
-        if ((paths === null || paths === void 0 ? void 0 : paths.length) > 0) {
+        if (paths?.length > 0) {
             let path = paths.shift();
             for (let i = 0; i < item.links.length; i++) {
                 if (item.links[i].name == path) {
@@ -242,7 +248,7 @@ class Storage {
         ]);
         if ((!to || to.ipfs != false) && this.web3Storage) {
             const files = [
-                new web3_storage_1.File([fileContent], 'file'),
+                new File([fileContent], 'file'),
             ];
             let cid = await this.web3Storage.put(files, {
                 name: source
@@ -296,7 +302,7 @@ class Storage {
             }
         ]);
         if ((!to || to.ipfs != false) && this.web3Storage) {
-            const files = await web3_storage_1.getFilesFromPath(filePath);
+            const files = await getFilesFromPath(filePath);
             let cid = await this.web3Storage.put(files, {
                 name: source
             });
@@ -397,7 +403,7 @@ class Storage {
             let items = await fs_1.promises.readdir(path);
             for (let i = 0; i < items.length; i++)
                 items[i] = path + '/' + items[i];
-            const files = await web3_storage_1.getFilesFromPath(items);
+            const files = await getFilesFromPath(items);
             cid = await this.web3Storage.put(files, {
                 name: source
             });
@@ -425,7 +431,6 @@ class Storage {
     }
     ;
     async putToS3(logContext, sourcePath, item, parent) {
-        var _a, _b;
         let itemType;
         if (item.type == 'dir')
             itemType = 'stat';
@@ -434,7 +439,7 @@ class Storage {
         let exists = await this.s3.hasObject(`${itemType}/${item.cid}`);
         if (!exists) {
             if (item.type == 'dir') {
-                if (((_a = item.links) === null || _a === void 0 ? void 0 : _a.length) > 0) {
+                if (item.links?.length > 0) {
                     if (sourcePath) {
                         for (let i = 0; i < item.links.length; i++)
                             await this.putToS3(logContext, path_1.default.join(sourcePath, item.links[i].name), item.links[i], item);
@@ -447,7 +452,7 @@ class Storage {
                     if (logContext) {
                         logContext.uploadItem.applyInsert({
                             cid: data.cid,
-                            logGuid: (_b = logContext.uploadLog.first) === null || _b === void 0 ? void 0 : _b.guid,
+                            logGuid: logContext.uploadLog.first?.guid,
                             parentCid: parent ? parent.cid : null,
                             size: data.size,
                             type: 1

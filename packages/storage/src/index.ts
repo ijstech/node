@@ -6,11 +6,13 @@ import Os from 'os';
 import * as IPFSUtils from '@ijstech/ipfs';
 import {IS3Options, S3} from './s3';
 import Extract from 'extract-zip';
-import { Web3Storage, getFilesFromPath, File} from 'web3.storage';
 import {getClient} from '@ijstech/db';
 import {IDbConnectionOptions} from '@ijstech/types';
 import {Context} from './log.pdm';
 
+let Web3Storage: any;
+let getFilesFromPath: any;
+let File: any;
 const appPrefix = 'sc';
 
 async function download(url: string, dest: string) {
@@ -51,15 +53,22 @@ export type IItemType = 'stat' | 'ipfs' | 'tmp';
 export class Storage{
     private options: IStorageOptions;
     private s3: S3;
-    private web3Storage: Web3Storage;
+    private web3Storage: any;
     private _initDir: boolean;
 
     constructor(options: IStorageOptions){
         this.options = options;
         if (this.options.s3)
             this.s3 = new S3(this.options.s3);        
-        if (this.options.web3Storage?.token)
-            this.web3Storage = new Web3Storage({ token: this.options.web3Storage.token});        
+        if (this.options.web3Storage?.token){
+            if (!Web3Storage){
+                let Lib = require('web3.storage');
+                Web3Storage = Lib.Web3Storage;
+                getFilesFromPath = Lib.getFilesFromPath;
+                File = Lib.File;
+            };
+            this.web3Storage = new Web3Storage({ token: this.options.web3Storage.token});   
+        }    
     };
     private async initDir(){
         if (!this._initDir){

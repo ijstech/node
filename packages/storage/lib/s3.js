@@ -101,9 +101,9 @@ class S3 {
     async listObjects(params) {
         const command = new client_s3_1.ListObjectsV2Command({
             Bucket: this.options.bucket,
-            MaxKeys: (params === null || params === void 0 ? void 0 : params.maxKeys) || 1000,
-            Prefix: (params === null || params === void 0 ? void 0 : params.prefix) || '',
-            StartAfter: (params === null || params === void 0 ? void 0 : params.startAfter) || ''
+            MaxKeys: params?.maxKeys || 1000,
+            Prefix: params?.prefix || '',
+            StartAfter: params?.startAfter || ''
         });
         let result = await this.s3.send(command);
         return result;
