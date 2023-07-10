@@ -56,17 +56,17 @@ declare module "@ijstech/eth-contract" {
             address?: string | string[];
         }): Promise<Event[]>;
         _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<string>;
-        _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<Transaction>;
+        _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<TransactionOptions>;
         utils: IWalletUtils;
     }
     export interface Event {
         name: string;
         address: string;
-        blockNumber: number;
-        logIndex: number;
+        blockNumber: BigInt;
+        logIndex: BigInt;
         topics: string[];
         transactionHash: string;
-        transactionIndex: number;
+        transactionIndex: BigInt;
         data: any;
         rawData: any;
     }
@@ -74,22 +74,22 @@ declare module "@ijstech/eth-contract" {
         address: string;
         data: string;
         topics: Array<string>;
-        logIndex: number;
+        logIndex: BigInt;
         transactionHash?: string;
-        transactionIndex: number;
+        transactionIndex: BigInt;
         blockHash?: string;
         type?: string;
-        blockNumber: number;
+        blockNumber: BigInt;
     }
     export interface IWalletEventLog {
         event: string;
         address: string;
         returnValues: any;
-        logIndex: number;
-        transactionIndex: number;
+        logIndex: BigInt;
+        transactionIndex: BigInt;
         transactionHash: string;
         blockHash: string;
-        blockNumber: number;
+        blockNumber: BigInt;
         raw?: {
             data: string;
             topics: string[];
@@ -97,38 +97,39 @@ declare module "@ijstech/eth-contract" {
     }
     export interface TransactionReceipt {
         transactionHash: string;
-        transactionIndex: number;
+        transactionIndex: BigInt;
         blockHash: string;
-        blockNumber: number;
+        blockNumber: BigInt;
         from: string;
         to: string;
         contractAddress?: string;
-        cumulativeGasUsed: number;
-        gasUsed: number;
+        cumulativeGasUsed: BigInt;
+        gasUsed: BigInt;
         logs?: Array<IWalletLog>;
         events?: {
             [eventName: string]: IWalletEventLog | IWalletEventLog[];
         };
-        status: boolean;
+        status: BigInt;
     }
     export interface Transaction {
         hash?: string;
-        nonce?: number;
+        nonce?: BigInt;
         blockHash?: string | null;
-        blockNumber?: number | null;
+        blockNumber?: BigInt | null;
         data?: string;
-        transactionIndex?: number | null;
+        transactionIndex?: BigInt | null;
         from?: string;
         to?: string | null;
         value?: BigNumber;
         gasPrice?: BigNumber;
-        maxPriorityFeePerGas?: number | string | BigNumber;
-        maxFeePerGas?: number | string | BigNumber;
-        gas?: number;
+        maxPriorityFeePerGas?: BigInt | string | BigNumber;
+        maxFeePerGas?: BigInt | string | BigNumber;
+        gas?: BigInt;
         input?: string;
     }
     export interface TransactionOptions {
         from?: string;
+        to?: string;
         nonce?: number;
         gas?: number;
         gasLimit?: number;

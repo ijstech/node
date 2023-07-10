@@ -6,7 +6,7 @@
         "outFile": "dist/index.js",        
         "rootDir": "src",
         "baseUrl": ".",
-        "target": "ES2017"
+        "target": "ES2020"
     },
     "include": [
         "src"
