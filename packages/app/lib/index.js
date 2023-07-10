@@ -28,16 +28,15 @@ function updateScriptPath(items) {
 }
 class AppServer {
     constructor(options) {
-        var _a, _b, _c;
         this.options = options;
         if (this.options.package)
             this._packageManager = new package_1.PackageManager(this.options.package);
         if (this.options.http && (this.options.http.port || this.options.http.securePort)) {
-            if (((_a = this.options.http.router) === null || _a === void 0 ? void 0 : _a.module) && !((_b = this.options.http.router) === null || _b === void 0 ? void 0 : _b.routes)) {
+            if (this.options.http.router?.module && !this.options.http.router?.routes) {
                 try {
                     let SCConfig = JSON.parse(fs_1.default.readFileSync(path_1.default.join(RootPath, this.options.http.router.module, 'scconfig.json'), 'utf-8'));
                     updateScriptPath(SCConfig.routes);
-                    (_c = this.options.http.router) === null || _c === void 0 ? void 0 : _c.routes;
+                    this.options.http.router?.routes;
                 }
                 catch (err) {
                     console.dir(err);
