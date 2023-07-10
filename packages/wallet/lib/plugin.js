@@ -121,7 +121,8 @@ const Wallet = {
     },
     async getBlockNumber() {
         let wallet = global.$$wallet_plugin;
-        return await wallet.getBlockNumber();
+        let result = await wallet.getBlockNumber();
+        return result;
     },
     async getBlockTimestamp(blockHashOrBlockNumber) {
         let wallet = global.$$wallet_plugin;

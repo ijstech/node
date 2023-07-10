@@ -4,6 +4,7 @@
         "./src"
     ],
     "compilerOptions": {
+        "target": "ES2020",
         "baseUrl": ".",
         "composite": false,
         "declaration": false,        

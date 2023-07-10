@@ -105,6 +105,7 @@ async function loadPlugin(worker, options) {
             },
             async getBlockNumber() {
                 return await wallet.getBlockNumber();
+                ;
             },
             async getBlockTimestamp(blockHashOrBlockNumber) {
                 return await wallet.getBlockTimestamp(blockHashOrBlockNumber);

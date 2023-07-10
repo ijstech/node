@@ -105,7 +105,7 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
                 return stringifyJson(await wallet.methods.apply(wallet, args));
             },            
             async getBlockNumber(): Promise<number>{
-                return await wallet.getBlockNumber();
+                return await wallet.getBlockNumber();;
             },
             async getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>{
                 return await wallet.getBlockTimestamp(blockHashOrBlockNumber)
