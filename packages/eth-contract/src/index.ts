@@ -312,6 +312,7 @@ export class Contract {
                 }
             }
         }
+        params = params || [];
         params.unshift(bytecode);
         let receipt = await this._send('', params, options);
         this.address = receipt.contractAddress;
