@@ -170,6 +170,7 @@ define("@ijstech/eth-contract", ["require", "exports", "bignumber.js"], function
                     }
                 }
             }
+            params = params || [];
             params.unshift(bytecode);
             let receipt = await this._send('', params, options);
             this.address = receipt.contractAddress;
