@@ -73,13 +73,14 @@ declare module "@ijstech/eth-contract" {
     export interface IWalletLog {
         address: string;
         data: string;
-        topics: Array<string>;
+        topics: string[];
         logIndex: BigInt;
-        transactionHash?: string;
         transactionIndex: BigInt;
-        blockHash?: string;
-        type?: string;
+        transactionHash: string;
+        blockHash: string;
         blockNumber: BigInt;
+        removed: boolean;
+        type?: string;
     }
     export interface IWalletEventLog {
         event: string;
@@ -96,6 +97,7 @@ declare module "@ijstech/eth-contract" {
         };
     }
     export interface TransactionReceipt {
+        status: BigInt;
         transactionHash: string;
         transactionIndex: BigInt;
         blockHash: string;
@@ -105,11 +107,12 @@ declare module "@ijstech/eth-contract" {
         contractAddress?: string;
         cumulativeGasUsed: BigInt;
         gasUsed: BigInt;
-        logs?: Array<IWalletLog>;
+        effectiveGasPrice: BigInt;
+        logs: IWalletLog[];
+        logsBloom: string;
         events?: {
-            [eventName: string]: IWalletEventLog | IWalletEventLog[];
+            [eventName: string]: IWalletEventLog;
         };
-        status: BigInt;
     }
     export interface Transaction {
         hash?: string;

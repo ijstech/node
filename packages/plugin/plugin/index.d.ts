@@ -18,13 +18,14 @@ export declare namespace Types{
     export interface IWalletLog {
         address: string;
         data: string;
-        topics: Array <string>;
+        topics: string[];
         logIndex: BigInt;
-        transactionHash?: string;
         transactionIndex: BigInt;
-        blockHash?: string;
-        type?: string;
+        transactionHash: string;
+        blockHash: string;
         blockNumber: BigInt;
+        removed: boolean;
+        type?: string;
     }
     export interface IWalletEventLog {
         event: string
@@ -89,6 +90,7 @@ export declare namespace Types{
         transactions: IWalletTransaction[];
     }
     export interface IWalletTransactionReceipt{
+        status: BigInt;
         transactionHash: string;
         transactionIndex: BigInt;
         blockHash: string;
@@ -98,11 +100,12 @@ export declare namespace Types{
         contractAddress?: string;
         cumulativeGasUsed: BigInt;
         gasUsed: BigInt;
-        logs ? : Array <IWalletLog>;
-        events ? : {
-            [eventName: string]: IWalletEventLog | IWalletEventLog[]
+        effectiveGasPrice: BigInt;
+        logs: IWalletLog[];
+        logsBloom: string;
+        events?: {
+            [eventName: string]: IWalletEventLog;
         };
-        status: BigInt;
     }
     export interface IWalletTokenInfo{
         name: string;
@@ -292,13 +295,14 @@ export interface IWalletEventLog {
 export interface IWalletLog {
     address: string;
     data: string;
-    topics: Array <string>;
-    logIndex: number;
-    transactionHash?: string;
-    transactionIndex: number;
-    blockHash?: string;
+    topics: string[];
+    logIndex: BigInt;
+    transactionIndex: BigInt;
+    transactionHash: string;
+    blockHash: string;
+    blockNumber: BigInt;
+    removed: boolean;
     type?: string;
-    blockNumber: number;
 }
 export interface IWalletEvent {
     name: string;
@@ -312,36 +316,22 @@ export interface IWalletEvent {
     rawData: any;
 }
 export interface IWalletTransactionReceipt{
+    status: BigInt;
     transactionHash: string;
-    transactionIndex: number;
+    transactionIndex: BigInt;
     blockHash: string;
-    blockNumber: number;
+    blockNumber: BigInt;
     from: string;
     to: string;
-    contractAddress: string;
-    cumulativeGasUsed: number;
-    gasUsed: number;
-    logs ? : Array <IWalletLog>;
-    events ? : {
-        [eventName: string]: IWalletEventLog | IWalletEventLog[]
+    contractAddress?: string;
+    cumulativeGasUsed: BigInt;
+    gasUsed: BigInt;
+    effectiveGasPrice: BigInt;
+    logs: IWalletLog[];
+    logsBloom: string;
+    events?: {
+        [eventName: string]: IWalletEventLog;
     };
-    status: string;
-}
-export interface IWalletTransactionReceipt{
-    transactionHash: string;
-    transactionIndex: number;
-    blockHash: string;
-    blockNumber: number;
-    from: string;
-    to: string;
-    contractAddress: string;
-    cumulativeGasUsed: number;
-    gasUsed: number;
-    logs ? : Array <IWalletLog>;
-    events ? : {
-        [eventName: string]: IWalletEventLog | IWalletEventLog[]
-    };
-    status: string;
 }
 export interface IWalletTransaction {
     hash: string;

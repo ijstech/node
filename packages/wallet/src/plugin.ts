@@ -47,15 +47,17 @@ export interface IWalletEventLog {
 export interface IWalletLog {
     address: string;
     data: string;
-    topics: Array <string>;
+    topics: string[];
     logIndex: BigInt;
-    transactionHash?: string;
     transactionIndex: BigInt;
-    blockHash?: string;
-    type?: string;
+    transactionHash: string;
+    blockHash: string;
     blockNumber: BigInt;
+    removed: boolean;
+    type?: string;
 }
 export interface IWalletTransactionReceipt{
+    status: BigInt;
     transactionHash: string;
     transactionIndex: BigInt;
     blockHash: string;
@@ -65,11 +67,12 @@ export interface IWalletTransactionReceipt{
     contractAddress?: string;
     cumulativeGasUsed: BigInt;
     gasUsed: BigInt;
-    logs ? : Array <IWalletLog>;
-    events ? : {
-        [eventName: string]: IWalletEventLog | IWalletEventLog[]
+    effectiveGasPrice: BigInt;
+    logs: IWalletLog[];
+    logsBloom: string;
+    events?: {
+        [eventName: string]: IWalletEventLog;
     };
-    status: boolean;
 }
 export interface IWalletEvent{
     name: string;

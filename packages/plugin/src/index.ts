@@ -21,13 +21,14 @@ export declare namespace Types{
     export interface IWalletLog {
         address: string;
         data: string;
-        topics: Array <string>;
-        logIndex: number;
-        transactionHash?: string;
-        transactionIndex: number;
-        blockHash?: string;
+        topics: string[];
+        logIndex: BigInt;
+        transactionIndex: BigInt;
+        transactionHash: string;
+        blockHash: string;
+        blockNumber: BigInt;
+        removed: boolean;
         type?: string;
-        blockNumber: number;
     }
     export interface IWalletEventLog {
         event: string
@@ -93,20 +94,22 @@ export declare namespace Types{
         transactions: IWalletTransaction[];
     }
     export interface IWalletTransactionReceipt{
+        status: BigInt;
         transactionHash: string;
-        transactionIndex: number;
+        transactionIndex: BigInt;
         blockHash: string;
-        blockNumber: number;
+        blockNumber: BigInt;
         from: string;
         to: string;
         contractAddress?: string;
-        cumulativeGasUsed: number;
-        gasUsed: number;
-        logs ? : Array <IWalletLog>;
-        events ? : {
-            [eventName: string]: IWalletEventLog | IWalletEventLog[]
+        cumulativeGasUsed: BigInt;
+        gasUsed: BigInt;
+        effectiveGasPrice: BigInt;
+        logs: IWalletLog[];
+        logsBloom: string;
+        events?: {
+            [eventName: string]: IWalletEventLog;
         };
-        status: boolean;
     }
     export interface IWalletTokenInfo{
         name: string;
