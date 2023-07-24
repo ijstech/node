@@ -35,6 +35,7 @@ export declare class VM {
     private _script;
     private compiledScript;
     private timeLimitTimer;
+    private readyCallbacks;
     private executing;
     loadedPlugins: ILoadedVM;
     constructor(options?: IVMOptions);
@@ -52,7 +53,10 @@ export declare class VM {
     private compileScript;
     getGlobalValue(name: string): Promise<any>;
     private emitEvent;
-    execute(): Promise<any>;
+    private ready;
+    execute(params: {
+        [name: string]: any;
+    }): Promise<any>;
     eval(script: string): Promise<Ivm.Transferable>;
     on(event: Events, cb: any): void;
     resetContext(): void;

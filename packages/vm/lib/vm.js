@@ -36,6 +36,7 @@ exports.DefaultRamLimit = 128;
 exports.DefaultLogging = false;
 class VM {
     constructor(options) {
+        this.readyCallbacks = [];
         this.loadedPlugins = {};
         this.memoryLimit = options && options.memoryLimit != undefined ? options.memoryLimit : exports.DefaultRamLimit;
         this.timeLimit = options && options.timeLimit != undefined ? options.timeLimit : exports.DefaultTimeLimit;
@@ -245,36 +246,57 @@ class VM {
         this.events.emit(event, data);
     }
     ;
-    async execute() {
-        if (this.executing)
-            return;
-        if (!this.context)
-            this.setupContext();
-        this.executing = true;
-        let cpuStart = this.isolate.cpuTime;
-        try {
-            if (this.timeLimit) {
-                clearTimeout(this.timeLimitTimer);
-                this.timeLimitTimer = setTimeout(() => {
-                    this.emitEvent('timeout');
-                    this.resetContext();
-                }, this.timeLimit);
-            }
-            let result;
-            try {
-                result = await this.compiledScript.apply(undefined, [], { reference: true, result: { copy: true, promise: true } });
-                this.cpuTime = Number(this.isolate.cpuTime - cpuStart);
-                clearTimeout(this.timeLimitTimer);
-            }
-            catch (err) {
-                clearTimeout(this.timeLimitTimer);
-                this.emitEvent('error', err);
-            }
-            return result;
-        }
-        finally {
-            this.executing = false;
-        }
+    ready(callback) {
+        if (this.executing || this.readyCallbacks.length > 0)
+            this.readyCallbacks.push(callback);
+        else
+            callback();
+    }
+    ;
+    async execute(params) {
+        return new Promise(async (resolve, reject) => {
+            this.ready(async () => {
+                this.executing = true;
+                let cpuStart = this.isolate.cpuTime;
+                try {
+                    if (params) {
+                        for (let name in params)
+                            this.injectGlobalValue(name, params[name]);
+                    }
+                    ;
+                    if (!this.context)
+                        this.setupContext();
+                    if (this.timeLimit) {
+                        clearTimeout(this.timeLimitTimer);
+                        this.timeLimitTimer = setTimeout(() => {
+                            this.emitEvent('timeout');
+                            this.resetContext();
+                        }, this.timeLimit);
+                    }
+                    let result;
+                    try {
+                        result = await this.compiledScript.apply(undefined, [], { reference: true, result: { copy: true, promise: true } });
+                        this.cpuTime = Number(this.isolate.cpuTime - cpuStart);
+                        clearTimeout(this.timeLimitTimer);
+                        resolve(result);
+                    }
+                    catch (err) {
+                        clearTimeout(this.timeLimitTimer);
+                        this.emitEvent('error', err);
+                        reject(err);
+                    }
+                }
+                finally {
+                    this.executing = false;
+                }
+                ;
+                setTimeout(() => {
+                    let readyCB = this.readyCallbacks.shift();
+                    if (readyCB)
+                        readyCB();
+                }, 1);
+            });
+        });
     }
     ;
     async eval(script) {

@@ -614,20 +614,28 @@ class RouterPluginVM extends PluginVM implements IRouterPlugin{
         return;
     };
     async init(session: ISession, params?: any): Promise<void>{
-        this.vm.injectGlobalValue('$$init', true);
+        let globalValues: any = {
+            '$$init': true
+        };
         if (params != null)
-            this.vm.injectGlobalValue('$$data', JSON.stringify(params));
-        await this.vm.execute();
+           globalValues['$$data'] = JSON.stringify(params);
+        await this.vm.execute(globalValues);
     };
     async route(session: ISession, request: IRouterRequest, response: IRouterResponse): Promise<boolean>{
-        this.vm.injectGlobalValue('$$request', request);
-        this.vm.injectGlobalValue('$$response', response);
-        let result = await this.vm.execute();
-        if (result !== true){
-            response.statusCode = 500
-            response.end('');
+        try{
+            let result = await this.vm.execute({
+                '$$request': request,
+                '$$response': response
+            });
+            if (result !== true){
+                response.statusCode = 500
+                response.end('');
+            };
+            return true;
+        }
+        catch(err){
+            console.dir(err)
         };
-        return true;
     };
 };
 class WorkerPluginVM extends PluginVM implements IWorkerPlugin{
@@ -672,23 +680,33 @@ class WorkerPluginVM extends PluginVM implements IWorkerPlugin{
         return true;
     };
     async init(session: ISession, params?: any): Promise<void>{
-        this.vm.injectGlobalValue('$$init', true);
+        let globalValues: any = {
+            '$$init': true
+        };
         if (params != null)
-            this.vm.injectGlobalValue('$$data', JSON.stringify(params));
-        await this.vm.execute();
+            globalValues['$$data'] = JSON.stringify(params);
+        await this.vm.execute(globalValues);
     };
     async message(session: ISession, channel: string, msg: string){
-        this.vm.injectGlobalValue('$$data', JSON.stringify({channel, msg}));
-        let result = await this.vm.execute();
+        let result = await this.vm.execute({
+            '$$data': JSON.stringify({channel, msg})
+        });
         return result;
-        // this.vm.injectGlobalValue('$$message', {channel, msg});
-        // this.vm.execute();
     };
-    async process(session: ISession, data?: any): Promise<boolean>{
-        if (data != null)
-            this.vm.injectGlobalValue('$$data', JSON.stringify(data));
-        let result = await this.vm.execute();
-        return result;
+    async process(session: ISession, data?: any): Promise<any>{
+        try{
+            let globalValues: any;
+            if (data != null){
+                globalValues = {
+                    '$$data': JSON.stringify(data)
+                };
+            };
+            let result = await this.vm.execute(globalValues);
+            return result;
+        }
+        catch(err){
+            console.dir(err);
+        };
     };
 };
 function Session(options: IPluginOptions): ISession{

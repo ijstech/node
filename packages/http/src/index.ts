@@ -239,7 +239,7 @@ export class HttpServer {
                     }
                     else{
                         ctx.set('Access-Control-Allow-Origin', '*');
-                    };                 
+                    };
                     if (ctx.method == 'OPTIONS'){
                         ctx.set('Access-Control-Allow-Headers', 'content-type');
                         ctx.status = 200;
@@ -252,6 +252,9 @@ export class HttpServer {
                 if (this.options.router && this.options.router.routes){
                     let matched = await this.getRouter(ctx);
                     if (matched?.router){
+                        if (ctx.method == 'OPTIONS'){
+                            return;
+                        };
                         let router = matched.router;
                         let baseUrl = matched.baseUrl;
                         if (this.options?.router?.module)
@@ -334,7 +337,7 @@ export class HttpServer {
                                     // await plugin.init(route.params);
                                 };
                             };
-                            if (plugin){                                                
+                            if (plugin && (['DELETE','GET','POST','PUT'].indexOf(ctx.method) >=0)){                                                
                                 let request = RouterRequest(ctx);                                                
                                 if (params === true)
                                     request.params = {}
@@ -346,7 +349,7 @@ export class HttpServer {
                             };
                         }
                     };
-                };
+                };                
                 await next();
             });
         };

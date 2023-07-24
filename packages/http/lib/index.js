@@ -238,6 +238,10 @@ class HttpServer {
                 if (this.options.router && this.options.router.routes) {
                     let matched = await this.getRouter(ctx);
                     if (matched?.router) {
+                        if (ctx.method == 'OPTIONS') {
+                            return;
+                        }
+                        ;
                         let router = matched.router;
                         let baseUrl = matched.baseUrl;
                         if (this.options?.router?.module)
@@ -323,7 +327,7 @@ class HttpServer {
                                 ;
                             }
                             ;
-                            if (plugin) {
+                            if (plugin && (['DELETE', 'GET', 'POST', 'PUT'].indexOf(ctx.method) >= 0)) {
                                 let request = plugin_1.RouterRequest(ctx);
                                 if (params === true)
                                     request.params = {};

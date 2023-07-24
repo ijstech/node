@@ -335,8 +335,8 @@ declare class RouterPluginVM extends PluginVM implements IRouterPlugin {
 declare class WorkerPluginVM extends PluginVM implements IWorkerPlugin {
     setup(): Promise<boolean>;
     init(session: ISession, params?: any): Promise<void>;
-    message(session: ISession, channel: string, msg: string): Promise<any>;
-    process(session: ISession, data?: any): Promise<boolean>;
+    message(session: ISession, channel: string, msg: string): Promise<unknown>;
+    process(session: ISession, data?: any): Promise<any>;
 }
 declare class Plugin {
     protected options: IPluginOptions;
