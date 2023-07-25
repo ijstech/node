@@ -282,6 +282,10 @@ class PluginVM {
         });
     }
     ;
+    get id() {
+        return this.options.id;
+    }
+    ;
     async setup() {
         await this.loadDependencies();
         this.vm.injectGlobalScript(this.options.script);
@@ -483,6 +487,10 @@ function Session(options) {
 class Plugin {
     constructor(options) {
         this.options = options;
+    }
+    ;
+    get id() {
+        return this.options.id;
     }
     ;
     async addPackage(packName, script) {

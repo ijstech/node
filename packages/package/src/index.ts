@@ -63,6 +63,7 @@ export function matchRoute(pack: IDomainRouterPackage, route: IRoute, url: strin
         return Object.assign({}, result.params);
 };
 export interface IDomainRouterPackage{
+    id?: string;
     baseUrl: string;
     packagePath: string;
     params?: any;
@@ -269,7 +270,7 @@ export class PackageManager{
         domain: string,
         method: string,
         url: string
-    }): Promise<{pack: Package, route: IRoute, options: IDomainOptions, params: any}>{
+    }): Promise<{id: string, pack: Package, route: IRoute, options: IDomainOptions, params: any}>{
         let packs = this.domainRouterPackages[ctx.domain];
         if (packs){
             let method = ctx.method as IRouterPluginMethod;
@@ -304,6 +305,7 @@ export class PackageManager{
                                     params = params || {};
                                 };                                                
                                 return {
+                                    id: pack.id,
                                     options: pack.options,
                                     pack: p,
                                     params,

@@ -7,7 +7,7 @@
 import {LocalCache} from './local';
 import {RedisCache} from './redis';
 import {VM} from '@ijstech/vm';
-import {ICachePlugin, ICacheClientOptions} from '@ijstech/types';
+import {ICachePlugin, ICacheClientOptions, IWorker} from '@ijstech/types';
 export{ ICachePlugin as ICacheClient, ICacheClientOptions };
 
 let Clients = {};
@@ -26,21 +26,25 @@ export function getClient(options?: ICacheClientOptions): ICachePlugin{
     }
 };
 
-export function loadPlugin(plugin: Worker, options: ICacheClientOptions, vm?: VM): ICachePlugin {
+export function loadPlugin(plugin: IWorker, options: ICacheClientOptions, vm?: VM): ICachePlugin {
     return {
         async get(key: string): Promise<string>{
             let client = getClient(options);
+            key = `${plugin.id||''}:${key}`;
             return await client.get(key);
         },
         async set(key: string, value: any, expires?: number): Promise<boolean>{
+            key = `${plugin.id||''}:${key}`;
             let client = getClient(options);
             return await client.set(key, value, expires);
         },
         async del(key: string): Promise<boolean>{
+            key = `${plugin.id||''}:${key}`;
             let client = getClient(options);
             return await client.del(key);
         },
         async getValue(key: string): Promise<any>{
+            key = `${plugin.id||''}:${key}`;
             let client = getClient(options);
             let value = await client.get(key);
             if (vm) //can returns string value to VM only

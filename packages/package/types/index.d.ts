@@ -50,6 +50,7 @@ export interface ISCConfig {
 }
 export declare function matchRoute(pack: IDomainRouterPackage, route: IRoute, url: string): any;
 export interface IDomainRouterPackage {
+    id?: string;
     baseUrl: string;
     packagePath: string;
     params?: any;
@@ -122,6 +123,7 @@ export declare class PackageManager {
         method: string;
         url: string;
     }): Promise<{
+        id: string;
         pack: Package;
         route: IRoute;
         options: IDomainOptions;

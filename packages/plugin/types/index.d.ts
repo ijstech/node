@@ -323,6 +323,7 @@ declare class PluginVM {
     protected options: IPluginOptions;
     vm: VM;
     constructor(options: IPluginOptions);
+    get id(): string;
     setup(): Promise<boolean>;
     private loadPackage;
     loadDependencies(): Promise<void>;
@@ -335,7 +336,7 @@ declare class RouterPluginVM extends PluginVM implements IRouterPlugin {
 declare class WorkerPluginVM extends PluginVM implements IWorkerPlugin {
     setup(): Promise<boolean>;
     init(session: ISession, params?: any): Promise<void>;
-    message(session: ISession, channel: string, msg: string): Promise<unknown>;
+    message(session: ISession, channel: string, msg: string): Promise<any>;
     process(session: ISession, data?: any): Promise<any>;
 }
 declare class Plugin {
@@ -346,6 +347,7 @@ declare class Plugin {
     vm: VM;
     data: any;
     constructor(options: IPluginOptions);
+    get id(): string;
     addPackage(packName: string, script?: string): Promise<void>;
     createPlugin(): Promise<void>;
     createVM(): any;

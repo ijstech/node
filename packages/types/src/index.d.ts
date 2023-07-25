@@ -68,20 +68,34 @@ export interface VM {
     injectGlobalScript(script: string): void;
 }
 export interface IWorker {
+    id: string;
     data: any;
     vm: VM;
 }
 export interface IPluginOptions {
+    id?: string;
     memoryLimit?: number;
     timeLimit?: number;
     isolated?: boolean;
-    script?: string;
+    github?: IGithubOptions;
     modulePath?: string;
+    script?: string;
     scriptPath?: string;
     params?: any;
     dependencies?: IDependencies;
     plugins?: IRequiredPlugins;
 }
+// export interface IPluginOptions {
+//     memoryLimit?: number;
+//     timeLimit?: number;
+//     isolated?: boolean;
+//     script?: string;
+//     modulePath?: string;
+//     scriptPath?: string;
+//     params?: any;
+//     dependencies?: IDependencies;
+//     plugins?: IRequiredPlugins;
+// }
 export interface IWorkerPluginOptions extends IPluginOptions{
     processing?: boolean;
 }
@@ -508,17 +522,6 @@ export interface IGithubOptions {
     org: string;
     repo: string;
     token?: string;
-}
-export interface IPluginOptions {
-    memoryLimit?: number;
-    timeLimit?: number;
-    isolated?: boolean;
-    github?: IGithubOptions;
-    script?: string;
-    scriptPath?: string;
-    params?: any;
-    dependencies?: IDependencies;
-    plugins?: IRequiredPlugins;
 }
 export interface IRequiredPlugins{
     cache?: ICacheClientOptions,

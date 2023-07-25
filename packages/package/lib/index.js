@@ -253,6 +253,7 @@ class PackageManager {
                                 }
                                 ;
                                 return {
+                                    id: pack.id,
                                     options: pack.options,
                                     pack: p,
                                     params,

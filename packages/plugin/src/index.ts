@@ -540,6 +540,9 @@ class PluginVM{
             timeLimit: options.timeLimit
         });
     };
+    get id(): string{
+        return this.options.id;
+    };
     async setup(): Promise<boolean>{
         await this.loadDependencies();        
         this.vm.injectGlobalScript(this.options.script);        
@@ -725,6 +728,9 @@ class Plugin{
 
     constructor(options: IPluginOptions){
         this.options = options;   
+    };
+    get id(): string{
+        return this.options.id;
     };
     async addPackage(packName: string, script?: string){
         await this.createPlugin();

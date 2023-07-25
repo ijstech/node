@@ -4,8 +4,8 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 import { VM } from '@ijstech/vm';
-import { ICachePlugin, ICacheClientOptions } from '@ijstech/types';
+import { ICachePlugin, ICacheClientOptions, IWorker } from '@ijstech/types';
 export { ICachePlugin as ICacheClient, ICacheClientOptions };
 export declare function getClient(options?: ICacheClientOptions): ICachePlugin;
-export declare function loadPlugin(plugin: Worker, options: ICacheClientOptions, vm?: VM): ICachePlugin;
+export declare function loadPlugin(plugin: IWorker, options: ICacheClientOptions, vm?: VM): ICachePlugin;
 export default loadPlugin;
