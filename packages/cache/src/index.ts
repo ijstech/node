@@ -30,21 +30,25 @@ export function loadPlugin(plugin: IWorker, options: ICacheClientOptions, vm?: V
     return {
         async get(key: string): Promise<string>{
             let client = getClient(options);
-            key = `${plugin.id||''}:${key}`;
+            if (!key.startsWith('$g:'))
+                key = `${plugin.id||''}:${key}`;
             return await client.get(key);
         },
         async set(key: string, value: any, expires?: number): Promise<boolean>{
-            key = `${plugin.id||''}:${key}`;
+            if (!key.startsWith('$g:'))
+                key = `${plugin.id||''}:${key}`;
             let client = getClient(options);
             return await client.set(key, value, expires);
         },
         async del(key: string): Promise<boolean>{
-            key = `${plugin.id||''}:${key}`;
+            if (!key.startsWith('$g:'))
+                key = `${plugin.id||''}:${key}`;
             let client = getClient(options);
             return await client.del(key);
         },
         async getValue(key: string): Promise<any>{
-            key = `${plugin.id||''}:${key}`;
+            if (!key.startsWith('$g:'))
+                key = `${plugin.id||''}:${key}`;
             let client = getClient(options);
             let value = await client.get(key);
             if (vm) //can returns string value to VM only

@@ -29,21 +29,25 @@ function loadPlugin(plugin, options, vm) {
     return {
         async get(key) {
             let client = getClient(options);
-            key = `${plugin.id || ''}:${key}`;
+            if (!key.startsWith('$g:'))
+                key = `${plugin.id || ''}:${key}`;
             return await client.get(key);
         },
         async set(key, value, expires) {
-            key = `${plugin.id || ''}:${key}`;
+            if (!key.startsWith('$g:'))
+                key = `${plugin.id || ''}:${key}`;
             let client = getClient(options);
             return await client.set(key, value, expires);
         },
         async del(key) {
-            key = `${plugin.id || ''}:${key}`;
+            if (!key.startsWith('$g:'))
+                key = `${plugin.id || ''}:${key}`;
             let client = getClient(options);
             return await client.del(key);
         },
         async getValue(key) {
-            key = `${plugin.id || ''}:${key}`;
+            if (!key.startsWith('$g:'))
+                key = `${plugin.id || ''}:${key}`;
             let client = getClient(options);
             let value = await client.get(key);
             if (vm)
