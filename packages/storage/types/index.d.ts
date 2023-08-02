@@ -21,9 +21,10 @@ export declare type IItemType = 'stat' | 'ipfs' | 'tmp';
 export declare class Storage {
     private options;
     private s3;
-    private web3Storage;
+    private _web3Storage;
     private _initDir;
     constructor(options: IStorageOptions);
+    private get web3Storage();
     private initDir;
     private localCacheExist;
     private getLocalCachePath;
