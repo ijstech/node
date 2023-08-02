@@ -155,13 +155,34 @@ export class Storage{
         if (await this.localCacheExist('stat', rootCid)){
             item = JSON.parse(await this.getLocalCache('stat', rootCid))
         }
-        else if (this.s3){
-            let content = await this.s3.getObject(`stat/${rootCid}`)
-            item = JSON.parse(content);
-            if ((await IPFSUtils.hashItems(item.links)).cid != rootCid)
-                throw new Error('CID not match');
-            await this.putLocalCache('stat', rootCid, content);
-        };        
+        else if (!filePath && await this.localCacheExist('ipfs', rootCid)){
+            return await this.getLocalCachePath('ipfs', rootCid);
+        }
+        else if (this.s3) {
+            if (await this.s3.hasObject(`stat/${rootCid}`)){
+                let content = await this.s3.getObject(`stat/${rootCid}`);
+                item = JSON.parse(content);
+                if ((await IPFSUtils.hashItems(item.links)).cid != rootCid)
+                    throw new Error('CID not match');
+                await this.putLocalCache('stat', rootCid, content);
+            }
+            else if (!filePath && await this.s3.hasObject(`ipfs/${rootCid}`)){
+                let targetFilePath = await this.getLocalCachePath('ipfs', rootCid);
+                if (targetFilePath) {
+                    let tmpFilePath = await this.getLocalCachePath('tmp', rootCid);
+                    let success = await this.s3.downloadObject(`ipfs/${rootCid}`, tmpFilePath);
+                    if (!success)
+                        throw new Error('Failed to download file');
+                    let { cid } = await IPFSUtils.hashFile(tmpFilePath);
+                    if (cid != rootCid) {
+                        await Fs.rm(tmpFilePath);
+                        throw new Error('CID not match');
+                    };
+                    await this.moveFile(tmpFilePath, targetFilePath);
+                    return targetFilePath;
+                };
+            };
+        };
         if (paths?.length > 0){
             let path = paths.shift();
             for (let i = 0; i < item.links.length; i++){
