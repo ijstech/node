@@ -7,7 +7,7 @@
 import {Wallet, IAccount, IWallet, BigNumber} from '@ijstech/eth-wallet';
 import {IWorker} from '@ijstech/types';
 import {IWalletLog, IWalletRequiredPluginOptions, IWalletEventLog, IAbiDefinition} from '@ijstech/types';
-import {IWalletPluginObject, IWalletTransaction} from './plugin';
+import {IWalletBlockTransactionObject, IWalletPluginObject, IWalletTransaction} from './plugin';
 
 function getWalletPlugin(): IWallet{
     return global.$$wallet_plugin;
@@ -73,6 +73,9 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
             },
             async decodeEventData(data: IWalletLog, events?: any): Promise<string>{
                 return stringifyJson(await wallet.decodeEventData(data, events))
+            },
+            decodeErrorMessage(msg: string): any{
+                return stringifyJson(wallet.decodeErrorMessage(msg))
             },
             decodeLog(inputs: any, hexString: string, topics: any): string{
                 return stringifyJson(wallet.decodeLog(inputs, hexString, topics));

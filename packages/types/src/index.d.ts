@@ -195,20 +195,19 @@ export interface IWalletEvent{
     rawData: any;
 }
 export interface IWalletTransaction {
-    hash?: string;
-    nonce?: BigInt;
-    blockHash?: string | null;
-    blockNumber?: BigInt | null;
-    data?: string;
-    transactionIndex?: BigInt | null;
-    from?: string;
-    to?: string | null;
-    value?: BigNumber;
-    gasPrice?: BigNumber;
+    hash: string;
+    nonce: BigInt;
+    blockHash: string | null;
+    blockNumber: BigInt | null;
+    transactionIndex: BigInt | null;
+    from: string;
+    to: string | null;
+    value: BigNumber;
+    gasPrice: BigNumber;
     maxPriorityFeePerGas?: BigInt | string | BigNumber;
     maxFeePerGas?: BigInt | string | BigNumber;
-    gas?: BigInt;
-    input?: string;
+    gas: BigInt;
+    input: string;
 }
 export interface IWalletTransactionOptions {
     from?: string;
@@ -220,7 +219,7 @@ export interface IWalletTransactionOptions {
     data?: string;
     value?: BigNumber | number;
 }
-export interface IWalletBlockTransactionObject{
+export interface IWalletBlockTransactionObject {
     number: BigInt;
     hash: string;
     parentHash: string;

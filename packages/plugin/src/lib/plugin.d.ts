@@ -67,7 +67,7 @@ export declare namespace Types{
         gas: BigInt;
         input: string;
     }
-    export interface IWalletBlockTransactionObject{
+    export interface IWalletBlockTransactionObject {
         number: BigInt;
         hash: string;
         parentHash: string;
@@ -335,21 +335,21 @@ export interface IWalletTransactionReceipt{
 }
 export interface IWalletTransaction {
     hash: string;
-    nonce: number;
+    nonce: BigInt;
     blockHash: string | null;
-    blockNumber: number | null;
-    transactionIndex: number | null;
+    blockNumber: BigInt | null;
+    transactionIndex: BigInt | null;
     from: string;
     to: string | null;
     value: BigNumber;
     gasPrice: BigNumber;
-    maxPriorityFeePerGas?: number | string | BigNumber;
-    maxFeePerGas?: number | string | BigNumber;
-    gas: number;
+    maxPriorityFeePerGas?: BigInt | string | BigNumber;
+    maxFeePerGas?: BigInt | string | BigNumber;
+    gas: BigInt;
     input: string;
 }
-export interface IWalletBlockTransactionObject{
-    number: number;
+export interface IWalletBlockTransactionObject {
+    number: BigInt;
     hash: string;
     parentHash: string;
     nonce: string;
@@ -360,13 +360,13 @@ export interface IWalletBlockTransactionObject{
     receiptsRoot: string;
     miner: string;
     extraData: string;
-    gasLimit: number;
-    gasUsed: number;
-    timestamp: number | string;
-    baseFeePerGas?: number;
-    size: number;
-    difficulty: number;
-    totalDifficulty: number;
+    gasLimit: BigInt;
+    gasUsed: BigInt;
+    timestamp: BigInt | string;
+    baseFeePerGas?: BigInt;
+    size: BigInt;
+    difficulty: BigInt;
+    totalDifficulty: BigInt;
     uncles: string[];
     transactions: IWalletTransaction[];
 }

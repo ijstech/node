@@ -92,6 +92,10 @@ define("plugin", ["require", "exports", "bignumber.js"], function (require, expo
             let wallet = global.$$wallet_plugin;
             return parseJson(wallet.decode(abi, event, raw));
         },
+        decodeErrorMessage(msg) {
+            let wallet = global.$$wallet_plugin;
+            return parseJson(wallet.decodeErrorMessage(msg));
+        },
         async decodeEventData(data, events) {
             let wallet = global.$$wallet_plugin;
             return parseJson(await wallet.decodeEventData(data, events));
