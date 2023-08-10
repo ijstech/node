@@ -86,20 +86,19 @@ export interface IWalletEvent{
     rawData: any;
 }
 export interface IWalletTransaction {
-    hash?: string;
-    nonce?: BigInt;
-    blockHash?: string | null;
-    blockNumber?: BigInt | null;
-    data?: string;
-    transactionIndex?: BigInt | null;
-    from?: string;
-    to?: string | null;
-    value?: BigNumber;
-    gasPrice?: BigNumber;
+    hash: string;
+    nonce: BigInt;
+    blockHash: string | null;
+    blockNumber: BigInt | null;
+    transactionIndex: BigInt | null;
+    from: string;
+    to: string | null;
+    value: BigNumber;
+    gasPrice: BigNumber;
     maxPriorityFeePerGas?: BigInt | string | BigNumber;
     maxFeePerGas?: BigInt | string | BigNumber;
-    gas?: BigInt;
-    input?: string;
+    gas: BigInt;
+    input: string;
 }
 export interface IWalletTransactionOptions {
     from?: string;
@@ -111,7 +110,7 @@ export interface IWalletTransactionOptions {
     data?: string;
     value?: BigNumber | number;
 }
-export interface IWalletBlockTransactionObject{
+export interface IWalletBlockTransactionObject {
     number: BigInt;
     hash: string;
     parentHash: string;
@@ -185,6 +184,7 @@ export interface IWallet {
     createAccount(): IWalletAccount;
     decode(abi:any, event:IWalletLog|IWalletEventLog, raw?:{data: string,topics: string[]}): IWalletEvent;    
     decodeEventData(data: IWalletLog, events?: any): Promise<IWalletEvent>;
+    decodeErrorMessage(msg: string): any;  
     decodeLog(inputs: any, hexString: string, topics: any): any;
     defaultAccount: string;
     getAbiEvents(abi: any[]): any;
@@ -247,6 +247,7 @@ export interface IWalletPluginObject{
     createAccount(): string;
     decode(abi:any, event:IWalletLog|IWalletEventLog, raw?:{data: string,topics: string[]}): string;
     decodeEventData(data: IWalletLog, events?: any): Promise<string>;
+    decodeErrorMessage(msg: string): any;  
     decodeLog(inputs: any, hexString: string, topics: any): string;
     getAbiEvents(abi: any[]): string;
     getAbiTopics(abi: any[], eventNames: string[]): string;
@@ -354,6 +355,10 @@ const Wallet: IWallet = {
     decode(abi:any, event:IWalletLog|IWalletEventLog, raw?:{data: string,topics: string[]}): IWalletEvent{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
         return parseJson(wallet.decode(abi, event, raw))
+    },
+    decodeErrorMessage(msg: string): any{
+        let wallet: IWalletPluginObject = global.$$wallet_plugin;
+        return parseJson(wallet.decodeErrorMessage(msg))
     },
     async decodeEventData(data: IWalletLog, events?: any): Promise<IWalletEvent>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;

@@ -56,23 +56,22 @@ export declare namespace Types{
         rawData: any;
     }
     export interface IWalletTransaction {
-        hash?: string;
-        nonce?: number;
-        blockHash?: string | null;
-        blockNumber?: number | null;
-        data?: string;
-        transactionIndex?: number | null;
-        from?: string;
-        to?: string | null;
-        value?: BigNumber;
-        gasPrice?: BigNumber;
-        maxPriorityFeePerGas?: number | string | BigNumber;
-        maxFeePerGas?: number | string | BigNumber;
-        gas?: number;
-        input?: string;
+        hash: string;
+        nonce: BigInt;
+        blockHash: string | null;
+        blockNumber: BigInt | null;
+        transactionIndex: BigInt | null;
+        from: string;
+        to: string | null;
+        value: BigNumber;
+        gasPrice: BigNumber;
+        maxPriorityFeePerGas?: BigInt | string | BigNumber;
+        maxFeePerGas?: BigInt | string | BigNumber;
+        gas: BigInt;
+        input: string;
     }
-    export interface IWalletBlockTransactionObject{
-        number: number;
+    export interface IWalletBlockTransactionObject {
+        number: BigInt;
         hash: string;
         parentHash: string;
         nonce: string;
@@ -83,13 +82,13 @@ export declare namespace Types{
         receiptsRoot: string;
         miner: string;
         extraData: string;
-        gasLimit: number;
-        gasUsed: number;
-        timestamp: number | string;
-        baseFeePerGas?: number;
-        size: number;
-        difficulty: number;
-        totalDifficulty: number;
+        gasLimit: BigInt;
+        gasUsed: BigInt;
+        timestamp: BigInt | string;
+        baseFeePerGas?: BigInt;
+        size: BigInt;
+        difficulty: BigInt;
+        totalDifficulty: BigInt;
         uncles: string[];
         transactions: IWalletTransaction[];
     }
@@ -143,7 +142,8 @@ export declare namespace Types{
         _call(abiHash: string, address: string, methodName:string, params?:any[], options?:any): Promise<any>;    
         chainId: number;
         createAccount(): IWalletAccount;
-        decode(abi:any, event:IWalletLog|IWalletEventLog, raw?:{data: string,topics: string[]}): IWalletEvent;    
+        decode(abi:any, event:IWalletLog|IWalletEventLog, raw?:{data: string,topics: string[]}): IWalletEvent;  
+        decodeErrorMessage(msg: string): any;  
         decodeEventData(data: IWalletLog, events?: any): Promise<IWalletEvent>;
         decodeLog(inputs: any, hexString: string, topics: any): any;
         defaultAccount: string;
@@ -199,6 +199,7 @@ export declare namespace Types{
     }
     export interface IMessagePlugin {
         publish(channel: string|number, msg: string):void;
+        subscribe(channel: string|number, cb?: (error: Error, msg: string) => void):void;
     }
     export interface IPlugins{
         cache?: ICachePlugin;

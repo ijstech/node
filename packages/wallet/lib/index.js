@@ -73,6 +73,9 @@ async function loadPlugin(worker, options) {
             async decodeEventData(data, events) {
                 return stringifyJson(await wallet.decodeEventData(data, events));
             },
+            decodeErrorMessage(msg) {
+                return stringifyJson(wallet.decodeErrorMessage(msg));
+            },
             decodeLog(inputs, hexString, topics) {
                 return stringifyJson(wallet.decodeLog(inputs, hexString, topics));
             },
