@@ -61,11 +61,11 @@ export interface IWallet {
 export interface Event {
     name: string;
     address: string;
-    blockNumber: BigInt;
-    logIndex: BigInt;
+    blockNumber: bigint;
+    logIndex: bigint;
     topics: string[];
     transactionHash: string;
-    transactionIndex: BigInt;
+    transactionIndex: bigint;
     data: any;
     rawData: any;
 }
@@ -73,11 +73,11 @@ export interface IWalletLog {
     address: string;
     data: string;
     topics: string[];
-    logIndex: BigInt;
-    transactionIndex: BigInt;
+    logIndex: bigint;
+    transactionIndex: bigint;
     transactionHash: string;
     blockHash: string;
-    blockNumber: BigInt;
+    blockNumber: bigint;
     removed: boolean;
     type?: string;
 }
@@ -85,28 +85,28 @@ export interface IWalletEventLog {
     event: string;
     address: string;
     returnValues: any;
-    logIndex: BigInt;
-    transactionIndex: BigInt;
+    logIndex: bigint;
+    transactionIndex: bigint;
     transactionHash: string;
     blockHash: string;
-    blockNumber: BigInt;
+    blockNumber: bigint;
     raw?: {
         data: string;
         topics: string[];
     };
 }
 export interface TransactionReceipt {
-    status: BigInt;
+    status: bigint;
     transactionHash: string;
-    transactionIndex: BigInt;
+    transactionIndex: bigint;
     blockHash: string;
-    blockNumber: BigInt;
+    blockNumber: bigint;
     from: string;
     to: string;
     contractAddress?: string;
-    cumulativeGasUsed: BigInt;
-    gasUsed: BigInt;
-    effectiveGasPrice: BigInt;
+    cumulativeGasUsed: bigint;
+    gasUsed: bigint;
+    effectiveGasPrice: bigint;
     logs: IWalletLog[];
     logsBloom: string;
     events?: {
@@ -115,18 +115,18 @@ export interface TransactionReceipt {
 }
 export interface Transaction {
     hash?: string;
-    nonce?: BigInt;
+    nonce?: bigint;
     blockHash?: string | null;
-    blockNumber?: BigInt | null;
+    blockNumber?: bigint | null;
     data?: string;
-    transactionIndex?: BigInt | null;
+    transactionIndex?: bigint | null;
     from?: string;
     to?: string | null;
     value?: BigNumber;
     gasPrice?: BigNumber;
-    maxPriorityFeePerGas?: BigInt | string | BigNumber;
-    maxFeePerGas?: BigInt | string | BigNumber;
-    gas?: BigInt;
+    maxPriorityFeePerGas?: bigint | string | BigNumber;
+    maxFeePerGas?: bigint | string | BigNumber;
+    gas?: bigint;
     input?: string;
 }
 export interface TransactionOptions {
