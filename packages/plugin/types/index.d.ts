@@ -17,11 +17,11 @@ export declare namespace Types {
         address: string;
         data: string;
         topics: string[];
-        logIndex: BigInt;
-        transactionIndex: BigInt;
+        logIndex: bigint;
+        transactionIndex: bigint;
         transactionHash: string;
         blockHash: string;
-        blockNumber: BigInt;
+        blockNumber: bigint;
         removed: boolean;
         type?: string;
     }
@@ -52,21 +52,21 @@ export declare namespace Types {
     }
     interface IWalletTransaction {
         hash: string;
-        nonce: BigInt;
+        nonce: bigint;
         blockHash: string | null;
-        blockNumber: BigInt | null;
-        transactionIndex: BigInt | null;
+        blockNumber: bigint | null;
+        transactionIndex: bigint | null;
         from: string;
         to: string | null;
         value: BigNumber;
         gasPrice: BigNumber;
-        maxPriorityFeePerGas?: BigInt | string | BigNumber;
-        maxFeePerGas?: BigInt | string | BigNumber;
-        gas: BigInt;
+        maxPriorityFeePerGas?: bigint | string | BigNumber;
+        maxFeePerGas?: bigint | string | BigNumber;
+        gas: bigint;
         input: string;
     }
     interface IWalletBlockTransactionObject {
-        number: BigInt;
+        number: bigint;
         hash: string;
         parentHash: string;
         nonce: string;
@@ -77,28 +77,28 @@ export declare namespace Types {
         receiptsRoot: string;
         miner: string;
         extraData: string;
-        gasLimit: BigInt;
-        gasUsed: BigInt;
-        timestamp: BigInt | string;
-        baseFeePerGas?: BigInt;
-        size: BigInt;
-        difficulty: BigInt;
-        totalDifficulty: BigInt;
+        gasLimit: bigint;
+        gasUsed: bigint;
+        timestamp: bigint | string;
+        baseFeePerGas?: bigint;
+        size: bigint;
+        difficulty: bigint;
+        totalDifficulty: bigint;
         uncles: string[];
         transactions: IWalletTransaction[];
     }
     interface IWalletTransactionReceipt {
-        status: BigInt;
+        status: bigint;
         transactionHash: string;
-        transactionIndex: BigInt;
+        transactionIndex: bigint;
         blockHash: string;
-        blockNumber: BigInt;
+        blockNumber: bigint;
         from: string;
         to: string;
         contractAddress?: string;
-        cumulativeGasUsed: BigInt;
-        gasUsed: BigInt;
-        effectiveGasPrice: BigInt;
+        cumulativeGasUsed: bigint;
+        gasUsed: bigint;
+        effectiveGasPrice: bigint;
         logs: IWalletLog[];
         logsBloom: string;
         events?: {
