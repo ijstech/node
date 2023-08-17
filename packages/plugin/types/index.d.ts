@@ -42,11 +42,11 @@ export declare namespace Types {
     interface IWalletEvent {
         name: string;
         address: string;
-        blockNumber: number;
-        logIndex: number;
+        blockNumber: bigint;
+        logIndex: bigint;
         topics: string[];
         transactionHash: string;
-        transactionIndex: number;
+        transactionIndex: bigint;
         data: any;
         rawData: any;
     }
