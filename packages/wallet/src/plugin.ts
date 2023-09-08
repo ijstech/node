@@ -220,6 +220,11 @@ export interface IWallet {
         methodName: F, 
         params: string[]
     ): string;
+    decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+        contract: T, 
+        methodName: F, 
+        hexString: string
+    ): any;
 }
 interface IDictionary {
     [index: string]: any;
@@ -292,6 +297,11 @@ export interface IWalletPluginObject{
         methodName: F, 
         params: string[]
     ): string;
+    decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+        contract: T, 
+        methodName: F, 
+        hexString: string
+    ): any;
 }
 function parseJson(value: string): any{
     return JSON.parse(value);
@@ -573,6 +583,14 @@ const Wallet: IWallet = {
     ): string {
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
         return wallet.encodeFunctionCall(contract, methodName, params);   
+    },
+    decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+        contract: T, 
+        methodName: F, 
+        hexString: string
+    ): any {
+        let wallet: IWalletPluginObject = global.$$wallet_plugin;
+        return wallet.decodeAbiEncodedParameters(contract, methodName, hexString);
     }
 };
 export default Wallet;

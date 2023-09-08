@@ -173,6 +173,11 @@ export declare namespace Types{
             methodName: F, 
             params: string[]
         ): string;
+        decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+			contract: T, 
+			methodName: F, 
+			hexString: string
+		): any;
     }
     export interface ICachePlugin{
         del(key: string): Promise<boolean>;
@@ -428,6 +433,11 @@ export interface IWalletPlugin {
         methodName: F, 
         params: string[]
     ): string;
+    decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+        contract: T, 
+        methodName: F, 
+        hexString: string
+    ): any;
 }
 export interface IMessagePlugin {
     publish(channel: string|number, msg: string):void;
