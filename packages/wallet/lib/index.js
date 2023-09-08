@@ -213,6 +213,9 @@ async function loadPlugin(worker, options) {
             },
             encodeFunctionCall(contract, methodName, params) {
                 return wallet.encodeFunctionCall(contract, methodName, params);
+            },
+            decodeAbiEncodedParameters(contract, methodName, hexString) {
+                return wallet.decodeAbiEncodedParameters(contract, methodName, hexString);
             }
         };
         worker.vm.injectGlobalObject('$$wallet_plugin', plugin);

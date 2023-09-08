@@ -306,6 +306,10 @@ define("plugin", ["require", "exports", "bignumber.js"], function (require, expo
         encodeFunctionCall(contract, methodName, params) {
             let wallet = global.$$wallet_plugin;
             return wallet.encodeFunctionCall(contract, methodName, params);
+        },
+        decodeAbiEncodedParameters(contract, methodName, hexString) {
+            let wallet = global.$$wallet_plugin;
+            return wallet.decodeAbiEncodedParameters(contract, methodName, hexString);
         }
     };
     exports.default = Wallet;

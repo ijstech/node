@@ -217,7 +217,14 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
                 params: string[]
             ): string {
                 return wallet.encodeFunctionCall(contract, methodName, params);
-            }          
+            },          
+            decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
+                contract: T, 
+                methodName: F, 
+                hexString: string
+            ): any {
+                return wallet.decodeAbiEncodedParameters(contract, methodName, hexString);
+            }
         };
         worker.vm.injectGlobalObject('$$wallet_plugin', plugin);
         return `
