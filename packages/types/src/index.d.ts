@@ -33,7 +33,7 @@ export interface IRouterCookieOptions {
     overwrite?: boolean | undefined;
 }
 export interface IRouterResponse{
-    statusCode: number;
+    statusCode: (value: number)=>void;
     cookie: (name:string, value:string, option?: IRouterCookieOptions)=>void;
     end: (value: any, contentType?: ResponseType)=>void;
     header: (name:string, value: string)=>void;

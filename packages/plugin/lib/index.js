@@ -241,10 +241,7 @@ function RouterResponse(ctx) {
     else if (ctx) {
         ctx.statusCode = 200;
         return {
-            get statusCode() {
-                return ctx.statusCode;
-            },
-            set statusCode(value) {
+            statusCode: function (value) {
                 ctx.statusCode = value;
             },
             cookie: function (name, value, option) {
@@ -384,17 +381,12 @@ class RouterPluginVM extends PluginVM {
                 '$$request': request,
                 '$$response': response
             });
-            if (result !== true) {
-                response.statusCode = 500;
-                response.end('');
-            }
-            ;
-            return true;
         }
         catch (err) {
-            console.dir(err);
+            response.statusCode(500);
         }
         ;
+        return true;
     }
     ;
 }
