@@ -274,7 +274,7 @@ export interface IRouterRequest{
 }
 export type ResponseType = 'application/json'|'image/gif'|'image/jpeg'|'image/png'|'image/svg+xml'|'text/plain'|'text/html'
 export interface IRouterResponse{
-    statusCode: number;
+    statusCode: (value: number)=>void;
     cookie: (name:string, value:string, optio?: any)=>void;
     end: (value: any, contentType?: ResponseType)=>void;
     header: (name:string, value: string)=>void;

@@ -468,10 +468,7 @@ export function RouterResponse(ctx: Koa.Context | IRouterResponseData): IRouterR
     if (isContext(ctx)){
         ctx.statusCode = 200;
         return {
-            get statusCode(){
-                return ctx.statusCode
-            },
-            set statusCode(value){
+            statusCode: function(value){
                 ctx.statusCode = value
             },
             cookie: function(name: string, value: string, option?: any){
@@ -604,8 +601,8 @@ class RouterPluginVM extends PluginVM implements IRouterPlugin{
                         }
                     }
                     else{
-                        await global.$$router.route(global.$$session, global.$$request, global.$$response);
-                        return true;
+                        let result = await global.$$router.route(global.$$session, global.$$request, global.$$response);
+                        return result;
                     }
                 }
                 finally{
@@ -633,16 +630,18 @@ class RouterPluginVM extends PluginVM implements IRouterPlugin{
                 '$$request': request,
                 '$$response': response
             });
-            // if (result !== true){
-            //     response.statusCode(500)
-            //     response.end('');
-            // };
+            if (result === false){
+                response.statusCode(500);
+                return false;
+            };
+            return true;
         }
         catch(err){
-            // console.dir(err)
+            console.dir('RouterPluginVM exception')
+            console.dir(err)
             response.statusCode(500)
+            return false;
         };
-        return true;
     };
 };
 class WorkerPluginVM extends PluginVM implements IWorkerPlugin{

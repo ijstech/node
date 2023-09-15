@@ -218,10 +218,7 @@ function RouterResponse(ctx) {
     if (isContext(ctx)) {
         ctx.statusCode = 200;
         return {
-            get statusCode() {
-                return ctx.statusCode;
-            },
-            set statusCode(value) {
+            statusCode: function (value) {
                 ctx.statusCode = value;
             },
             cookie: function (name, value, option) {
@@ -350,8 +347,8 @@ class RouterPluginVM extends PluginVM {
                         }
                     }
                     else{
-                        await global.$$router.route(global.$$session, global.$$request, global.$$response);
-                        return true;
+                        let result = await global.$$router.route(global.$$session, global.$$request, global.$$response);
+                        return result;
                     }
                 }
                 finally{
@@ -381,12 +378,20 @@ class RouterPluginVM extends PluginVM {
                 '$$request': request,
                 '$$response': response
             });
+            if (result === false) {
+                response.statusCode(500);
+                return false;
+            }
+            ;
+            return true;
         }
         catch (err) {
+            console.dir('RouterPluginVM exception');
+            console.dir(err);
             response.statusCode(500);
+            return false;
         }
         ;
-        return true;
     }
     ;
 }
