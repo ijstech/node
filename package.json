@@ -1,7 +1,7 @@
 {
     "name": "@ijstech/node",
     "description": "Secure Node",
-    "version": "0.1.76",
+    "version": "0.1.77",
     "engines": {
         "node": ">=18.0.0"
     },
