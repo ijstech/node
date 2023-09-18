@@ -63,7 +63,7 @@ class Contract {
             for (let name in receipt.events) {
                 let events = (Array.isArray(receipt.events[name]) ? receipt.events[name] : [receipt.events[name]]);
                 events.forEach(event => {
-                    if (topic0 == event.raw.topics[0] && (this.address && this.address.toLowerCase() == event.address.toLowerCase())) {
+                    if (topic0 == event.raw.topics[0] && this.address && event.address && this.address.toLowerCase() == event.address.toLowerCase()) {
                         result.push(this.wallet.decode(eventAbis[topic0], event, event.raw));
                     }
                 });
@@ -72,7 +72,7 @@ class Contract {
         else if (receipt.logs) {
             for (let i = 0; i < receipt.logs.length; i++) {
                 let log = receipt.logs[i];
-                if (topic0 == log.topics[0] && (this.address && this.address.toLowerCase() == log.address.toLowerCase())) {
+                if (topic0 == log.topics[0] && this.address && log.address && this.address.toLowerCase() == log.address.toLowerCase()) {
                     result.push(this.wallet.decode(eventAbis[topic0], log));
                 }
             }
