@@ -485,11 +485,12 @@ class Plugin {
     constructor(options) {
         this.options = options;
     }
-    ;
     get id() {
         return this.options.id;
     }
-    ;
+    get domain() {
+        return this.options.domain;
+    }
     async addPackage(packName, script) {
         await this.createPlugin();
         if (!script) {

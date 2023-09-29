@@ -69,11 +69,13 @@ export interface VM {
 }
 export interface IWorker {
     id: string;
+    domain: string;
     data: any;
     vm: VM;
 }
 export interface IPluginOptions {
     id?: string;
+    domain?: string;
     memoryLimit?: number;
     timeLimit?: number;
     isolated?: boolean;

@@ -27,30 +27,35 @@ export function getClient(options?: ICacheClientOptions): ICachePlugin{
 };
 
 export function loadPlugin(plugin: IWorker, options: ICacheClientOptions, vm?: VM): ICachePlugin {
+    const resolveKey = (key: string) => {
+        if (key.startsWith('$g:'))
+            return key;
+        else if (key.startsWith('$d:'))
+            return `${plugin.domain||''}:${key.substring(3)}`;
+        else
+            return `${plugin.id||''}:${key}`;
+    }
+
     return {
         async get(key: string): Promise<string>{
             let client = getClient(options);
-            if (!key.startsWith('$g:'))
-                key = `${plugin.id||''}:${key}`;
-            return await client.get(key);
+            let resolvedKey = resolveKey(key);
+            return await client.get(resolvedKey);
         },
         async set(key: string, value: any, expires?: number): Promise<boolean>{
-            if (!key.startsWith('$g:'))
-                key = `${plugin.id||''}:${key}`;
             let client = getClient(options);
-            return await client.set(key, value, expires);
+            let resolvedKey = resolveKey(key);
+            return await client.set(resolvedKey, value, expires);
         },
         async del(key: string): Promise<boolean>{
-            if (!key.startsWith('$g:'))
-                key = `${plugin.id||''}:${key}`;
             let client = getClient(options);
-            return await client.del(key);
+            let resolvedKey = resolveKey(key);
+            return await client.del(resolvedKey);
         },
         async getValue(key: string): Promise<any>{
-            if (!key.startsWith('$g:'))
-                key = `${plugin.id||''}:${key}`;
             let client = getClient(options);
-            let value = await client.get(key);
+            let resolvedKey = resolveKey(key);
+            let value = await client.get(resolvedKey);
             if (vm) //can returns string value to VM only
                 return value;
             try{
