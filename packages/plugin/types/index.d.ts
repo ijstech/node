@@ -352,6 +352,7 @@ declare class Plugin {
     data: any;
     constructor(options: IPluginOptions);
     get id(): string;
+    get domain(): string;
     addPackage(packName: string, script?: string): Promise<void>;
     createPlugin(): Promise<void>;
     createVM(): any;

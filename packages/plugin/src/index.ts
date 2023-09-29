@@ -731,10 +731,13 @@ class Plugin{
 
     constructor(options: IPluginOptions){
         this.options = options;   
-    };
+    }
     get id(): string{
         return this.options.id;
-    };
+    }
+    get domain() {
+        return this.options.domain;
+    }
     async addPackage(packName: string, script?: string){
         await this.createPlugin();
         if (!script){

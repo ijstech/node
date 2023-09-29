@@ -26,30 +26,34 @@ function getClient(options) {
 exports.getClient = getClient;
 ;
 function loadPlugin(plugin, options, vm) {
+    const resolveKey = (key) => {
+        if (key.startsWith('$g:'))
+            return key;
+        else if (key.startsWith('$d:'))
+            return `${plugin.domain || ''}:${key.substring(3)}`;
+        else
+            return `${plugin.id || ''}:${key}`;
+    };
     return {
         async get(key) {
             let client = getClient(options);
-            if (!key.startsWith('$g:'))
-                key = `${plugin.id || ''}:${key}`;
-            return await client.get(key);
+            let resolvedKey = resolveKey(key);
+            return await client.get(resolvedKey);
         },
         async set(key, value, expires) {
-            if (!key.startsWith('$g:'))
-                key = `${plugin.id || ''}:${key}`;
             let client = getClient(options);
-            return await client.set(key, value, expires);
+            let resolvedKey = resolveKey(key);
+            return await client.set(resolvedKey, value, expires);
         },
         async del(key) {
-            if (!key.startsWith('$g:'))
-                key = `${plugin.id || ''}:${key}`;
             let client = getClient(options);
-            return await client.del(key);
+            let resolvedKey = resolveKey(key);
+            return await client.del(resolvedKey);
         },
         async getValue(key) {
-            if (!key.startsWith('$g:'))
-                key = `${plugin.id || ''}:${key}`;
             let client = getClient(options);
-            let value = await client.get(key);
+            let resolvedKey = resolveKey(key);
+            let value = await client.get(resolvedKey);
             if (vm)
                 return value;
             try {
