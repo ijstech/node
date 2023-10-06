@@ -256,6 +256,7 @@ export declare namespace Types{
 const RootPath = process.cwd();
 let Modules = {};
 let LoadingPackageName: string = '';
+let LastDefineModule: any;
 global.define = function(id: string, deps: string[], callback: Function){
     if (typeof (id) == 'function') {
         callback = id;
@@ -277,6 +278,7 @@ global.define = function(id: string, deps: string[], callback: Function){
         };
         if (callback)
             callback.apply(this, result);
+        LastDefineModule = exports;
         if (id == 'index' || id == 'plugin')
             Modules[LoadingPackageName || 'index'] = exports
         else
@@ -378,11 +380,12 @@ export async function getPackageScript(packName: string, pack?: IPackageScript):
 export type IPluginScript = any;
 export function loadModule(script: string, name?: string): IPluginScript{
     LoadingPackageName = name;
+    LastDefineModule = null;
     var m = new (<any>module).constructor();
     m.filename = name;
     m._compile(script, name || 'index');
     LoadingPackageName = '';
-    return Modules[name || 'index'];
+    return Modules[name || 'index'] || LastDefineModule;
 };
 function cloneObject(value: any): any{
     if (value)

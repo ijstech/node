@@ -19,6 +19,7 @@ const tsc_1 = require("@ijstech/tsc");
 const RootPath = process.cwd();
 let Modules = {};
 let LoadingPackageName = '';
+let LastDefineModule;
 global.define = function (id, deps, callback) {
     if (typeof (id) == 'function') {
         callback = id;
@@ -41,6 +42,7 @@ global.define = function (id, deps, callback) {
         ;
         if (callback)
             callback.apply(this, result);
+        LastDefineModule = exports;
         if (id == 'index' || id == 'plugin')
             Modules[LoadingPackageName || 'index'] = exports;
         else
@@ -151,11 +153,12 @@ exports.getPackageScript = getPackageScript;
 ;
 function loadModule(script, name) {
     LoadingPackageName = name;
+    LastDefineModule = null;
     var m = new module.constructor();
     m.filename = name;
     m._compile(script, name || 'index');
     LoadingPackageName = '';
-    return Modules[name || 'index'];
+    return Modules[name || 'index'] || LastDefineModule;
 }
 exports.loadModule = loadModule;
 ;
