@@ -152,12 +152,19 @@ async function getPackageScript(packName, pack) {
 exports.getPackageScript = getPackageScript;
 ;
 function loadModule(script, name) {
-    LoadingPackageName = name;
-    LastDefineModule = null;
-    var m = new module.constructor();
-    m.filename = name;
-    m._compile(script, name || 'index');
-    LoadingPackageName = '';
+    global.define.amd = true;
+    try {
+        LoadingPackageName = name;
+        LastDefineModule = null;
+        var m = new module.constructor();
+        m.filename = name;
+        m._compile(script, name || 'index');
+        LoadingPackageName = '';
+    }
+    finally {
+        global.define.amd = undefined;
+    }
+    ;
     return Modules[name || 'index'] || LastDefineModule;
 }
 exports.loadModule = loadModule;
@@ -547,23 +554,39 @@ class Plugin {
         return;
     }
     ;
+    async loadDependenceModule(name) {
+        if (!Modules[name]) {
+            let script = await getPackageScript(name);
+            if (script)
+                loadModule(script, name);
+        }
+        ;
+    }
+    ;
     async createModule() {
-        for (let v in this.options.plugins) {
-            if (v == 'db') {
-                let script = await getPackageScript('@ijstech/pdm');
-                if (script)
-                    loadModule(script, '@ijstech/pdm');
-                break;
-            }
-            ;
+        if (this.options.plugins?.db) {
+            await this.loadDependenceModule('@ijstech/pdm');
+        }
+        ;
+        if (this.options.plugins?.wallet) {
+            await this.loadDependenceModule('bignumber.js');
+            await this.loadDependenceModule('@ijstech/wallet');
+            await this.loadDependenceModule('@ijstech/eth-contract');
+        }
+        ;
+        if (this.options.plugins?.fetch) {
+            await this.loadDependenceModule('@ijstech/fetch');
         }
         ;
         if (this.options.dependencies) {
             for (let packname in this.options.dependencies) {
-                let pack = this.options.dependencies[packname];
-                let script = await getPackageScript(packname, pack);
-                if (script)
-                    loadModule(script, packname);
+                if (packname != '@ijstech/plugin') {
+                    let pack = this.options.dependencies[packname];
+                    let script = await getPackageScript(packname, pack);
+                    if (script)
+                        loadModule(script, packname);
+                }
+                ;
             }
             ;
         }

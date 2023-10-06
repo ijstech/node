@@ -356,6 +356,7 @@ declare class Plugin {
     addPackage(packName: string, script?: string): Promise<void>;
     createPlugin(): Promise<void>;
     createVM(): any;
+    loadDependenceModule(name: string): Promise<void>;
     createModule(): Promise<any>;
     init(params?: any): Promise<void>;
     getSession(): Promise<ISession>;
