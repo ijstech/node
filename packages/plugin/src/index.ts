@@ -824,12 +824,10 @@ class Plugin{
         };
         if (this.options.dependencies){
             for (let packname in this.options.dependencies){
-                if (packname != '@ijstech/plugin'){
-                    let pack = this.options.dependencies[packname];
-                    let script = await getPackageScript(packname, pack);
-                    if (script)
-                        loadModule(script, packname)
-                };
+                let pack = this.options.dependencies[packname];
+                let script = await getPackageScript(packname, pack);
+                if (script)
+                    loadModule(script, packname);
             };
         };
         let script = this.options.script;        
