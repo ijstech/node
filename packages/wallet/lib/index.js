@@ -208,8 +208,14 @@ async function loadPlugin(worker, options) {
             toChecksumAddress(address) {
                 return wallet.toChecksumAddress(address);
             },
+            isAddress(address) {
+                return wallet.isAddress(address);
+            },
             multiCall(calls, gasBuffer) {
                 return wallet.multiCall(calls, gasBuffer);
+            },
+            doMulticall(contracts, gasBuffer) {
+                return wallet.doMulticall(contracts, gasBuffer);
             },
             encodeFunctionCall(contract, methodName, params) {
                 return wallet.encodeFunctionCall(contract, methodName, params);

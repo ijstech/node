@@ -291,6 +291,10 @@ define("plugin", ["require", "exports", "bignumber.js"], function (require, expo
             let wallet = global.$$wallet_plugin;
             return wallet.toChecksumAddress(address);
         },
+        isAddress(address) {
+            let wallet = global.$$wallet_plugin;
+            return wallet.isAddress(address);
+        },
         _txObj(abiHash, address, methodName, params, options) {
             let wallet = global.$$wallet_plugin;
             return;
@@ -302,6 +306,10 @@ define("plugin", ["require", "exports", "bignumber.js"], function (require, expo
         multiCall(calls, gasBuffer) {
             let wallet = global.$$wallet_plugin;
             return wallet.multiCall(calls, gasBuffer);
+        },
+        doMulticall(contracts, gasBuffer) {
+            let wallet = global.$$wallet_plugin;
+            return wallet.doMulticall(contracts, gasBuffer);
         },
         encodeFunctionCall(contract, methodName, params) {
             let wallet = global.$$wallet_plugin;
