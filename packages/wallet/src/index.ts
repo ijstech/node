@@ -6,7 +6,7 @@
 
 import {Wallet, IAccount, IWallet, BigNumber} from '@ijstech/eth-wallet';
 import {IWorker} from '@ijstech/types';
-import {IWalletLog, IWalletRequiredPluginOptions, IWalletEventLog, IAbiDefinition} from '@ijstech/types';
+import {IWalletLog, IWalletRequiredPluginOptions, IWalletEventLog, IAbiDefinition, IMulticallContractCall} from '@ijstech/types';
 import {IWalletBlockTransactionObject, IWalletPluginObject, IWalletTransaction} from './plugin';
 
 function getWalletPlugin(): IWallet{
@@ -208,9 +208,15 @@ export async function loadPlugin(worker: IWorker, options: IWalletRequiredPlugin
             toChecksumAddress(address: string): string{
                 return wallet.toChecksumAddress(address);
             },
+            isAddress(address: string): boolean{
+                return wallet.isAddress(address);
+            },
             multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>{
                 return wallet.multiCall(calls, gasBuffer);   
-            },          
+            },  
+            doMulticall(contracts: IMulticallContractCall[], gasBuffer?: string) {
+                return wallet.doMulticall(contracts, gasBuffer);
+            },      
             encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
                 contract: T, 
                 methodName: F, 

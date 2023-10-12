@@ -173,6 +173,12 @@ export interface IWalletUtils{
 export interface IAbiDefinition {
     _abi: any;
 }
+export interface IMulticallContractCall {
+    to: string;
+    contract: IAbiDefinition;
+    methodName: string;
+    params: string[];
+}
 export interface IWallet {
     account: IWalletAccount;
     accounts: Promise<string[]>;
@@ -212,9 +218,14 @@ export interface IWallet {
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
     soliditySha3(...val: any[]): string;	
     toChecksumAddress(address: string): string;	
+    isAddress(address: string): boolean;
     _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<IWalletTransactionOptions>;
     _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<string>;
     multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
+    doMulticall(
+        contracts: IMulticallContractCall[], 
+        gasBuffer?: string
+    ): Promise<any[]>;
     encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
         contract: T, 
         methodName: F, 
@@ -291,7 +302,12 @@ export interface IWalletPluginObject{
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
     soliditySha3(...val: any[]): string;
     toChecksumAddress(address: string): string;	
+    isAddress(address: string): boolean;
     multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
+    doMulticall(
+        contracts: IMulticallContractCall[], 
+        gasBuffer?: string
+    ): Promise<any[]>;
     encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
         contract: T, 
         methodName: F, 
@@ -564,6 +580,10 @@ const Wallet: IWallet = {
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
         return wallet.toChecksumAddress(address);   
     },
+    isAddress(address: string): boolean{
+        let wallet: IWalletPluginObject = global.$$wallet_plugin;
+        return wallet.isAddress(address);   
+    },
     _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | IWalletTransactionOptions): Promise<IWalletTransactionOptions>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
         return;
@@ -575,6 +595,10 @@ const Wallet: IWallet = {
     multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>{
         let wallet: IWalletPluginObject = global.$$wallet_plugin;
         return wallet.multiCall(calls, gasBuffer);   
+    }, 
+    doMulticall(contracts: IMulticallContractCall[], gasBuffer?: string){
+        let wallet: IWalletPluginObject = global.$$wallet_plugin;
+        return wallet.doMulticall(contracts, gasBuffer);   
     },    
     encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
         contract: T, 

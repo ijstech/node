@@ -165,9 +165,14 @@ export declare namespace Types{
         verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
         soliditySha3(...val: any[]): string;
         toChecksumAddress(address: string): string;		
+        isAddress(address: string): boolean;
         _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<IWalletTransactionOptions>;
         _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<string>;
         multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
+        doMulticall(
+            contracts: IMulticallContractCall[], 
+            gasBuffer?: string
+        ): Promise<any[]>;
         encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
             contract: T, 
             methodName: F, 
@@ -390,6 +395,12 @@ export interface IWalletTokenInfo{
 export interface IAbiDefinition {
     _abi: any;
 }
+export interface IMulticallContractCall {
+    to: string;
+    contract: IAbiDefinition;
+    methodName: string;
+    params: string[];
+}
 export interface IWalletPlugin {
     account: IWalletAccount;
     accounts: Promise<string[]>;
@@ -425,9 +436,14 @@ export interface IWalletPlugin {
     verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;	
     soliditySha3(...val: any[]): string;	
     toChecksumAddress(address: string): string;	
+    isAddress(address: string): boolean;
     _txObj(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<IWalletTransaction>;
     _txData(abiHash: string, address: string, methodName:string, params?:any[], options?:number|BigNumber|IWalletTransaction): Promise<string>;
     multiCall(calls: {to: string; data: string}[], gasBuffer?: string): Promise<{results: string[]; lastSuccessIndex: BigNumber}>;
+    doMulticall(
+        contracts: IMulticallContractCall[], 
+        gasBuffer?: string
+    ): Promise<any[]>;
     encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, { [K in keyof T]: T[K] extends Function ? K : never }[keyof T]>>(
         contract: T, 
         methodName: F, 
