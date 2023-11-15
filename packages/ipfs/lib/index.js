@@ -3,14 +3,53 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hashFile = exports.hashContent = exports.hashDir = exports.hashItems = exports.parse = void 0;
+exports.cidToHash = exports.hashFile = exports.hashContent = exports.hashDir = exports.hashItems = exports.hashChunks = exports.hashChunk = exports.parse = exports.DAG_PB = void 0;
 const ipfs_js_1 = __importDefault(require("./ipfs.js"));
 const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
-function parse(cid) {
-    return ipfs_js_1.default.parse(cid);
+exports.DAG_PB = 0X70;
+;
+;
+function parse(cid, bytes) {
+    let result = ipfs_js_1.default.parse(cid, bytes);
+    let links = [];
+    if (result.links) {
+        for (let i = 0; i < result.links.length; i++) {
+            let link = result.links[i];
+            links.push({
+                cid: link.Hash.toString(),
+                name: link.Name,
+                size: link.Tsize
+            });
+        }
+    }
+    ;
+    return {
+        cid: cid,
+        size: result.size,
+        code: result.code,
+        type: result.type == 'directory' ? 'dir' : result.type == 'file' ? 'file' : undefined,
+        multihash: result.multihash,
+        links: links,
+        bytes: result.bytes
+    };
 }
 exports.parse = parse;
+;
+;
+async function hashChunk(data, version) {
+    if (version == undefined)
+        version = 1;
+    return ipfs_js_1.default.hashChunk(data, version);
+}
+exports.hashChunk = hashChunk;
+;
+async function hashChunks(chunks, version) {
+    if (version == undefined)
+        version = 1;
+    return ipfs_js_1.default.hashChunks(chunks, version);
+}
+exports.hashChunks = hashChunks;
 ;
 async function hashItems(items, version) {
     return await ipfs_js_1.default.hashItems(items || [], version);
@@ -29,6 +68,7 @@ async function hashDir(dirPath, version) {
         if (stat.isDirectory()) {
             let result = await hashDir(path, version);
             result.name = file;
+            result.type = 'dir';
             items.push(result);
         }
         else {
@@ -47,14 +87,7 @@ async function hashDir(dirPath, version) {
         }
     }
     ;
-    let result = await hashItems(items, version);
-    return {
-        cid: result.cid,
-        name: '',
-        size: result.size,
-        type: 'dir',
-        links: items
-    };
+    return await hashItems(items, version);
 }
 exports.hashDir = hashDir;
 ;
@@ -63,46 +96,38 @@ async function hashContent(content, version) {
         version = 1;
     if (content.length == 0) {
         return {
-            cid: await ipfs_js_1.default.hashContent('', version),
+            cid: version == 1 ? 'bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku' : 'QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH',
             size: 0
         };
     }
-    if (version == 1) {
-        return await ipfs_js_1.default.hashFile(content, version, {
-            rawLeaves: true,
-            maxChunkSize: 1048576,
-            maxChildrenPerNode: 1024
-        });
-    }
-    else
-        return await ipfs_js_1.default.hashFile(content, version);
+    return ipfs_js_1.default.hashFile(content, version);
 }
 exports.hashContent = hashContent;
-async function hashFile(filePath, version, options) {
+;
+async function hashFile(filePath, version) {
     if (version == undefined)
         version = 1;
     let size;
     let stat = await fs_1.promises.stat(filePath);
+    let file;
     size = stat.size;
-    let file = fs_1.createReadStream(filePath);
-    let cid;
-    let result;
     if (size == 0) {
-        cid = await ipfs_js_1.default.hashContent('', version);
         return {
-            cid,
-            size
+            cid: version == 1 ? 'bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku' : 'QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH',
+            size: 0
         };
     }
-    else if (version == 1) {
-        result = await ipfs_js_1.default.hashFile(file, version, ipfs_js_1.default.mergeOptions({
-            rawLeaves: true,
-            maxChunkSize: 1048576,
-            maxChildrenPerNode: 1024
-        }, options || {}));
-    }
+    ;
+    if (version == 1)
+        file = fs_1.createReadStream(filePath, { highWaterMark: 1048576 });
     else
-        result = await ipfs_js_1.default.hashFile(file, version);
-    return result;
+        file = fs_1.createReadStream(filePath, { highWaterMark: 262144 });
+    return ipfs_js_1.default.hashFile(file, version);
 }
 exports.hashFile = hashFile;
+;
+function cidToHash(cid) {
+    return ipfs_js_1.default.cidToHash(cid);
+}
+exports.cidToHash = cidToHash;
+;

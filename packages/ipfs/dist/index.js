@@ -774,7 +774,16 @@
     }
     return value.low || value.high ? new util_LongBits(value.low >>> 0, value.high >>> 0) : zero;
   };
-
+  util_LongBits.prototype.toNumber = function toNumber(unsigned) {
+    if (!unsigned && this.hi >>> 31) {
+        var lo = ~this.lo + 1 >>> 0,
+            hi = ~this.hi     >>> 0;
+        if (!lo)
+            hi = hi + 1 >>> 0;
+        return -(lo + hi * 4294967296);
+    }
+    return this.lo + this.hi * 4294967296;
+  };
   //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/util/longbits.js#L187
   util_LongBits.prototype.length = function length() {
     var part0 = this.lo,
@@ -991,7 +1000,97 @@
     this.pos = 0;
     this.len = buffer.length;
   }
+  function indexOutOfRange(reader, writeLength) {
+    return RangeError("index out of range: " + reader.pos + " + " + (writeLength || 1) + " > " + reader.len);
+  }
+  Reader.prototype.uint32 = (function read_uint32_setup() {
+    var value = 4294967295; // optimizer type-hint, tends to deopt otherwise (?!)
+    return function read_uint32() {
+        value = (         this.buf[this.pos] & 127       ) >>> 0; if (this.buf[this.pos++] < 128) return value;
+        value = (value | (this.buf[this.pos] & 127) <<  7) >>> 0; if (this.buf[this.pos++] < 128) return value;
+        value = (value | (this.buf[this.pos] & 127) << 14) >>> 0; if (this.buf[this.pos++] < 128) return value;
+        value = (value | (this.buf[this.pos] & 127) << 21) >>> 0; if (this.buf[this.pos++] < 128) return value;
+        value = (value | (this.buf[this.pos] &  15) << 28) >>> 0; if (this.buf[this.pos++] < 128) return value;
 
+        /* istanbul ignore if */
+        if ((this.pos += 5) > this.len) {
+            this.pos = this.len;
+            throw indexOutOfRange(this, 10);
+        }
+        return value;
+    };
+  })();
+  Reader.prototype.int32 = function read_int32() {
+    return this.uint32() | 0;
+  };
+  Reader.prototype.bytes = function read_bytes() {
+    var length = this.uint32(),
+        start  = this.pos,
+        end    = this.pos + length;
+
+    /* istanbul ignore if */
+    if (end > this.len)
+        throw indexOutOfRange(this, length);
+
+    this.pos += length;
+    if (Array.isArray(this.buf)) // plain array
+        return this.buf.slice(start, end);
+    return start === end // fix for IE 10/Win8 and others' subarray returning array of size 1
+        ? new this.buf.constructor(0)
+        : this._slice.call(this.buf, start, end);
+  };
+  //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/util/longbits.js#L123
+  function readLongVarint() {
+    var bits = new util_LongBits(0, 0);
+    var i = 0;
+    if (this.len - this.pos > 4) { // fast route (lo)
+        for (; i < 4; ++i) {
+            // 1st..4th
+            bits.lo = (bits.lo | (this.buf[this.pos] & 127) << i * 7) >>> 0;
+            if (this.buf[this.pos++] < 128)
+                return bits;
+        }
+        // 5th
+        bits.lo = (bits.lo | (this.buf[this.pos] & 127) << 28) >>> 0;
+        bits.hi = (bits.hi | (this.buf[this.pos] & 127) >>  4) >>> 0;
+        if (this.buf[this.pos++] < 128)
+            return bits;
+        i = 0;
+    } else {
+        for (; i < 3; ++i) {
+            /* istanbul ignore if */
+            if (this.pos >= this.len)
+                throw indexOutOfRange(this);
+            // 1st..3th
+            bits.lo = (bits.lo | (this.buf[this.pos] & 127) << i * 7) >>> 0;
+            if (this.buf[this.pos++] < 128)
+                return bits;
+        }
+        // 4th
+        bits.lo = (bits.lo | (this.buf[this.pos++] & 127) << i * 7) >>> 0;
+        return bits;
+    }
+    if (this.len - this.pos > 4) { // fast route (hi)
+        for (; i < 5; ++i) {
+            // 6th..10th
+            bits.hi = (bits.hi | (this.buf[this.pos] & 127) << i * 7 + 3) >>> 0;
+            if (this.buf[this.pos++] < 128)
+                return bits;
+        }
+    } else {
+        for (; i < 5; ++i) {
+            /* istanbul ignore if */
+            if (this.pos >= this.len)
+                throw indexOutOfRange(this);
+            // 6th..10th
+            bits.hi = (bits.hi | (this.buf[this.pos] & 127) << i * 7 + 3) >>> 0;
+            if (this.buf[this.pos++] < 128)
+                return bits;
+        }
+    }
+    /* istanbul ignore next */
+    throw Error("invalid varint encoding");
+  }
   //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/reader.js#L43
   var create_array = typeof Uint8Array !== "undefined"
     ? function create_typed_array(buffer) {
@@ -1017,7 +1116,9 @@
       }
       : create_array;
   };
-
+  Reader.create = r1_create();
+  Reader.prototype._slice = util_Array.prototype.subarray || /* istanbul ignore next */ util_Array.prototype.slice;
+  
   //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/util/minimal.js#L237
   function util_merge(dst, src, ifNotSet) {
     for (var keys = Object.keys(src), i = 0; i < keys.length; ++i)
@@ -1025,14 +1126,55 @@
         dst[keys[i]] = src[keys[i]];
     return dst;
   }
+  //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/reader.js#L334
+  Reader.prototype.skip = function skip(length) {
+    if (typeof length === "number") {
+        /* istanbul ignore if */
+        if (this.pos + length > this.len)
+            throw indexOutOfRange(this, length);
+        this.pos += length;
+    } else {
+        do {
+            /* istanbul ignore if */
+            if (this.pos >= this.len)
+                throw indexOutOfRange(this);
+        } while (this.buf[this.pos++] & 128);
+    }
+    return this;
+  };
+  Reader.prototype.skipType = function(wireType) {
+    switch (wireType) {
+        case 0:
+            this.skip();
+            break;
+        case 1:
+            this.skip(8);
+            break;
+        case 2:
+            this.skip(this.uint32());
+            break;
+        case 3:
+            while ((wireType = this.uint32() & 7) !== 4) {
+                this.skipType(wireType);
+            }
+            break;
+        case 5:
+            this.skip(4);
+            break;
 
+        /* istanbul ignore next */
+        default:
+            throw Error("invalid wire type " + wireType + " at offset " + this.pos);
+    }
+    return this;
+  };
   //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/reader.js#L382
   Reader._configure = function (BufferReader_) {
     BufferReader = BufferReader_;
     Reader.create = r1_create();
     BufferReader._configure();
 
-    var fn = "toLong";
+    var fn = "toNumber";
     util_merge(Reader.prototype, {
 
       int64: function read_int64() {
@@ -1041,20 +1183,7 @@
 
       uint64: function read_uint64() {
         return readLongVarint.call(this)[fn](true);
-      },
-
-      sint64: function read_sint64() {
-        return readLongVarint.call(this).zzDecode()[fn](false);
-      },
-
-      fixed64: function read_fixed64() {
-        return readFixed64.call(this)[fn](true);
-      },
-
-      sfixed64: function read_sfixed64() {
-        return readFixed64.call(this)[fn](false);
       }
-
     });
   };
   //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/writer_buffer.js#L16
@@ -1253,23 +1382,6 @@
       BufferReader.prototype._slice = util_Buffer.prototype.slice;
   };
 
-  //https://github.com/protobufjs/protobuf.js/blob/2cdbba32da9951c1ff14e55e65e4a9a9f24c70fd/src/util/minimal.js#L402
-  // util_configure = function () {
-  //   var Buffer = util_Buffer;
-  //   if (!Buffer) {
-  //     util_Buffer_from = util_Buffer_allocUnsafe = null;
-  //     return;
-  //   }
-  //   util_Buffer_from = Buffer.from !== Uint8Array.from && Buffer.from ||
-  //     function Buffer_from(value, encoding) {
-  //       return new Buffer(value, encoding);
-  //     };
-  //   util_Buffer_allocUnsafe = Buffer.allocUnsafe ||
-  //     function Buffer_allocUnsafe(size) {
-  //       return new Buffer(size);
-  //     };
-  // };
-
   protobuf.rpc = {};
   protobuf.roots = {};
   protobuf.configure = configure;
@@ -1465,7 +1577,81 @@
       }
       return m;
     };
-
+    Data.toObject = function toObject(m, o) {
+      if (!o)
+          o = {};
+      var d = {};
+      if (o.arrays || o.defaults) {
+          d.blocksizes = [];
+      }
+      if (o.defaults) {
+          d.Type = o.enums === String ? "Raw" : 0;
+          if (o.bytes === String)
+              d.Data = "";
+          else {
+              d.Data = [];
+              if (o.bytes !== Array)
+                  d.Data = $util.newBuffer(d.Data);
+          }
+          if ($util.Long) {
+              var n = new $util.Long(0, 0, true);
+              d.filesize = o.longs === String ? n.toString() : o.longs === Number ? n.toNumber() : n;
+          } else
+              d.filesize = o.longs === String ? "0" : 0;
+          if ($util.Long) {
+              var n = new $util.Long(0, 0, true);
+              d.hashType = o.longs === String ? n.toString() : o.longs === Number ? n.toNumber() : n;
+          } else
+              d.hashType = o.longs === String ? "0" : 0;
+          if ($util.Long) {
+              var n = new $util.Long(0, 0, true);
+              d.fanout = o.longs === String ? n.toString() : o.longs === Number ? n.toNumber() : n;
+          } else
+              d.fanout = o.longs === String ? "0" : 0;
+          d.mode = 0;
+          d.mtime = null;
+      }
+      if (m.Type != null && m.hasOwnProperty("Type")) {
+          d.Type = o.enums === String ? $root.Data.DataType[m.Type] : m.Type;
+      }
+      if (m.Data != null && m.hasOwnProperty("Data")) {
+          d.Data = o.bytes === String ? $util.base64.encode(m.Data, 0, m.Data.length) : o.bytes === Array ? Array.prototype.slice.call(m.Data) : m.Data;
+      }
+      if (m.filesize != null && m.hasOwnProperty("filesize")) {
+          if (typeof m.filesize === "number")
+              d.filesize = o.longs === String ? String(m.filesize) : m.filesize;
+          else
+              d.filesize = o.longs === String ? $util.Long.prototype.toString.call(m.filesize) : o.longs === Number ? new $util.LongBits(m.filesize.low >>> 0, m.filesize.high >>> 0).toNumber(true) : m.filesize;
+      }
+      if (m.blocksizes && m.blocksizes.length) {
+          d.blocksizes = [];
+          for (var j = 0; j < m.blocksizes.length; ++j) {
+              if (typeof m.blocksizes[j] === "number")
+                  d.blocksizes[j] = o.longs === String ? String(m.blocksizes[j]) : m.blocksizes[j];
+              else
+                  d.blocksizes[j] = o.longs === String ? $util.Long.prototype.toString.call(m.blocksizes[j]) : o.longs === Number ? new $util.LongBits(m.blocksizes[j].low >>> 0, m.blocksizes[j].high >>> 0).toNumber(true) : m.blocksizes[j];
+          }
+      }
+      if (m.hashType != null && m.hasOwnProperty("hashType")) {
+          if (typeof m.hashType === "number")
+              d.hashType = o.longs === String ? String(m.hashType) : m.hashType;
+          else
+              d.hashType = o.longs === String ? $util.Long.prototype.toString.call(m.hashType) : o.longs === Number ? new $util.LongBits(m.hashType.low >>> 0, m.hashType.high >>> 0).toNumber(true) : m.hashType;
+      }
+      if (m.fanout != null && m.hasOwnProperty("fanout")) {
+          if (typeof m.fanout === "number")
+              d.fanout = o.longs === String ? String(m.fanout) : m.fanout;
+          else
+              d.fanout = o.longs === String ? $util.Long.prototype.toString.call(m.fanout) : o.longs === Number ? new $util.LongBits(m.fanout.low >>> 0, m.fanout.high >>> 0).toNumber(true) : m.fanout;
+      }
+      if (m.mode != null && m.hasOwnProperty("mode")) {
+          d.mode = m.mode;
+      }
+      if (m.mtime != null && m.hasOwnProperty("mtime")) {
+          d.mtime = $root.UnixTime.toObject(m.mtime, o);
+      }
+      return d;
+    };
     Data.DataType = function () {
       const valuesById = {}, values = Object.create(valuesById);
       values[valuesById[0] = 'Raw'] = 0;
@@ -1556,6 +1742,29 @@
 
   //https://github.com/ipfs/js-ipfs-unixfs/blob/de1a7f0afc144462b374919a44d3af4fae3a49da/packages/ipfs-unixfs/src/index.js#L122
   class UnixFS {
+    static unmarshal (marshaled) {
+      const message = PBData.decode(marshaled)
+      const decoded = PBData.toObject(message, {
+        defaults: false,
+        arrays: true,
+        longs: Number,
+        objects: false
+      })
+      const data = new UnixFS({
+        type: types[decoded.Type],
+        data: decoded.Data,
+        blockSizes: decoded.blocksizes,
+        mode: decoded.mode,
+        mtime: decoded.mtime
+          ? {
+              secs: decoded.mtime.Seconds,
+              nsecs: decoded.mtime.FractionalNanoseconds
+            }
+          : undefined
+      })
+      data._originalMode = decoded.mode || 0;
+      return data
+    };
     constructor(options = { type: 'file' }) {
       const { type, data, blockSizes, hashType, fanout, mtime, mode } = options;
       if (type && !types.includes(type)) {
@@ -1667,832 +1876,6 @@
       };
       return PBData.encode(pbData).finish();
     }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/options.js#L8
-  async function hamtHashFn(buf) {
-    const hash = await multihashing(buf, 'murmur3-128')
-    const justHash = hash.slice(2, 10)
-    const length = justHash.length
-    const result = new Uint8Array(length)
-    // TODO: invert buffer because that's how Go impl does it
-    for (let i = 0; i < length; i++) {
-      result[length - i - 1] = justHash[i]
-    }
-
-    return result
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/chunker/rabin.js#L19
-  async function* rabinChunker(source, options) {
-    let min, max, avg
-
-    if (options.minChunkSize && options.maxChunkSize && options.avgChunkSize) {
-      avg = options.avgChunkSize
-      min = options.minChunkSize
-      max = options.maxChunkSize
-    } else if (!options.avgChunkSize) {
-      throw errcode(new Error('please specify an average chunk size'), 'ERR_INVALID_AVG_CHUNK_SIZE')
-    } else {
-      avg = options.avgChunkSize
-      min = avg / 3
-      max = avg + (avg / 2)
-    }
-
-    // validate min/max/avg in the same way as go
-    if (min < 16) {
-      throw errcode(new Error('rabin min must be greater than 16'), 'ERR_INVALID_MIN_CHUNK_SIZE')
-    }
-
-    if (max < min) {
-      max = min
-    }
-
-    if (avg < min) {
-      avg = min
-    }
-
-    const sizepow = Math.floor(Math.log2(avg))
-
-    for await (const chunk of rabin(source, {
-      min: min,
-      max: max,
-      bits: sizepow,
-      window: options.window,
-      polynomial: options.polynomial
-    })) {
-      yield chunk
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/chunker/rabin.js#L66
-  async function* rabin(source, options) {
-    const r = await create(options.bits, options.min, options.max, options.window)
-    const buffers = new BufferList()
-
-    for await (const chunk of source) {
-      buffers.append(chunk)
-
-      const sizes = r.fingerprint(chunk)
-
-      for (let i = 0; i < sizes.length; i++) {
-        const size = sizes[i]
-        const buf = buffers.slice(0, size)
-        buffers.consume(size)
-
-        yield buf
-      }
-    }
-
-    if (buffers.length) {
-      yield buffers.slice(0)
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/chunker/fixed-size.js#L7
-  async function* fixedSizeChunker(source, options) {
-    let bl = new BufferList()
-    let currentLength = 0
-    let emitted = false
-    const maxChunkSize = options.maxChunkSize
-
-    for await (const buffer of source) {
-      bl.append(buffer)
-
-      currentLength += buffer.length
-
-      while (currentLength >= maxChunkSize) {
-        yield bl.slice(0, maxChunkSize)
-        emitted = true
-
-        // throw away consumed bytes
-        if (maxChunkSize === bl.length) {
-          bl = new BufferList()
-          currentLength = 0
-        } else {
-          const newBl = new BufferList()
-          newBl.append(bl.shallowSlice(maxChunkSize))
-          bl = newBl
-
-          // update our offset
-          currentLength -= maxChunkSize
-        }
-      }
-    }
-
-    if (!emitted || currentLength) {
-      // return any remaining bytes or an empty buffer
-      yield bl.slice(0, currentLength)
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/dag-builder/index.js#L59
-  async function* dagBuilder1(source, block, options) {
-    for await (const entry of source) {
-      if (entry.path) {
-        if (entry.path.substring(0, 2) === './') {
-          options.wrapWithDirectory = true
-        }
-
-        entry.path = entry.path
-          .split('/')
-          .filter(path => path && path !== '.')
-          .join('/')
-      }
-
-      if (entry.content) {
-        let chunker
-
-        if (typeof options.chunker === 'function') {
-          chunker = options.chunker
-        } else if (options.chunker === 'rabin') {
-          chunker = rabinChunker
-        } else {
-          chunker = fixedSizeChunker
-        }
-
-        let chunkValidator
-
-        if (typeof options.chunkValidator === 'function') {
-          chunkValidator = options.chunkValidator
-        } else {
-          chunkValidator = validateChunks // point 5
-        }
-
-        const file = {
-          path: entry.path,
-          mtime: entry.mtime,
-          mode: entry.mode,
-          content: chunker(chunkValidator(contentAsAsyncIterable(entry.content), options), options) // here change content to other data type
-        }
-
-        yield () => fileBuilder(file, block, options)
-      } else if (entry.path) {
-        const dir = {
-          path: entry.path,
-          mtime: entry.mtime,
-          mode: entry.mode
-        }
-
-        yield () => dirBuilder(dir, block, options)
-      } else {
-        throw new Error('Import candidate must have content or path or both')
-      }
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/dag-builder/validate-chunks.js#L11
-  async function* validateChunks(source) {
-    for await (const content of source) {
-      if (content.length === undefined) {
-        throw errCode(new Error('Content was invalid'), 'ERR_INVALID_CONTENT')
-      }
-
-      if (typeof content === 'string' || content instanceof String) {
-        yield uint8ArrayFromString(content.toString())
-      } else if (Array.isArray(content)) {
-        yield Uint8Array.from(content)
-      } else if (content instanceof Uint8Array) {
-        yield content
-      } else {
-        throw errCode(new Error('Content was invalid'), 'ERR_INVALID_CONTENT')
-      }
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/dag-builder/dir.js#L12
-  const dirBuilder = async (item, block, options) => {
-    const unixfs = new UnixFS({
-      type: 'directory',
-      mtime: item.mtime,
-      mode: item.mode
-    })
-
-    const buffer = new DAGNode(unixfs.marshal()).serialize()
-    const cid = await persist(buffer, block, options)
-    const path = item.path
-
-    return {
-      cid,
-      path,
-      unixfs,
-      size: buffer.length
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/balanced.js#L17
-  async function reduceToParents(source, reduce, options) {
-    const roots = []
-
-    for await (const chunked of batch(source, options.maxChildrenPerNode)) {
-      roots.push(await reduce(chunked))
-    }
-
-    if (roots.length > 1) {
-      return reduceToParents(roots, reduce, options)
-    }
-
-    return roots[0]
-  }
-
-  const dagBuilders = {
-    //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/flat.js#L6
-    flat: async function (source, reduce) {
-      return reduce(await all(source))
-    },
-    //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/balanced.js#L10
-    balanced: function balanced(source, reduce, options) {
-      return reduceToParents(source, reduce, options)
-    },
-    //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/trickle.js#L15
-    trickle: async function trickleStream(source, reduce, options) {
-      const root = new Root(options.layerRepeat)
-      let iteration = 0
-      let maxDepth = 1
-      let subTree = root
-
-      for await (const layer of batch(source, options.maxChildrenPerNode)) {
-        if (subTree.isFull()) {
-          if (subTree !== root) {
-            root.addChild(await subTree.reduce(reduce))
-          }
-
-          if (iteration && iteration % options.layerRepeat === 0) {
-            maxDepth++
-          }
-
-          subTree = new SubTree(maxDepth, options.layerRepeat, iteration)
-
-          iteration++
-        }
-
-        subTree.append(layer)
-      }
-
-      if (subTree && subTree !== root) {
-        root.addChild(await subTree.reduce(reduce))
-      }
-
-      return root.reduce(reduce)
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/trickle.js#L50
-  class SubTree {
-    constructor(maxDepth, layerRepeat, iteration = 0) {
-      this.maxDepth = maxDepth
-      this.layerRepeat = layerRepeat
-      this.currentDepth = 1
-      this.iteration = iteration
-
-      this.root = this.node = this.parent = {
-        children: [],
-        depth: this.currentDepth,
-        maxDepth,
-        maxChildren: (this.maxDepth - this.currentDepth) * this.layerRepeat
-      }
-    }
-
-    isFull() {
-      if (!this.root.data) {
-        return false
-      }
-
-      if (this.currentDepth < this.maxDepth && this.node.maxChildren) {
-        this._addNextNodeToParent(this.node)
-        return false
-      }
-
-      const distantRelative = this._findParent(this.node, this.currentDepth)
-
-      if (distantRelative) {
-        this._addNextNodeToParent(distantRelative)
-
-        return false
-      }
-
-      return true
-    }
-
-    _addNextNodeToParent(parent) {
-      this.parent = parent
-      const nextNode = {
-        children: [],
-        depth: parent.depth + 1,
-        parent,
-        maxDepth: this.maxDepth,
-        maxChildren: Math.floor(parent.children.length / this.layerRepeat) * this.layerRepeat
-      }
-
-      // @ts-ignore
-      parent.children.push(nextNode)
-
-      this.currentDepth = nextNode.depth
-      this.node = nextNode
-    }
-
-    append(layer) {
-      this.node.data = layer
-    }
-
-    reduce(reduce) {
-      return this._reduce(this.root, reduce)
-    }
-
-    async _reduce(node, reduce) {
-      /** @type {InProgressImportResult[]} */
-      let children = []
-
-      if (node.children.length) {
-        children = await Promise.all(
-          node.children
-            // @ts-ignore
-            .filter(child => child.data)
-            // @ts-ignore
-            .map(child => this._reduce(child, reduce))
-        )
-      }
-
-      return reduce((node.data || []).concat(children))
-    }
-
-    _findParent(node, depth) {
-      const parent = node.parent
-
-      if (!parent || parent.depth === 0) {
-        return
-      }
-
-      if (parent.children.length === parent.maxChildren || !parent.maxChildren) {
-        return this._findParent(parent, depth)
-      }
-
-      return parent
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/trickle.js#L175
-  class Root extends SubTree {
-
-    constructor(layerRepeat) {
-      super(0, layerRepeat)
-
-      this.root.depth = 0
-      this.currentDepth = 1
-    }
-
-    addChild(child) {
-      this.root.children.push(child)
-    }
-
-    reduce(reduce) {
-      return reduce((this.root.data || []).concat(this.root.children))
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/index.js#L198
-  function fileBuilder(file, block, options) {
-    const dagBuilder = dagBuilders[options.strategy]
-
-    if (!dagBuilder) {
-      throw errCode(new Error(`Unknown importer build strategy name: ${options.strategy}`), 'ERR_BAD_STRATEGY')
-    }
-    return dagBuilder(buildFileBatch(file, block, options), reduce(file, block, options), options)
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/buffer-importer.js#L13
-  async function* bufferImporter1(file, block, options) {
-    for await (let buffer of file.content) {
-      yield async () => {
-        options.progress(buffer.length, file.path)
-        let unixfs
-
-        const opts = {
-          codec: 'dag-pb',
-          cidVersion: options.cidVersion,
-          hashAlg: options.hashAlg,
-          onlyHash: options.onlyHash
-        }
-
-        if (options.rawLeaves) {
-          opts.codec = 'raw'
-          opts.cidVersion = 1
-        } else {
-          unixfs = new UnixFS({
-            type: options.leafType,
-            data: buffer,
-            mtime: file.mtime,
-            mode: file.mode
-          })
-
-          buffer = new DAGNode(unixfs.marshal()).serialize()  // buffer is [Uint8Array]
-        }
-        return {
-          cid: await persist(buffer, block, opts),
-          unixfs,
-          size: buffer.length
-        }
-      }
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/index.js#L37
-  async function* buildFileBatch(file, block, options) {
-    let count = -1
-    let previous
-    let bufferImporter
-
-    if (typeof options.bufferImporter === 'function') {
-      bufferImporter = options.bufferImporter
-    } else {
-      bufferImporter = bufferImporter1
-    }
-
-    for await (const entry of parallelBatch(bufferImporter(file, block, options), options.blockWriteConcurrency)) {
-      count++
-
-      if (count === 0) {
-        previous = entry
-        continue
-      } else if (count === 1 && previous) {
-        yield previous
-        previous = null
-      }
-
-      yield entry
-    }
-
-    if (previous) {
-      previous.single = true
-      yield previous
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dag-builder/file/index.js#L73
-  const reduce = (file, block, options) => {
-
-    async function reducer(leaves) {
-      if (leaves.length === 1 && leaves[0].single && options.reduceSingleLeafToSelf) {
-        const leaf = leaves[0]
-
-        if (leaf.cid.codec === 'raw' && (file.mtime !== undefined || file.mode !== undefined)) {
-          let { data: buffer } = await block.get(leaf.cid, options)
-
-          leaf.unixfs = new UnixFS({
-            type: 'file',
-            mtime: file.mtime,
-            mode: file.mode,
-            data: buffer
-          })
-
-          const multihash = mh.decode(leaf.cid.multihash)
-          buffer = new DAGNode(leaf.unixfs.marshal()).serialize()
-
-          leaf.cid = await persist(buffer, block, {
-            ...options,
-            codec: 'dag-pb',
-            hashAlg: multihash.name,
-            cidVersion: options.cidVersion
-          })
-          leaf.size = buffer.length
-        }
-        return {
-          cid: leaf.cid,
-          path: file.path,
-          unixfs: leaf.unixfs,
-          size: leaf.size
-        }
-      }
-
-      const f = new UnixFS({
-        type: 'file',
-        mtime: file.mtime,
-        mode: file.mode
-      })
-
-      const links = leaves
-        .filter(leaf => {
-          if (leaf.cid.codec === 'raw' && leaf.size) {
-            return true
-          }
-
-          if (leaf.unixfs && !leaf.unixfs.data && leaf.unixfs.fileSize()) {
-            return true
-          }
-
-          return Boolean(leaf.unixfs && leaf.unixfs.data && leaf.unixfs.data.length)
-        })
-        .map((leaf) => {
-          if (leaf.cid.codec === 'raw') {
-            f.addBlockSize(leaf.size)
-
-            return new DAGLink('', leaf.size, leaf.cid)
-          }
-
-          if (!leaf.unixfs || !leaf.unixfs.data) {
-            f.addBlockSize((leaf.unixfs && leaf.unixfs.fileSize()) || 0)
-          } else {
-            f.addBlockSize(leaf.unixfs.data.length)
-          }
-
-          return new DAGLink('', leaf.size, leaf.cid)
-        })
-
-      const node = new DAGNode(f.marshal(), links)
-      const buffer = node.serialize()
-      const cid = await persist(buffer, block, options)
-
-      return {
-        cid,
-        path: file.path,
-        unixfs: f,
-        size: buffer.length + node.Links.reduce((acc, curr) => acc + curr.Tsize, 0)
-      }
-    }
-
-    return reducer
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/dag-builder/index.js#L36
-  function contentAsAsyncIterable(content) {
-    try {
-      if (content instanceof Uint8Array) {
-        return (async function* () {
-          yield content
-        }())
-      } else if (isIterable(content)) {
-        return (async function* () {
-          yield* content
-        }())
-      } else if (isAsyncIterable(content)) {
-        return content
-      }
-    } catch {
-      throw errCode(new Error('Content was invalid'), 'ERR_INVALID_CONTENT')
-    }
-
-    throw errCode(new Error('Content was invalid'), 'ERR_INVALID_CONTENT')
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/dag-builder/index.js#L20
-  function isIterable(thing) {
-    return Symbol.iterator in thing
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/dag-builder/index.js#L28
-  function isAsyncIterable(thing) {
-    return Symbol.asyncIterator in thing
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/utils/to-path-components.js#L1
-  const toPathComponents = (path = '') => {
-    return (path
-      .trim()
-      .match(/([^\\^/]|\\\/)+/g) || [])
-      .filter(Boolean)
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/tree-builder.js#L19
-  async function addToTree(elem, tree, options) {
-    const pathElems = toPathComponents(elem.path || '')
-    const lastIndex = pathElems.length - 1
-    let parent = tree
-    let currentPath = ''
-
-    for (let i = 0; i < pathElems.length; i++) {
-      const pathElem = pathElems[i]
-
-      currentPath += `${currentPath ? '/' : ''}${pathElem}`
-
-      const last = (i === lastIndex)
-      parent.dirty = true
-      parent.cid = undefined
-      parent.size = undefined
-
-      if (last) {
-        await parent.put(pathElem, elem)
-        tree = await flatToShard(null, parent, options.shardSplitThreshold, options)
-      } else {
-        let dir = await parent.get(pathElem)
-
-        if (!dir || !(dir instanceof Dir)) {
-          dir = new DirFlat({
-            root: false,
-            dir: true,
-            parent: parent,
-            parentKey: pathElem,
-            path: currentPath,
-            dirty: true,
-            flat: true,
-            mtime: dir && dir.unixfs && dir.unixfs.mtime,
-            mode: dir && dir.unixfs && dir.unixfs.mode
-          }, options)
-        }
-
-        await parent.put(pathElem, dir)
-
-        parent = dir
-      }
-    }
-    return tree
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/tree-builder.js#L68
-  async function* flushAndYield(tree, block) {
-    if (!(tree instanceof Dir)) {
-      if (tree && tree.unixfs && tree.unixfs.isDirectory()) {
-        yield tree
-      }
-
-      return
-    }
-
-    yield* tree.flush(block)
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/tree-builder.js#L83
-  async function* treeBuilder1(source, block, options) {
-    let tree = new DirFlat({
-      root: true,
-      dir: true,
-      path: '',
-      dirty: true,
-      flat: true
-    }, options)
-
-    for await (const entry of source) {
-      if (!entry) {
-        continue
-      }
-
-      tree = await addToTree(entry, tree, options)
-
-      if (!entry.unixfs || !entry.unixfs.isDirectory()) {
-        yield entry
-      }
-    }
-
-    if (options.wrapWithDirectory) {
-      yield* flushAndYield(tree, block)
-    } else {
-      for await (const unwrapped of tree.eachChildSeries()) {
-        if (!unwrapped) {
-          continue
-        }
-
-        yield* flushAndYield(unwrapped.child, block)
-      }
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dir.js#L20
-  class Dir {
-    constructor(props, options) {
-      this.options = options || {}
-
-      this.root = props.root
-      this.dir = props.dir
-      this.path = props.path
-      this.dirty = props.dirty
-      this.flat = props.flat
-      this.parent = props.parent
-      this.parentKey = props.parentKey
-      this.unixfs = props.unixfs
-      this.mode = props.mode
-      this.mtime = props.mtime
-
-      this.cid = undefined
-      this.size = undefined
-    }
-
-    async put(name, value) { }
-    get(name) {
-      return Promise.resolve(this)
-    }
-    async * eachChildSeries() { }
-    async * flush(block) { }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/dir-flat.js#L16
-  class DirFlat extends Dir {
-
-    constructor(props, options) {
-      super(props, options)
-      this._children = {}
-    }
-
-    async put(name, value) {
-      this.cid = undefined
-      this.size = undefined
-      this._children[name] = value
-    }
-
-    get(name) {
-      return Promise.resolve(this._children[name])
-    }
-
-    childCount() {
-      return Object.keys(this._children).length
-    }
-
-    directChildrenCount() {
-      return this.childCount()
-    }
-
-    onlyChild() {
-      return this._children[Object.keys(this._children)[0]]
-    }
-
-    async * eachChildSeries() {
-      const keys = Object.keys(this._children)
-
-      for (let i = 0; i < keys.length; i++) {
-        const key = keys[i]
-
-        yield {
-          key: key,
-          child: this._children[key]
-        }
-      }
-    }
-
-    async * flush(block) {
-      const children = Object.keys(this._children)
-      const links = []
-
-      for (let i = 0; i < children.length; i++) {
-        let child = this._children[children[i]]
-
-        if (child instanceof Dir) {
-          for await (const entry of child.flush(block)) {
-            child = entry
-
-            yield child
-          }
-        }
-
-        if (child.size != null && child.cid) {
-          links.push(new DAGLink(children[i], child.size, child.cid))
-        }
-      }
-
-      const unixfs = new UnixFS({
-        type: 'directory',
-        mtime: this.mtime,
-        mode: this.mode
-      })
-
-      const node = new DAGNode(unixfs.marshal(), links)
-      const buffer = node.serialize()
-      const cid = await persist(buffer, block, this.options)
-      const size = buffer.length + node.Links.reduce(
-        (acc, curr) => acc + curr.Tsize,
-        0)
-
-      this.cid = cid
-      this.size = size
-
-      yield {
-        cid,
-        unixfs,
-        path: this.path,
-        size
-      }
-    }
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/options.js#L26
-  const defaultOptions = {
-    chunker: 'fixed',
-    strategy: 'balanced', // 'flat', 'trickle'
-    rawLeaves: false,
-    onlyHash: false,
-    reduceSingleLeafToSelf: true,
-    hashAlg: 'sha2-256',
-    leafType: 'file', // 'raw'
-    cidVersion: 0,
-    progress: () => () => { },
-    shardSplitThreshold: 1000,
-    fileImportConcurrency: 50,
-    blockWriteConcurrency: 10,
-    minChunkSize: 262144,
-    maxChunkSize: 262144,
-    avgChunkSize: 262144,
-    window: 16,
-    // FIXME: This number is too big for JavaScript
-    // https://github.com/ipfs/go-ipfs-chunker/blob/d0125832512163708c0804a3cda060e21acddae4/rabin.go#L11
-    polynomial: 17437180132763653, // eslint-disable-line no-loss-of-precision
-    maxChildrenPerNode: 174,
-    layerRepeat: 4,
-    wrapWithDirectory: false,
-    pin: false,
-    recursive: false,
-    hidden: false,
-    preload: false,
-    timeout: undefined,
-    hamtHashFn,
-    hamtHashCode: 0x22,
-    hamtBucketBits: 8
   }
 
   /*---------------------------------------------------------------------------------------------
@@ -3014,7 +2397,182 @@
       }
     }
   }
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-decode.js#L16
+  var decodeVarint = (bytes, offset) => {
+    let v = 0
+  
+    for (let shift = 0; ; shift += 7) {
+      /* c8 ignore next 3 */
+      if (shift >= 64) {
+        throw new Error('protobuf: varint overflow')
+      }
+      /* c8 ignore next 3 */
+      if (offset >= bytes.length) {
+        throw new Error('protobuf: unexpected end of data')
+      }
+  
+      const b = bytes[offset++]
+      v += shift < 28 ? (b & 0x7f) << shift : (b & 0x7f) * (2 ** shift)
+      if (b < 0x80) {
+        break
+      }
+    }
+    return [v, offset]
+  }
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-decode.js#L43
+  var decodeBytes = (bytes, offset) => {
+    let byteLen
+    ;[byteLen, offset] = decodeVarint(bytes, offset)
+    const postOffset = offset + byteLen
+  
+    /* c8 ignore next 3 */
+    if (byteLen < 0 || postOffset < 0) {
+      throw new Error('protobuf: invalid length')
+    }
+    /* c8 ignore next 3 */
+    if (postOffset > bytes.length) {
+      throw new Error('protobuf: unexpected end of data')
+    }
+  
+    return [bytes.subarray(offset, postOffset), postOffset]
+  }
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-decode.js#L65
+  var decodeKey = (bytes, index) => {
+    let wire
+    ;[wire, index] = decodeVarint(bytes, index);
+    return [wire & 0x7, wire >> 3, index]
+  };
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-decode.js#L141
+  var decodeNode =(bytes) => {
+    const l = bytes.length
+    let index = 0
+    let links
+    let linksBeforeData = false
+    let data
+    while (index < l) {
+      let wireType, fieldNum
+      ;[wireType, fieldNum, index] = decodeKey(bytes, index)
 
+      if (wireType !== 2) {
+        throw new Error(`protobuf: (PBNode) invalid wireType, expected 2, got ${wireType}`)
+      }
+      if (fieldNum === 1) {
+        if (data) {
+          throw new Error('protobuf: (PBNode) duplicate Data section')
+        }
+
+        ;[data, index] = decodeBytes(bytes, index)
+        if (links) {
+          linksBeforeData = true
+        }
+      } else if (fieldNum === 2) {
+        if (linksBeforeData) { // interleaved Links/Dode/Links
+          throw new Error('protobuf: (PBNode) duplicate Links section')
+        } else if (!links) {
+          links = []
+        }
+        let byts
+        ;[byts, index] = decodeBytes(bytes, index)
+        links.push(decodeLink(byts))
+      } else {
+        throw new Error(`protobuf: (PBNode) invalid fieldNumber, expected 1 or 2, got ${fieldNum}`)
+      }
+    }
+    if (index > l) {
+      throw new Error('protobuf: (PBNode) unexpected end of data')
+    }
+    const node = {}
+    if (data) {
+      node.Data = data
+    }
+    node.Links = links || []
+    return node
+  }
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-decode.js#L76
+  var decodeLink = (bytes) => {
+    const link = {}
+    const l = bytes.length
+    let index = 0
+  
+    while (index < l) {
+      let wireType, fieldNum
+      ;[wireType, fieldNum, index] = decodeKey(bytes, index)
+  
+      if (fieldNum === 1) {
+        if (link.Hash) {
+          throw new Error('protobuf: (PBLink) duplicate Hash section')
+        }
+        if (wireType !== 2) {
+          throw new Error(`protobuf: (PBLink) wrong wireType (${wireType}) for Hash`)
+        }
+        if (link.Name !== undefined) {
+          throw new Error('protobuf: (PBLink) invalid order, found Name before Hash')
+        }
+        if (link.Tsize !== undefined) {
+          throw new Error('protobuf: (PBLink) invalid order, found Tsize before Hash')
+        }
+  
+        ;[link.Hash, index] = decodeBytes(bytes, index)
+      } else if (fieldNum === 2) {
+        if (link.Name !== undefined) {
+          throw new Error('protobuf: (PBLink) duplicate Name section')
+        }
+        if (wireType !== 2) {
+          throw new Error(`protobuf: (PBLink) wrong wireType (${wireType}) for Name`)
+        }
+        if (link.Tsize !== undefined) {
+          throw new Error('protobuf: (PBLink) invalid order, found Tsize before Name')
+        }
+  
+        let byts
+        ;[byts, index] = decodeBytes(bytes, index)
+        link.Name = textDecoder.decode(byts)
+      } else if (fieldNum === 3) {
+        if (link.Tsize !== undefined) {
+          throw new Error('protobuf: (PBLink) duplicate Tsize section')
+        }
+        if (wireType !== 0) {
+          throw new Error(`protobuf: (PBLink) wrong wireType (${wireType}) for Tsize`)
+        }
+  
+        ;[link.Tsize, index] = decodeVarint(bytes, index)
+      } else {
+        throw new Error(`protobuf: (PBLink) invalid fieldNumber, expected 1, 2 or 3, got ${fieldNum}`)
+      }
+    }  
+    /* c8 ignore next 3 */
+    if (index > l) {
+      throw new Error('protobuf: (PBLink) unexpected end of data')
+    }  
+    return link
+  };
+  //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/index.js#L53
+  var d_decode = (bytes) => {
+    const pbn = decodeNode(bytes)
+    const node = {}
+    if (pbn.Data) {
+      node.Data = pbn.Data
+    }
+    if (pbn.Links) {
+      node.Links = pbn.Links.map((l) => {
+        const link = {}
+        try {
+          link.Hash = CID.decode(l.Hash)
+        } catch (e) {}
+        if (!link.Hash) {
+          throw new Error('Invalid Hash field found in link, expected CID')
+        }
+        if (l.Name !== undefined) {
+          link.Name = l.Name
+        }
+        if (l.Tsize !== undefined) {
+          link.Tsize = l.Tsize
+        }
+        return link
+      })
+    }
+    return node
+  };
   //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/index.js#L23
   var d_encode = (node) => {
     validate(node)
@@ -3277,92 +2835,6 @@
     return writer.finish()
   }
 
-  const hashItems = async (items, version) => {
-    const opts = mergeOptions(defaultOptions, { cidVersion: 1, onlyHash: true, rawLeaves: true, maxChunkSize: 1048576 })
-    if (version == undefined)
-      version = 1;
-    let Links = [];
-    for (let i = 0; i < items.length; i++) {
-      let item = items[i];
-      Links.push({
-        Name: item.name,
-        Hash: parse(item.cid),
-        Tsize: item.size
-      })
-    };
-    Links.sort(linkComparator);
-    try {
-      const dirUnixFS = new UnixFS({
-        type: 'directory',
-        mtime: undefined,
-        mode: 493
-      });
-      const node = {
-        Data: dirUnixFS.marshal(),
-        Links
-      };
-      // const buffer = d_encode(node);
-
-      // const cid = await persist(buffer, {
-      //   get: async cid => { throw new Error(`unexpected block API get for ${cid}`) },
-      //   put: async () => { }
-      // }, opts);
-      // console.dir(opts);
-      // return {
-      //   size: 0,//bytes.length + Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0),
-      //   cid: cid.toString()
-      // }
-      const bytes = d_encode(node);
-      const hash = await s_sha256.digest(bytes);
-      const dagPB_code = 0x70;
-      // const cid = CID.create(version, RAW_CODE, hash);
-      const cid = CID.create(version, dagPB_code, hash);
-      return {
-        size: bytes.length + Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0),
-        cid: cid.toString()
-      }
-    } catch (e) {
-      throw e;
-    }
-  };
-  const hashContent = async (value, version) => {
-    try {
-      if (version == undefined)
-        version = 1;
-      if (typeof (value) == 'string')
-        value = new TextEncoder("utf-8").encode(value);
-
-      var cid;
-      if (version == 0) {
-        const unixFS = new UnixFS({
-          type: 'file',
-          data: value
-        })
-        const bytes = d_encode({
-          Data: unixFS.marshal(),
-          Links: []
-        })
-        const hash = await s_sha256.digest(bytes);
-        cid = CID.create(version, DAG_PB_CODE, hash);
-      }
-      else {
-        const hash = await s_sha256.digest(value);
-        if (value.length <= 1048576) //1 MB
-          cid = CID.create(version, RAW_CODE, hash)
-        else
-          cid = CID.create(version, DAG_PB_CODE, hash)
-      }
-      return cid.toString();
-    }
-    catch (e) {
-      throw e;
-    }
-  };
-  const parse = function (cid) {
-    return CID.parse(cid)
-  };
-
-  // new code start from here
   /*---------------------------------------------------------------------------------------------
   *  Copyright (c) 2013-2019 bl contributors
   *  Licensed under the MIT License.
@@ -3870,63 +3342,6 @@
     }
 
     return base.decoder.decode(`${base.prefix}${string}`)
-  }
-
-  // No license(?)
-  //https://github.com/achingbrain/it/blob/c74ff5ff0d1b4164cd2f556f1b431d77ad47dd16/packages/it-all/index.js#L9
-  const all = async (source) => {
-    const arr = []
-
-    for await (const entry of source) {
-      arr.push(entry)
-    }
-
-    return arr
-  }
-
-  //https://github.com/achingbrain/it/blob/c74ff5ff0d1b4164cd2f556f1b431d77ad47dd16/packages/it-batch/index.js#L12
-  async function* batch(source, size = 1) {
-    let things = []
-
-    if (size < 1) {
-      size = 1
-    }
-
-    for await (const thing of source) {
-      things.push(thing)
-
-      while (things.length >= size) {
-        yield things.slice(0, size)
-
-        things = things.slice(size)
-      }
-    }
-
-    while (things.length) {
-      yield things.slice(0, size)
-
-      things = things.slice(size)
-    }
-  }
-
-  // No license(?)
-  //https://github.com/achingbrain/it-parallel-batch/blob/2a7f2c29b44be057c0862d4864856fcc66466d57/packages/it-parallel-batch/index.js#L5
-  async function* parallelBatch(source, size = 1) {
-    for await (const tasks of batch(source, size)) {
-      const things = tasks.map(
-        p => {
-          return p().then(value => ({ ok: true, value }), err => ({ ok: false, err }))
-        })
-
-      for (let i = 0; i < things.length; i++) {
-        const result = await things[i]
-        if (result.ok) {
-          yield result.value
-        } else {
-          throw result.err
-        }
-      }
-    }
   }
 
   /*---------------------------------------------------------------------------------------------
@@ -4545,81 +3960,6 @@
   }
 
   /*---------------------------------------------------------------------------------------------
-  *  Licensed under the MIT and Apache-2.0 License.
-  *  https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/LICENSE
-  *--------------------------------------------------------------------------------------------*/
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/99a830dadc400df16d1fd3a5e92943d43c09b2d6/packages/ipfs-unixfs-importer/src/utils/persist.js#L10
-  const persist = async (buffer, block, options) => {
-    if (!options.codec) {
-      options.codec = 'dag-pb'
-    }
-
-    if (!options.cidVersion) {
-      options.cidVersion = 0
-    }
-
-    if (!options.hashAlg) {
-      options.hashAlg = 'sha2-256'
-    }
-
-    if (options.hashAlg !== 'sha2-256') {
-      options.cidVersion = 1
-    }
-
-    const multihash = await Multihashing(buffer, options.hashAlg) // buffer is [Uint8Array]
-    const cid = new CID1(options.cidVersion, options.codec, multihash)
-
-    if (!options.onlyHash) {
-      await block.put(buffer, {
-        pin: options.pin,
-        preload: options.preload,
-        timeout: options.timeout,
-        cid
-      })
-    }
-
-    return cid
-  }
-
-  //https://github.com/ipfs/js-ipfs-unixfs/blob/ba851f65469a7afa926752df1154e2bebbd6c31b/packages/ipfs-unixfs-importer/src/index.js#L30
-  async function* importer(source, block, options = {}) {
-    const opts = mergeOptions(defaultOptions, options)
-
-    let dagBuilder
-
-    if (typeof options.dagBuilder === 'function') {
-      dagBuilder = options.dagBuilder
-    } else {
-      dagBuilder = dagBuilder1
-    }
-
-    let treeBuilder
-
-    if (typeof options.treeBuilder === 'function') {
-      treeBuilder = options.treeBuilder
-    } else {
-      treeBuilder = treeBuilder1
-    }
-
-    let candidates
-
-    if (Symbol.asyncIterator in source || Symbol.iterator in source) {
-      candidates = source
-    } else {
-      candidates = [source]
-    }
-    for await (const entry of treeBuilder(parallelBatch(dagBuilder(candidates, block, opts), opts.fileImportConcurrency), block, opts)) {
-      yield {
-        cid: entry.cid,
-        path: entry.path,
-        unixfs: entry.unixfs,
-        size: entry.size
-      }
-    }
-  }
-
-  /*---------------------------------------------------------------------------------------------
   *  Copyright (C) 2018 Angry Bytes and contributors.
   *  https://github.com/Two-Screen/stable/blob/master/README.md
   *--------------------------------------------------------------------------------------------*/
@@ -4711,231 +4051,243 @@
     return arr
   };
 
-  /*---------------------------------------------------------------------------------------------
-  *  Copyright (c) 2020 Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
-  *  Licensed under the MIT License.
-  *  https://github.com/sindresorhus/is-plain-obj/blob/main/license
-  *--------------------------------------------------------------------------------------------*/
-
-  //https://github.com/sindresorhus/is-plain-obj/blob/68e8cc77bb1bbd0bf7d629d3574b6ca70289b2cc/index.js#L1
-  const isOptionObject = value => {
-    if (Object.prototype.toString.call(value) !== '[object Object]') {
-      return false;
-    }
-
-    const prototype = Object.getPrototypeOf(value);
-    return prototype === null || prototype === Object.prototype;
-  };
-
-  /*---------------------------------------------------------------------------------------------
-  *  Copyright (c) Michael Mayer <michael@schnittstabil.de>
-  *  Licensed under the MIT License.
-  *  https://github.com/schnittstabil/merge-options/blob/master/license
-  *--------------------------------------------------------------------------------------------*/
-
-  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L4
-  const { hasOwnProperty } = Object.prototype;
-  const { propertyIsEnumerable } = Object;
-
-  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L6
-  const defineProperty = (object, name, value) => Object.defineProperty(object, name, {
-    value,
-    writable: true,
-    enumerable: true,
-    configurable: true
-  });
-
-  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L13
   const globalThis = this;
-  const defaultMergeOptions = {
-    concatArrays: false,
-    ignoreUndefined: false
+  
+  async function hashChunk(version, data){
+    let size = data.length;
+    const dataSize = data.length;
+    let multihash;
+    if (version == 0){
+      const unixFS = new UnixFS({
+        type: 'file',
+        data: data
+      })
+      let bytes = d_encode({
+        Data: unixFS.marshal(),
+        Links: []
+      })
+      multihash = await Multihashing(bytes, 'sha2-256')
+      size = bytes.length;
+    }
+    else{
+      multihash = await Multihashing(data, 'sha2-256') // buffer is [Uint8Array]
+    };
+    let codec = version==1?'raw':'dag-pb';
+    const cid = new CID1(version, codec, multihash)
+    return {
+      size: size,
+      dataSize: dataSize,
+      cid: cid
+    };
   };
-
-  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L19
-  const getEnumerableOwnPropertyKeys = value => {
-    const keys = [];
-
-    for (const key in value) {
-      if (hasOwnProperty.call(value, key)) {
-        keys.push(key);
-      }
-    }
-
-    /* istanbul ignore else  */
-    if (Object.getOwnPropertySymbols) {
-      const symbols = Object.getOwnPropertySymbols(value);
-
-      for (const symbol of symbols) {
-        if (propertyIsEnumerable.call(value, symbol)) {
-          keys.push(symbol);
-        }
-      }
-    }
-
-    return keys;
-  };
-
-  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L42
-  function clone(value) {
-    if (Array.isArray(value)) {
-      return cloneArray(value);
-    }
-
-    if (isOptionObject(value)) {
-      return cloneOptionObject(value);
-    }
-
-    return value;
-  }
-
-  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L54
-  function cloneArray(array) {
-    const result = array.slice(0, 0);
-
-    getEnumerableOwnPropertyKeys(array).forEach(key => {
-      defineProperty(result, key, clone(array[key]));
+  async function hashChunks(version, chunks){
+    let contentLength = 0;
+    const unixfs = new UnixFS({
+      type: 'file'
     });
+    let links = [];
+    for (let i = 0; i < chunks.length; i++) {
+      let item = chunks[i];
+      contentLength += item.dataSize;      
+      unixfs.addBlockSize(item.dataSize);
+      links.push(new DAGLink('', item.size, item.cid))
+    };
+    const node = new DAGNode(unixfs.marshal(), links)
+    const buffer = node.serialize();
+    const multihash = await Multihashing(buffer, 'sha2-256') // buffer is [Uint8Array]
+    const cid = new CID1(version, 'dag-pb', multihash)
+    return {
+      size: buffer.length + contentLength,
+      type: 'file',
+      cid: cid.toString(),
+      bytes: buffer
+    };
+  };
+  async function hashItems(items, version){
+    if (version == undefined)
+      version = 1;
+    let Links = [];
+    for (let i = 0; i < items.length; i++) {
+      let item = items[i];
+      Links.push({
+        Name: item.name,
+        Hash: parse(item.cid),
+        Tsize: item.size
+      })
+    };
+    Links.sort(linkComparator);
+    try {
+      const dirUnixFS = new UnixFS({
+        type: 'directory',
+        mtime: undefined,
+        mode: 493
+      });
+      const node = {
+        Data: dirUnixFS.marshal(),
+        Links
+      };
+      const bytes = d_encode(node);
+      const hash = await s_sha256.digest(bytes);
+      const dagPB_code = 0x70;
+      // const cid = CID.create(version, RAW_CODE, hash);
+      const cid = CID.create(version, dagPB_code, hash).toString();
+      return {
+        size: bytes.length + Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0),
+        name: '',
+        type: 'dir',
+        links: items,
+        cid: cid,
+        bytes: bytes
+      }
+    } catch (e) {
+      throw e;
+    }
+  };
+  // async function hashContent(value, version){
+  //   try {
+  //     if (version == undefined)
+  //       version = 1;
+  //     if (typeof (value) == 'string')
+  //       value = textEncoder.encode(value);
 
+  //     var cid;
+  //     if (version == 0) {
+  //       const unixFS = new UnixFS({
+  //         type: 'file',
+  //         data: value
+  //       })
+  //       const bytes = d_encode({
+  //         Data: unixFS.marshal(),
+  //         Links: []
+  //       })
+  //       const hash = await s_sha256.digest(bytes);
+  //       cid = CID.create(version, DAG_PB_CODE, hash);
+  //     }
+  //     else {
+  //       const hash = await s_sha256.digest(value);
+  //       if (value.length <= 1048576) //1 MB
+  //         cid = CID.create(version, RAW_CODE, hash)
+  //       else
+  //         cid = CID.create(version, DAG_PB_CODE, hash)
+  //     }
+  //     return cid.toString();
+  //   }
+  //   catch (e) {
+  //     throw e;
+  //   }
+  // };
+  function parse(cid, bytes) {
+    let result = CID.parse(cid);
+    if (bytes){
+      let decoded = d_decode(bytes);
+      result.links = decoded.Links;
+      if (decoded.Data){
+        decoded.Data = UnixFS.unmarshal(decoded.Data)
+        result.type = decoded.Data.type;
+        if (result.type == 'directory')
+          result.size = bytes.length + decoded.Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0);
+      };
+    };
     return result;
-  }
-
-  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L64
-  function cloneOptionObject(object) {
-    const result = Object.getPrototypeOf(object) === null ? Object.create(null) : {};
-
-    getEnumerableOwnPropertyKeys(object).forEach(key => {
-      defineProperty(result, key, clone(object[key]));
-    });
-
-    return result;
-  }
-
-  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L81
-  const mergeKeys = (merged, source, keys, config) => {
-    keys.forEach(key => {
-      if (typeof source[key] === 'undefined' && config.ignoreUndefined) {
-        return;
-      }
-
-      // Do not recurse into prototype chain of merged
-      if (key in merged && merged[key] !== Object.getPrototypeOf(merged)) {
-        defineProperty(merged, key, merge(merged[key], source[key], config));
-      } else {
-        defineProperty(merged, key, clone(source[key]));
-      }
-    });
-
-    return merged;
   };
-
-  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L106
-  const concatArrays = (merged, source, config) => {
-    let result = merged.slice(0, 0);
-    let resultIndex = 0;
-
-    [merged, source].forEach(array => {
-      const indices = [];
-
-      // `result.concat(array)` with cloning
-      for (let k = 0; k < array.length; k++) {
-        if (!hasOwnProperty.call(array, k)) {
-          continue;
-        }
-
-        indices.push(String(k));
-
-        if (array === merged) {
-          // Already cloned
-          defineProperty(result, resultIndex++, array[k]);
-        } else {
-          defineProperty(result, resultIndex++, clone(array[k]));
-        }
-      }
-
-      // Merge non-index keys
-      result = mergeKeys(result, array, getEnumerableOwnPropertyKeys(array).filter(key => !indices.includes(key)), config);
-    });
-
-    return result;
-  };
-
-  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L142
-  function merge(merged, source, config) {
-    if (config.concatArrays && Array.isArray(merged) && Array.isArray(source)) {
-      return concatArrays(merged, source, config);
-    }
-
-    if (!isOptionObject(source) || !isOptionObject(merged)) {
-      return clone(source);
-    }
-
-    return mergeKeys(merged, source, getEnumerableOwnPropertyKeys(source), config);
-  }
-
-  //https://github.com/schnittstabil/merge-options/blob/2b96ee3e6e9b276b1410d239c7e20e3326fdd6cd/index.js#L154
-  function merge_options(...options) {
-    const config = merge(clone(defaultMergeOptions), (this !== globalThis && this) || {}, defaultMergeOptions);
-    let merged = { _: {} };
-
-    for (const option of options) {
-      if (option === undefined) {
-        continue;
-      }
-
-      if (!isOptionObject(option)) {
-        throw new TypeError('`' + option + '` is not an Option Object');
-      }
-
-      merged = merge(merged, { _: option }, config);
-    }
-
-    return merged._;
-  };
-
-  const mergeOptions = merge_options.bind({ ignoreUndefined: true })
-
-  /*---------------------------------------------------------------------------------------------
-  *  Copyright (c) 2019 Alan Shaw
-  *  Licensed under the MIT License.
-  *  https://github.com/alanshaw/ipfs-only-hash/blob/master/LICENSE
-  *--------------------------------------------------------------------------------------------*/
-
-  //https://github.com/alanshaw/ipfs-only-hash/blob/31a971c167c94ca38715a25e50fdc521c1c57ddf/index.js#L3
-  const block = {
-    get: async cid => { throw new Error(`unexpected block API get for ${cid}`) },
-    put: async () => { throw new Error('unexpected block API put') }
-  }
-
-  //https://github.com/alanshaw/ipfs-only-hash/blob/31a971c167c94ca38715a25e50fdc521c1c57ddf/index.js#L8
-  async function hashFile(content, version, options) {
-
-    var options = options || {}
-    options.onlyHash = true
-    options.cidVersion = version
-
+  async function hashFile(content, version) {
+    let buffer = [];
+    let items = [];
+    let contentLength = 0;
     if (typeof content === 'string') {
-      content = new TextEncoder().encode(content)
-    }
+      // content = new TextEncoder().encode(content)
+      let chunkSize = 1048576;
+      if (version == 0)
+        chunkSize = 262144;
 
-    let lastCid
-    let lastSize;
-    for await (const { cid, size } of importer([{ content }], block, options)) {
-      lastCid = cid;
-      lastSize = size;
+      let offset = 0  
+      const size = Math.ceil(content.length/chunkSize)
+      for (let i = 0; i < size; i++) {
+        let data = textEncoder.encode(content.substr(offset, chunkSize));
+        contentLength += data.length;
+        items.push(await hashChunk(version, data));
+        offset += chunkSize;
+      }
     }
-    return { cid: lastCid.toString(), size: lastSize }
+    else{
+      for await (const data of content) {
+        buffer.push(data);
+        contentLength += data.length;
+        items.push(await hashChunk(version, data));
+      };
+    };
+    if (items.length == 1){
+      return {
+        size: contentLength,
+        type: 'file',
+        cid: items[0].cid.toString()
+      };
+    }
+    else{
+      let result= await hashChunks(version, items);
+      let links = [];
+      for (let i = 0; i < items.length; i++) {
+        let item = items[i];
+        links.push({
+          cid: item.cid.toString(),
+          size: item.size
+        })
+      };
+      return {
+        cid: result.cid,
+        size: result.size,
+        type: 'file',
+        bytes: result.bytes,
+        links: links
+      };
+    }
+  };
+  function base64Encode(binaryInput){
+    const base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    let result = '';
+    if (binaryInput.length % 3 === 1) {
+      binaryInput += '00';
+    } else if (binaryInput.length % 3 === 2) {
+      binaryInput += '0';
+    };
+    for (let i = 0; i < binaryInput.length; i += 6) {
+      const chunk = binaryInput.slice(i, i + 6);
+      const decimalValue = parseInt(chunk, 2);
+      result += base64Chars.charAt(decimalValue);
+    };
+    const padding = calculatePadding(result);
+    result += '='.repeat(padding);
+    return result;
+  };
+  function calculatePadding(inputNumber) {
+    const inputLength = inputNumber.toString().length;
+    const nextMultipleOf4 = Math.ceil(inputLength / 4) * 4;
+    const difference = nextMultipleOf4 - inputLength;
+    return difference;
+  };
+  function hexToBinary(hexString){
+    return hexString
+      .split('')
+      .map(hex => parseInt(hex, 16).toString(2).padStart(4, '0'))
+      .join('');
+  };
+  function cidToHash(cid) {
+    const parsedCid = parse(cid);
+    const hashBuffer = Buffer.from(parsedCid.multihash.bytes);
+    const hashHex = Array.from(hashBuffer.slice(2)).map(byte => byte.toString(16).toUpperCase().padStart(2, '0')).join('');
+    const binaryInput = hexToBinary(hashHex);
+    return base64Encode(binaryInput);
   };
   // AMD
   if (typeof define == 'function' && define.amd)
-    define('@ijstech/ipfs-utils', function () { return { parse, hashItems, hashContent, hashFile, mergeOptions }; })
+    define('@ijstech/ipfs-utils', function () { return {cidToHash, parse, hashChunk, hashChunks, hashItems, hashFile }; })
   // Node.js
   else if (typeof module != 'undefined' && module.exports)
-    module.exports = { parse, hashItems, hashContent, hashFile, mergeOptions }
+    module.exports = {cidToHash, parse, hashChunk, hashChunks, hashItems, hashFile }
   // Browser
   else {
     if (!globalObject)
       globalObject = typeof self != 'undefined' && self ? self : window;
-    globalObject.IPFSUtils = { parse, hashItems, hashContent, hashFile, mergeOptions };
+    globalObject.IPFSUtils = {cidToHash, parse, hashChunk, hashChunks, hashItems, hashFile };
   };
 })(this);

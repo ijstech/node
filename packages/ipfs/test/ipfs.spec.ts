@@ -1,28 +1,10 @@
-import { ICidInfo, hashDir, hashItems, hashContent, hashFile} from '../src/index';
+import {cidToHash, ICidInfo, ICidData, hashDir, hashItems, hashContent, hashFile, parse} from '../src/index';
 import assert from 'assert';
 import Path from 'path';
 import {promises as Fs} from 'fs';
-import { resourceLimits } from 'worker_threads';
 
-// import fs from 'fs';
-// import Hash from './hashOnly';
-
-// describe('IPFS (Non zero dependency)', function () {
-//   it('hash text file v0 size 1048577', async () => {
-//     let stream = fs.createReadStream('./1048577.bin');
-//     let c = await Hash.of(stream, {cidVersion: 0});
-//     assert.strictEqual(c, 'Qmeb988ZjF9Ui6AVPR8Sjg5sAv1B6DauS5rUjCoNs7ftZ1');    
-//   });
-//   it('hash text file v1 size 1048577', async () => {    
-//     let stream = fs.createReadStream(Path.resolve(__dirname, './1048577.bin'));
-//     let c = await Hash.of(stream, {cidVersion: 1, rawLeaves: true, maxChunkSize: 1048576}); //match with web3.storage
-//     assert.strictEqual(c, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');    
-//   });  
-  // it('hash directory', async ()=>{
-  //   let result = await Hash.ofDir(Path.resolve(__dirname, 'dir'))
-  //   console.dir(result);
-  // })
-// });
+const CODE_RAW = 0x55;
+const CODE_DAG_PB = 0x70;
 
 describe('IPFS', function () {
   it('hash items', async function () {
@@ -666,12 +648,22 @@ describe('IPFS', function () {
       ]
     };
     let result = await hashItems(data.links);
+    assert.strictEqual(parse(result.cid).code, CODE_DAG_PB);
     assert.strictEqual(result.cid, data.cid);
     assert.strictEqual(result.size, data.size);
+    let parsed = parse(result.cid, result.bytes);
+    assert.strictEqual(parsed.type, 'dir');
   });  
   it('hash directory', async function () {
     let path = Path.join(__dirname, './dir');
     let result = await hashDir(path);
+
+    let parsed = parse(result.cid, result.bytes);
+    function deleteBytes(data: ICidData){
+        delete data.bytes;
+        data.links?.forEach(deleteBytes)
+    };
+    deleteBytes(result)
     //https://ipfs.io/ipfs/bafybeiejzqyjx5o22l7izdwoeshzvtcjlu7w7y3mv7324gzxml2mt5lyzm
     assert.deepStrictEqual(result, {
       "cid": "bafybeiejzqyjx5o22l7izdwoeshzvtcjlu7w7y3mv7324gzxml2mt5lyzm",
@@ -720,6 +712,7 @@ describe('IPFS', function () {
   });
   it('hash content V1', async () => {
     let result = await hashContent('Hello World!', 1);
+    assert.strictEqual(parse(result.cid).code, CODE_RAW);
     assert.strictEqual(result.cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
   });
   it('hash text file v0', async () => {
@@ -741,33 +734,94 @@ describe('IPFS', function () {
     // https://dweb.link/ipfs/bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla?filename=1048576.bin
     let { cid } = await hashFile(Path.resolve(__dirname, './1048576.bin'), 1);
     assert.strictEqual(cid, 'bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla');
+    let data = parse(cid);
+    assert.strictEqual(data.code, 0x55);//'raw'
   });
   it('hash text file v1 size 1048577', async () => {
     //https://bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby.ipfs.dweb.link/1048577.bin
     //https://dweb.link/ipfs/bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq?filename=1048577.bin
-    let { cid } = await hashFile(Path.resolve(__dirname, './1048577.bin'), 1);
-    assert.strictEqual(cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
+    let result = await hashFile(Path.resolve(__dirname, './1048577.bin'), 1);
+    assert.strictEqual(parse(result.cid).code, CODE_DAG_PB);
+    assert.strictEqual(parse(result.cid, result.bytes).type, 'file');
+    assert.strictEqual(result.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
+    assert.strictEqual(result.size, 1048681);
+    assert.deepStrictEqual(result.links,  [
+        {
+          cid: 'bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla',
+          size: 1048576
+        },
+        {
+          cid: 'bafkreidogqfzz75tpkmjzjke425xqcrmpcib2p5tg44hnbirumdbpl5adu',
+          size: 1
+        }
+      ]);
   });
+  it('hash text file v0 size 1048577', async () => {    
+    let result = await hashFile(Path.resolve(__dirname, './1048577.bin'), 0);
+    assert.strictEqual(result.cid, 'Qmeb988ZjF9Ui6AVPR8Sjg5sAv1B6DauS5rUjCoNs7ftZ1');
+    let parsed = parse(result.cid, result.bytes);
+    assert.deepStrictEqual(parsed.links, [
+        {
+          cid: 'QmRk1rduJvo5DfEYAaLobS2za9tDszk35hzaNSDCJ74DA7',
+          name: '',
+          size: 262158
+        },
+        {
+          cid: 'QmRk1rduJvo5DfEYAaLobS2za9tDszk35hzaNSDCJ74DA7',
+          name: '',
+          size: 262158
+        },
+        {
+          cid: 'QmRk1rduJvo5DfEYAaLobS2za9tDszk35hzaNSDCJ74DA7',
+          name: '',
+          size: 262158
+        },
+        {
+          cid: 'QmRk1rduJvo5DfEYAaLobS2za9tDszk35hzaNSDCJ74DA7',
+          name: '',
+          size: 262158
+        },
+        {
+          cid: 'QmS9JArPwa55ePgDnyg6TzX24mYTS1b1vLqWNebyVotKxQ',
+          name: '',
+          size: 9
+        }
+      ]);
+  }); 
   it('hash content v1 size 1048577', async () => {
     //https://bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby.ipfs.dweb.link/1048577.bin
     //https://dweb.link/ipfs/bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq?filename=1048577.bin
     let content = await Fs.readFile(Path.resolve(__dirname, './1048577.bin'), 'utf-8');
-    let result = await hashContent(content);    
-    assert.strictEqual(result.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
-    result = await hashItems([
+    let cid = await hashContent(content);   
+    assert.strictEqual(cid.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
+    let code = parse(cid.cid).code;
+    assert.strictEqual(code, 0x70); //dag-pb
+    let result = await hashItems([
         {
-            cid: result.cid,
+            cid: cid.cid,
             name: '1048577.bin',
-            size: result.size,
-            type: 'file'
+            size: cid.size
         }
     ]);
     assert.strictEqual(result.cid, 'bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby');
+    let parsedData = parse(result.cid, result.bytes);
+    assert.strictEqual(result.size, parsedData.size);
+    assert.strictEqual(parsedData.type, 'dir');
+    assert.deepEqual(parsedData.links, [
+        {
+            cid: cid.cid,
+            name: '1048577.bin',
+            size: cid.size
+        }
+    ]);
+  }); 
+  it('hash content v0 size 1048577', async () => {
+    //https://bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby.ipfs.dweb.link/1048577.bin
+    //https://dweb.link/ipfs/bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq?filename=1048577.bin
+    let content = await Fs.readFile(Path.resolve(__dirname, './1048577.bin'), 'utf-8');
+    let cid = await hashContent(content, 0);    
+    assert.strictEqual(cid.cid, 'Qmeb988ZjF9Ui6AVPR8Sjg5sAv1B6DauS5rUjCoNs7ftZ1');
   });
-  it('hash text file v0 size 1048577', async () => {    
-    let {cid} = await hashFile(Path.resolve(__dirname, './1048577.bin'), 0);
-    assert.strictEqual(cid, 'Qmeb988ZjF9Ui6AVPR8Sjg5sAv1B6DauS5rUjCoNs7ftZ1');
-  });  
   it('hash image file v0', async () => {
     //https://ipfs.io/ipfs/QmSbQLR1hdDRwf81ZJ2Ndhm5BoKJLH7cfH8mmA2jeCunmy
     let { cid } = await hashFile(Path.resolve(__dirname, './sclogo.png'), 0);
@@ -777,5 +831,9 @@ describe('IPFS', function () {
     //https://ipfs.io/ipfs/bafkreidoephzortbdteu2iskujwdmb2xy6t6shonqdgbsn3v4w5ory5eui
     let { cid } = await hashFile(Path.resolve(__dirname, './sclogo.png'), 1);
     assert.strictEqual(cid, 'bafkreidoephzortbdteu2iskujwdmb2xy6t6shonqdgbsn3v4w5ory5eui');
+  });
+  it('CID to Sha256', async () => {
+    let result = cidToHash('bafkreidoephzortbdteu2iskujwdmb2xy6t6shonqdgbsn3v4w5ory5eui');
+    assert.strictEqual(result, 'biPPl0ZhHMlNIkqibDYHV8en6R3NgMwZN3XluujjpKI=');
   });
 });
