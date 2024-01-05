@@ -4186,6 +4186,7 @@
       return {
         size: contentLength,
         type: 'file',
+        code: CODE_RAW,
         cid: items[0].cid.toString()
       };
     }
@@ -4202,6 +4203,7 @@
       return {
         cid: result.cid,
         size: result.size,
+        code: CODE_DAG_PB,
         type: 'file',
         bytes: result.bytes,
         links: links

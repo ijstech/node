@@ -732,15 +732,20 @@ describe('IPFS', function () {
   });
   it('hash text file v1 size 1048576', async () => {
     // https://dweb.link/ipfs/bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla?filename=1048576.bin
-    let { cid } = await hashFile(Path.resolve(__dirname, './1048576.bin'), 1);
-    assert.strictEqual(cid, 'bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla');
-    let data = parse(cid);
-    assert.strictEqual(data.code, 0x55);//'raw'
+    let result = await hashFile(Path.resolve(__dirname, './1048576.bin'), 1);
+    assert.strictEqual(result.code, CODE_RAW);
+    assert.strictEqual(result.type, 'file');
+    assert.strictEqual(result.size, 1048576);
+    assert.strictEqual(result.cid, 'bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla');
+    let data = parse(result.cid);
+    assert.strictEqual(data.code, CODE_RAW);//'raw'
   });
   it('hash text file v1 size 1048577', async () => {
     //https://bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby.ipfs.dweb.link/1048577.bin
     //https://dweb.link/ipfs/bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq?filename=1048577.bin
     let result = await hashFile(Path.resolve(__dirname, './1048577.bin'), 1);
+    assert.strictEqual(result.code, CODE_DAG_PB);
+    assert.strictEqual(result.type, 'file');
     assert.strictEqual(parse(result.cid).code, CODE_DAG_PB);
     assert.strictEqual(parse(result.cid, result.bytes).type, 'file');
     assert.strictEqual(result.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');

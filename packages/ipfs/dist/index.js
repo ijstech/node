@@ -330,8 +330,8 @@
     bitsPerChar: 5
   })
 
-  const DAG_PB_CODE = 0x70
-  const RAW_CODE = 0x55
+  const CODE_DAG_PB = 0x70
+  const CODE_RAW = 0x55
 
   //https://github.com/multiformats/js-multiformats/blob/bb14a29dd823a517ef0c6c741d265e022591d831/vendor/varint.js#L58
   var N1 = Math.pow(2, 7);
@@ -553,8 +553,8 @@
 
       switch (version) {
         case 0: {
-          if (code !== DAG_PB_CODE) {
-            throw new Error(`Version 0 CID must use dag-pb (code: ${DAG_PB_CODE}) block encoding`)
+          if (code !== CODE_DAG_PB) {
+            throw new Error(`Version 0 CID must use dag-pb (code: ${CODE_DAG_PB}) block encoding`)
           } else {
             return new CID(version, code, digest, digest.bytes)
           }
@@ -608,7 +608,7 @@
       }
 
       let version = next()
-      let codec = DAG_PB_CODE
+      let codec = CODE_DAG_PB
       if (version === 18) { // CIDv0
         version = 0
         offset = 0
@@ -630,7 +630,7 @@
     }
 
     static createV0(digest) {
-      return CID.create(0, DAG_PB_CODE, digest)
+      return CID.create(0, CODE_DAG_PB, digest)
     }
 
     static createV1(code, digest) {
@@ -3889,8 +3889,8 @@
   }
 
   const baseTable = Object.freeze({
-    'raw': 0x55,
-    'dag-pb': 0x70,
+    'raw': CODE_RAW,
+    'dag-pb': CODE_DAG_PB,
   })
 
   //https://github.com/multiformats/js-multicodec/blob/2945d8b4f65552cb93ae60892f69ee6fac24b359/src/util.js#L42
@@ -4128,9 +4128,8 @@
       };
       const bytes = d_encode(node);
       const hash = await s_sha256.digest(bytes);
-      const dagPB_code = 0x70;
       // const cid = CID.create(version, RAW_CODE, hash);
-      const cid = CID.create(version, dagPB_code, hash).toString();
+      const cid = CID.create(version, CODE_DAG_PB, hash).toString();
       return {
         size: bytes.length + Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0),
         name: '',
@@ -4143,39 +4142,6 @@
       throw e;
     }
   };
-  // async function hashContent(value, version){
-  //   try {
-  //     if (version == undefined)
-  //       version = 1;
-  //     if (typeof (value) == 'string')
-  //       value = textEncoder.encode(value);
-
-  //     var cid;
-  //     if (version == 0) {
-  //       const unixFS = new UnixFS({
-  //         type: 'file',
-  //         data: value
-  //       })
-  //       const bytes = d_encode({
-  //         Data: unixFS.marshal(),
-  //         Links: []
-  //       })
-  //       const hash = await s_sha256.digest(bytes);
-  //       cid = CID.create(version, DAG_PB_CODE, hash);
-  //     }
-  //     else {
-  //       const hash = await s_sha256.digest(value);
-  //       if (value.length <= 1048576) //1 MB
-  //         cid = CID.create(version, RAW_CODE, hash)
-  //       else
-  //         cid = CID.create(version, DAG_PB_CODE, hash)
-  //     }
-  //     return cid.toString();
-  //   }
-  //   catch (e) {
-  //     throw e;
-  //   }
-  // };
   function parse(cid, bytes) {
     let result = CID.parse(cid);
     if (bytes){
@@ -4220,6 +4186,7 @@
       return {
         size: contentLength,
         type: 'file',
+        code: CODE_RAW,
         cid: items[0].cid.toString()
       };
     }
@@ -4236,6 +4203,7 @@
       return {
         cid: result.cid,
         size: result.size,
+        code: CODE_DAG_PB,
         type: 'file',
         bytes: result.bytes,
         links: links
