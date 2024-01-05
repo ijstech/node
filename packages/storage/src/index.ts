@@ -4,7 +4,7 @@ import Https from 'https';
 import Crypto from 'crypto';
 import Os from 'os';
 import * as IPFSUtils from '@ijstech/ipfs';
-import {IS3Options, S3} from './s3';
+import {IS3Options, S3, IPreSignedUrlOptions} from './s3';
 import Extract from 'extract-zip';
 import {getClient} from '@ijstech/db';
 import {IDbConnectionOptions} from '@ijstech/types';
@@ -216,8 +216,8 @@ export class Storage{
             return await this.getLocalCachePath('stat', rootCid);
         }
     };
-    async getUploadUrl(path: string, expiresInSeconds?: number): Promise<string>{
-        return this.s3.putObjectSignedUrl(path, expiresInSeconds);
+    async getUploadUrl(path: string, options?: IPreSignedUrlOptions): Promise<string>{
+        return this.s3.putObjectSignedUrl(path, options);
     };
     async putContent(fileContent: string, to?: {ipfs?:boolean, s3?: boolean}, source?: string): Promise<IPFSUtils.ICidInfo>{
         let fileItem = await IPFSUtils.hashContent(fileContent);

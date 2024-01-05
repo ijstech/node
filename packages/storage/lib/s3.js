@@ -1,4 +1,23 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -11,6 +30,8 @@ const promises_1 = require("node:stream/promises");
 const fs_1 = require("fs");
 const mime_1 = __importDefault(require("@ijstech/mime"));
 const path_1 = __importDefault(require("path"));
+const IPFSUtils = __importStar(require("@ijstech/ipfs"));
+;
 ;
 class S3 {
     constructor(options) {
@@ -137,8 +158,8 @@ class S3 {
         }
     }
     ;
-    getObjectSignedUrl(key, expiresInSeconds) {
-        return s3_request_presigner_1.getSignedUrl(this.s3, new client_s3_1.GetObjectCommand({ Bucket: this.options.bucket, Key: key }), { expiresIn: expiresInSeconds || 3600 });
+    getObjectSignedUrl(key, options) {
+        return s3_request_presigner_1.getSignedUrl(this.s3, new client_s3_1.GetObjectCommand({ Bucket: this.options.bucket, Key: key }), { expiresIn: options?.expiresInSeconds || 3600 });
     }
     ;
     async moveObject(fromKey, toKey) {
@@ -154,18 +175,28 @@ class S3 {
         ;
     }
     ;
-    putObject(key, content) {
+    async putObject(key, content) {
+        let cid = await IPFSUtils.hashContent(content);
         const command = new client_s3_1.PutObjectCommand({
             Bucket: this.options.bucket,
             Key: key,
             ContentType: mime_1.default.getType(key) || 'application/octet-stream',
+            ChecksumSHA256: IPFSUtils.cidToHash(cid.cid),
             Body: content
         });
         return this.s3.send(command);
     }
     ;
-    putObjectSignedUrl(key, expiresInSeconds) {
-        return s3_request_presigner_1.getSignedUrl(this.s3, new client_s3_1.PutObjectCommand({ Bucket: this.options.bucket, Key: key }), { expiresIn: expiresInSeconds || 3600 });
+    putObjectSignedUrl(key, options) {
+        return s3_request_presigner_1.getSignedUrl(this.s3, new client_s3_1.PutObjectCommand({
+            Bucket: this.options.bucket,
+            Key: key,
+            ContentType: mime_1.default.getType(key) || 'application/octet-stream',
+            ChecksumSHA256: options?.sha256 ? options.sha256 : undefined
+        }), {
+            unhoistableHeaders: new Set(['x-amz-checksum-sha256', 'content-length']),
+            expiresIn: options?.expiresInSeconds || 3600
+        });
     }
     ;
     putObjectFrom(key, filePath, progressCallback) {

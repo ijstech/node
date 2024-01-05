@@ -3,6 +3,7 @@ import {S3} from '../src/s3';
 import {Storage} from '../src';
 import Config from './data/config.js';
 import Path from 'path';
+import * as IPFSUtils from '@ijstech/ipfs';
 import {promises as Fs, rmSync} from 'fs';
 
 try{
@@ -106,12 +107,27 @@ describe('Storage', function () {
     });
     it ('s3.putObjectSignedUrl', async function(){
         let s3 = new S3(Config.s3)
-        let url = await s3.putObjectSignedUrl('file1-presign.txt');
+        let cid = await IPFSUtils.hashFile(Path.join(__dirname, 'dir/file1.txt'))
+        let sha256 = IPFSUtils.cidToHash(cid.cid);
+        await s3.deleteObject('file1-presign.txt');
+        let url = await s3.putObjectSignedUrl('file1-presign.txt', {
+            sha256: sha256
+        });
         assert.strictEqual(typeof(url), 'string');
-        let res = await fetch(url, {
-            method: 'PUT',
-            body: await Fs.readFile(Path.join(__dirname, 'dir/file1.txt'))
-        })
+        try{
+            let res = await fetch(url, {
+                method: 'PUT',
+                headers:{
+                    "x-amz-checksum-sha256": sha256,
+                    // "content-length": cid.size.toString()
+                },
+                body: await Fs.readFile(Path.join(__dirname, 'dir/file1.txt'))
+            });
+        }
+        catch(err){
+            console.dir(err.message)
+        }
+        let headResult = await s3.headObject('file1-presign.txt');
         let exists = await s3.hasObject('file1-presign.txt');
         assert.strictEqual(exists, true);
         await s3.deleteObject('file1-presign.txt')

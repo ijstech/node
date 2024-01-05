@@ -1,5 +1,5 @@
 import * as IPFSUtils from '@ijstech/ipfs';
-import { IS3Options } from './s3';
+import { IS3Options, IPreSignedUrlOptions } from './s3';
 import { IDbConnectionOptions } from '@ijstech/types';
 export interface IGithubRepo {
     org: string;
@@ -33,7 +33,7 @@ export declare class Storage {
     getFile(rootCid: string, filePath?: string | string[]): Promise<string>;
     private moveFile;
     getLocalFilePath(rootCid: string, filePath?: string | string[], returnIndex?: boolean): Promise<string>;
-    getUploadUrl(path: string, expiresInSeconds?: number): Promise<string>;
+    getUploadUrl(path: string, options?: IPreSignedUrlOptions): Promise<string>;
     putContent(fileContent: string, to?: {
         ipfs?: boolean;
         s3?: boolean;

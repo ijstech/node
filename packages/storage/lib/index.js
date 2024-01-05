@@ -249,8 +249,8 @@ class Storage {
         }
     }
     ;
-    async getUploadUrl(path, expiresInSeconds) {
-        return this.s3.putObjectSignedUrl(path, expiresInSeconds);
+    async getUploadUrl(path, options) {
+        return this.s3.putObjectSignedUrl(path, options);
     }
     ;
     async putContent(fileContent, to, source) {

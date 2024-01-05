@@ -7,7 +7,7 @@ import { pipeline } from 'node:stream/promises';
 import { createReadStream, createWriteStream} from 'fs';
 import Mime from '@ijstech/mime';
 import Path from 'path';
-import {ICidInfo} from '@ijstech/ipfs';
+import * as IPFSUtils from '@ijstech/ipfs';
 
 export interface IS3Options {
     region?: string;
@@ -15,6 +15,10 @@ export interface IS3Options {
     key: string;
     secret: string;
     bucket: string;
+};
+export interface IPreSignedUrlOptions {
+    expiresInSeconds?: number;
+    sha256?: string;
 };
 export class S3 {
     private s3: S3Client;
@@ -80,7 +84,7 @@ export class S3 {
         });
         return this.s3.send(command);
     };
-    async syncFiles(sourceDir: string, targetDir: string, items: ICidInfo[]){
+    async syncFiles(sourceDir: string, targetDir: string, items: IPFSUtils.ICidInfo[]){
         for (let i = 0; i < items.length; i ++){
             let item = items[i];
             if (item.type == 'dir')
@@ -128,8 +132,8 @@ export class S3 {
             return false
         }        
     };
-    getObjectSignedUrl(key: string, expiresInSeconds?: number): Promise<string>{
-        return getSignedUrl(this.s3, new GetObjectCommand({Bucket: this.options.bucket, Key: key}), { expiresIn: expiresInSeconds || 3600 })
+    getObjectSignedUrl(key: string, options?: IPreSignedUrlOptions): Promise<string>{
+        return getSignedUrl(this.s3, new GetObjectCommand({Bucket: this.options.bucket, Key: key}), { expiresIn: options?.expiresInSeconds || 3600 })
     };
     async moveObject(fromKey: string, toKey: string): Promise<boolean>{
         try{
@@ -142,17 +146,28 @@ export class S3 {
             return false;
         };        
     };
-    putObject(key: string, content: string): Promise<PutObjectCommandOutput> {
+    async putObject(key: string, content: string): Promise<PutObjectCommandOutput> {
+        let cid = await IPFSUtils.hashContent(content);
         const command = new PutObjectCommand({
             Bucket: this.options.bucket,
             Key: key,
             ContentType: Mime.getType(key) || 'application/octet-stream',
+            ChecksumSHA256: IPFSUtils.cidToHash(cid.cid),
             Body: content
         });
         return this.s3.send(command);
     };
-    putObjectSignedUrl(key: string, expiresInSeconds?: number): Promise<string>{
-        return getSignedUrl(this.s3, new PutObjectCommand({Bucket: this.options.bucket, Key: key}), { expiresIn: expiresInSeconds || 3600 })
+    putObjectSignedUrl(key: string, options?: IPreSignedUrlOptions): Promise<string>{
+        return getSignedUrl(this.s3, new PutObjectCommand({
+                Bucket: this.options.bucket, 
+                Key: key,
+                ContentType: Mime.getType(key) || 'application/octet-stream',                
+                // ContentLength: options?.size?options.size:undefined,
+                ChecksumSHA256: options?.sha256?options.sha256:undefined                
+            }), { 
+                unhoistableHeaders: new Set(['x-amz-checksum-sha256','content-length']),
+                expiresIn: options?.expiresInSeconds || 3600
+        })
     };
     putObjectFrom(key: string, filePath: string, progressCallback?: any): Promise<CompleteMultipartUploadCommandOutput> {
         let fileStream = createReadStream(filePath);
