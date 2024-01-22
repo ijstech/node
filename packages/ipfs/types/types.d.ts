@@ -6,7 +6,7 @@ export interface ICidData {
     cid: string;
     links?: ICidInfo[];
     name?: string;
-    size?: number;
+    size: number;
     type?: 'dir' | 'file';
     code?: CidCode;
     multihash?: any;
@@ -16,6 +16,6 @@ export interface ICidInfo {
     cid: string;
     links?: ICidInfo[];
     name?: string;
-    size?: number;
+    size: number;
     type?: 'dir' | 'file';
 }

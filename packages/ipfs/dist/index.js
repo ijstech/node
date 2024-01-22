@@ -4175,6 +4175,20 @@
         offset += chunkSize;
       }
     }
+    else if (content instanceof Uint8Array){
+      let chunkSize = 1048576;
+      if (version == 0)
+        chunkSize = 262144;
+
+      let offset = 0  
+      const size = Math.ceil(content.length/chunkSize)
+      for (let i = 0; i < size; i++) {
+        let data = content.slice(offset, offset + chunkSize);
+        contentLength += data.length;
+        items.push(await hashChunk(version, data));
+        offset += chunkSize;
+      }
+    }
     else{
       for await (const data of content) {
         buffer.push(data);
