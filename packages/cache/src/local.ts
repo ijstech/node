@@ -13,7 +13,7 @@ export class LocalCache implements ICachePlugin{
     private Expires = {};
 	async get(key: string):Promise<string> {     
         let expires = this.Expires[key];
-        if (expires && expires >= (new Date().getTime() / 1000)){
+        if (expires && expires <= (new Date().getTime() / 1000)){
             delete this.Data[key];
             throw new Error('$key_not_found');
         };
@@ -31,7 +31,7 @@ export class LocalCache implements ICachePlugin{
 	async set(key: string, value: string, expires?: number): Promise<boolean> {
         if (typeof value !== 'string')
             value = JSON.stringify(value);
-        expires = expires || DefaultExpires;        
+        expires = (expires || DefaultExpires) + Math.floor(new Date().getTime() / 1000);      
         this.Expires[key] = expires;
         this.Data[key] = value;
         return true;
