@@ -399,7 +399,7 @@ export interface IMulticallContractCall {
     to: string;
     contract: IAbiDefinition;
     methodName: string;
-    params: string[];
+    params: any[];
 }
 export interface IWalletPlugin {
     account: IWalletAccount;

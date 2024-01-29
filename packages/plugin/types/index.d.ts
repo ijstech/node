@@ -133,7 +133,7 @@ export declare namespace Types {
         to: string;
         contract: IAbiDefinition;
         methodName: string;
-        params: string[];
+        params: any[];
     }
     interface IWalletPlugin {
         account: IWalletAccount;

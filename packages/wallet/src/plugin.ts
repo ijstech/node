@@ -177,7 +177,7 @@ export interface IMulticallContractCall {
     to: string;
     contract: IAbiDefinition;
     methodName: string;
-    params: string[];
+    params: any[];
 }
 export interface IWallet {
     account: IWalletAccount;
