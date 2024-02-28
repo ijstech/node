@@ -7,4 +7,4 @@ async function copyFile(src, dest) {
     await Fs.copyFile(src, dest);    
 };
 copyFile('src/ipfs.js', 'lib/ipfs.js');
-copyFile('src/ipfs.js', 'dist/index.js');
+// copyFile('src/ipfs.js', 'dist/ipfs.js');

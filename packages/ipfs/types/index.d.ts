@@ -1,3 +1,4 @@
-import { ICidData, ICidInfo } from './types';
-export { ICidData, ICidInfo };
-export { cidToHash, hashContent, hashDir, hashFile, hashItems, parse } from './utils';
+export { CidCode, ICidData, ICidInfo } from './types';
+export { cidToHash, hashChunks, hashContent, hashItems, parse } from './utils';
+export { hashDir, hashFile } from './node';
+export { FileManager, FileManagerHttpTransport, IFileManagerTransport, IFileManagerTransporterOptions } from './fileManager';

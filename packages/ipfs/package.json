@@ -3,10 +3,14 @@
     "version": "0.1.0",
     "main": "./lib/index.js",
     "types": "./types/index.d.ts",
+    "plugin": "dist/index.js",
+    "pluginTypes": "dist/index.d.ts",
     "scripts": {
-        "build": "npm run clean && tsc && node tools/bundle",
+        "build": "npm run clean && tsc && npm run build:dist && node tools/bundle",
+        "build:dist": "tsc --p tsconfig.dist.json && tsc --p tsconfig.types.json",
         "clean": "rm -f tsconfig.tsbuildinfo && rm -rf lib && rm -rf dist && rm -rf types",
         "test": "mocha --exit --require ts-node/register test/*.spec.ts --timeout 10000",
+        "test:server": "npx tsx test/server.ts",
         "test-coverage": "nyc mocha --exit --require ts-node/register test/*.spec.ts --timeout 10000"
     }
 }

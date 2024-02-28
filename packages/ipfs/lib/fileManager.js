@@ -1,0 +1,515 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.FileManager = exports.FileNode = exports.FileManagerHttpTransport = void 0;
+const utils_1 = require("./utils");
+const types_1 = require("./types");
+;
+;
+;
+class FileManagerHttpTransport {
+    constructor(options) {
+        this.updated = {};
+        this.options = options || {};
+        this.options.endpoint = this.options.endpoint || '';
+    }
+    ;
+    async applyUpdate(node) {
+        let cidInfo = node.cidInfo;
+        if (cidInfo && !this.updated[cidInfo.cid]) {
+            let result = await this.getUploadUrl(cidInfo);
+            if (await node.isFolder()) {
+                let url = result?.[cidInfo.cid];
+                if (!url?.exists) {
+                    let method = url?.method || 'PUT';
+                    let headers = url?.headers || {};
+                    headers['Content-Type'] = headers['Content-Type'] || 'application/octet-stream';
+                    headers['Content-Length'] = cidInfo.bytes.length.toString();
+                    let res = await fetch(url.url, {
+                        method: method,
+                        headers: headers,
+                        body: cidInfo.bytes
+                    });
+                    if (!res.ok)
+                        throw new Error(res.statusText);
+                }
+                ;
+            }
+            else if (cidInfo.links?.length > 0) {
+                let offset = 0;
+                for (let link of cidInfo.links) {
+                    let url = result?.[link.cid];
+                    if (!url?.exists) {
+                        let method = url?.method || 'PUT';
+                        let headers = url?.headers || {};
+                        headers['Content-Type'] = headers['Content-Type'] || 'application/octet-stream';
+                        headers['Content-Length'] = link.size.toString();
+                        let body;
+                        if (node.fileContent)
+                            body = node.fileContent?.slice(offset, offset + link.size);
+                        else if (node.file) {
+                            let chunk = node.file.slice(offset, offset + link.size);
+                            body = new FormData();
+                            body.append('file', chunk);
+                        }
+                        ;
+                        offset += link.size;
+                        let res = await fetch(url.url, {
+                            method: method,
+                            headers: headers,
+                            body: body
+                        });
+                        if (!res.ok)
+                            throw new Error(res.statusText);
+                    }
+                    ;
+                }
+                ;
+                if (cidInfo.bytes) {
+                    let url = result?.[cidInfo.cid];
+                    if (!url?.exists) {
+                        let method = url?.method || 'PUT';
+                        let headers = url?.headers || {};
+                        headers['Content-Type'] = headers['Content-Type'] || 'application/octet-stream';
+                        headers['Content-Length'] = cidInfo.bytes.length.toString();
+                        let res = await fetch(url.url, {
+                            method: method,
+                            headers: headers,
+                            body: cidInfo.bytes
+                        });
+                        if (!res.ok)
+                            throw new Error(res.statusText);
+                    }
+                    ;
+                }
+                ;
+            }
+            else if (result?.[cidInfo.cid]) {
+                let url = result[cidInfo.cid];
+                if (!url?.exists) {
+                    let method = url?.method || 'PUT';
+                    let headers = url?.headers || {};
+                    headers['Content-Type'] = headers['Content-Type'] || 'application/octet-stream';
+                    headers['Content-Length'] = cidInfo.size.toString();
+                    let res = await fetch(url.url, {
+                        method: method,
+                        headers: headers,
+                        body: node.fileContent
+                    });
+                    if (!res.ok)
+                        throw new Error(res.statusText);
+                }
+                ;
+            }
+            ;
+            this.updated[cidInfo.cid] = true;
+        }
+        ;
+    }
+    ;
+    async getCidInfo(cid) {
+        let cidInfo = utils_1.parse(cid);
+        if (cidInfo.code == types_1.CidCode.DAG_PB) {
+            let data = await fetch(`${this.options.endpoint}/stat/${cid}`);
+            if (data.status == 200) {
+                return await data.json();
+            }
+        }
+        else
+            return cidInfo;
+    }
+    ;
+    async getUploadUrl(cidInfo) {
+        let req = {
+            cid: cidInfo.cid,
+            name: cidInfo.name,
+            size: cidInfo.size,
+            type: cidInfo.type,
+            links: []
+        };
+        let signature;
+        if (cidInfo.links) {
+            for (let link of cidInfo.links) {
+                req.links?.push({
+                    cid: link.cid,
+                    name: link.name,
+                    size: link.size
+                });
+            }
+            ;
+        }
+        ;
+        if (this.options.signer)
+            signature = await this.options.signer.sign(req);
+        let result = await fetch(`${this.options.endpoint}/api/ipfs/v0/upload`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                signature: signature,
+                data: req
+            })
+        });
+        return await result.json();
+    }
+    ;
+}
+exports.FileManagerHttpTransport = FileManagerHttpTransport;
+;
+class FileNode {
+    constructor(owner, name, parent, cidInfo) {
+        this._owner = owner;
+        this._name = name;
+        if (parent) {
+            this._parent = parent;
+            if (!cidInfo)
+                this._parent.addItem(this);
+        }
+        ;
+        this._items = [];
+        this._cidInfo = cidInfo;
+        this._isFile = cidInfo?.type == 'file' || false;
+        this._isFolder = cidInfo?.type == 'dir' || true;
+        if (this._cidInfo?.type == 'dir') {
+            this._cidInfo.links?.forEach(link => {
+                this._items.push(new FileNode(this._owner, link.name, this, link));
+            });
+        }
+        ;
+    }
+    ;
+    get cid() {
+        return this._cidInfo?.cid || '';
+    }
+    ;
+    async checkCid() {
+        if (this._cidInfo && this._cidInfo.type == undefined) {
+            this._cidInfo = await this._owner.getCidInfo(this._cidInfo.cid);
+            if (this._cidInfo?.type == 'dir') {
+                this._isFolder = true;
+                this._isFile = false;
+                this._items = [];
+                for (let i = 0; i < this._cidInfo.links.length; i++) {
+                    let link = this._cidInfo.links[i];
+                    let node = new FileNode(this._owner, link.name, this, link);
+                    this._items.push(node);
+                }
+                ;
+            }
+            else {
+                this._isFolder = false;
+                this._isFile = true;
+            }
+        }
+        ;
+    }
+    ;
+    get fullPath() {
+        let path = this._name;
+        let parent = this._parent;
+        while (parent) {
+            path = parent.name + '/' + path;
+            parent = parent.parent;
+        }
+        ;
+        return path;
+    }
+    ;
+    get isModified() {
+        return this._isModified;
+    }
+    ;
+    modified(value) {
+        if (value === false)
+            return this._isModified = false;
+        this._isModified = true;
+        this._cidInfo = undefined;
+        if (this._parent)
+            this._parent.modified();
+    }
+    ;
+    get name() {
+        return this._name;
+    }
+    ;
+    set name(value) {
+        if (this._name != value) {
+            this._name = value;
+            this.modified();
+        }
+        ;
+    }
+    ;
+    get parent() {
+        return this._parent;
+    }
+    ;
+    set parent(value) {
+        if (this._parent != value) {
+            if (this._parent) {
+                let idx = this._parent._items.indexOf(this);
+                if (idx >= 0) {
+                    this._parent._items.splice(idx, 1);
+                    this._parent.modified();
+                }
+                ;
+            }
+            ;
+            this._parent = value;
+            this._parent._items.push(this);
+            this.modified();
+        }
+        ;
+    }
+    ;
+    async itemCount() {
+        await this.checkCid();
+        return this._items.length;
+    }
+    ;
+    async items(index) {
+        await this.checkCid();
+        let item = this._items[index];
+        return item;
+    }
+    ;
+    async addFile(name, file) {
+        await this.checkCid();
+        return this._owner.addFileTo(this, name, file);
+    }
+    ;
+    async addFileContent(name, content) {
+        await this.checkCid();
+        if (typeof (content) == 'string')
+            content = new TextEncoder().encode(content);
+        return this._owner.addFileTo(this, name, content);
+    }
+    ;
+    async addItem(item) {
+        if (this._items.indexOf(item) < 0) {
+            this._items.push(item);
+            this.modified();
+        }
+        ;
+    }
+    ;
+    removeItem(item) {
+        let idx = this._items.indexOf(item);
+        if (idx >= 0) {
+            this._items.splice(idx, 1);
+            this.modified();
+        }
+        ;
+    }
+    ;
+    async findItem(name) {
+        let item = this._items.find(item => item.name == name);
+        return item;
+    }
+    ;
+    get cidInfo() {
+        return this._cidInfo;
+    }
+    ;
+    async isFile() {
+        await this.checkCid();
+        return this._isFile;
+    }
+    ;
+    async isFolder() {
+        await this.checkCid();
+        return this._isFolder;
+    }
+    ;
+    get file() {
+        return this._file;
+    }
+    ;
+    set file(value) {
+        this._isFile = true;
+        this._isFolder = false;
+        this._file = value;
+        this._fileContent = undefined;
+        this.modified();
+    }
+    ;
+    get fileContent() {
+        return this._fileContent;
+    }
+    ;
+    set fileContent(value) {
+        this._isFile = true;
+        this._isFolder = false;
+        this._file = undefined;
+        this._fileContent = value;
+        this.modified();
+    }
+    ;
+    async hash() {
+        if (!this._cidInfo) {
+            if (this._isFile) {
+                if (this._fileContent)
+                    this._cidInfo = await utils_1.hashContent(this._fileContent);
+                else if (this._file)
+                    this._cidInfo = await utils_1.hashFile(this._file);
+            }
+            else if (this._isFolder) {
+                let items = [];
+                for (let i = 0; i < this._items.length; i++) {
+                    let item = this._items[i];
+                    let cidInfo = await item.hash();
+                    if (cidInfo) {
+                        cidInfo.name = item.name;
+                        items.push(cidInfo);
+                    }
+                }
+                ;
+                this._cidInfo = await utils_1.hashItems(items);
+            }
+            ;
+        }
+        ;
+        return this._cidInfo;
+    }
+    ;
+}
+exports.FileNode = FileNode;
+;
+class FileManager {
+    constructor(options) {
+        this.options = options || {};
+        if (this.options?.transport)
+            this.transporter = this.options.transport;
+        else
+            this.transporter = new FileManagerHttpTransport(this.options);
+    }
+    ;
+    async addFileTo(folder, filePath, file) {
+        if (filePath.startsWith('/'))
+            filePath = filePath.substr(1);
+        let paths = filePath.split('/');
+        let node = folder;
+        for (let path of paths) {
+            let item = await folder.findItem(path);
+            if (!item)
+                item = new FileNode(this, path, node);
+            else
+                await item.checkCid();
+            node = item;
+        }
+        ;
+        if (file instanceof Uint8Array) {
+            node.fileContent = file;
+        }
+        else {
+            node.file = file;
+        }
+        ;
+        return node;
+    }
+    ;
+    async addFile(filePath, file) {
+        if (!filePath.startsWith('/'))
+            filePath = '/' + filePath;
+        let fileNode = await this.getFileNode(filePath);
+        fileNode.file = file;
+        return fileNode;
+    }
+    ;
+    async addFileContent(filePath, content) {
+        if (!filePath.startsWith('/'))
+            filePath = '/' + filePath;
+        let fileNode = await this.getFileNode(filePath);
+        if (typeof (content) == 'string')
+            fileNode.fileContent = new TextEncoder().encode(content);
+        else
+            fileNode.fileContent = content;
+        return fileNode;
+    }
+    ;
+    async getCidInfo(cid) {
+        return await this.transporter?.getCidInfo(cid);
+    }
+    ;
+    async updateNode(fileNode) {
+        if (fileNode.isModified) {
+            await fileNode.hash();
+            if (await fileNode.isFolder()) {
+                let count = await fileNode.itemCount();
+                for (let i = 0; i < count; i++) {
+                    let item = await fileNode.items(i);
+                    await this.updateNode(item);
+                }
+                ;
+            }
+            ;
+            await this.transporter.applyUpdate(fileNode);
+            fileNode.modified(false);
+        }
+        ;
+    }
+    ;
+    async applyUpdates() {
+        await this.updateNode(this.rootNode);
+        return this.rootNode;
+    }
+    ;
+    delete(fileNode) {
+        if (fileNode.parent)
+            fileNode.parent.removeItem(fileNode);
+    }
+    ;
+    async getFileNode(path) {
+        this.rootNode = await this.getRootNode();
+        let paths = path.split('/');
+        let node = await this.getRootNode();
+        for (let i = 1; i < paths.length; i++) {
+            let path = paths[i];
+            let item = await node.findItem(path);
+            if (!item) {
+                item = new FileNode(this, path, node);
+            }
+            else
+                await item.checkCid();
+            node = item;
+        }
+        ;
+        return node;
+    }
+    ;
+    async getRootNode() {
+        if (!this.rootNode) {
+            if (this.options.rootCid)
+                this.rootNode = await this.setRootCid(this.options.rootCid);
+            else
+                this.rootNode = new FileNode(this, '/', null);
+        }
+        ;
+        return this.rootNode;
+    }
+    ;
+    reset() {
+        this.rootNode = null;
+    }
+    ;
+    async setRootCid(cid) {
+        this.options.rootCid = cid;
+        let cidInfo = await this.transporter.getCidInfo(cid);
+        if (cidInfo) {
+            this.rootNode = new FileNode(this, '/', null, cidInfo);
+            await this.rootNode.checkCid();
+            return this.rootNode;
+        }
+        else
+            this.options.rootCid = undefined;
+    }
+    ;
+    move(fileNode, newParent) {
+        if (fileNode.parent)
+            fileNode.parent.removeItem(fileNode);
+        fileNode.parent = newParent;
+    }
+    ;
+}
+exports.FileManager = FileManager;
+;

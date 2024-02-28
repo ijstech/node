@@ -3,13 +3,10 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-import IPFS from './ipfs.js';
-import { promises as Fs, createReadStream} from 'fs';
-import Path from 'path';
-import { ICidData, ICidInfo } from './types';
 
-export const CODE_DAG_PB = 0X70;
-export const CODE_RAW = 0X55;
+// @ts-ignore
+import IPFS from './ipfs.js';
+import { CidCode, ICidData, ICidInfo } from './types';
 
 export function parse(cid: string, bytes?: Uint8Array): ICidData {
     let result = IPFS.parse(cid, bytes);
@@ -28,7 +25,7 @@ export function parse(cid: string, bytes?: Uint8Array): ICidData {
         cid: cid,
         size: result.size,
         code: result.code,
-        type: result.type == 'directory'? 'dir' : result.type =='file'?'file': undefined,
+        type: result.type == 'directory'? 'dir' : result.type =='file'?'file': result.code==CidCode.RAW?'file':undefined,
         multihash: result.multihash,
         links: links,
         bytes: result.bytes
@@ -46,7 +43,7 @@ export async function hashChunk(data: Buffer, version?: number): Promise<IHashCh
         version = 1;
     return IPFS.hashChunk(data, version);
 };
-export async function hashChunks(chunks: IHashChunk[], version?: number): Promise<ICidData> {
+export async function hashChunks(chunks: IHashChunk[] | ICidInfo[], version?: number): Promise<ICidData> {
     if (version == undefined)
         version = 1;
     return IPFS.hashChunks(chunks, version);
@@ -54,76 +51,41 @@ export async function hashChunks(chunks: IHashChunk[], version?: number): Promis
 export async function hashItems(items?: ICidInfo[], version?: number): Promise<ICidData> {
     return await IPFS.hashItems(items || [], version);
 };
-export async function hashDir(dirPath: string, version?: number): Promise<ICidData> {
-    if (version == undefined)
-        version = 1;
-    let files = await Fs.readdir(dirPath);
-    let items: ICidInfo[] = [];
-    for (let i = 0; i < files.length; i++) {
-        let file = files[i];
-        let path = Path.join(dirPath, file);
-        let stat = await Fs.stat(path)
-        if (stat.isDirectory()) {
-            let result = await hashDir(path, version);
-            result.name = file;
-            result.type = 'dir';
-            items.push(result);
-        }
-        else {
-            try{
-                let result = await hashFile(path, version);
-                items.push({
-                    cid: result.cid,
-                    name: file,
-                    size: result.size,
-                    type: 'file'
-                })
-            }
-            catch(err){
-                console.dir(path)
-            }
-        }
-    };
-    return await hashItems(items, version);
-    // return {
-    //     cid: result.cid,
-    //     name: '',
-    //     size: result.size,
-    //     type: 'dir',
-    //     links: items,
-    //     code: result.code,
-
-    // };
-};
-export async function hashContent(content: string | Buffer, version?: number): Promise<ICidData> {
+export async function hashContent(content: string | Uint8Array, version?: number): Promise<ICidData> {
     if (version == undefined)
         version = 1;  
     if (content.length == 0){
         return {
             cid: version == 1? 'bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku':'QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH', 
+            type: 'file',
+            code: version == 1? 0x55: 0x70,
             size: 0
         };
     }   
-    return IPFS.hashFile(content, version);
+    return IPFS.hashContent(content, version);
 };
-export async function hashFile(filePath: string, version?: number): Promise<ICidData> {
+export async function hashFile(file: File | Uint8Array, version?: number): Promise<ICidData> {
     if (version == undefined)
         version = 1;
-    let size: number;
-    let stat = await Fs.stat(filePath);
-    let file: any;
-    size = stat.size;   
-    if (size == 0){
-        return {
-            cid: version == 1? 'bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku':'QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH', 
-            size: 0
-        };
-    };
-    if (version == 1)
-        file = createReadStream(filePath, {highWaterMark: 1048576})
+    if (file instanceof File){
+        if (file.size == 0)
+            return await IPFS.hashContent('', version);
+
+        return new Promise((resolve, reject)=>{
+            const reader = new FileReader();
+            reader.readAsArrayBuffer(file);
+            reader.addEventListener('error', (event)=>{
+                reject('Error occurred reading file');
+            });
+            reader.addEventListener('load', async (event: any) => {
+                const data = new Uint8Array(event.target.result);
+                let result = await IPFS.hashContent(data, version);
+                resolve(result);
+            }); 
+        });
+    }
     else
-        file = createReadStream(filePath, {highWaterMark: 262144});
-    return IPFS.hashFile(file, version);
+        return this.hashContent(file, version);    
 };
 export function cidToHash(cid: string): string {
     return IPFS.cidToHash(cid);

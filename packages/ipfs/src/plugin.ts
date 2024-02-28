@@ -3,8 +3,7 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
+///<amd-module name="@ijstech/ipfs"/>
 export { CidCode, ICidData, ICidInfo} from './types';
-// export { CidCode, ICidData, ICidInfo};
-export { cidToHash, hashChunks, hashContent, hashItems, parse} from './utils';
-export { hashDir, hashFile } from './node';
+export { cidToHash, hashContent, hashFile, hashItems, parse} from './utils';
 export { FileManager, FileManagerHttpTransport, IFileManagerTransport, IFileManagerTransporterOptions} from './fileManager';

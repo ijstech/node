@@ -1,14 +1,16 @@
 "use strict";
+/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cidToHash = exports.hashFile = exports.hashContent = exports.hashDir = exports.hashItems = exports.hashChunks = exports.hashChunk = exports.parse = exports.CODE_RAW = exports.CODE_DAG_PB = void 0;
+exports.cidToHash = exports.hashFile = exports.hashContent = exports.hashItems = exports.hashChunks = exports.hashChunk = exports.parse = void 0;
 const ipfs_js_1 = __importDefault(require("./ipfs.js"));
-const fs_1 = require("fs");
-const path_1 = __importDefault(require("path"));
-exports.CODE_DAG_PB = 0X70;
-exports.CODE_RAW = 0X55;
+const types_1 = require("./types");
 function parse(cid, bytes) {
     let result = ipfs_js_1.default.parse(cid, bytes);
     let links = [];
@@ -27,7 +29,7 @@ function parse(cid, bytes) {
         cid: cid,
         size: result.size,
         code: result.code,
-        type: result.type == 'directory' ? 'dir' : result.type == 'file' ? 'file' : undefined,
+        type: result.type == 'directory' ? 'dir' : result.type == 'file' ? 'file' : result.code == types_1.CidCode.RAW ? 'file' : undefined,
         multihash: result.multihash,
         links: links,
         bytes: result.bytes
@@ -55,73 +57,42 @@ async function hashItems(items, version) {
 }
 exports.hashItems = hashItems;
 ;
-async function hashDir(dirPath, version) {
-    if (version == undefined)
-        version = 1;
-    let files = await fs_1.promises.readdir(dirPath);
-    let items = [];
-    for (let i = 0; i < files.length; i++) {
-        let file = files[i];
-        let path = path_1.default.join(dirPath, file);
-        let stat = await fs_1.promises.stat(path);
-        if (stat.isDirectory()) {
-            let result = await hashDir(path, version);
-            result.name = file;
-            result.type = 'dir';
-            items.push(result);
-        }
-        else {
-            try {
-                let result = await hashFile(path, version);
-                items.push({
-                    cid: result.cid,
-                    name: file,
-                    size: result.size,
-                    type: 'file'
-                });
-            }
-            catch (err) {
-                console.dir(path);
-            }
-        }
-    }
-    ;
-    return await hashItems(items, version);
-}
-exports.hashDir = hashDir;
-;
 async function hashContent(content, version) {
     if (version == undefined)
         version = 1;
     if (content.length == 0) {
         return {
             cid: version == 1 ? 'bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku' : 'QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH',
+            type: 'file',
+            code: version == 1 ? 0x55 : 0x70,
             size: 0
         };
     }
-    return ipfs_js_1.default.hashFile(content, version);
+    return ipfs_js_1.default.hashContent(content, version);
 }
 exports.hashContent = hashContent;
 ;
-async function hashFile(filePath, version) {
+async function hashFile(file, version) {
     if (version == undefined)
         version = 1;
-    let size;
-    let stat = await fs_1.promises.stat(filePath);
-    let file;
-    size = stat.size;
-    if (size == 0) {
-        return {
-            cid: version == 1 ? 'bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku' : 'QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH',
-            size: 0
-        };
+    if (file instanceof File) {
+        if (file.size == 0)
+            return await ipfs_js_1.default.hashContent('', version);
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsArrayBuffer(file);
+            reader.addEventListener('error', (event) => {
+                reject('Error occurred reading file');
+            });
+            reader.addEventListener('load', async (event) => {
+                const data = new Uint8Array(event.target.result);
+                let result = await ipfs_js_1.default.hashContent(data, version);
+                resolve(result);
+            });
+        });
     }
-    ;
-    if (version == 1)
-        file = fs_1.createReadStream(filePath, { highWaterMark: 1048576 });
     else
-        file = fs_1.createReadStream(filePath, { highWaterMark: 262144 });
-    return ipfs_js_1.default.hashFile(file, version);
+        return this.hashContent(file, version);
 }
 exports.hashFile = hashFile;
 ;

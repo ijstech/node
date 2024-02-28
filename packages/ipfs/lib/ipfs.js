@@ -2151,7 +2151,7 @@
   const pbLinkProperties = ['Hash', 'Name', 'Tsize']
 
   //https://github.com/ipld/js-dag-pb/blob/422f91ea722efdd119b25a8c41087ef9a61f2252/src/pb-encode.js#L1
-  const textEncoder = new TextEncoder()
+  const textEncoder = new TextEncoder();
   const maxInt32 = 2 ** 32
   const maxUInt32 = 2 ** 31
 
@@ -4053,7 +4053,7 @@
 
   const globalThis = this;
   
-  async function hashChunk(version, data){
+  async function hashChunk(data, version){
     let size = data.length;
     const dataSize = data.length;
     let multihash;
@@ -4080,7 +4080,7 @@
       cid: cid
     };
   };
-  async function hashChunks(version, chunks){
+  async function hashChunks(chunks, version){
     let contentLength = 0;
     const unixfs = new UnixFS({
       type: 'file'
@@ -4088,9 +4088,14 @@
     let links = [];
     for (let i = 0; i < chunks.length; i++) {
       let item = chunks[i];
-      contentLength += item.dataSize;      
-      unixfs.addBlockSize(item.dataSize);
-      links.push(new DAGLink('', item.size, item.cid))
+      contentLength += (item.dataSize || item.size);      
+      unixfs.addBlockSize(item.dataSize || item.size);
+      let cid = item.cid
+      if (typeof(cid) == 'string'){
+        let parsed = parse(item.cid);
+        cid = new CID1(version, 'raw', parsed.multihash.bytes)
+      };
+      links.push(new DAGLink('', item.size, cid))
     };
     const node = new DAGNode(unixfs.marshal(), links)
     const buffer = node.serialize();
@@ -4132,6 +4137,7 @@
       const cid = CID.create(version, CODE_DAG_PB, hash).toString();
       return {
         size: bytes.length + Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0),
+        code: CODE_DAG_PB,
         name: '',
         type: 'dir',
         links: items,
@@ -4147,35 +4153,44 @@
     if (bytes){
       let decoded = d_decode(bytes);
       result.links = decoded.Links;
+      if (result.code == CODE_DAG_PB)
+          result.size = bytes.length + decoded.Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0);
       if (decoded.Data){
         decoded.Data = UnixFS.unmarshal(decoded.Data)
         result.type = decoded.Data.type;
-        if (result.type == 'directory')
-          result.size = bytes.length + decoded.Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0);
+        // if (result.type == 'directory')
+        // else if(result.type == 'file' && result.code == CODE_DAG_PB){
+        //   result.size = result.size || (decoded.Links.reduce((acc, curr) => acc + (curr.Tsize == null ? 0 : curr.Tsize), 0))
+        // };
       };
     };
     return result;
   };
-  async function hashFile(content, version) {
-    let buffer = [];
+  async function hashContent(content, version) {
+    // let buffer = [];
     let items = [];
     let contentLength = 0;
     if (typeof content === 'string') {
-      // content = new TextEncoder().encode(content)
-      let chunkSize = 1048576;
-      if (version == 0)
-        chunkSize = 262144;
+      content = new TextEncoder("utf-8").encode(content)
+      // // new TextEncoder("utf-8").encode(value);
+      // let chunkSize = 1048576;
+      // if (version == 0){
+      //   chunkSize = 262144;
+      //   let offset = 0  
+      //   const size = Math.ceil(content.length/chunkSize);
+      //   for (let i = 0; i < size; i++) {
+      //     let data = textEncoder.encode(content.substr(offset, chunkSize));
+      //     contentLength += data.length;
+      //     items.push(await hashChunk(data, version));
+      //     offset += chunkSize;
+      //   }
+      // }
+      // else{
+      //   content = new TextEncoder("utf-8").encode(content);
 
-      let offset = 0  
-      const size = Math.ceil(content.length/chunkSize)
-      for (let i = 0; i < size; i++) {
-        let data = textEncoder.encode(content.substr(offset, chunkSize));
-        contentLength += data.length;
-        items.push(await hashChunk(version, data));
-        offset += chunkSize;
-      }
+      // }
     }
-    else if (content instanceof Uint8Array){
+    if (content instanceof Uint8Array){
       let chunkSize = 1048576;
       if (version == 0)
         chunkSize = 262144;
@@ -4185,15 +4200,15 @@
       for (let i = 0; i < size; i++) {
         let data = content.slice(offset, offset + chunkSize);
         contentLength += data.length;
-        items.push(await hashChunk(version, data));
+        items.push(await hashChunk(data, version));
         offset += chunkSize;
       }
     }
     else{
       for await (const data of content) {
-        buffer.push(data);
+        // buffer.push(data);
         contentLength += data.length;
-        items.push(await hashChunk(version, data));
+        items.push(await hashChunk(data, version));
       };
     };
     if (items.length == 1){
@@ -4205,7 +4220,7 @@
       };
     }
     else{
-      let result= await hashChunks(version, items);
+      let result= await hashChunks(items, version);
       let links = [];
       for (let i = 0; i < items.length; i++) {
         let item = items[i];
@@ -4262,14 +4277,14 @@
   };
   // AMD
   if (typeof define == 'function' && define.amd)
-    define('@ijstech/ipfs-utils', function () { return {cidToHash, parse, hashChunk, hashChunks, hashItems, hashFile }; })
+    define('ipfs', function () { return {default:{cidToHash, parse, hashChunk, hashChunks, hashItems, hashContent }}; })
   // Node.js
   else if (typeof module != 'undefined' && module.exports)
-    module.exports = {cidToHash, parse, hashChunk, hashChunks, hashItems, hashFile }
+    module.exports = {cidToHash, parse, hashChunk, hashChunks, hashItems, hashContent }
   // Browser
   else {
     if (!globalObject)
       globalObject = typeof self != 'undefined' && self ? self : window;
-    globalObject.IPFSUtils = {cidToHash, parse, hashChunk, hashChunks, hashItems, hashFile };
+    globalObject.IPFSUtils = {cidToHash, parse, hashChunk, hashChunks, hashItems, hashContent };
   };
 })(this);

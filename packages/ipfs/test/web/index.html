@@ -1,0 +1,112 @@
+<html>
+
+<head>
+    <script src="./lib.js"></script>
+    <script src="./index.js"></script>
+</head>
+
+<body>
+    <script>
+        function test() {
+            try {
+                require(['@ijstech/ipfs'], async function(IPFSUtils){
+                    console.dir('here')
+                    console.dir(IPFSUtils)
+                    let cidInfo = await IPFSUtils.hashContent('Hello World!', 0);
+                    console.log(cidInfo.cid, 'Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy', cidInfo.cid == 'Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy');
+                    if (cidInfo.cid != 'Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy')
+                        alert('failed')
+                    cidInfo = await IPFSUtils.hashContent('Hello World!', 1);
+                    console.log(cidInfo.cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne', cidInfo.cid == 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
+                    if (cidInfo.cid != 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne')
+                        alert('failed')
+                    cidInfo = await IPFSUtils.hashItems([{
+                        cid: 'bafybeibvtgpxeen4tcdfgtorheknc45lj5masx3kmj26k36r6mp2sdgrue',
+                        name: '.gitbook',
+                        size: 33162398,
+                        type: 'dir'
+                    },
+                    {
+                        cid: 'bafkreif2jyyaf7b65jk7kbvlrfycn5p42nbsaahzobkto24crfqcv5cejy',
+                        name: '.gitbook.yaml',
+                        size: 417,
+                        type: 'file'
+                    },
+                    {
+                        cid: 'bafkreifn3dkj6qif7jozh4pfwf7lfz6pyql7gkjqi6p4uachamkngjxaym',
+                        name: 'README.md',
+                        size: 6222,
+                        type: 'file'
+                    },
+                    {
+                        cid: 'bafkreib7vebod5cdghmofrof3gxapvyucordpluqm7jb4bz3zv7agzrjke',
+                        name: 'SUMMARY.md',
+                        size: 6696,
+                        type: 'file'
+                    },
+                    {
+                        cid: 'bafkreihf2ymtsjc5jn6btmam5ehy2vgyvrpwkokapse7qdx5sqvxm5m6iy',
+                        name: 'buy-store-and-stake-pokt.md',
+                        size: 7129,
+                        type: 'file'
+                    },
+                    {
+                        cid: 'bafybeid6kahmwhlvvw4kqqkyclv6z3xxnvxit524qkpccpyyogpnvr2g4u',
+                        name: 'paths',
+                        size: 113673,
+                        type: 'dir'
+                    },
+                    {
+                        cid: 'bafybeibkryq5w5kuufnljz3svtxoierzwdab4ijdn6vpndabskh6dk7boy',
+                        name: 'pokt-accounts-and-transactions',
+                        size: 9091,
+                        type: 'dir'
+                    },
+                    {
+                        cid: 'bafybeiddpxabrm2s33cbaoczomqy3xlr73paakiwticy2fis627bxevygm',
+                        name: 'resources',
+                        size: 77343,
+                        type: 'dir'
+                    },
+                    {
+                        cid: 'bafybeidodumq3tyigy26apyos24lu7ajm3weomqmdlxo3dfujgqzrbctki',
+                        name: 'v0',
+                        size: 69792,
+                        type: 'dir'
+                    },
+                    {
+                        cid: 'bafybeic3jq2uf7yglu37cff5gcffs6pyrecr4q6qrgmmuaqdejlkxcp2uy',
+                        name: 'v1',
+                        size: 41394,
+                        type: 'dir'
+                    }])
+                    console.log(cidInfo.cid, 'bafybeif7dzvyk6phpxj3xdizloewkjpoossa4whipfwuadvmqsqapacc4q', cidInfo.cid == 'bafybeif7dzvyk6phpxj3xdizloewkjpoossa4whipfwuadvmqsqapacc4q');
+                    if (cidInfo.cid != 'bafybeif7dzvyk6phpxj3xdizloewkjpoossa4whipfwuadvmqsqapacc4q')
+                        alert('fail')
+
+                    let fileManager = new IPFSUtils.FileManager({
+                        endpoint: '',
+                    });
+                    let node = await fileManager.addFileContent('/test3/file.txt', 'Hello World!');                    
+                    let rootNode = await fileManager.applyUpdates();
+                    console.log('update /test3/file.txt', node.cid, node.cid == "bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne")
+                    console.log('update rootNode', rootNode.cid, rootNode.cid == "bafybeidgipx46uso72vbtso5bjwt5osij2on2anug7pih6pkhapy3vuhte")
+
+                    fileManager = new IPFSUtils.FileManager({
+                        endpoint: '',
+                        rootCid: 'bafybeidgipx46uso72vbtso5bjwt5osij2on2anug7pih6pkhapy3vuhte'
+                    });
+                    node = await fileManager.getFileNode('/test3/file.txt');
+                    console.log('get /test3/file.txt', node.cid, node.cid == "bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne")                   
+                });                
+            }
+            catch (err) {
+                console.dir(err)
+                alert('failed')
+            }
+        };
+        test();
+    </script>
+</body>
+
+</html>

@@ -1,7 +1,8 @@
-import {cidToHash, ICidInfo, ICidData, hashDir, hashItems, hashContent, hashFile, parse} from '../src/index';
+import {cidToHash, ICidInfo, ICidData, hashDir, hashChunks, hashItems, hashContent, hashFile, parse} from '../src/index';
 import assert from 'assert';
 import Path from 'path';
 import {promises as Fs} from 'fs';
+// const IPFS = require('./samples/ipfs.js');
 
 const CODE_RAW = 0x55;
 const CODE_DAG_PB = 0x70;
@@ -653,58 +654,78 @@ describe('IPFS', function () {
     assert.strictEqual(result.size, data.size);
     let parsed = parse(result.cid, result.bytes);
     assert.strictEqual(parsed.type, 'dir');
-  });  
+  });
   it('hash directory', async function () {
-    let path = Path.join(__dirname, './dir');
+    let path = Path.join(__dirname, './samples/dir');
     let result = await hashDir(path);
-
-    let parsed = parse(result.cid, result.bytes);
     function deleteBytes(data: ICidData){
         delete data.bytes;
         data.links?.forEach(deleteBytes)
     };
     deleteBytes(result)
-    //https://ipfs.io/ipfs/bafybeiejzqyjx5o22l7izdwoeshzvtcjlu7w7y3mv7324gzxml2mt5lyzm
     assert.deepStrictEqual(result, {
-      "cid": "bafybeiejzqyjx5o22l7izdwoeshzvtcjlu7w7y3mv7324gzxml2mt5lyzm",
-      "name": "",
-      "size": 267,
-      "type": "dir",
-      "links": [
-        {
-          "cid": "bafkreifk34zhzathycow776ypiniblj4pgcgt7ztfn5fpopiybc5i2zk64",
-          "name": "file1.txt",
-          "size": 8,
-          "type": "file"
-        },
-        {
-          "cid": "bafybeihapeavy7ekzx62ut2k4hzvvsdury3wehcota5f7b7mpazegj6avu",
-          "name": "subdir",
-          "size": 151,
-          "type": "dir",
-          "links": [
-            {
-              "cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
-              "name": "2.txt",
-              "size": 0,
-              "type": "file"
-            },
-            {
-              "cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
-              "name": "3.txt",
-              "size": 0,
-              "type": "file"
-            },
-            {
-              "cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
-              "name": "4.txt",
-              "size": 0,
-              "type": "file"
-            }
-          ]
-        }
-      ]
-    })
+        "size": 1049006,
+        "code": 112,
+        "name": "",
+        "type": "dir",
+        "cid": "bafybeiazdqzvgv4oohlwchvq6d5zj5csq3sin23twwvq6tvda3km4veyym",
+        "links": [
+          {
+            "size": 8,
+            "type": "file",
+            "code": 85,
+            "cid": "bafkreifk34zhzathycow776ypiniblj4pgcgt7ztfn5fpopiybc5i2zk64",
+            "name": "file1.txt"
+          },
+          {
+            "size": 1048889,
+            "code": 112,
+            "name": "subdir",
+            "type": "dir",
+            "links": [
+              {
+                "cid": "bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq",
+                "size": 1048681,
+                "code": 112,
+                "type": "file",
+                "links": [
+                  {
+                    "cid": "bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla",
+                    "size": 1048576
+                  },
+                  {
+                    "cid": "bafkreidogqfzz75tpkmjzjke425xqcrmpcib2p5tg44hnbirumdbpl5adu",
+                    "size": 1
+                  }
+                ],
+                "name": "1048577.bin"
+              },
+              {
+                "cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+                "type": "file",
+                "code": 85,
+                "size": 0,
+                "name": "2.txt"
+              },
+              {
+                "cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+                "type": "file",
+                "code": 85,
+                "size": 0,
+                "name": "3.txt"
+              },
+              {
+                "cid": "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+                "type": "file",
+                "code": 85,
+                "size": 0,
+                "name": "4.txt"
+              }
+            ],
+            "cid": "bafybeiebzz4n3spk5nb5t3azeu4nzhih7scez7d5b5gjjspkx27qyr4lka"
+          }
+        ]
+      })
   });
   it('hash content V0', async () => {
     let result = await hashContent('Hello World!', 0);
@@ -717,22 +738,37 @@ describe('IPFS', function () {
   });
   it('hash text file v0', async () => {
     //https://ipfs.io/ipfs/Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy
-    let { cid } = await hashFile(Path.resolve(__dirname, './file.txt'), 0);
+    let { cid } = await hashFile(Path.resolve(__dirname, './samples/file.txt'), {version: 0});
     assert.strictEqual(cid, 'Qmf1rtki74jvYmGeqaaV51hzeiaa6DyWc98fzDiuPatzyy');
   });
   it('hash text file v1', async () => {
     //https://ipfs.io/ipfs/bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne?filename=hello.txt
-    let { cid } = await hashFile(Path.resolve(__dirname, './file.txt'), 1);
+    let { cid } = await hashFile(Path.resolve(__dirname, './samples/file.txt'));
     assert.strictEqual(cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
+    let hash = cidToHash(cid);
+    assert.strictEqual(hash, 'f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=')
   });
   it('hash text file v1 size 1048575', async () => {
     //https://dweb.link/ipfs/bafkreigkp3imjkhgps64iyoezmgsq3jpvo6z6dcbu72cwzs7olv2vcxmky?filename=1048575.bin
-    let { cid } = await hashFile(Path.resolve(__dirname, './1048575.bin'), 1);
+    let { cid } = await hashFile(Path.resolve(__dirname, './samples/1048575.bin'));
     assert.strictEqual(cid, 'bafkreigkp3imjkhgps64iyoezmgsq3jpvo6z6dcbu72cwzs7olv2vcxmky');
+  });
+  it('hash text file v1 size 1048577 chunk 256k', async () => {
+    let result = await hashFile(Path.resolve(__dirname, './samples/1048577.bin'), {chunkSize: 262144});
+    assert.strictEqual(result.cid, 'bafybeihhq4imxfkfucfxjbnqvrvzdknmfbzvxaivz7jzdnumfkabdbq3yq');
+    let hash = cidToHash(result.cid);
+    assert.strictEqual(hash, '54cQy5VFoIt0hbCsa5GprChzW4EVz9ORtowqgBGGG8Q=');
+  });
+  it('hash test.png v1 chunk 256k', async () => {
+    //https://ipfs.eth.aragon.network/ipfs/bafybeicewbxnti3caqxogpvdi66kclhwi6yiq3q2royain6g247nnrsxiy
+    let result = await hashFile(Path.resolve(__dirname, './samples/test.png'), {chunkSize: 262144});
+    assert.strictEqual(result.cid, 'bafybeicewbxnti3caqxogpvdi66kclhwi6yiq3q2royain6g247nnrsxiy');
+    let hash = cidToHash(result.cid);
+    assert.strictEqual(hash, 'RLBu2aNiBC7jPqNHvKEs9kewiG4ai7AEN8bXPtbGV0Y=');
   });
   it('hash text file v1 size 1048576', async () => {
     // https://dweb.link/ipfs/bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla?filename=1048576.bin
-    let result = await hashFile(Path.resolve(__dirname, './1048576.bin'), 1);
+    let result = await hashFile(Path.resolve(__dirname, './samples/1048576.bin'));
     assert.strictEqual(result.code, CODE_RAW);
     assert.strictEqual(result.type, 'file');
     assert.strictEqual(result.size, 1048576);
@@ -743,13 +779,16 @@ describe('IPFS', function () {
   it('hash text file v1 size 1048577', async () => {
     //https://bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby.ipfs.dweb.link/1048577.bin
     //https://dweb.link/ipfs/bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq?filename=1048577.bin
-    let result = await hashFile(Path.resolve(__dirname, './1048577.bin'), 1);
+    let result = await hashFile(Path.resolve(__dirname, './samples/1048577.bin'));
     assert.strictEqual(result.code, CODE_DAG_PB);
     assert.strictEqual(result.type, 'file');
-    assert.strictEqual(parse(result.cid).code, CODE_DAG_PB);
-    assert.strictEqual(parse(result.cid, result.bytes).type, 'file');
     assert.strictEqual(result.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
     assert.strictEqual(result.size, 1048681);
+    assert.strictEqual(parse(result.cid).code, CODE_DAG_PB);
+    assert.strictEqual(parse(result.cid, result.bytes).type, 'file');
+    let hash = cidToHash(result.cid);
+    assert.strictEqual(hash, '4+YzD7e0YdLTDozkfK1N3yGuVRdJz6Z62yXw00lrQmQ=');
+
     assert.deepStrictEqual(result.links,  [
         {
           cid: 'bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla',
@@ -760,9 +799,31 @@ describe('IPFS', function () {
           size: 1
         }
       ]);
+    result = await hashChunks(result.links);
+    assert.strictEqual(result.type, 'file');
+    assert.strictEqual(result.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
+
+    let content = await Fs.readFile(Path.resolve(__dirname, './samples/test.png'));
+    result = await hashContent(content); 
+    assert.strictEqual(result.cid, 'bafybeidozewhivatocukvcn2tlqch5qknyk7c5wp7ktk3zcjty5xzqycum');
+    hash = cidToHash(result.cid);
+    assert.strictEqual(hash, 'bsksdFQTcKiqibqa4CP2Cm4V8XbP+qat5EmeO3zDAqM=');
+
+    result = await hashFile(Path.resolve(__dirname, './samples/test.png'));
+    assert.strictEqual(result.cid, 'bafybeidozewhivatocukvcn2tlqch5qknyk7c5wp7ktk3zcjty5xzqycum');
+    assert.deepStrictEqual(result.links, [
+        {
+          cid: 'bafkreidyoppvd7vbqmhsipgplq4wsuig4nyt42bvt2li66bgcrlbztndzu',
+          size: 1048576
+        },
+        {
+          cid: 'bafkreiek4wkqdggysjupfexi3lmv2b764rwwdwow2552d73v6mv2ta44ti',
+          size: 196075
+        }
+    ]);
   });
   it('hash text file v0 size 1048577', async () => {    
-    let result = await hashFile(Path.resolve(__dirname, './1048577.bin'), 0);
+    let result = await hashFile(Path.resolve(__dirname, './samples/1048577.bin'), {version: 0});
     assert.strictEqual(result.cid, 'Qmeb988ZjF9Ui6AVPR8Sjg5sAv1B6DauS5rUjCoNs7ftZ1');
     let parsed = parse(result.cid, result.bytes);
     assert.deepStrictEqual(parsed.links, [
@@ -796,7 +857,7 @@ describe('IPFS', function () {
   it('hash content v1 size 1048577', async () => {
     //https://bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby.ipfs.dweb.link/1048577.bin
     //https://dweb.link/ipfs/bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq?filename=1048577.bin
-    let content = await Fs.readFile(Path.resolve(__dirname, './1048577.bin'), 'utf-8');
+    let content = await Fs.readFile(Path.resolve(__dirname, './samples/1048577.bin'), 'utf-8');
     let cid = await hashContent(content);   
     assert.strictEqual(cid.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
     let code = parse(cid.cid).code;
@@ -823,18 +884,18 @@ describe('IPFS', function () {
   it('hash content v0 size 1048577', async () => {
     //https://bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby.ipfs.dweb.link/1048577.bin
     //https://dweb.link/ipfs/bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq?filename=1048577.bin
-    let content = await Fs.readFile(Path.resolve(__dirname, './1048577.bin'), 'utf-8');
-    let cid = await hashContent(content, 0);    
+    let content = await Fs.readFile(Path.resolve(__dirname, './samples/1048577.bin'), 'utf-8');
+    let cid = await hashContent(content, 0);
     assert.strictEqual(cid.cid, 'Qmeb988ZjF9Ui6AVPR8Sjg5sAv1B6DauS5rUjCoNs7ftZ1');
   });
   it('hash image file v0', async () => {
     //https://ipfs.io/ipfs/QmSbQLR1hdDRwf81ZJ2Ndhm5BoKJLH7cfH8mmA2jeCunmy
-    let { cid } = await hashFile(Path.resolve(__dirname, './sclogo.png'), 0);
+    let { cid } = await hashFile(Path.resolve(__dirname, './samples/sclogo.png'), {version: 0});
     assert.strictEqual(cid, 'QmSbQLR1hdDRwf81ZJ2Ndhm5BoKJLH7cfH8mmA2jeCunmy');
   });
   it('hash image file v1', async () => {
     //https://ipfs.io/ipfs/bafkreidoephzortbdteu2iskujwdmb2xy6t6shonqdgbsn3v4w5ory5eui
-    let { cid } = await hashFile(Path.resolve(__dirname, './sclogo.png'), 1);
+    let { cid } = await hashFile(Path.resolve(__dirname, './samples/sclogo.png'));
     assert.strictEqual(cid, 'bafkreidoephzortbdteu2iskujwdmb2xy6t6shonqdgbsn3v4w5ory5eui');
   });
   it('CID to Sha256', async () => {

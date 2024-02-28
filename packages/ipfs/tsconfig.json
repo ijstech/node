@@ -1,7 +1,11 @@
 {     
     "extends": "../../tsconfig.build.json",
     "include": [
-        "src"
+        "src/fileManager.ts",
+        "src/index.ts",
+        "src/node.ts",
+        "src/types.ts",
+        "src/utils.ts"
     ],
     "compilerOptions": {
         "baseUrl": ".",     
