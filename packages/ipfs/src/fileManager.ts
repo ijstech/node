@@ -447,7 +447,8 @@ export class FileManager {
             fileNode.parent.removeItem(fileNode);
     };
     async getFileNode(path: string): Promise<FileNode> {
-        this.rootNode = await this.getRootNode();
+        if (!path.startsWith('/'))
+            path = '/' + path;
         let paths = path.split('/');
         let node = await this.getRootNode();
         for (let i = 1; i < paths.length; i++) {

@@ -4465,7 +4465,8 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
         }
         ;
         async getFileNode(path) {
-            this.rootNode = await this.getRootNode();
+            if (!path.startsWith('/'))
+                path = '/' + path;
             let paths = path.split('/');
             let node = await this.getRootNode();
             for (let i = 1; i < paths.length; i++) {
