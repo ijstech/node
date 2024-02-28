@@ -26,10 +26,12 @@ export declare class S3 {
         startAfter?: string;
     }): Promise<ListObjectsV2CommandOutput>;
     getObject(key: string): Promise<string>;
+    getObjectRaw(key: string): Promise<Uint8Array>;
     downloadObject(key: string, targetFilePath: string): Promise<boolean>;
     getObjectSignedUrl(key: string, options?: IPreSignedUrlOptions): Promise<string>;
     moveObject(fromKey: string, toKey: string): Promise<boolean>;
     putObject(key: string, content: string): Promise<PutObjectCommandOutput>;
+    putObjectRaw(key: string, content: Uint8Array, hash: string): Promise<PutObjectCommandOutput>;
     putObjectSignedUrl(key: string, options?: IPreSignedUrlOptions): Promise<string>;
     putObjectFrom(key: string, filePath: string, progressCallback?: any): Promise<CompleteMultipartUploadCommandOutput>;
 }

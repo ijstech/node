@@ -139,6 +139,16 @@ class S3 {
         return result.Body.transformToString('utf-8');
     }
     ;
+    async getObjectRaw(key) {
+        const command = new client_s3_1.GetObjectCommand({
+            Bucket: this.options.bucket,
+            Key: key
+        });
+        let result = await this.s3.send(command);
+        return await result.Body.transformToByteArray();
+        ;
+    }
+    ;
     async downloadObject(key, targetFilePath) {
         try {
             const command = new client_s3_1.GetObjectCommand({
@@ -177,11 +187,49 @@ class S3 {
     ;
     async putObject(key, content) {
         let cid = await IPFSUtils.hashContent(content);
+        if (cid.code == IPFSUtils.CidCode.DAG_PB) {
+            let chunkSize = 1048576;
+            let offset = 0;
+            const size = Math.ceil(content.length / chunkSize);
+            for (let i = 0; i < size; i++) {
+                let chunk = cid.links[i];
+                let exists = await this.hasObject(`ipfs/${chunk.cid}`);
+                if (!exists) {
+                    let data = content.substr(offset, chunkSize);
+                    offset += chunkSize;
+                    await this.putObjectRaw(`ipfs/${chunk.cid}`, Buffer.from(data), IPFSUtils.cidToHash(chunk.cid));
+                }
+                ;
+            }
+            ;
+            let command = new client_s3_1.PutObjectCommand({
+                Bucket: this.options.bucket,
+                Key: key,
+                ContentType: 'application/octet-stream',
+                ChecksumSHA256: IPFSUtils.cidToHash(cid.cid),
+                Body: cid.bytes
+            });
+            return this.s3.send(command);
+        }
+        else {
+            const command = new client_s3_1.PutObjectCommand({
+                Bucket: this.options.bucket,
+                Key: key,
+                ContentType: mime_1.default.getType(key) || 'application/octet-stream',
+                ChecksumSHA256: IPFSUtils.cidToHash(cid.cid),
+                Body: content
+            });
+            return this.s3.send(command);
+        }
+        ;
+    }
+    ;
+    async putObjectRaw(key, content, hash) {
         const command = new client_s3_1.PutObjectCommand({
             Bucket: this.options.bucket,
             Key: key,
             ContentType: mime_1.default.getType(key) || 'application/octet-stream',
-            ChecksumSHA256: IPFSUtils.cidToHash(cid.cid),
+            ChecksumSHA256: hash,
             Body: content
         });
         return this.s3.send(command);

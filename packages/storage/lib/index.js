@@ -22,7 +22,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Storage = void 0;
+exports.Storage = exports.S3 = void 0;
 const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
 const https_1 = __importDefault(require("https"));
@@ -30,10 +30,10 @@ const crypto_1 = __importDefault(require("crypto"));
 const os_1 = __importDefault(require("os"));
 const IPFSUtils = __importStar(require("@ijstech/ipfs"));
 const s3_1 = require("./s3");
+Object.defineProperty(exports, "S3", { enumerable: true, get: function () { return s3_1.S3; } });
 const extract_zip_1 = __importDefault(require("extract-zip"));
 const db_1 = require("@ijstech/db");
 const log_pdm_1 = require("./log.pdm");
-let Web3Storage;
 let getFilesFromPath;
 let File;
 const appPrefix = 'sc';
@@ -69,18 +69,6 @@ class Storage {
         this.options = options;
         if (this.options.s3)
             this.s3 = new s3_1.S3(this.options.s3);
-    }
-    ;
-    get web3Storage() {
-        if (!this._web3Storage && this.options.web3Storage?.token) {
-            let Lib = require('web3.storage');
-            Web3Storage = Lib.Web3Storage;
-            getFilesFromPath = Lib.getFilesFromPath;
-            File = Lib.File;
-            this._web3Storage = new Web3Storage({ token: this.options.web3Storage.token });
-        }
-        ;
-        return this._web3Storage;
     }
     ;
     async initDir() {
@@ -129,6 +117,15 @@ class Storage {
         ;
     }
     ;
+    async getLocalCacheRaw(type, key) {
+        let filePath = await this.getLocalCachePath(type, key);
+        if (filePath) {
+            let content = await fs_1.promises.readFile(filePath);
+            return content;
+        }
+        ;
+    }
+    ;
     async putLocalCache(type, key, content) {
         let filePath = await this.getLocalCachePath(type, key);
         if (filePath) {
@@ -141,6 +138,12 @@ class Storage {
         let path = await this.getLocalFilePath(rootCid, filePath);
         if (path)
             return await fs_1.promises.readFile(path, 'utf8');
+    }
+    ;
+    async getFileRaw(rootCid, filePath) {
+        let path = await this.getLocalFilePath(rootCid, filePath, false, true);
+        if (path)
+            return await fs_1.promises.readFile(path);
     }
     ;
     moveFile(sourcePath, destPath) {
@@ -161,7 +164,7 @@ class Storage {
         });
     }
     ;
-    async getLocalFilePath(rootCid, filePath, returnIndex) {
+    async getLocalFilePath(rootCid, filePath, returnIndex, rawFile) {
         if (rootCid.startsWith('/') && typeof (filePath) == 'string')
             return path_1.default.join(rootCid, filePath);
         if (typeof (filePath) == 'string' && filePath[0] == '/')
@@ -175,64 +178,87 @@ class Storage {
         }
         ;
         let item;
-        if (await this.localCacheExist('stat', rootCid)) {
+        if (filePath && await this.localCacheExist('stat', rootCid)) {
             item = JSON.parse(await this.getLocalCache('stat', rootCid));
         }
         else if (!filePath && await this.localCacheExist('ipfs', rootCid)) {
             return await this.getLocalCachePath('ipfs', rootCid);
         }
         else if (this.s3) {
-            if (await this.s3.hasObject(`stat/${rootCid}`)) {
-                let content = await this.s3.getObject(`stat/${rootCid}`);
-                item = JSON.parse(content);
-                if ((await IPFSUtils.hashItems(item.links)).cid != rootCid)
-                    throw new Error('CID not match');
-                await this.putLocalCache('stat', rootCid, content);
-            }
-            else if (!filePath && await this.s3.hasObject(`ipfs/${rootCid}`)) {
-                let targetFilePath = await this.getLocalCachePath('ipfs', rootCid);
-                if (targetFilePath) {
-                    let tmpFilePath = await this.getLocalCachePath('tmp', rootCid);
-                    let success = await this.s3.downloadObject(`ipfs/${rootCid}`, tmpFilePath);
-                    if (!success)
-                        throw new Error('Failed to download file');
-                    let { cid } = await IPFSUtils.hashFile(tmpFilePath);
-                    if (cid != rootCid) {
-                        await fs_1.promises.rm(tmpFilePath);
-                        throw new Error('CID not match');
+            if (!filePath && await this.s3.hasObject(`ipfs/${rootCid}`)) {
+                let info = await this.getItemInfo(rootCid);
+                if (!rawFile && info.code == IPFSUtils.CidCode.DAG_PB && await this.localCacheExist('stat', rootCid)) {
+                    return await this.getLocalCachePath('stat', rootCid);
+                }
+                else {
+                    let targetFilePath = await this.getLocalCachePath('ipfs', rootCid);
+                    if (targetFilePath) {
+                        let tmpFilePath = await this.getLocalCachePath('tmp', rootCid);
+                        let success = await this.s3.downloadObject(`ipfs/${rootCid}`, tmpFilePath);
+                        if (!success)
+                            throw new Error('Failed to download file');
+                        if (info.code == IPFSUtils.CidCode.DAG_PB) {
+                            let cidInfo = await this.getItemInfo(rootCid);
+                            if (cidInfo.cid != rootCid) {
+                                await fs_1.promises.rm(tmpFilePath);
+                                throw new Error('CID not match');
+                            }
+                        }
+                        else {
+                            let cid = (await IPFSUtils.hashFile(tmpFilePath)).cid;
+                            if (cid != rootCid) {
+                                await fs_1.promises.rm(tmpFilePath);
+                                throw new Error('CID not match');
+                            }
+                            ;
+                        }
+                        await this.moveFile(tmpFilePath, targetFilePath);
+                        return targetFilePath;
                     }
                     ;
-                    await this.moveFile(tmpFilePath, targetFilePath);
-                    return targetFilePath;
+                }
+            }
+            else {
+                item = await this.getItemInfo(rootCid);
+                if (item.type != 'dir') {
+                    throw new Error('Invalid directory');
                 }
                 ;
             }
-            ;
         }
         ;
         if (paths?.length > 0) {
             let path = paths.shift();
             for (let i = 0; i < item.links.length; i++) {
-                if (item.links[i].name == path) {
-                    if (item.links[i].type == 'dir')
-                        return await this.getLocalFilePath(item.links[i].cid, paths, returnIndex);
+                let link = item.links[i];
+                if (link.name == path) {
+                    let info = await this.getItemInfo(link.cid);
+                    if (info.type == 'dir')
+                        return await this.getLocalFilePath(link.cid, paths, returnIndex);
                     else {
-                        let targetFilePath = await this.getLocalCachePath('ipfs', item.links[i].cid);
-                        if (targetFilePath) {
-                            if (await this.localCacheExist('ipfs', item.links[i].cid))
+                        let info = await this.getItemInfo(link.cid);
+                        if (info.code == IPFSUtils.CidCode.DAG_PB) {
+                            return await this.getLocalFilePath(link.cid);
+                        }
+                        else {
+                            let targetFilePath = await this.getLocalCachePath('ipfs', link.cid);
+                            if (targetFilePath) {
+                                if (await this.localCacheExist('ipfs', link.cid))
+                                    return targetFilePath;
+                                let tmpFilePath = await this.getLocalCachePath('tmp', link.cid);
+                                let success = await this.s3.downloadObject(`ipfs/${link.cid}`, tmpFilePath);
+                                if (!success)
+                                    throw new Error('Failed to download file');
+                                let { cid } = await IPFSUtils.hashFile(tmpFilePath);
+                                if (cid != link.cid) {
+                                    await fs_1.promises.rm(tmpFilePath);
+                                    throw new Error('CID not match');
+                                }
+                                ;
+                                await this.moveFile(tmpFilePath, targetFilePath);
                                 return targetFilePath;
-                            let tmpFilePath = await this.getLocalCachePath('tmp', item.links[i].cid);
-                            let success = await this.s3.downloadObject(`ipfs/${item.links[i].cid}`, tmpFilePath);
-                            if (!success)
-                                throw new Error('Failed to download file');
-                            let { cid } = await IPFSUtils.hashFile(tmpFilePath);
-                            if (cid != item.links[i].cid) {
-                                await fs_1.promises.rm(tmpFilePath);
-                                throw new Error('CID not match');
                             }
                             ;
-                            await this.moveFile(tmpFilePath, targetFilePath);
-                            return targetFilePath;
                         }
                         ;
                     }
@@ -257,30 +283,10 @@ class Storage {
         let fileItem = await IPFSUtils.hashContent(fileContent);
         fileItem.type = 'file';
         fileItem.name = '';
-        let exists;
         if (this.s3) {
-            exists = await this.s3.hasObject(`ipfs/${fileItem.cid}`);
+            let exists = await this.s3.hasObject(`ipfs/${fileItem.cid}`);
             if (exists)
                 return fileItem;
-        }
-        ;
-        let folderItem = await IPFSUtils.hashItems([
-            {
-                cid: fileItem.cid,
-                name: 'file',
-                size: fileItem.size,
-                type: fileItem.type
-            }
-        ]);
-        if ((!to || to.ipfs != false) && this.web3Storage) {
-            const files = [
-                new File([fileContent], 'file'),
-            ];
-            let cid = await this.web3Storage.put(files, {
-                name: source
-            });
-            if (cid != folderItem.cid)
-                throw new Error('CID not match');
         }
         ;
         if (!to || to.s3 != false) {
@@ -327,15 +333,6 @@ class Storage {
                 type: 'file'
             }
         ]);
-        if ((!to || to.ipfs != false) && this.web3Storage) {
-            const files = await getFilesFromPath(filePath);
-            let cid = await this.web3Storage.put(files, {
-                name: source
-            });
-            if (cid != folderItem.cid)
-                throw new Error('CID not match');
-        }
-        ;
         if (!to || to.s3 != false) {
             let logContext;
             if (this.options.log) {
@@ -354,6 +351,28 @@ class Storage {
         return fileItem;
     }
     ;
+    async getItemInfo(cid) {
+        let parsed = IPFSUtils.parse(cid);
+        if (parsed.code == IPFSUtils.CidCode.DAG_PB) {
+            parsed = JSON.parse(await this.getItem(cid));
+            return {
+                cid: cid,
+                size: parsed.size,
+                code: IPFSUtils.CidCode.DAG_PB,
+                type: parsed.type,
+                name: parsed.name,
+                links: parsed.links
+            };
+        }
+        else
+            return {
+                cid: cid,
+                size: parsed.size,
+                code: IPFSUtils.CidCode.RAW,
+                type: 'file'
+            };
+    }
+    ;
     async getItem(cid) {
         if (await this.localCacheExist('stat', cid)) {
             return await this.getLocalCache('stat', cid);
@@ -363,18 +382,49 @@ class Storage {
         }
         else if (this.s3) {
             let match;
-            let content;
             let itemType;
+            let content;
+            let result;
             if (await this.s3.hasObject(`ipfs/${cid}`)) {
-                itemType = 'ipfs';
-                content = await this.s3.getObject(`ipfs/${cid}`);
+                let parsed = IPFSUtils.parse(cid);
+                if (parsed.code == IPFSUtils.CidCode.DAG_PB) {
+                    itemType = 'stat';
+                    content = await this.s3.getObjectRaw(`ipfs/${cid}`);
+                    parsed = IPFSUtils.parse(cid, content);
+                    let links = [];
+                    for (let i = 0; i < parsed.links.length; i++) {
+                        let link = parsed.links[i];
+                        links.push({
+                            cid: link.cid,
+                            name: link.name,
+                            size: link.size
+                        });
+                    }
+                    ;
+                    if (parsed.type == 'dir') {
+                        match = (await IPFSUtils.hashItems(parsed.links)).cid == cid;
+                    }
+                    else
+                        match = (await IPFSUtils.hashChunks(parsed.links)).cid == cid;
+                    result = JSON.stringify({
+                        cid: cid,
+                        name: parsed.name || '',
+                        size: parsed.size,
+                        type: parsed.type,
+                        links: links
+                    });
+                }
+                else {
+                    itemType = 'ipfs';
+                    result = await this.s3.getObject(`ipfs/${cid}`);
+                    match = (await IPFSUtils.hashContent(result)).cid == cid;
+                }
+                ;
             }
             else {
                 itemType = 'stat';
                 content = await this.s3.getObject(`stat/${cid}`);
-            }
-            ;
-            if (content) {
+                result = content;
                 try {
                     if ((await IPFSUtils.hashItems(JSON.parse(content).links)).cid == cid)
                         match = true;
@@ -383,10 +433,10 @@ class Storage {
                 ;
             }
             ;
-            if (!match && (await IPFSUtils.hashContent(content)).cid != cid)
+            if (!match)
                 throw new Error('CID not match');
-            await this.putLocalCache(itemType, cid, content);
-            return content;
+            await this.putLocalCache(itemType, cid, result);
+            return result;
         }
         ;
     }
@@ -395,7 +445,15 @@ class Storage {
         let hash = await IPFSUtils.hashItems(items, 1);
         hash.name = '';
         hash.type = 'dir';
-        hash.links = items;
+        hash.links = [];
+        items.forEach(item => {
+            hash.links?.push({
+                cid: item.cid,
+                name: item.name,
+                size: item.size,
+                type: item.type
+            });
+        });
         let logContext;
         if (this.options.log) {
             let client = db_1.getClient(this.options.log);
@@ -425,18 +483,6 @@ class Storage {
         hash.name = path.split('/').pop() || path;
         hash.type = 'dir';
         let cid;
-        if ((!to || to.ipfs != false) && this.web3Storage) {
-            let items = await fs_1.promises.readdir(path);
-            for (let i = 0; i < items.length; i++)
-                items[i] = path + '/' + items[i];
-            const files = await getFilesFromPath(items);
-            cid = await this.web3Storage.put(files, {
-                name: source
-            });
-            if (cid != hash.cid)
-                throw new Error('CID not match');
-        }
-        ;
         if (!to || to.s3 != false) {
             let logContext;
             if (this.options.log) {
@@ -457,30 +503,37 @@ class Storage {
     }
     ;
     async putToS3(logContext, sourcePath, item, parent) {
-        let itemType;
-        if (item.type == 'dir')
-            itemType = 'stat';
-        else
-            itemType = 'ipfs';
-        let exists = await this.s3.hasObject(`${itemType}/${item.cid}`);
+        let exists = await this.s3.hasObject(`ipfs/${item.cid}`);
         if (!exists) {
-            if (item.type == 'dir') {
-                if (item.links?.length > 0) {
-                    if (sourcePath) {
-                        for (let i = 0; i < item.links.length; i++)
-                            await this.putToS3(logContext, path_1.default.join(sourcePath, item.links[i].name), item.links[i], item);
+            if (item.code == IPFSUtils.CidCode.DAG_PB) {
+                if (item.type == 'file') {
+                    let fileStream = fs_1.createReadStream(sourcePath, { highWaterMark: 1048576 });
+                    let idx = 0;
+                    for await (const data of fileStream) {
+                        let chunk = item.links[idx];
+                        idx++;
+                        let exists = await this.s3.hasObject(`ipfs/${chunk.cid}`);
+                        if (!exists)
+                            await this.s3.putObjectRaw(`ipfs/${chunk.cid}`, data, IPFSUtils.cidToHash(chunk.cid));
                     }
                     ;
-                    let data = JSON.parse(JSON.stringify(item));
-                    for (let i = 0; i < data.links.length; i++)
-                        delete data.links[i].links;
-                    await this.s3.putObject(`stat/${item.cid}`, JSON.stringify(data));
+                    await this.s3.putObjectRaw(`ipfs/${item.cid}`, item.bytes, IPFSUtils.cidToHash(item.cid));
+                }
+                else if (item.links?.length > 0) {
+                    if (sourcePath) {
+                        for (let i = 0; i < item.links.length; i++) {
+                            let link = item.links[i];
+                            await this.putToS3(logContext, path_1.default.join(sourcePath, link.name), link, item);
+                        }
+                    }
+                    ;
+                    await this.s3.putObjectRaw(`ipfs/${item.cid}`, item.bytes, IPFSUtils.cidToHash(item.cid));
                     if (logContext) {
                         logContext.uploadItem.applyInsert({
-                            cid: data.cid,
+                            cid: item.cid,
                             logGuid: logContext.uploadLog.first?.guid,
                             parentCid: parent ? parent.cid : null,
-                            size: data.size,
+                            size: item.size,
                             type: 1
                         });
                     }

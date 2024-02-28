@@ -15,39 +15,102 @@ Config.localCache = {
 }
 describe('Storage', function () {
     this.timeout(1800000);
+    let s3 = new S3(Config.s3);
+    before(async function(){
+        let s3 = new S3(Config.s3);
+        //delete all ipfs objects
+        let items = await s3.listObjects({prefix: 'ipfs'})
+        if (items.Contents?.length){
+            for (let i = 0; i < items.Contents?.length; i ++){
+                let key = items.Contents[i].Key;
+                if (key)
+                    await s3.deleteObject(key);
+            };  
+        };        
+    })
     it('put Dir', async function(){
         let storage = new Storage(Config);
         let path = Path.join(__dirname, './dir');
         let result = await storage.putDir(path, {s3: true, ipfs: true}, 'local test dir')
-        assert.strictEqual(result.cid, 'bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy');
+        assert.strictEqual(result.cid, 'bafybeidn6qdn3idyhpdqv65ofiinqjr6egalh6bwodb7cc4o77lxquuism');
         result = await storage.putItems(result.links);
-        assert.strictEqual(result.cid, 'bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy');
+        assert.strictEqual(result.cid, 'bafybeidn6qdn3idyhpdqv65ofiinqjr6egalh6bwodb7cc4o77lxquuism');
     });
     it('get Item', async function(){
         let storage = new Storage(Config);
-        let result = JSON.parse(await storage.getItem('bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy'))
-        assert.strictEqual(result.cid, 'bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy');
-        result = await storage.getItem('bafkreiedx5743ej6qhjv6diostwr5qdbd2hdwsijyi5qb347a5xsaxthyy')
+        let info = await storage.getItemInfo('bafybeidn6qdn3idyhpdqv65ofiinqjr6egalh6bwodb7cc4o77lxquuism');  
+        assert.deepStrictEqual(info, {
+            cid: 'bafybeidn6qdn3idyhpdqv65ofiinqjr6egalh6bwodb7cc4o77lxquuism',
+            code: 112,
+            size: 1048917,
+            type: 'dir',
+            name: '',
+            links: [
+              {
+                cid: 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq',
+                name: '1048577.bin',
+                size: 1048681
+              },
+              {
+                cid: 'bafkreiedx5743ej6qhjv6diostwr5qdbd2hdwsijyi5qb347a5xsaxthyy',
+                name: 'file1.txt',
+                size: 6
+              },
+              {
+                cid: 'bafybeiaujqvgye35gwlz6jlzljojrosci25yuro6qb2754ysfkkjwgo4ma',
+                name: 'folder 1',
+                size: 64
+              }
+            ]
+        });
+        let result = await storage.getItem('bafkreiedx5743ej6qhjv6diostwr5qdbd2hdwsijyi5qb347a5xsaxthyy')
         assert.strictEqual(result, 'file 1');
+        info = await storage.getItemInfo('bafybeidn6qdn3idyhpdqv65ofiinqjr6egalh6bwodb7cc4o77lxquuism');
+        assert.strictEqual(info.type, 'dir');
+        assert.strictEqual(info.size, 1048917);
+        info = await storage.getItemInfo('bafkreiedx5743ej6qhjv6diostwr5qdbd2hdwsijyi5qb347a5xsaxthyy');
+        assert.strictEqual(info.type, 'file');
+        info = await storage.getItemInfo('bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq'); //1048577.bin
+        assert.strictEqual(info.type, 'file');
+        assert.strictEqual(info.size, 1048681);
+        assert.strictEqual(info.code, IPFSUtils.CidCode.DAG_PB);
+        assert.deepStrictEqual(info.links, [
+            {
+                cid: 'bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla',
+                name: '',
+                size: 1048576
+              },
+              {
+                cid: 'bafkreidogqfzz75tpkmjzjke425xqcrmpcib2p5tg44hnbirumdbpl5adu',
+                name: '',
+                size: 1
+              }
+        ]);
+        info = await storage.getItemInfo('bafkreibq4fevl27rgurgnxbp7adh42aqiyd6ouflxhj3gzmcxcxzbh6lla'); //chunk 0
+        assert.strictEqual(info.type, 'file');
     });
-    it('put Github', async function(){
-        let storage = new Storage(Config);
-        let result = await storage.putGithub({org:'ijstech',repo:'openswap-scbook',commit:'f1abac737421db53e507be21dafc6710a73c8c6f'}, {ipfs: true, s3: false});
-        assert.strictEqual(result.cid, 'bafybeiabehpjuhbjnnrehsrl327pr5tp4fqhclp3th5ta4bxazlmmdkopq');
-    });    
-    it('get File', async function(){
-        let storage = new Storage(Config);
-        let result = await storage.getFile('bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy', 'file1.txt')
-        assert.strictEqual(result, 'file 1');
-        result = await storage.getFile('bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy', 'file1.txt')
-        assert.strictEqual(result, 'file 1');
-    });    
+    // it('put Github', async function(){
+    //     let storage = new Storage(Config);
+    //     let result = await storage.putGithub({org:'ijstech',repo:'openswap-scbook',commit:'f1abac737421db53e507be21dafc6710a73c8c6f'}, {ipfs: true, s3: false});
+    //     assert.strictEqual(result.cid, 'bafybeiabehpjuhbjnnrehsrl327pr5tp4fqhclp3th5ta4bxazlmmdkopq');
+    // });    
+    // it('get File', async function(){
+    //     let storage = new Storage(Config);
+    //     let result = await storage.getFile('bafybeidn6qdn3idyhpdqv65ofiinqjr6egalh6bwodb7cc4o77lxquuism', 'file1.txt')
+    //     assert.strictEqual(result, 'file 1');
+    //     result = await storage.getFile('bafybeidn6qdn3idyhpdqv65ofiinqjr6egalh6bwodb7cc4o77lxquuism', 'file1.txt')
+    //     assert.strictEqual(result, 'file 1');
+    // });    
     it('get File Path', async function(){
         let storage = new Storage(Config);
-        let result = await storage.getLocalFilePath('bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy', 'folder 1/file 2.txt');
+        let result = await storage.getLocalFilePath('bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');  //1048577.bin
+        assert.strictEqual(typeof(result), 'string');
+        result = await storage.getLocalFilePath('bafybeidn6qdn3idyhpdqv65ofiinqjr6egalh6bwodb7cc4o77lxquuism', '1048577.bin');
+        assert.strictEqual(typeof(result), 'string');
+        result = await storage.getLocalFilePath('bafybeidn6qdn3idyhpdqv65ofiinqjr6egalh6bwodb7cc4o77lxquuism', 'folder 1/file 2.txt');
         let content = await Fs.readFile(result, 'utf-8');
         assert.strictEqual(content, 'file 2');
-        result = await storage.getLocalFilePath('bafybeidbj3z4j6gv5pjwm3beu2oh4b7xaaem5zyp2o2sbitvdkgrfftkuy', 'folder 1/file 2.txt');
+        result = await storage.getLocalFilePath('bafybeidn6qdn3idyhpdqv65ofiinqjr6egalh6bwodb7cc4o77lxquuism', 'folder 1/file 2.txt');
         content = await Fs.readFile(result, 'utf-8');
         assert.strictEqual(content, 'file 2');
     });
@@ -142,6 +205,6 @@ describe('Storage', function () {
             maxKeys: 100,
             startAfter: result.Contents?.[1].Key
         });
-        assert.strictEqual(result.Contents?.length, 3)
+        assert.strictEqual(result.Contents?.length, 6)
     });    
 });

@@ -1,6 +1,7 @@
 import * as IPFSUtils from '@ijstech/ipfs';
-import { IS3Options, IPreSignedUrlOptions } from './s3';
+import { IS3Options, S3, IPreSignedUrlOptions } from './s3';
 import { IDbConnectionOptions } from '@ijstech/types';
+export { S3 };
 export interface IGithubRepo {
     org: string;
     repo: string;
@@ -8,10 +9,6 @@ export interface IGithubRepo {
 }
 export interface IStorageOptions {
     s3?: IS3Options;
-    web3Storage?: {
-        endpoint?: string;
-        token: string;
-    };
     localCache?: {
         path: string;
     };
@@ -20,19 +17,19 @@ export interface IStorageOptions {
 export declare type IItemType = 'stat' | 'ipfs' | 'tmp';
 export declare class Storage {
     private options;
-    private s3;
-    private _web3Storage;
+    s3: S3;
     private _initDir;
     constructor(options: IStorageOptions);
-    private get web3Storage();
     private initDir;
     private localCacheExist;
     private getLocalCachePath;
     private getLocalCache;
+    private getLocalCacheRaw;
     private putLocalCache;
     getFile(rootCid: string, filePath?: string | string[]): Promise<string>;
+    getFileRaw(rootCid: string, filePath?: string | string[]): Promise<Uint8Array>;
     private moveFile;
-    getLocalFilePath(rootCid: string, filePath?: string | string[], returnIndex?: boolean): Promise<string>;
+    getLocalFilePath(rootCid: string, filePath?: string | string[], returnIndex?: boolean, rawFile?: boolean): Promise<string>;
     getUploadUrl(path: string, options?: IPreSignedUrlOptions): Promise<string>;
     putContent(fileContent: string, to?: {
         ipfs?: boolean;
@@ -42,6 +39,7 @@ export declare class Storage {
         ipfs?: boolean;
         s3?: boolean;
     }, source?: string): Promise<IPFSUtils.ICidInfo>;
+    getItemInfo(cid: string): Promise<IPFSUtils.ICidData>;
     getItem(cid: string): Promise<string>;
     putItems(items: IPFSUtils.ICidInfo[], source?: string): Promise<IPFSUtils.ICidInfo>;
     putDir(path: string, to?: {

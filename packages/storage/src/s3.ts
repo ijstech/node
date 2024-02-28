@@ -115,6 +115,14 @@ export class S3 {
         let result = await this.s3.send(command);
         return result.Body.transformToString('utf-8');
     };
+    async getObjectRaw(key: string): Promise<Uint8Array> {
+        const command = new GetObjectCommand({
+            Bucket: this.options.bucket,
+            Key: key
+        });
+        let result = await this.s3.send(command);
+        return await result.Body.transformToByteArray();;
+    };
     async downloadObject(key: string, targetFilePath: string): Promise<boolean> {
         try{
             const command = new GetObjectCommand({
@@ -148,11 +156,45 @@ export class S3 {
     };
     async putObject(key: string, content: string): Promise<PutObjectCommandOutput> {
         let cid = await IPFSUtils.hashContent(content);
+        if (cid.code == IPFSUtils.CidCode.DAG_PB){
+            let chunkSize = 1048576;
+            let offset = 0  
+            const size = Math.ceil(content.length/chunkSize);
+            for (let i = 0; i < size; i++) {
+                let chunk = cid.links[i];
+                let exists = await this.hasObject(`ipfs/${chunk.cid}`);
+                if (!exists){
+                    let data = content.substr(offset, chunkSize);
+                    offset += chunkSize;                    
+                    await this.putObjectRaw(`ipfs/${chunk.cid}`, Buffer.from(data), IPFSUtils.cidToHash(chunk.cid));
+                };
+            };
+            let command = new PutObjectCommand({
+                Bucket: this.options.bucket,
+                Key: key,
+                ContentType: 'application/octet-stream',
+                ChecksumSHA256: IPFSUtils.cidToHash(cid.cid),
+                Body: cid.bytes
+            });
+            return this.s3.send(command);
+        }
+        else{
+            const command = new PutObjectCommand({
+                Bucket: this.options.bucket,
+                Key: key,
+                ContentType: Mime.getType(key) || 'application/octet-stream',
+                ChecksumSHA256: IPFSUtils.cidToHash(cid.cid),
+                Body: content
+            });
+            return this.s3.send(command);
+        };
+    };
+    async putObjectRaw(key: string, content: Uint8Array, hash: string): Promise<PutObjectCommandOutput> {
         const command = new PutObjectCommand({
             Bucket: this.options.bucket,
             Key: key,
             ContentType: Mime.getType(key) || 'application/octet-stream',
-            ChecksumSHA256: IPFSUtils.cidToHash(cid.cid),
+            ChecksumSHA256: hash,
             Body: content
         });
         return this.s3.send(command);
