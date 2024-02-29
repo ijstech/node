@@ -4011,6 +4011,8 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
     ;
     ;
     ;
+    ;
+    ;
     class FileManagerHttpTransport {
         constructor(options) {
             this.updated = {};
@@ -4021,7 +4023,7 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
         async applyUpdate(node) {
             let cidInfo = node.cidInfo;
             if (cidInfo && !this.updated[cidInfo.cid]) {
-                let result = await this.getUploadUrl(cidInfo);
+                let result = await this.getUploadUrl(cidInfo, node.isRoot);
                 if (await node.isFolder()) {
                     let url = result?.[cidInfo.cid];
                     if (!url?.exists) {
@@ -4123,7 +4125,7 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
                 return cidInfo;
         }
         ;
-        async getUploadUrl(cidInfo) {
+        async getUploadUrl(cidInfo, isRoot) {
             let req = {
                 cid: cidInfo.cid,
                 name: cidInfo.name,
@@ -4151,6 +4153,7 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
+                    isRoot: isRoot,
                     signature: signature,
                     data: req
                 })
@@ -4489,6 +4492,7 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
                     this.rootNode = await this.setRootCid(this.options.rootCid);
                 else
                     this.rootNode = new FileNode(this, '/', null);
+                this.rootNode.isRoot = true;
             }
             ;
             return this.rootNode;
@@ -4503,6 +4507,7 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
             let cidInfo = await this.transporter.getCidInfo(cid);
             if (cidInfo) {
                 this.rootNode = new FileNode(this, '/', null, cidInfo);
+                this.rootNode.isRoot = true;
                 await this.rootNode.checkCid();
                 return this.rootNode;
             }

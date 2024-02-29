@@ -1,6 +1,10 @@
 import { ICidData, ICidInfo } from './types';
-interface ISigner {
-    sign(data: any): Promise<string>;
+export interface ISignature {
+    pubKey: string;
+    data: any;
+}
+export interface ISigner {
+    sign(data: any): Promise<ISignature>;
 }
 interface IFileManagerOptions {
     transport?: IFileManagerTransport;
@@ -21,7 +25,7 @@ export declare type IGetUploadUrlResult = {
 export interface IFileManagerTransport {
     applyUpdate(node: FileNode): Promise<void>;
     getCidInfo(cid: string): Promise<ICidInfo | undefined>;
-    getUploadUrl(cidInfo: ICidInfo): Promise<IGetUploadUrlResult | undefined>;
+    getUploadUrl(cidInfo: ICidInfo, isRoot?: boolean): Promise<IGetUploadUrlResult | undefined>;
 }
 export interface IFileManagerTransporterOptions {
     endpoint?: string;
@@ -33,7 +37,7 @@ export declare class FileManagerHttpTransport implements IFileManagerTransport {
     constructor(options?: IFileManagerTransporterOptions);
     applyUpdate(node: FileNode): Promise<void>;
     getCidInfo(cid: string): Promise<ICidInfo | undefined>;
-    getUploadUrl(cidInfo: ICidInfo): Promise<IGetUploadUrlResult | undefined>;
+    getUploadUrl(cidInfo: ICidInfo, isRoot?: boolean): Promise<IGetUploadUrlResult | undefined>;
 }
 export declare class FileNode {
     private _name;
@@ -46,6 +50,7 @@ export declare class FileNode {
     private _fileContent;
     private _isModified;
     private _owner;
+    isRoot: boolean;
     constructor(owner: FileManager, name: string, parent?: FileNode, cidInfo?: ICidData);
     get cid(): string;
     checkCid(): Promise<void>;

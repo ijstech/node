@@ -20,9 +20,13 @@ import { ICidData, ICidInfo, CidCode} from './types';
 //     file?: FileRaw;
 //     fileContent?: Uint8Array;
 // };
-interface ISigner {
-    sign(data: any): Promise<string>;
-}
+export interface ISignature{
+    pubKey: string;
+    data: any;
+};
+export interface ISigner {
+    sign(data: any): Promise<ISignature>;
+};
 interface IFileManagerOptions {
     transport?: IFileManagerTransport;
     endpoint?: string;
@@ -39,7 +43,7 @@ export type IGetUploadUrlResult = {
 export interface IFileManagerTransport {
     applyUpdate(node: FileNode): Promise<void>;
     getCidInfo(cid: string): Promise<ICidInfo | undefined>;
-    getUploadUrl(cidInfo: ICidInfo): Promise<IGetUploadUrlResult | undefined>;
+    getUploadUrl(cidInfo: ICidInfo, isRoot?: boolean): Promise<IGetUploadUrlResult | undefined>;
 };
 
 export interface IFileManagerTransporterOptions {
@@ -56,7 +60,7 @@ export class FileManagerHttpTransport implements IFileManagerTransport {
     async applyUpdate(node: FileNode): Promise<void>{
         let cidInfo = node.cidInfo;
         if (cidInfo && !this.updated[cidInfo.cid]){
-            let result = await this.getUploadUrl(cidInfo);
+            let result = await this.getUploadUrl(cidInfo, node.isRoot);
             if (await node.isFolder()){
                 let url = result?.[cidInfo.cid];
                 if (!url?.exists){
@@ -148,7 +152,7 @@ export class FileManagerHttpTransport implements IFileManagerTransport {
         else
             return cidInfo;
     };
-    async getUploadUrl(cidInfo: ICidInfo): Promise<IGetUploadUrlResult | undefined> {
+    async getUploadUrl(cidInfo: ICidInfo, isRoot?: boolean): Promise<IGetUploadUrlResult | undefined> {
         let req: ICidInfo = {
             cid: cidInfo.cid,
             name: cidInfo.name,
@@ -156,7 +160,7 @@ export class FileManagerHttpTransport implements IFileManagerTransport {
             type: cidInfo.type,
             links: []
         };
-        let signature: string;        
+        let signature: ISignature;        
         if (cidInfo.links){
             for (let link of cidInfo.links){
                 req.links?.push({
@@ -174,6 +178,7 @@ export class FileManagerHttpTransport implements IFileManagerTransport {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
+                isRoot: isRoot,
                 signature: signature,
                 data: req
             })
@@ -192,6 +197,7 @@ export class FileNode {
     private _fileContent: string | Uint8Array | undefined;
     private _isModified: boolean;
     private _owner: FileManager;
+    public isRoot: boolean;
     constructor(owner: FileManager, name: string, parent?: FileNode, cidInfo?: ICidData){
         this._owner = owner;
         this._name = name;
@@ -469,6 +475,7 @@ export class FileManager {
                 this.rootNode = await this.setRootCid(this.options.rootCid);
             else
                 this.rootNode = new FileNode(this, '/', null, );
+            this.rootNode.isRoot = true;
         };
         return this.rootNode;        
     };
@@ -480,6 +487,7 @@ export class FileManager {
         let cidInfo = await this.transporter.getCidInfo(cid);
         if (cidInfo){
             this.rootNode = new FileNode(this, '/', null, cidInfo);
+            this.rootNode.isRoot = true;
             await this.rootNode.checkCid();
             return this.rootNode;
         }
