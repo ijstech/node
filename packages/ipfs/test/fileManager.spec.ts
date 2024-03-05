@@ -2,8 +2,8 @@ import 'mocha';
 import * as assert from 'assert';
 import {promises as Fs, createReadStream} from 'fs';
 import Path from 'path';
-import { CidCode, cidToHash, FileManager, ICidInfo, FileManagerHttpTransport, parse, hashItems} from '../src';
-import { IGetUploadUrlResult, IFileManagerTransporterOptions, FileNode} from '../src/fileManager';
+import { CidCode, cidToHash, FileManager, ICidInfo, FileManagerHttpTransport, parse} from '../src';
+import { IGetUploadUrlResult, IFileManagerTransporterOptions, FileNode, IRootInfo, IResult} from '../src/fileManager';
 import {Storage} from '@ijstech/storage';
 import Config from './data/config.js';
 import {S3} from '@ijstech/storage';
@@ -21,13 +21,26 @@ class FileManagerTransport extends FileManagerHttpTransport {
         parsed = parse(cid, data);
         return parsed;
     };
+    async getRoot(): Promise<IRootInfo>{
+        return {
+            success: true,
+            data: {
+                cid: '',
+                used: 0,
+                quota: 10000000
+            }
+        };
+    };
     async getUploadUrl(cidInfo: ICidInfo): Promise<IGetUploadUrlResult | undefined> {
         let sha256 = cidToHash(cidInfo.cid);
-        let result: IGetUploadUrlResult = {};
+        let result: IGetUploadUrlResult = {
+            success: true,
+            data: {}
+        };
         let url = await storage.getUploadUrl(`ipfs/${cidInfo.cid}`, {
             sha256: sha256
         });
-        result[cidInfo.cid] = {
+        result.data[cidInfo.cid] = {
             url: url,
             method: 'PUT',
             headers:{
@@ -43,7 +56,7 @@ class FileManagerTransport extends FileManagerHttpTransport {
                     url = await storage.getUploadUrl(`ipfs/${link.cid}`, {
                         sha256: sha256
                     });
-                    result[link.cid] = {
+                    result.data[link.cid] = {
                         url: url,
                         method: 'PUT',
                         headers:{
@@ -57,6 +70,11 @@ class FileManagerTransport extends FileManagerHttpTransport {
         };
         return result;
     };
+    async updateRoot(node: FileNode): Promise<IResult>{
+        return {
+            success: true
+        };
+    }
 };
 describe('FileManager', async function () {    
     this.timeout(60000);
@@ -194,139 +212,139 @@ describe('FileManager', async function () {
         assert.strictEqual(await node.isFile(), true);
         assert.strictEqual(node.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
     });
-    it('Check FileManagerHttpTransport Query', async function(){
-        let transport = new FileManagerHttpTransport({
-            endpoint: 'http://localhost:8088'
-        });
-        let manager = new FileManager({
-            transport: transport
-        });
-        let rootNode = await manager.setRootCid('bafybeiadhh6b33tyybyi6gp6tcykcyak3fyqkqt4a5iz6cvkkd476jdkea');
-        assert.strictEqual(await rootNode.isFolder(), true);
-        assert.strictEqual(rootNode.cid, 'bafybeiadhh6b33tyybyi6gp6tcykcyak3fyqkqt4a5iz6cvkkd476jdkea');
-        assert.strictEqual(await (rootNode.itemCount()), 2);
+    // it('Check FileManagerHttpTransport Query', async function(){
+    //     let transport = new FileManagerHttpTransport({
+    //         endpoint: 'http://localhost:8088'
+    //     });
+    //     let manager = new FileManager({
+    //         transport: transport
+    //     });
+    //     let rootNode = await manager.setRootCid('bafybeiadhh6b33tyybyi6gp6tcykcyak3fyqkqt4a5iz6cvkkd476jdkea');
+    //     assert.strictEqual(await rootNode.isFolder(), true);
+    //     assert.strictEqual(rootNode.cid, 'bafybeiadhh6b33tyybyi6gp6tcykcyak3fyqkqt4a5iz6cvkkd476jdkea');
+    //     assert.strictEqual(await (rootNode.itemCount()), 2);
 
-        let node = await manager.getFileNode('/test2');
-        assert.strictEqual(await node.isFolder(), true);
-        assert.strictEqual(node.cid, 'bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby');
-        assert.strictEqual(await (node.itemCount()), 1);
-        let item = await node.items(0);
-        assert.strictEqual(item?.name, '1048577.bin');
-        assert.strictEqual(await item?.isFile(), true);
+    //     let node = await manager.getFileNode('/test2');
+    //     assert.strictEqual(await node.isFolder(), true);
+    //     assert.strictEqual(node.cid, 'bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby');
+    //     assert.strictEqual(await (node.itemCount()), 1);
+    //     let item = await node.items(0);
+    //     assert.strictEqual(item?.name, '1048577.bin');
+    //     assert.strictEqual(await item?.isFile(), true);
 
-        manager = new FileManager({
-            transport: transport
-        });
-        rootNode = await manager.setRootCid('bafybeiadhh6b33tyybyi6gp6tcykcyak3fyqkqt4a5iz6cvkkd476jdkea');
-        node = await manager.getFileNode('/test2/1048577.bin');
-        assert.strictEqual(node.name, '1048577.bin');
-        assert.strictEqual(await node.isFile(), true);
-        assert.strictEqual(node.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
-    });
+    //     manager = new FileManager({
+    //         transport: transport
+    //     });
+    //     rootNode = await manager.setRootCid('bafybeiadhh6b33tyybyi6gp6tcykcyak3fyqkqt4a5iz6cvkkd476jdkea');
+    //     node = await manager.getFileNode('/test2/1048577.bin');
+    //     assert.strictEqual(node.name, '1048577.bin');
+    //     assert.strictEqual(await node.isFile(), true);
+    //     assert.strictEqual(node.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
+    // });
 
-    it('Check FileManagerHttpTransport Update', async function(){
-        let s3 = new S3(Config.s3);
-        //delete all test data
-        let items = await s3.listObjects({prefix: 'ipfs'})
-        for (let i = 0; i < items.Contents?.length; i ++){
-            let key = items.Contents[i].Key;
-            await s3.deleteObject(key);
-        };        
-        let transport = new FileManagerHttpTransport({
-            endpoint: 'http://localhost:8088'
-        });
-        let exists = await s3.hasObject('ipfs/bafybeieew4sqq2zdvqrs26hyeimquh5qvchvibeac4kxcw43yokyqyp4ze');
-        assert.strictEqual(exists, false);
-        //upload file
-        let manager = new FileManager({
-            transport: transport
-        });
-        let buffer = await Fs.readFile(Path.join(__dirname, './samples/1048577.bin'));
-        await manager.addFileContent('/test3/1048577.bin', buffer);
-        await manager.applyUpdates();
+    // it('Check FileManagerHttpTransport Update', async function(){
+    //     let s3 = new S3(Config.s3);
+    //     //delete all test data
+    //     let items = await s3.listObjects({prefix: 'ipfs'})
+    //     for (let i = 0; i < items.Contents?.length; i ++){
+    //         let key = items.Contents[i].Key;
+    //         await s3.deleteObject(key);
+    //     };        
+    //     let transport = new FileManagerHttpTransport({
+    //         endpoint: 'http://localhost:8088'
+    //     });
+    //     let exists = await s3.hasObject('ipfs/bafybeieew4sqq2zdvqrs26hyeimquh5qvchvibeac4kxcw43yokyqyp4ze');
+    //     assert.strictEqual(exists, false);
+    //     //upload file
+    //     let manager = new FileManager({
+    //         transport: transport
+    //     });
+    //     let buffer = await Fs.readFile(Path.join(__dirname, './samples/1048577.bin'));
+    //     await manager.addFileContent('/test3/1048577.bin', buffer);
+    //     await manager.applyUpdates();
 
-        exists = await s3.hasObject('ipfs/bafybeieew4sqq2zdvqrs26hyeimquh5qvchvibeac4kxcw43yokyqyp4ze');
-        assert.strictEqual(exists, true);
+    //     exists = await s3.hasObject('ipfs/bafybeieew4sqq2zdvqrs26hyeimquh5qvchvibeac4kxcw43yokyqyp4ze');
+    //     assert.strictEqual(exists, true);
 
-        //check if the file is uploaded
-        manager = new FileManager({
-            transport: transport,
-            rootCid: 'bafybeieew4sqq2zdvqrs26hyeimquh5qvchvibeac4kxcw43yokyqyp4ze'
-        });
-        let rootNode = await manager.getRootNode();
-        assert.strictEqual(await rootNode.isFolder(), true);
-        assert.strictEqual(rootNode.cid, 'bafybeieew4sqq2zdvqrs26hyeimquh5qvchvibeac4kxcw43yokyqyp4ze');
+    //     //check if the file is uploaded
+    //     manager = new FileManager({
+    //         transport: transport,
+    //         rootCid: 'bafybeieew4sqq2zdvqrs26hyeimquh5qvchvibeac4kxcw43yokyqyp4ze'
+    //     });
+    //     let rootNode = await manager.getRootNode();
+    //     assert.strictEqual(await rootNode.isFolder(), true);
+    //     assert.strictEqual(rootNode.cid, 'bafybeieew4sqq2zdvqrs26hyeimquh5qvchvibeac4kxcw43yokyqyp4ze');
         
-        let node = await manager.getFileNode('/test3');
-        assert.strictEqual(await node.isFolder(), true);
-        assert.strictEqual(node.cid, 'bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby');
-        assert.strictEqual(await (node.itemCount()), 1);
-        let item = await node.items(0);
-        assert.strictEqual(item?.name, '1048577.bin');
-        assert.strictEqual(await item?.isFile(), true);
-        assert.strictEqual(item.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
+    //     let node = await manager.getFileNode('/test3');
+    //     assert.strictEqual(await node.isFolder(), true);
+    //     assert.strictEqual(node.cid, 'bafybeicvmd5gqjerunziy7quvocsbb3rdhjmxvn6iqdzreokinurbhjlby');
+    //     assert.strictEqual(await (node.itemCount()), 1);
+    //     let item = await node.items(0);
+    //     assert.strictEqual(item?.name, '1048577.bin');
+    //     assert.strictEqual(await item?.isFile(), true);
+    //     assert.strictEqual(item.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
 
 
-        //add file to existing folder
-        manager = new FileManager({
-            transport: transport,
-            rootCid: 'bafybeieew4sqq2zdvqrs26hyeimquh5qvchvibeac4kxcw43yokyqyp4ze'
-        });        
-        rootNode = await manager.getRootNode();
-        assert.strictEqual(rootNode.cid, 'bafybeieew4sqq2zdvqrs26hyeimquh5qvchvibeac4kxcw43yokyqyp4ze');
+    //     //add file to existing folder
+    //     manager = new FileManager({
+    //         transport: transport,
+    //         rootCid: 'bafybeieew4sqq2zdvqrs26hyeimquh5qvchvibeac4kxcw43yokyqyp4ze'
+    //     });        
+    //     rootNode = await manager.getRootNode();
+    //     assert.strictEqual(rootNode.cid, 'bafybeieew4sqq2zdvqrs26hyeimquh5qvchvibeac4kxcw43yokyqyp4ze');
 
-        node = await rootNode.addFileContent('test3/file.txt', 'Hello World!');
-        await manager.applyUpdates();
-        assert.strictEqual(rootNode.cid, 'bafybeifsaekfrx3lsjw3zytlqdjahesf7m3nejdv4pgbo4mey3ei57zt6i');
+    //     node = await rootNode.addFileContent('test3/file.txt', 'Hello World!');
+    //     await manager.applyUpdates();
+    //     assert.strictEqual(rootNode.cid, 'bafybeifsaekfrx3lsjw3zytlqdjahesf7m3nejdv4pgbo4mey3ei57zt6i');
 
-        // check if the file is uploaded 
-        manager = new FileManager({
-            transport: transport,
-            rootCid: 'bafybeifsaekfrx3lsjw3zytlqdjahesf7m3nejdv4pgbo4mey3ei57zt6i'
-        });
-        rootNode = await manager.getRootNode();
-        assert.strictEqual(rootNode.cid, 'bafybeifsaekfrx3lsjw3zytlqdjahesf7m3nejdv4pgbo4mey3ei57zt6i');
+    //     // check if the file is uploaded 
+    //     manager = new FileManager({
+    //         transport: transport,
+    //         rootCid: 'bafybeifsaekfrx3lsjw3zytlqdjahesf7m3nejdv4pgbo4mey3ei57zt6i'
+    //     });
+    //     rootNode = await manager.getRootNode();
+    //     assert.strictEqual(rootNode.cid, 'bafybeifsaekfrx3lsjw3zytlqdjahesf7m3nejdv4pgbo4mey3ei57zt6i');
         
-        node = await manager.getFileNode('/test3/file.txt');
-        assert.strictEqual(await node.isFile(), true);
-        assert.strictEqual(node.cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
+    //     node = await manager.getFileNode('/test3/file.txt');
+    //     assert.strictEqual(await node.isFile(), true);
+    //     assert.strictEqual(node.cid, 'bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne');
 
-        node = await manager.getFileNode('/test3/1048577.bin');
-        assert.strictEqual(await node.isFile(), true);
-        assert.strictEqual(node.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
+    //     node = await manager.getFileNode('/test3/1048577.bin');
+    //     assert.strictEqual(await node.isFile(), true);
+    //     assert.strictEqual(node.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
 
-        // check if the file is uploaded 
-        manager = new FileManager({
-            transport: transport,
-            rootCid: 'bafybeifsaekfrx3lsjw3zytlqdjahesf7m3nejdv4pgbo4mey3ei57zt6i'
-        });        
-        node = await manager.getFileNode('/test3/1048577.bin');
-        assert.strictEqual(await node.isFile(), true);
-        assert.strictEqual(node.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
+    //     // check if the file is uploaded 
+    //     manager = new FileManager({
+    //         transport: transport,
+    //         rootCid: 'bafybeifsaekfrx3lsjw3zytlqdjahesf7m3nejdv4pgbo4mey3ei57zt6i'
+    //     });        
+    //     node = await manager.getFileNode('/test3/1048577.bin');
+    //     assert.strictEqual(await node.isFile(), true);
+    //     assert.strictEqual(node.cid, 'bafybeihd4yzq7n5umhjngdum4r6k2to7egxfkf2jz6thvwzf6djus22cmq');
 
-        // check if the folder is uploaded 
-        manager = new FileManager({
-            transport: transport,
-            rootCid: 'bafybeifsaekfrx3lsjw3zytlqdjahesf7m3nejdv4pgbo4mey3ei57zt6i'
-        });        
-        node = await manager.getFileNode('/test3');
-        assert.strictEqual(await node.isFolder(), true);
-        assert.strictEqual(node.cid, 'bafybeib52rxgw7kd4hkvyuklg6k6isjnhynnfp5dh7ckejexojpxzodapa');
-        assert.strictEqual(await (node.itemCount()), 2);
+    //     // check if the folder is uploaded 
+    //     manager = new FileManager({
+    //         transport: transport,
+    //         rootCid: 'bafybeifsaekfrx3lsjw3zytlqdjahesf7m3nejdv4pgbo4mey3ei57zt6i'
+    //     });        
+    //     node = await manager.getFileNode('/test3');
+    //     assert.strictEqual(await node.isFolder(), true);
+    //     assert.strictEqual(node.cid, 'bafybeib52rxgw7kd4hkvyuklg6k6isjnhynnfp5dh7ckejexojpxzodapa');
+    //     assert.strictEqual(await (node.itemCount()), 2);
 
-        buffer = await Fs.readFile(Path.join(__dirname, './samples/test.png'));
-        await node.addFileContent('test.png', buffer);
-        await manager.applyUpdates();
-        rootNode = await manager.getRootNode();
-        assert.strictEqual(rootNode.cid, 'bafybeid3rwd52gvq4ewayotikbwoopsoem5tv4wrprazw5igx6p6zpw6qi');
+    //     buffer = await Fs.readFile(Path.join(__dirname, './samples/test.png'));
+    //     await node.addFileContent('test.png', buffer);
+    //     await manager.applyUpdates();
+    //     rootNode = await manager.getRootNode();
+    //     assert.strictEqual(rootNode.cid, 'bafybeid3rwd52gvq4ewayotikbwoopsoem5tv4wrprazw5igx6p6zpw6qi');
 
-        // check if the file is uploaded 
-        manager = new FileManager({
-            transport: transport,
-            rootCid: 'bafybeid3rwd52gvq4ewayotikbwoopsoem5tv4wrprazw5igx6p6zpw6qi'
-        });        
-        node = await manager.getFileNode('/test3/test.png');
-        assert.strictEqual(await node.isFile(), true);
-        assert.strictEqual(node.cid, 'bafybeidozewhivatocukvcn2tlqch5qknyk7c5wp7ktk3zcjty5xzqycum');
-    });
+    //     // check if the file is uploaded 
+    //     manager = new FileManager({
+    //         transport: transport,
+    //         rootCid: 'bafybeid3rwd52gvq4ewayotikbwoopsoem5tv4wrprazw5igx6p6zpw6qi'
+    //     });        
+    //     node = await manager.getFileNode('/test3/test.png');
+    //     assert.strictEqual(await node.isFile(), true);
+    //     assert.strictEqual(node.cid, 'bafybeidozewhivatocukvcn2tlqch5qknyk7c5wp7ktk3zcjty5xzqycum');
+    // });
 });

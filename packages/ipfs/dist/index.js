@@ -4013,6 +4013,10 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
     ;
     ;
     ;
+    ;
+    ;
+    ;
+    ;
     class FileManagerHttpTransport {
         constructor(options) {
             this.updated = {};
@@ -4024,9 +4028,10 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
             let cidInfo = node.cidInfo;
             if (cidInfo && !this.updated[cidInfo.cid]) {
                 let result = await this.getUploadUrl(cidInfo, node.isRoot);
+                let endpoints = result?.data;
                 if (await node.isFolder()) {
-                    let url = result?.[cidInfo.cid];
-                    if (!url?.exists) {
+                    let url = endpoints?.[cidInfo.cid];
+                    if (!url?.exists && cidInfo.bytes && url?.url) {
                         let method = url?.method || 'PUT';
                         let headers = url?.headers || {};
                         headers['Content-Type'] = headers['Content-Type'] || 'application/octet-stream';
@@ -4041,11 +4046,11 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
                     }
                     ;
                 }
-                else if (cidInfo.links?.length > 0) {
+                else if (cidInfo.links?.length && cidInfo.links?.length > 0) {
                     let offset = 0;
                     for (let link of cidInfo.links) {
-                        let url = result?.[link.cid];
-                        if (!url?.exists) {
+                        let url = endpoints?.[link.cid];
+                        if (url?.url && !url?.exists) {
                             let method = url?.method || 'PUT';
                             let headers = url?.headers || {};
                             headers['Content-Type'] = headers['Content-Type'] || 'application/octet-stream';
@@ -4055,8 +4060,7 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
                                 body = node.fileContent?.slice(offset, offset + link.size);
                             else if (node.file) {
                                 let chunk = node.file.slice(offset, offset + link.size);
-                                body = new FormData();
-                                body.append('file', chunk);
+                                body = chunk;
                             }
                             ;
                             offset += link.size;
@@ -4072,8 +4076,8 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
                     }
                     ;
                     if (cidInfo.bytes) {
-                        let url = result?.[cidInfo.cid];
-                        if (!url?.exists) {
+                        let url = endpoints?.[cidInfo.cid];
+                        if (url?.url && !url?.exists) {
                             let method = url?.method || 'PUT';
                             let headers = url?.headers || {};
                             headers['Content-Type'] = headers['Content-Type'] || 'application/octet-stream';
@@ -4090,17 +4094,24 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
                     }
                     ;
                 }
-                else if (result?.[cidInfo.cid]) {
-                    let url = result[cidInfo.cid];
+                else if (endpoints?.[cidInfo.cid]) {
+                    let url = endpoints[cidInfo.cid];
                     if (!url?.exists) {
                         let method = url?.method || 'PUT';
                         let headers = url?.headers || {};
                         headers['Content-Type'] = headers['Content-Type'] || 'application/octet-stream';
                         headers['Content-Length'] = cidInfo.size.toString();
+                        let body;
+                        if (node.fileContent)
+                            body = node.fileContent;
+                        else if (node.file) {
+                            body = node.file;
+                        }
+                        ;
                         let res = await fetch(url.url, {
                             method: method,
                             headers: headers,
-                            body: node.fileContent
+                            body: body
                         });
                         if (!res.ok)
                             throw new Error(res.statusText);
@@ -4111,6 +4122,45 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
                 this.updated[cidInfo.cid] = true;
             }
             ;
+            if (node.isRoot) {
+                return this.updateRoot(node);
+            }
+            ;
+            return {
+                success: true
+            };
+        }
+        ;
+        async updateRoot(node) {
+            let signature;
+            if (this.options.signer) {
+                signature = await this.options.signer.sign({
+                    action: 'UPDATE_ROOT',
+                    timestamp: new Date().getTime(),
+                    data: {
+                        cid: node.cid
+                    }
+                }, {
+                    action: 'string',
+                    timestamp: 'number',
+                    data: 'object'
+                });
+            }
+            ;
+            let result = await fetch(`${this.options.endpoint}/api/ipfs/v0`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'UPDATE_ROOT',
+                    signature: signature,
+                    data: {
+                        cid: node.cid
+                    }
+                })
+            });
+            return await result.json();
         }
         ;
         async getCidInfo(cid) {
@@ -4123,6 +4173,29 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
             }
             else
                 return cidInfo;
+        }
+        ;
+        async getRoot() {
+            let signature;
+            if (this.options.signer)
+                signature = await this.options.signer.sign({
+                    action: 'GET_ROOT',
+                    timestamp: new Date().getTime()
+                }, {
+                    action: 'string',
+                    timestamp: 'number'
+                });
+            let result = await fetch(`${this.options.endpoint}/api/ipfs/v0`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'GET_ROOT',
+                    signature: signature
+                })
+            });
+            return await result.json();
         }
         ;
         async getUploadUrl(cidInfo, isRoot) {
@@ -4145,20 +4218,42 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
                 ;
             }
             ;
-            if (this.options.signer)
-                signature = await this.options.signer.sign(req);
-            let result = await fetch(`${this.options.endpoint}/api/ipfs/v0/upload`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    isRoot: isRoot,
-                    signature: signature,
+            if (this.options.signer) {
+                let timestamp = new Date().getTime();
+                signature = await this.options.signer.sign({
+                    action: 'GET_UPLOAD_URL',
+                    timestamp: timestamp,
                     data: req
-                })
-            });
-            return await result.json();
+                }, {
+                    action: 'string',
+                    timestamp: 'number',
+                    data: 'object'
+                });
+                let result = await fetch(`${this.options.endpoint}/api/ipfs/v0`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'GET_UPLOAD_URL',
+                        signature: signature,
+                        data: req
+                    })
+                });
+                return await result.json();
+            }
+            else {
+                let result = await fetch(`${this.options.endpoint}/api/ipfs/v0`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        data: req
+                    })
+                });
+                return await result.json();
+            }
         }
         ;
     }
@@ -4180,7 +4275,7 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
             this._isFolder = cidInfo?.type == 'dir' || true;
             if (this._cidInfo?.type == 'dir') {
                 this._cidInfo.links?.forEach(link => {
-                    this._items.push(new FileNode(this._owner, link.name, this, link));
+                    this._items.push(new FileNode(this._owner, link.name || '', this, link));
                 });
             }
             ;
@@ -4197,10 +4292,16 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
                     this._isFolder = true;
                     this._isFile = false;
                     this._items = [];
-                    for (let i = 0; i < this._cidInfo.links.length; i++) {
-                        let link = this._cidInfo.links[i];
-                        let node = new FileNode(this._owner, link.name, this, link);
-                        this._items.push(node);
+                    if (this._cidInfo.links) {
+                        for (let i = 0; i < this._cidInfo.links.length; i++) {
+                            let link = this._cidInfo.links[i];
+                            if (link?.name) {
+                                let node = new FileNode(this._owner, link.name, this, link);
+                                this._items.push(node);
+                            }
+                            ;
+                        }
+                        ;
                     }
                     ;
                 }
@@ -4420,19 +4521,24 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
             if (!filePath.startsWith('/'))
                 filePath = '/' + filePath;
             let fileNode = await this.getFileNode(filePath);
-            fileNode.file = file;
-            return fileNode;
+            if (fileNode) {
+                fileNode.file = file;
+                return fileNode;
+            }
         }
         ;
         async addFileContent(filePath, content) {
             if (!filePath.startsWith('/'))
                 filePath = '/' + filePath;
             let fileNode = await this.getFileNode(filePath);
-            if (typeof (content) == 'string')
-                fileNode.fileContent = new TextEncoder().encode(content);
-            else
-                fileNode.fileContent = content;
-            return fileNode;
+            if (fileNode) {
+                if (typeof (content) == 'string')
+                    fileNode.fileContent = new TextEncoder().encode(content);
+                else
+                    fileNode.fileContent = content;
+                return fileNode;
+            }
+            ;
         }
         ;
         async getCidInfo(cid) {
@@ -4458,8 +4564,11 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
         }
         ;
         async applyUpdates() {
-            await this.updateNode(this.rootNode);
-            return this.rootNode;
+            if (this.rootNode) {
+                await this.updateNode(this.rootNode);
+                return this.rootNode;
+            }
+            ;
         }
         ;
         delete(fileNode) {
@@ -4474,13 +4583,17 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
             let node = await this.getRootNode();
             for (let i = 1; i < paths.length; i++) {
                 let path = paths[i];
-                let item = await node.findItem(path);
-                if (!item) {
-                    item = new FileNode(this, path, node);
+                if (node) {
+                    let item = await node.findItem(path);
+                    if (!item) {
+                        item = new FileNode(this, path, node);
+                    }
+                    else
+                        await item.checkCid();
+                    node = item;
                 }
                 else
-                    await item.checkCid();
-                node = item;
+                    break;
             }
             ;
             return node;
@@ -4490,23 +4603,33 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
             if (!this.rootNode) {
                 if (this.options.rootCid)
                     this.rootNode = await this.setRootCid(this.options.rootCid);
-                else
-                    this.rootNode = new FileNode(this, '/', null);
-                this.rootNode.isRoot = true;
+                else {
+                    let result = await this.transporter.getRoot();
+                    let data = result.data;
+                    if (data.cid)
+                        this.rootNode = await this.setRootCid(data.cid);
+                    else
+                        this.rootNode = new FileNode(this, '/', undefined);
+                    this.quota = data.quota;
+                    this.used = data.used;
+                }
+                ;
+                if (this.rootNode)
+                    this.rootNode.isRoot = true;
             }
             ;
             return this.rootNode;
         }
         ;
         reset() {
-            this.rootNode = null;
+            this.rootNode = undefined;
         }
         ;
         async setRootCid(cid) {
             this.options.rootCid = cid;
             let cidInfo = await this.transporter.getCidInfo(cid);
             if (cidInfo) {
-                this.rootNode = new FileNode(this, '/', null, cidInfo);
+                this.rootNode = new FileNode(this, '/', undefined, cidInfo);
                 this.rootNode.isRoot = true;
                 await this.rootNode.checkCid();
                 return this.rootNode;

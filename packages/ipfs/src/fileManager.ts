@@ -5,27 +5,20 @@
 *-----------------------------------------------------------*/
 import { hashFile, hashContent, hashItems, parse } from './utils';
 import { ICidData, ICidInfo, CidCode} from './types';
-// export interface FileRaw extends File {
-//     path : string;
-//     cid?: ICidInfo;
-//     uploadUrl?: string;
-// };
-// export interface FileNode {
-//     name: string;
-//     parent?: FileNode;
-//     items: FileNode[];
-//     cidInfo?: ICidInfo;
-//     isFile: boolean;
-//     isFolder: boolean;
-//     file?: FileRaw;
-//     fileContent?: Uint8Array;
-// };
+
+
 export interface ISignature{
     pubKey: string;
-    data: any;
+    timestamp: number;
+    sig: string;
+};
+export interface ISignerData {
+    action: string;
+    timestamp: number;
+    data?: any;
 };
 export interface ISigner {
-    sign(data: any): Promise<ISignature>;
+    sign(data: ISignerData, schema: object): Promise<ISignature>;
 };
 interface IFileManagerOptions {
     transport?: IFileManagerTransport;
@@ -33,17 +26,34 @@ interface IFileManagerOptions {
     signer?: ISigner;
     rootCid?: string;
 };
-export type IGetUploadUrlResult = {
+export interface IUploadEndpoints {
     [cid: string]: {
         exists?: boolean,
         url: string,method?: string,
         headers?: {[key: string]: string}
     }
 };
+export type IGetUploadUrlResult = {
+    success: true,
+    data: IUploadEndpoints    
+};
+export interface IRootInfo{
+    success: boolean;
+    data: {
+        cid: string;
+        used: number;
+        quota: number;
+    };    
+};
+export interface IResult{
+    success: boolean;
+    data?: any;
+};
 export interface IFileManagerTransport {
-    applyUpdate(node: FileNode): Promise<void>;
+    applyUpdate(node: FileNode): Promise<IResult>;
     getCidInfo(cid: string): Promise<ICidInfo | undefined>;
-    getUploadUrl(cidInfo: ICidInfo, isRoot?: boolean): Promise<IGetUploadUrlResult | undefined>;
+    getRoot(): Promise<IRootInfo>;
+    getUploadUrl(cidInfo: ICidInfo): Promise<IGetUploadUrlResult | undefined>;
 };
 
 export interface IFileManagerTransporterOptions {
@@ -57,13 +67,14 @@ export class FileManagerHttpTransport implements IFileManagerTransport {
         this.options = options || {};
         this.options.endpoint = this.options.endpoint || '';
     };
-    async applyUpdate(node: FileNode): Promise<void>{
+    async applyUpdate(node: FileNode): Promise<IResult>{
         let cidInfo = node.cidInfo;
         if (cidInfo && !this.updated[cidInfo.cid]){
             let result = await this.getUploadUrl(cidInfo, node.isRoot);
+            let endpoints = result?.data;
             if (await node.isFolder()){
-                let url = result?.[cidInfo.cid];
-                if (!url?.exists){
+                let url = endpoints?.[cidInfo.cid];
+                if (!url?.exists && cidInfo.bytes && url?.url){
                     let method = url?.method || 'PUT';
                     let headers = url?.headers || {};
                     headers['Content-Type'] = headers['Content-Type'] || 'application/octet-stream';
@@ -78,11 +89,11 @@ export class FileManagerHttpTransport implements IFileManagerTransport {
                         throw new Error(res.statusText); 
                 };
             }
-            else if (cidInfo.links?.length > 0){
+            else if (cidInfo.links?.length && cidInfo.links?.length > 0){
                 let offset = 0;
                 for (let link of cidInfo.links){
-                    let url = result?.[link.cid];
-                    if (!url?.exists){
+                    let url = endpoints?.[link.cid];
+                    if (url?.url && !url?.exists){
                         let method = url?.method || 'PUT';
                         let headers = url?.headers || {};
                         headers['Content-Type'] = headers['Content-Type'] || 'application/octet-stream';    
@@ -92,8 +103,7 @@ export class FileManagerHttpTransport implements IFileManagerTransport {
                             body = node.fileContent?.slice(offset, offset + link.size)
                         else if (node.file){
                             let chunk = node.file.slice(offset, offset + link.size);
-                            body = new FormData();
-                            body.append('file', chunk);
+                            body = chunk;
                         };
                         offset += link.size;
                         let res = await fetch(url.url, {
@@ -106,8 +116,8 @@ export class FileManagerHttpTransport implements IFileManagerTransport {
                     };
                 };
                 if (cidInfo.bytes){
-                    let url = result?.[cidInfo.cid];
-                    if (!url?.exists){
+                    let url = endpoints?.[cidInfo.cid];
+                    if (url?.url && !url?.exists){
                         let method = url?.method || 'PUT';
                         let headers = url?.headers || {};
                         headers['Content-Type'] = headers['Content-Type'] || 'application/octet-stream';
@@ -122,24 +132,66 @@ export class FileManagerHttpTransport implements IFileManagerTransport {
                     }; 
                 };
             }
-            else if (result?.[cidInfo.cid]){
-                let url = result[cidInfo.cid];
+            else if (endpoints?.[cidInfo.cid]){
+                let url = endpoints[cidInfo.cid];
                 if (!url?.exists){
                     let method = url?.method || 'PUT';
                     let headers = url?.headers || {};
                     headers['Content-Type'] = headers['Content-Type'] || 'application/octet-stream';
                     headers['Content-Length'] = cidInfo.size.toString();
+                    let body: any;
+                    if (node.fileContent)
+                        body = node.fileContent
+                    else if (node.file){
+                        body = node.file
+                    };
                     let res = await fetch(url.url, {
                         method: method,
                         headers: headers,
-                        body: node.fileContent
+                        body: body
                     });
                     if (!res.ok)
                         throw new Error(res.statusText);
                 };
             };
             this.updated[cidInfo.cid] = true;
-        };        
+        };
+        if (node.isRoot){
+            return this.updateRoot(node);
+        };   
+        return {
+            success: true
+        };
+    };
+    async updateRoot(node: FileNode): Promise<IResult>{
+        let signature: ISignature|undefined;
+        if (this.options.signer){
+            signature = await this.options.signer.sign({
+                action: 'UPDATE_ROOT',
+                timestamp: new Date().getTime(),
+                data: {
+                    cid: node.cid
+                }
+            }, {
+                action: 'string',
+                timestamp: 'number',
+                data: 'object'
+            });
+        };
+        let result = await fetch(`${this.options.endpoint}/api/ipfs/v0`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'UPDATE_ROOT',
+                signature: signature,
+                data: {
+                    cid: node.cid
+                }
+            })
+        });  
+        return await result.json();
     };
     async getCidInfo(cid: string): Promise<ICidInfo | undefined> {
         let cidInfo = parse(cid);
@@ -151,6 +203,28 @@ export class FileManagerHttpTransport implements IFileManagerTransport {
         }
         else
             return cidInfo;
+    };
+    async getRoot(): Promise<IRootInfo>{
+        let signature: ISignature|undefined;
+        if (this.options.signer)
+            signature = await this.options.signer.sign({
+                action: 'GET_ROOT',
+                timestamp: new Date().getTime()
+            }, {
+                action: 'string',
+                timestamp: 'number'
+            });
+        let result = await fetch(`${this.options.endpoint}/api/ipfs/v0`, {
+            method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'GET_ROOT',
+                    signature: signature
+                })
+        });
+        return await result.json();
     };
     async getUploadUrl(cidInfo: ICidInfo, isRoot?: boolean): Promise<IGetUploadUrlResult | undefined> {
         let req: ICidInfo = {
@@ -170,20 +244,42 @@ export class FileManagerHttpTransport implements IFileManagerTransport {
                 });
             };
         };
-        if (this.options.signer)
-            signature = await this.options.signer.sign(req);
-        let result = await fetch(`${this.options.endpoint}/api/ipfs/v0/upload`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                isRoot: isRoot,
-                signature: signature,
+        if (this.options.signer){
+            let timestamp = new Date().getTime();
+            signature = await this.options.signer.sign({
+                action: 'GET_UPLOAD_URL',
+                timestamp: timestamp,
                 data: req
-            })
-        });
-        return await result.json();
+            }, {
+                action: 'string',
+                timestamp: 'number',
+                data: 'object'
+            });
+            let result = await fetch(`${this.options.endpoint}/api/ipfs/v0`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'GET_UPLOAD_URL',
+                    signature: signature,
+                    data: req
+                })
+            });
+            return await result.json();
+        }
+        else{
+            let result = await fetch(`${this.options.endpoint}/api/ipfs/v0`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    data: req
+                })
+            });
+            return await result.json();
+        }        
     };
 };
 export class FileNode {
@@ -213,7 +309,7 @@ export class FileNode {
 
         if (this._cidInfo?.type == 'dir'){
             this._cidInfo.links?.forEach(link => {
-                this._items.push(new FileNode(this._owner, link.name, this, link));
+                this._items.push(new FileNode(this._owner, link.name || '', this, link));
             });
         };
     };
@@ -227,11 +323,14 @@ export class FileNode {
                 this._isFolder = true;
                 this._isFile = false;
                 this._items = [];
-
-                for (let i = 0; i < this._cidInfo.links.length; i++){
-                    let link = this._cidInfo.links[i];
-                    let node = new FileNode(this._owner, link.name, this, link);
-                    this._items.push(node);
+                if (this._cidInfo.links){
+                    for (let i = 0; i < this._cidInfo.links.length; i++){
+                        let link = this._cidInfo.links[i];
+                        if (link?.name){
+                            let node = new FileNode(this._owner, link.name, this, link);
+                            this._items.push(node);
+                        };
+                    };
                 };
             }
             else{
@@ -380,8 +479,10 @@ export class FileNode {
 };
 export class FileManager {
     private transporter: IFileManagerTransport;
-    private rootNode: FileNode;
+    private rootNode: FileNode | undefined;
     private options: IFileManagerOptions;
+    public quota: number;
+    public used: number;
     constructor(options?: IFileManagerOptions) {
         this.options = options || {};
         if (this.options?.transport)
@@ -410,22 +511,26 @@ export class FileManager {
         };
         return node;
     };
-    async addFile(filePath: string, file: File): Promise<FileNode>{
+    async addFile(filePath: string, file: File): Promise<FileNode | undefined>{
         if (!filePath.startsWith('/'))
             filePath = '/' + filePath;
         let fileNode = await this.getFileNode(filePath);        
-        fileNode.file = file;      
-        return fileNode;
+        if (fileNode){
+            fileNode.file = file;      
+            return fileNode;
+        }
     };
-    async addFileContent(filePath: string, content: Uint8Array | string): Promise<FileNode>{
+    async addFileContent(filePath: string, content: Uint8Array | string): Promise<FileNode | undefined>{
         if (!filePath.startsWith('/'))
             filePath = '/' + filePath;
         let fileNode = await this.getFileNode(filePath);
-        if (typeof(content) == 'string')
-            fileNode.fileContent = new TextEncoder().encode(content);
-        else
-            fileNode.fileContent = content;
-        return fileNode;
+        if (fileNode){
+            if (typeof(content) == 'string')
+                fileNode.fileContent = new TextEncoder().encode(content);
+            else
+                fileNode.fileContent = content;
+            return fileNode;
+        };        
     };
     async getCidInfo(cid: string): Promise<ICidInfo | undefined> {
         return await this.transporter?.getCidInfo(cid);
@@ -444,49 +549,64 @@ export class FileManager {
             fileNode.modified(false);
         };
     };
-    async applyUpdates(): Promise<FileNode>{
-        await this.updateNode(this.rootNode);
-        return this.rootNode;
+    async applyUpdates(): Promise<FileNode | undefined>{
+        if (this.rootNode){
+            await this.updateNode(this.rootNode);
+            return this.rootNode;
+        };        
     };
     delete(fileNode: FileNode){
         if (fileNode.parent)
             fileNode.parent.removeItem(fileNode);
     };
-    async getFileNode(path: string): Promise<FileNode> {
+    async getFileNode(path: string): Promise<FileNode | undefined> {
         if (!path.startsWith('/'))
             path = '/' + path;
         let paths = path.split('/');
         let node = await this.getRootNode();
         for (let i = 1; i < paths.length; i++) {
             let path = paths[i];
-            let item = await node.findItem(path);
-            if (!item) {
-                item = new FileNode(this, path, node);
+            if (node){
+                let item = await node.findItem(path);
+                if (!item) {
+                    item = new FileNode(this, path, node);
+                }
+                else
+                    await item.checkCid();
+                node = item;
             }
             else
-                await item.checkCid();
-            node = item;
+                break;   
         };
         return node;
     };
-    async getRootNode(): Promise<FileNode> {
+    async getRootNode(): Promise<FileNode | undefined> {
         if (!this.rootNode){
             if (this.options.rootCid)
                 this.rootNode = await this.setRootCid(this.options.rootCid);
-            else
-                this.rootNode = new FileNode(this, '/', null, );
-            this.rootNode.isRoot = true;
+            else{
+                let result = await this.transporter.getRoot();
+                let data = result.data;
+                if (data.cid)
+                    this.rootNode = await this.setRootCid(data.cid)
+                else
+                    this.rootNode = new FileNode(this, '/', undefined, );
+                this.quota = data.quota;
+                this.used = data.used;
+            };
+            if (this.rootNode)
+                this.rootNode.isRoot = true;
         };
         return this.rootNode;        
     };
     reset() {
-        this.rootNode = null;
+        this.rootNode = undefined;
     };
-    async setRootCid(cid: string): Promise<FileNode>{      
+    async setRootCid(cid: string): Promise<FileNode | undefined>{      
         this.options.rootCid = cid;  
         let cidInfo = await this.transporter.getCidInfo(cid);
         if (cidInfo){
-            this.rootNode = new FileNode(this, '/', null, cidInfo);
+            this.rootNode = new FileNode(this, '/', undefined, cidInfo);
             this.rootNode.isRoot = true;
             await this.rootNode.checkCid();
             return this.rootNode;

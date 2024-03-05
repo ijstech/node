@@ -43,10 +43,16 @@ declare module "fileManager" {
     import { ICidData, ICidInfo } from "types";
     export interface ISignature {
         pubKey: string;
-        data: any;
+        timestamp: number;
+        sig: string;
+    }
+    export interface ISignerData {
+        action: string;
+        timestamp: number;
+        data?: any;
     }
     export interface ISigner {
-        sign(data: any): Promise<ISignature>;
+        sign(data: ISignerData, schema: object): Promise<ISignature>;
     }
     interface IFileManagerOptions {
         transport?: IFileManagerTransport;
@@ -54,7 +60,7 @@ declare module "fileManager" {
         signer?: ISigner;
         rootCid?: string;
     }
-    export type IGetUploadUrlResult = {
+    export interface IUploadEndpoints {
         [cid: string]: {
             exists?: boolean;
             url: string;
@@ -63,11 +69,28 @@ declare module "fileManager" {
                 [key: string]: string;
             };
         };
+    }
+    export type IGetUploadUrlResult = {
+        success: true;
+        data: IUploadEndpoints;
     };
+    export interface IRootInfo {
+        success: boolean;
+        data: {
+            cid: string;
+            used: number;
+            quota: number;
+        };
+    }
+    export interface IResult {
+        success: boolean;
+        data?: any;
+    }
     export interface IFileManagerTransport {
-        applyUpdate(node: FileNode): Promise<void>;
+        applyUpdate(node: FileNode): Promise<IResult>;
         getCidInfo(cid: string): Promise<ICidInfo | undefined>;
-        getUploadUrl(cidInfo: ICidInfo, isRoot?: boolean): Promise<IGetUploadUrlResult | undefined>;
+        getRoot(): Promise<IRootInfo>;
+        getUploadUrl(cidInfo: ICidInfo): Promise<IGetUploadUrlResult | undefined>;
     }
     export interface IFileManagerTransporterOptions {
         endpoint?: string;
@@ -77,8 +100,10 @@ declare module "fileManager" {
         private options;
         private updated;
         constructor(options?: IFileManagerTransporterOptions);
-        applyUpdate(node: FileNode): Promise<void>;
+        applyUpdate(node: FileNode): Promise<IResult>;
+        updateRoot(node: FileNode): Promise<IResult>;
         getCidInfo(cid: string): Promise<ICidInfo | undefined>;
+        getRoot(): Promise<IRootInfo>;
         getUploadUrl(cidInfo: ICidInfo, isRoot?: boolean): Promise<IGetUploadUrlResult | undefined>;
     }
     export class FileNode {
@@ -123,18 +148,20 @@ declare module "fileManager" {
         private transporter;
         private rootNode;
         private options;
+        quota: number;
+        used: number;
         constructor(options?: IFileManagerOptions);
         addFileTo(folder: FileNode, filePath: string, file: File | Uint8Array): Promise<FileNode>;
-        addFile(filePath: string, file: File): Promise<FileNode>;
-        addFileContent(filePath: string, content: Uint8Array | string): Promise<FileNode>;
+        addFile(filePath: string, file: File): Promise<FileNode | undefined>;
+        addFileContent(filePath: string, content: Uint8Array | string): Promise<FileNode | undefined>;
         getCidInfo(cid: string): Promise<ICidInfo | undefined>;
         private updateNode;
-        applyUpdates(): Promise<FileNode>;
+        applyUpdates(): Promise<FileNode | undefined>;
         delete(fileNode: FileNode): void;
-        getFileNode(path: string): Promise<FileNode>;
-        getRootNode(): Promise<FileNode>;
+        getFileNode(path: string): Promise<FileNode | undefined>;
+        getRootNode(): Promise<FileNode | undefined>;
         reset(): void;
-        setRootCid(cid: string): Promise<FileNode>;
+        setRootCid(cid: string): Promise<FileNode | undefined>;
         move(fileNode: FileNode, newParent: FileNode): void;
     }
 }
