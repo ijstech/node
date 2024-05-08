@@ -28,6 +28,10 @@ class DBClient {
         return new Promise(resolve => resolve(true));
     }
     ;
+    syncTableIndexes(tableName, indexes) {
+        return new Promise(resolve => resolve(true));
+    }
+    ;
 }
 exports.DBClient = DBClient;
 ;

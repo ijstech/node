@@ -254,6 +254,12 @@ export declare namespace Types {
         result?: any;
         error?: string;
     }
+    type TableIndexType = 'UNIQUE' | 'NON_UNIQUE';
+    interface ITableIndexProps {
+        name: string;
+        columns: string[];
+        type?: TableIndexType;
+    }
     interface IDBClient {
         applyQueries(queries: IQuery[]): Promise<IQueryResult[]>;
         beginTransaction(): Promise<boolean>;
@@ -263,6 +269,7 @@ export declare namespace Types {
         resolve(table: string, fields: IFields, criteria: any, args: any): Promise<any>;
         rollback(): Promise<boolean>;
         syncTableSchema(tableName: string, fields: IFields): Promise<boolean>;
+        syncTableIndexes(tableName: string, indexes: ITableIndexProps[]): Promise<boolean>;
     }
 }
 export declare function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string;

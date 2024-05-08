@@ -32,6 +32,7 @@ declare module "types" {
         applyQueries(queries: IQuery[]): Promise<IQueryResult[]>;
         checkTableExists(tableName: string): Promise<boolean>;
         syncTableSchema(tableName: string, fields: IFields): Promise<boolean>;
+        syncTableIndexes(tableName: string, indexes: ITableIndexProps[]): Promise<boolean>;
     }
     export interface IFields {
         [name: string]: IField;
@@ -47,6 +48,12 @@ declare module "types" {
     export interface IDBConnection {
         url: string;
     }
+    export type TableIndexType = 'UNIQUE' | 'NON_UNIQUE';
+    export interface ITableIndexProps {
+        name: string;
+        columns: string[];
+        type?: TableIndexType;
+    }
 }
 declare module "dbClient" {
     import * as Types from "types";
@@ -56,10 +63,11 @@ declare module "dbClient" {
         applyQueries(queries: Types.IQuery[]): Promise<Types.IQueryResult[]>;
         checkTableExists(tableName: string): Promise<boolean>;
         syncTableSchema(tableName: string, fields: Types.IFields): Promise<boolean>;
+        syncTableIndexes(tableName: string, indexes: Types.ITableIndexProps[]): Promise<boolean>;
     }
 }
 declare module "pdm" {
-    import { IField, IFields, ISchema, IDBClient, IQueryData } from "types";
+    import { IField, IFields, ISchema, IDBClient, IQueryData, ITableIndexProps } from "types";
     export { DBClient } from "dbClient";
     export interface IRefField extends IField {
         record: string;
@@ -218,6 +226,7 @@ declare module "pdm" {
     export interface ITimeField extends IField {
     }
     export function RecordSet(tableName: string, recordType: typeof TRecord, recordSetType?: any): (target: TContext, propName: string, params?: any) => void;
+    export function Index(indexProps?: ITableIndexProps): (target: Function) => void;
     export function KeyField(fieldType?: IField): (target: TRecord, propName: string) => void;
     export function RefTo<T extends TContext>(record: keyof T, field?: string): (target: TRecord, propName: string) => void;
     export function StringField(fieldType?: IStringField): (target: TRecord, propName: string) => void;

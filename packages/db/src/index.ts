@@ -58,6 +58,9 @@ function getPluginClient(vm: VM, db: string, client: Types.IDBClient): string{
         },
         async syncTableSchema(tableName: string, fields: Types.IFields): Promise<boolean>{
             return await client.syncTableSchema(tableName, fields);
+        },
+        async syncTableIndexes(tableName: string, indexes: Types.ITableIndexProps[]): Promise<boolean>{
+            return await client.syncTableIndexes(tableName, indexes);
         }
     };
     (plugin as any)["$$query_json"] = true;

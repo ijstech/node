@@ -252,6 +252,12 @@ export declare namespace Types{
         result?: any;
         error?: string;
     }
+    export type TableIndexType = 'UNIQUE'|'NON_UNIQUE';
+    export interface ITableIndexProps{
+        name: string;
+        columns: string[]; 
+        type?: TableIndexType;
+    }
     export interface IDBClient{
         applyQueries(queries: IQuery[]): Promise<IQueryResult[]>;
         beginTransaction():Promise<boolean>;
@@ -261,6 +267,7 @@ export declare namespace Types{
         resolve(table: string, fields: IFields, criteria: any, args: any): Promise<any>;
         rollback(): Promise<boolean>;
         syncTableSchema(tableName: string, fields: IFields): Promise<boolean>;
+        syncTableIndexes(tableName: string, indexes: ITableIndexProps[]): Promise<boolean>;
     }
 };
 

@@ -501,6 +501,7 @@ export interface IDBClient{
     resolve(table: string, fields: IFields, criteria: any, args: any): Promise<any>;
     rollback(): Promise<boolean>;
     syncTableSchema(tableName: string, fields: IFields): Promise<boolean>;
+    syncTableIndexes(tableName: string, indexes: ITableIndexProps[]): Promise<boolean>;
 }
 export interface IDbConnectionOptions{
     type?: string;
@@ -547,4 +548,10 @@ export interface IRequiredPlugins{
     message?: IMessageRequiredPluginOptions,
     wallet?: IWalletRequiredPluginOptions,
     fetch?: IFetchRequiredPluginOptions,
+}
+export type TableIndexType = 'UNIQUE'|'NON_UNIQUE';
+export interface ITableIndexProps{
+    name: string;
+    columns: string[]; 
+    type?: TableIndexType;
 }

@@ -7,65 +7,65 @@
 import * as Types from '@ijstech/types';
 import * as MySQL from 'mysql';
 
-export class MySQLClient implements Types.IDBClient{
+export class MySQLClient implements Types.IDBClient {
     private _connection: MySQL.Connection;
     private options: Types.IMySQLConnection;
     private transaction: boolean;
 
-    constructor(options: Types.IMySQLConnection){
+    constructor(options: Types.IMySQLConnection) {
         this.options = options;
     };
-    async applyQueries(queries: Types.IQuery[]): Promise<Types.IQueryResult[]>{
+    async applyQueries(queries: Types.IQuery[]): Promise<Types.IQueryResult[]> {
         let result = [];
-        if (Array.isArray(queries)){
+        if (Array.isArray(queries)) {
             await this.beginTransaction();
-            try{
-                for (let i = 0; i < queries.length; i ++){
+            try {
+                for (let i = 0; i < queries.length; i++) {
                     let query = queries[i];
                     await this.applyQuery(result, query);
                 };
                 await this.commit();
             }
-            catch(err){
+            catch (err) {
                 this.rollback();
-                return [{error: typeof(err)=='string'?err:err.message || '$exception'}];
+                return [{ error: typeof (err) == 'string' ? err : err.message || '$exception' }];
             }
-            finally{
+            finally {
                 this.end();
             };
         };
         return result;
     };
-    private async applyQuery(result: any[], query: Types.IQuery): Promise<any>{
+    private async applyQuery(result: any[], query: Types.IQuery): Promise<any> {
         let tableName = query.table;
         let fields = query.fields;
         let id = query.id;
-        try{
-            if (Array.isArray(query.queries) && query.queries.length > 0){
-                for (let i = 0; i < query.queries.length; i ++){
+        try {
+            if (Array.isArray(query.queries) && query.queries.length > 0) {
+                for (let i = 0; i < query.queries.length; i++) {
                     let q = query.queries[i];
-                    if (q.a == 's'){
+                    if (q.a == 's') {
                         let r = await this.applySelectQuery(tableName, fields, q.q);
                         result.push({
                             id: id,
                             result: r
                         });
                     }
-                    else if (q.a == 'i'){
+                    else if (q.a == 'i') {
                         let r = await this.applyInsertQuery(tableName, fields, q.d);
                         result.push({
                             id: id,
                             result: r
                         });
                     }
-                    else if (q.a == 'd'){
+                    else if (q.a == 'd') {
                         let r = await this.applyDeleteQuery(tableName, fields, q.q);
                         result.push({
                             id: id,
                             result: r
                         });
                     }
-                    else if (q.a == 'u'){
+                    else if (q.a == 'u') {
                         let r = await this.applyUpdateQuery(tableName, fields, q.d, q.q);
                         result.push({
                             id: id,
@@ -74,18 +74,18 @@ export class MySQLClient implements Types.IDBClient{
                     }
                 };
             };
-            if (Array.isArray(query.records) && query.records.length > 0){
+            if (Array.isArray(query.records) && query.records.length > 0) {
                 await this.applyUpdateRecords(tableName, fields, query.records);
             };
             return result;
         }
-        catch(err){
+        catch (err) {
             console.error(err)
             throw err
         };
     };
-    private async applyDeleteQuery(tableName: string, fields: any, qry: any[]): Promise<any>{
-        try{
+    private async applyDeleteQuery(tableName: string, fields: any, qry: any[]): Promise<any> {
+        try {
             await this.syncTableSchema(tableName, fields);
             let sql = '';
             let params = [];
@@ -93,11 +93,11 @@ export class MySQLClient implements Types.IDBClient{
             sql += 'WHERE ' + this.getQuery(fields, qry, params);
             return await this.query(sql, params);
         }
-        catch(err){
+        catch (err) {
             throw err
         }
     };
-    private async applyInsertQuery(tableName: string, fields: any, data: Types.IQueryData): Promise<any>{
+    private async applyInsertQuery(tableName: string, fields: any, data: Types.IQueryData): Promise<any> {
         try {
             await this.syncTableSchema(tableName, fields);
             let sql = '';
@@ -105,11 +105,11 @@ export class MySQLClient implements Types.IDBClient{
             sql = `INSERT INTO ${this.escape(tableName)} SET ${this.getFields(fields, data, params)}`;
             return await this.query(sql, params);
         }
-        catch(e) {
+        catch (e) {
             throw e;
         }
     };
-    private async applySelectQuery(tableName: string, fields: any, qry: any[]): Promise<any>{
+    private async applySelectQuery(tableName: string, fields: any, qry: any[]): Promise<any> {
         try {
             await this.syncTableSchema(tableName, fields);
             let sql = '';
@@ -119,11 +119,11 @@ export class MySQLClient implements Types.IDBClient{
             let result = await this.query(sql, params);
             return result;
         }
-        catch(e) {
+        catch (e) {
             throw e
         }
     };
-    private async applyUpdateQuery(tableName: string, fields: Types.IFields, data: any, qry: Types.IQuery[]): Promise<any>{
+    private async applyUpdateQuery(tableName: string, fields: Types.IFields, data: any, qry: Types.IQuery[]): Promise<any> {
         try {
             await this.syncTableSchema(tableName, fields);
             let sql = '';
@@ -132,17 +132,17 @@ export class MySQLClient implements Types.IDBClient{
             sql += 'WHERE ' + this.getQuery(fields, qry, params);
             return await this.query(sql, params);
         }
-        catch(e) {
+        catch (e) {
             throw e;
         }
     };
-    private async applyUpdateRecords(tableName: string, fields: Types.IFields, records: Types.IQueryRecord[]): Promise<any>{
+    private async applyUpdateRecords(tableName: string, fields: Types.IFields, records: Types.IQueryRecord[]): Promise<any> {
         try {
             await this.syncTableSchema(tableName, fields);
             let keyField: Types.IField;
-            for (let f in fields){
+            for (let f in fields) {
                 let field = fields[f];
-                if (field.dataType == 'key'){
+                if (field.dataType == 'key') {
                     if (!field.field)
                         field.field = f;
                     field.prop = f;
@@ -150,57 +150,57 @@ export class MySQLClient implements Types.IDBClient{
                     break;
                 };
             };
-            for (let i = 0; i < records.length; i ++){
+            for (let i = 0; i < records.length; i++) {
                 let record = records[i];
                 let params = [];
-                if (record.a == 'u'){
+                if (record.a == 'u') {
                     let sql = `UPDATE ${this.escape(tableName)} SET ${this.getFields(fields, record.d, params)}`;
                     sql += ` WHERE ${this.escape(keyField.field)}=?`;
                     params.push(record.k);
                     await this.query(sql, params);
                 }
-                else if (record.a == 'i'){
+                else if (record.a == 'i') {
                     if (!record.d[keyField.field])
-                        record.d[keyField.field] = record.k;                        
+                        record.d[keyField.field] = record.k;
                     let sql = `INSERT INTO ${this.escape(tableName)} SET ${this.getFields(fields, record.d, params)}`;
                     await this.query(sql, params);
                 }
-                else if (record.a == 'd' && record.k){
+                else if (record.a == 'd' && record.k) {
                     let sql = `DELETE FROM ${this.escape(tableName)} WHERE ${this.escape(keyField.field)}=?`;
                     let params = [record.k];
                     await this.query(sql, params);
                 };
             };
         }
-        catch(e) {
+        catch (e) {
             throw e;
         };
     };
-    async checkTableExists(tableName: string): Promise<boolean>{
+    async checkTableExists(tableName: string): Promise<boolean> {
         let sql = `SHOW TABLES LIKE ?`;
         let result = await this.query(sql, [tableName]);
         return result.length > 0;
     };
-    escape(entity: string): string{
+    escape(entity: string): string {
         return this.connection.escapeId(entity)
     };
-    private getFields(fields: Types.IFields, data?: Types.IQueryData, params?: any[]): string{
+    private getFields(fields: Types.IFields, data?: Types.IQueryData, params?: any[]): string {
         let result = '';
         let idx = {};
-        for (let prop in fields){
+        for (let prop in fields) {
             let field = fields[prop];
             let fieldName = field.field;
-            if (!field.details){
-                if (!data || typeof(data[fieldName]) != 'undefined'){
-                    if (!idx[fieldName]){
+            if (!field.details) {
+                if (!data || typeof (data[fieldName]) != 'undefined') {
+                    if (!idx[fieldName]) {
                         idx[fieldName] = true;
-                        if (result){
+                        if (result) {
                             result += ',';
                             result += this.escape(fieldName)
                         }
                         else
                             result = this.escape(fieldName);
-                        if (data){
+                        if (data) {
                             result += '=?';
                             params.push(data[fieldName])
                         };
@@ -210,20 +210,20 @@ export class MySQLClient implements Types.IDBClient{
         };
         return result;
     };
-    private getQuery(fields: Types.IFields, query: any[], params: any[]){
+    private getQuery(fields: Types.IFields, query: any[], params: any[]) {
         if (query.length == 1)
             return this.getQuery(fields, query[0], params);
         let sql = '('
-        if (Array.isArray(query)){
+        if (Array.isArray(query)) {
             let op = query[1];
-            if (['like','=','!=','<','>','>=','<='].indexOf(op) > -1){
+            if (['like', '=', '!=', '<', '>', '>=', '<='].indexOf(op) > -1) {
                 let field = fields[query[0]];
                 if (!field)
                     throw `Field "${query[0]}" not defined`;
                 sql += this.escape(field.field || query[0]) + ' ' + op + ' ?';
                 params.push(query[2]);
             }
-            else if (op == 'between'){
+            else if (op == 'between') {
                 let field = fields[query[0]];
                 if (!field)
                     throw `Field "${query[0]}" not defined`;
@@ -231,15 +231,15 @@ export class MySQLClient implements Types.IDBClient{
                 params.push(query[2]);
                 params.push(query[3]);
             }
-            else if (op == 'in'){
+            else if (op == 'in') {
                 let field = fields[query[0]];
                 if (!field)
                     throw `Field "${query[0]}" not defined`;
                 sql += this.escape(field.field || query[0]) + ' ' + op + ' (?)';
                 params.push(query[2]);
             }
-            else{
-                for (let i = 0; i < query.length; i ++){
+            else {
+                for (let i = 0; i < query.length; i++) {
                     if (Array.isArray(query[i]))
                         sql += this.getQuery(fields, query[i], params)
                     else if (query[i] == 'or' || query[i] == 'and')
@@ -250,20 +250,20 @@ export class MySQLClient implements Types.IDBClient{
         sql += ')';
         return sql;
     };
-    get connection(): MySQL.Connection{
+    get connection(): MySQL.Connection {
         if (!this._connection)
             this._connection = MySQL.createConnection(this.options);
         return this._connection;
     };
-    private end(){
+    private end() {
         if (this._connection)
             this._connection.end();
         delete this._connection;
     };
     beginTransaction(): Promise<boolean> {
-        return new Promise((resolve, reject)=>{
+        return new Promise((resolve, reject) => {
             this.transaction = true;
-            this.connection.beginTransaction(function(err){
+            this.connection.beginTransaction(function (err) {
                 if (err)
                     reject(err)
                 else
@@ -272,41 +272,41 @@ export class MySQLClient implements Types.IDBClient{
         });
     };
     commit(): Promise<boolean> {
-        return new Promise((resolve, reject)=>{
+        return new Promise((resolve, reject) => {
             this.transaction = false;
-            this.connection.commit((err)=>{
-                try{
+            this.connection.commit((err) => {
+                try {
                     this.end();
                 }
-                catch(err){};
+                catch (err) { };
                 if (err)
                     reject(err)
-                else{
+                else {
                     resolve(true);
                 }
             });
         });
     };
-    import(sql: string): Promise<boolean>{
-        return new Promise((resolve)=>{
+    import(sql: string): Promise<boolean> {
+        return new Promise((resolve) => {
             let config = JSON.parse(JSON.stringify(this.options));
             config.multipleStatements = true;
             let connection = MySQL.createConnection(config);
-            connection.beginTransaction(function(err){
-                if (err){
+            connection.beginTransaction(function (err) {
+                if (err) {
                     connection.end();
                     resolve(false);
                 }
-                else{
-                    connection.query(sql, [], function(err, result){
-                        if (err){
-                            connection.rollback(function(err){
+                else {
+                    connection.query(sql, [], function (err, result) {
+                        if (err) {
+                            connection.rollback(function (err) {
                                 connection.end();
                                 resolve(false);
                             })
                         }
-                        else{
-                            connection.commit(function(){
+                        else {
+                            connection.commit(function () {
                                 connection.end();
                                 resolve(true);
                             });
@@ -317,40 +317,40 @@ export class MySQLClient implements Types.IDBClient{
         });
     };
     query(sql: string, params?: any[]): Promise<any[]> {
-        return new Promise((resolve, reject)=>{
-            try{
-                this.connection.query(sql, params, function(err, result){
+        return new Promise((resolve, reject) => {
+            try {
+                this.connection.query(sql, params, function (err, result) {
                     if (err)
                         reject(err)
                     else
                         resolve(result);
                 })
             }
-            finally{
+            finally {
                 if (!this.transaction)
                     this.end();
             };
         });
     };
-    async resolve(table: string, fields: Types.IFields, criteria: any, args: any): Promise<any>{
+    async resolve(table: string, fields: Types.IFields, criteria: any, args: any): Promise<any> {
         let sql = '';
-        for (let p in fields){
+        for (let p in fields) {
             let field = fields[p];
             if (sql)
                 sql += ','
-            else 
-                sql = 'SELECT ';            
+            else
+                sql = 'SELECT ';
             sql += this.escape(field.field);
             if (field.field !== p)
                 sql += ` as ${this.escape(p)}`
         }
         sql += ` FROM ?? WHERE 1 = 1 `
         let params = [table];
-        for(const arg in args) {
+        for (const arg in args) {
             const value = args[arg];
             const fieldName = fields[arg].field;
             const dataType = criteria[arg]['dataType'];
-            switch(dataType) {
+            switch (dataType) {
                 case 'key':
                 case 'char':
                 case 'varchar':
@@ -375,14 +375,14 @@ export class MySQLClient implements Types.IDBClient{
         let data = await this.query(sql, params);
         return data;
     };
-    rollback(): Promise<boolean>{
-        return new Promise((resolve, reject)=>{
+    rollback(): Promise<boolean> {
+        return new Promise((resolve, reject) => {
             this.transaction = false;
-            this.connection.rollback((err)=>{
-                try{
+            this.connection.rollback((err) => {
+                try {
                     this.end();
                 }
-                catch(err){};
+                catch (err) { };
                 if (err)
                     reject(err)
                 else
@@ -393,17 +393,17 @@ export class MySQLClient implements Types.IDBClient{
     async syncTableSchema(tableName: string, fields: Types.IFields): Promise<boolean> {
         try {
             const tableExists = await this.checkTableExists(tableName);
-            if(!tableExists) {
+            if (!tableExists) {
                 let pkName: string;
                 const columnBuilder = [];
                 const columnBuilderParams = [];
                 let newFields = {};
-                for(const prop in fields) {
+                for (const prop in fields) {
                     const field = fields[prop];
                     const fieldName = field.field;
-                    if (!newFields[fieldName.toLowerCase()]){
+                    if (!newFields[fieldName.toLowerCase()]) {
                         newFields[fieldName.toLowerCase()] = true;
-                        switch(field.dataType) {
+                        switch (field.dataType) {
                             case 'key':
                                 pkName = fieldName;
                                 columnBuilder.push(`${this.escape(fieldName)} VARCHAR(${field.size || 36}) NOT NULL`);
@@ -425,11 +425,11 @@ export class MySQLClient implements Types.IDBClient{
                                 break;
                             case 'integer':
                                 columnBuilder.push(`${this.escape(fieldName)} INT(?) NULL`);
-                                columnBuilderParams.push((<Types.IIntegerField> field).digits || 11);
+                                columnBuilderParams.push((<Types.IIntegerField>field).digits || 11);
                                 break;
                             case 'decimal':
                                 columnBuilder.push(`${this.escape(fieldName)} DECIMAL(?, ?) NULL`);
-                                columnBuilderParams.push((<Types.IDecimalField> field).digits || 11, (<Types.IDecimalField> field).decimals || 2);
+                                columnBuilderParams.push((<Types.IDecimalField>field).digits || 11, (<Types.IDecimalField>field).decimals || 2);
                                 break;
                             case 'date':
                                 columnBuilder.push(`${this.escape(fieldName)} DATE NULL`);
@@ -455,10 +455,10 @@ export class MySQLClient implements Types.IDBClient{
                         }
                     }
                 }
-                if(pkName) {
+                if (pkName) {
                     columnBuilder.push(`PRIMARY KEY (${this.escape(pkName)})`);
                 }
-                if(columnBuilder.length > 0) {
+                if (columnBuilder.length > 0) {
                     const sql = `CREATE TABLE ${this.escape(tableName)} (${columnBuilder.join(', ')})`;
                     await this.query(sql, columnBuilderParams);
                 }
@@ -472,11 +472,11 @@ export class MySQLClient implements Types.IDBClient{
                 const columnBuilderParams = [];
                 let prevField;
                 for (const prop in fields) {
-                    const field = fields[prop];                    
+                    const field = fields[prop];
                     const fieldName = field.field;
                     const currentField = columnDef.find(v => v['Field'] === (fieldName));
-                    if(!currentField) {
-                        switch(field.dataType) {
+                    if (!currentField) {
+                        switch (field.dataType) {
                             case 'key':
                                 columnBuilder.push(`ADD ${this.escape(fieldName)} VARCHAR(${field.size || 36}) NOT NULL FIRST`);
                                 columnBuilderPK.push(`ADD PRIMARY KEY (${this.escape(fieldName)})`);
@@ -499,12 +499,12 @@ export class MySQLClient implements Types.IDBClient{
                                 break;
                             case 'integer':
                                 columnBuilder.push(`ADD ${this.escape(fieldName)} INT(?) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                columnBuilderParams.push((<Types.IIntegerField> field).digits || 11);
+                                columnBuilderParams.push((<Types.IIntegerField>field).digits || 11);
                                 break;
                             case 'decimal':
                                 columnBuilder.push(`ADD ${this.escape(fieldName)} DECIMAL(?, ?) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                columnBuilderParams.push((<Types.IDecimalField> field).digits || 11, (<Types.IDecimalField> field).decimals || 2)
-                                break;                            
+                                columnBuilderParams.push((<Types.IDecimalField>field).digits || 11, (<Types.IDecimalField>field).decimals || 2)
+                                break;
                             case 'date':
                                 columnBuilder.push(`ADD ${this.escape(fieldName)} DATE NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
                                 break;
@@ -546,19 +546,91 @@ export class MySQLClient implements Types.IDBClient{
                     prevField = fieldName;
                 }
 
-                if(columnBuilder.length > 0) {
+                if (columnBuilder.length > 0) {
                     const sql = `ALTER TABLE ${this.escape(tableName)} ${columnBuilder.join(', ')}`;
                     await this.query(sql, columnBuilderParams);
                 }
-                if(columnBuilderPK.length > 0) {
+                if (columnBuilderPK.length > 0) {
                     const sql2 = `ALTER TABLE ${this.escape(tableName)} ${columnBuilderPK.join(',')}`;
                     await this.query(sql2);
                 };
                 return true;
             };
         }
-        catch(e) {
+        catch (e) {
             // throw e;
         };
     };
+
+    async syncTableIndexes(tableName: string, indexes: Types.ITableIndexProps[]): Promise<boolean> {
+        try {
+            const result = await this.query(`SHOW INDEXES FROM ${this.escape(tableName)}`);
+            const existingIndexes: Record<string, Types.ITableIndexProps> = result.reduce((acc, row) => {
+                if (!acc[row.Key_name]) {
+                    let indexType: Types.TableIndexType;
+                    if (row.Non_unique === 0) {
+                        indexType = 'UNIQUE';
+                    }
+                    else {
+                        indexType = 'NON_UNIQUE';
+                    }
+                    acc[row.Key_name] = {
+                        name: row.Key_name,
+                        columns: [],
+                        type: indexType
+                    };
+                }
+                acc[row.Key_name].columns.push(row.Column_name);
+
+                return acc;
+            }, {});
+
+            const createIndex = async (index: Types.ITableIndexProps) => {
+                const columns = index.columns.join(', ');
+                let createIndexSql;
+                if (index.type === 'UNIQUE') {
+                    createIndexSql = `CREATE UNIQUE INDEX ${this.escape(index.name)} ON ${this.escape(tableName)} (${columns})`;
+                }
+                else {
+                    createIndexSql = `CREATE INDEX ${this.escape(index.name)} ON ${this.escape(tableName)} (${columns})`;
+                }
+                await this.query(createIndexSql);
+            }
+            const dropIndex = async (indexName: string) => {
+                let dropIndexSql = `DROP INDEX ${this.escape(indexName)} ON ${this.escape(tableName)}`;
+                await this.query(dropIndexSql);
+            }
+
+            for (const index of indexes) {
+                const indexName = index.name;
+                const type = index.type;
+
+                if (!existingIndexes[indexName]) {
+                    await createIndex(index);
+                }
+                else {
+                    const typeChanged = existingIndexes[indexName].type !== type;
+                    const existingIndexesColumns = existingIndexes[indexName].columns;
+                    const columnsChanged = !existingIndexesColumns.every(column => index.columns.includes(column)) || !index.columns.every(column => existingIndexesColumns.includes(column));
+                    if (typeChanged || columnsChanged) {
+                        await dropIndex(indexName);
+                        await createIndex(index);
+                    }
+                }
+            }
+
+            const indexesToDrop = Object.keys(existingIndexes)
+                .filter(existingIndex => existingIndex !== 'PRIMARY' && !indexes.find(index => index.name === existingIndex));
+            for (const indexName of indexesToDrop) {
+                if (!indexes.find(index => index.name === indexName)) {
+                    await dropIndex(indexName);
+                }
+            }
+
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    }
 };
