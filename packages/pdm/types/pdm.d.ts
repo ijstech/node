@@ -3,7 +3,7 @@
 * Released under dual AGPLv3/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-import { IField, IFields, ISchema, IDBClient, IQueryData } from './types';
+import { IField, IFields, ISchema, IDBClient, IQueryData, ITableIndexProps } from './types';
 export { DBClient } from './dbClient';
 export interface IRefField extends IField {
     record: string;
@@ -162,6 +162,7 @@ export interface IDateTimeField extends IField {
 export interface ITimeField extends IField {
 }
 export declare function RecordSet(tableName: string, recordType: typeof TRecord, recordSetType?: any): (target: TContext, propName: string, params?: any) => void;
+export declare function Index(indexProps?: ITableIndexProps): (target: Function) => void;
 export declare function KeyField(fieldType?: IField): (target: TRecord, propName: string) => void;
 export declare function RefTo<T extends TContext>(record: keyof T, field?: string): (target: TRecord, propName: string) => void;
 export declare function StringField(fieldType?: IStringField): (target: TRecord, propName: string) => void;

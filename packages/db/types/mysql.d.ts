@@ -30,4 +30,5 @@ export declare class MySQLClient implements Types.IDBClient {
     resolve(table: string, fields: Types.IFields, criteria: any, args: any): Promise<any>;
     rollback(): Promise<boolean>;
     syncTableSchema(tableName: string, fields: Types.IFields): Promise<boolean>;
+    syncTableIndexes(tableName: string, indexes: Types.ITableIndexProps[]): Promise<boolean>;
 }

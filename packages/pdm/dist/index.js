@@ -25,6 +25,7 @@ define("types", ["require", "exports"], function (require, exports) {
     ;
     ;
     ;
+    ;
 });
 define("dbClient", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -57,6 +58,10 @@ define("dbClient", ["require", "exports"], function (require, exports) {
             return new Promise(resolve => resolve(true));
         }
         ;
+        syncTableIndexes(tableName, indexes) {
+            return new Promise(resolve => resolve(true));
+        }
+        ;
     }
     exports.DBClient = DBClient;
     ;
@@ -69,7 +74,7 @@ define("dbClient", ["require", "exports"], function (require, exports) {
 define("pdm", ["require", "exports", "dbClient"], function (require, exports, dbClient_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.OneToMany = exports.BlobField = exports.TimeField = exports.DateTimeField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.RecordSet = exports.TRecordSet = exports.TRecord = exports.TContext = exports.DBClient = void 0;
+    exports.OneToMany = exports.BlobField = exports.TimeField = exports.DateTimeField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.Index = exports.RecordSet = exports.TRecordSet = exports.TRecord = exports.TContext = exports.DBClient = void 0;
     Object.defineProperty(exports, "DBClient", { enumerable: true, get: function () { return dbClient_1.DBClient; } });
     function generateUUID() {
         var d = new Date().getTime();
@@ -123,11 +128,21 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             try {
                 for (let n in this.$$records) {
                     let rs = this.$$records[n];
-                    let result = await this._client.syncTableSchema(rs.tableName, rs.recordSet.fields);
-                    if (!result)
+                    const syncTableSchemaResult = await this._client.syncTableSchema(rs.tableName, rs.recordSet.fields);
+                    if (!syncTableSchemaResult)
+                        return false;
+                    let indexes = [];
+                    for (let name in rs.recordType['$$indexes']) {
+                        let properties = rs.recordType['$$indexes'][name];
+                        indexes.push({
+                            name,
+                            ...properties
+                        });
+                    }
+                    const syncTableIndexesResult = await this._client.syncTableIndexes(rs.tableName, indexes);
+                    if (!syncTableIndexesResult)
                         return false;
                 }
-                ;
                 return true;
             }
             catch (err) {
@@ -683,6 +698,24 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
     }
     exports.RecordSet = RecordSet;
     ;
+    function Index(indexProps) {
+        return function (target) {
+            const indexName = indexProps.name || 'PRIMARY';
+            let indexType;
+            if (!indexProps.name) {
+                indexType = 'PRIMARY';
+            }
+            else {
+                indexType = indexProps.type || 'NON_UNIQUE';
+            }
+            target['$$indexes'] = target['$$indexes'] || {};
+            target['$$indexes'][indexName] = {
+                columns: indexProps.columns,
+                type: indexType
+            };
+        };
+    }
+    exports.Index = Index;
     function KeyField(fieldType) {
         return function (target, propName) {
             fieldType = fieldType || {};

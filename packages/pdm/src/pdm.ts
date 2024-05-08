@@ -4,7 +4,7 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 // import * as Types from '@ijstech/types';
-import {IField, IFields, ISchema, IDBClient, IQuery, IQueryData, IQueryRecord} from './types';
+import {IField, IFields, ISchema, IDBClient, IQuery, IQueryData, IQueryRecord, TableIndexType, ITableIndexProps} from './types';
 export {DBClient} from './dbClient';
 
 function generateUUID() { // Public Domain/MIT
@@ -82,10 +82,21 @@ export class TContext {
         try{
             for (let n in this.$$records){
                 let rs = this.$$records[n];
-                let result = await this._client.syncTableSchema(rs.tableName, rs.recordSet.fields);
-                if (!result)
+                const syncTableSchemaResult = await this._client.syncTableSchema(rs.tableName, rs.recordSet.fields);
+                if (!syncTableSchemaResult)
                     return false;
-            };
+                let indexes: any[] = [];
+                for (let name in rs.recordType['$$indexes']){
+                    let properties = rs.recordType['$$indexes'][name];
+                    indexes.push({
+                        name,
+                        ...properties
+                    });
+                }
+                const syncTableIndexesResult = await this._client.syncTableIndexes(rs.tableName, indexes);
+                if (!syncTableIndexesResult)
+                    return false;                
+            }
             return true;
         }
         catch(err){
@@ -671,6 +682,23 @@ export function RecordSet(tableName: string, recordType: typeof TRecord, recordS
         };
     };
 };
+export function Index(indexProps?: ITableIndexProps) {
+    return function (target: Function) {
+        const indexName = indexProps.name || 'PRIMARY';
+        let indexType: TableIndexType;
+        if (!indexProps.name) {
+            indexType = 'PRIMARY';
+        }   
+        else {
+            indexType = indexProps.type || 'NON_UNIQUE'
+        }
+        target['$$indexes'] = target['$$indexes'] || {};
+        target['$$indexes'][indexName] = {
+            columns: indexProps.columns, 
+            type: indexType
+        };
+    };
+}
 export function KeyField(fieldType?: IField){
     return function (target: TRecord, propName: string) {
         fieldType = fieldType || {};

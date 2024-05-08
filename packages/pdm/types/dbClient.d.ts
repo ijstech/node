@@ -5,4 +5,5 @@ export declare class DBClient {
     applyQueries(queries: Types.IQuery[]): Promise<Types.IQueryResult[]>;
     checkTableExists(tableName: string): Promise<boolean>;
     syncTableSchema(tableName: string, fields: Types.IFields): Promise<boolean>;
+    syncTableIndexes(tableName: string, indexes: Types.ITableIndexProps[]): Promise<boolean>;
 }

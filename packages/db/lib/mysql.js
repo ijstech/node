@@ -624,6 +624,84 @@ class MySQLClient {
         ;
     }
     ;
+    async syncTableIndexes(tableName, indexes) {
+        try {
+            const result = await this.query(`SHOW INDEXES FROM ${this.escape(tableName)}`);
+            const existingIndexes = result.reduce((acc, row) => {
+                if (!acc[row.Key_name]) {
+                    let indexType;
+                    if (row.Key_name === 'PRIMARY') {
+                        indexType = 'PRIMARY';
+                    }
+                    else if (row.Non_unique === 0) {
+                        indexType = 'UNIQUE';
+                    }
+                    else {
+                        indexType = 'NON_UNIQUE';
+                    }
+                    acc[row.Key_name] = {
+                        name: row.Key_name,
+                        columns: [],
+                        type: indexType
+                    };
+                }
+                acc[row.Key_name].columns.push(row.Column_name);
+                return acc;
+            }, {});
+            const createIndex = async (index) => {
+                const columns = index.columns.join(', ');
+                let createIndexSql;
+                if (index.type === 'PRIMARY') {
+                    createIndexSql = `ALTER TABLE ${this.escape(tableName)} ADD PRIMARY KEY (${columns})`;
+                }
+                else if (index.type === 'UNIQUE') {
+                    createIndexSql = `CREATE UNIQUE INDEX ${this.escape(index.name)} ON ${this.escape(tableName)} (${columns})`;
+                }
+                else {
+                    createIndexSql = `CREATE INDEX ${this.escape(index.name)} ON ${this.escape(tableName)} (${columns})`;
+                }
+                await this.query(createIndexSql);
+            };
+            const dropIndex = async (indexName) => {
+                let dropIndexSql;
+                if (indexName === 'PRIMARY') {
+                    dropIndexSql = `ALTER TABLE ${this.escape(tableName)} DROP PRIMARY KEY`;
+                }
+                else {
+                    dropIndexSql = `DROP INDEX ${this.escape(indexName)} ON ${this.escape(tableName)}`;
+                }
+                await this.query(dropIndexSql);
+            };
+            for (const index of indexes) {
+                const indexName = index.name;
+                const type = index.type;
+                if (!existingIndexes[indexName]) {
+                    await createIndex(index);
+                }
+                else {
+                    const typeChanged = existingIndexes[indexName].type !== type;
+                    const existingIndexesColumns = existingIndexes[indexName].columns;
+                    const columnsChanged = !existingIndexesColumns.every(column => index.columns.includes(column)) || !index.columns.every(column => existingIndexesColumns.includes(column));
+                    if (typeChanged || columnsChanged) {
+                        await dropIndex(indexName);
+                        await createIndex(index);
+                    }
+                }
+            }
+            const indexesToDrop = Object.keys(existingIndexes)
+                .filter(existingIndex => existingIndex !== 'PRIMARY' && !indexes.find(index => index.name === existingIndex));
+            for (const indexName of indexesToDrop) {
+                if (!indexes.find(index => index.name === indexName)) {
+                    await dropIndex(indexName);
+                }
+            }
+            return true;
+        }
+        catch (e) {
+            console.error(e);
+            return false;
+        }
+    }
 }
 exports.MySQLClient = MySQLClient;
 ;

@@ -23,4 +23,7 @@ export class DBClient{
     syncTableSchema(tableName: string, fields: Types.IFields): Promise<boolean> {
         return new Promise(resolve => resolve(true));
     };
+    syncTableIndexes(tableName: string, indexes: Types.ITableIndexProps[]): Promise<boolean> {
+        return new Promise(resolve => resolve(true));
+    };
 };

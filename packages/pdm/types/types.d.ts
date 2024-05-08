@@ -31,6 +31,7 @@ export interface IDBClient {
     applyQueries(queries: IQuery[]): Promise<IQueryResult[]>;
     checkTableExists(tableName: string): Promise<boolean>;
     syncTableSchema(tableName: string, fields: IFields): Promise<boolean>;
+    syncTableIndexes(tableName: string, indexes: ITableIndexProps[]): Promise<boolean>;
 }
 export interface IFields {
     [name: string]: IField;
@@ -45,4 +46,10 @@ export interface IGraphClient {
 }
 export interface IDBConnection {
     url: string;
+}
+export declare type TableIndexType = 'PRIMARY' | 'UNIQUE' | 'NON_UNIQUE';
+export interface ITableIndexProps {
+    name?: string;
+    columns: string[];
+    type?: TableIndexType;
 }
