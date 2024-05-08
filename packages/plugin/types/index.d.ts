@@ -254,9 +254,9 @@ export declare namespace Types {
         result?: any;
         error?: string;
     }
-    type TableIndexType = 'PRIMARY' | 'UNIQUE' | 'NON_UNIQUE';
+    type TableIndexType = 'UNIQUE' | 'NON_UNIQUE';
     interface ITableIndexProps {
-        name?: string;
+        name: string;
         columns: string[];
         type?: TableIndexType;
     }

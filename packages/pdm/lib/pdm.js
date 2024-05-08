@@ -632,14 +632,8 @@ exports.RecordSet = RecordSet;
 ;
 function Index(indexProps) {
     return function (target) {
-        const indexName = indexProps.name || 'PRIMARY';
-        let indexType;
-        if (!indexProps.name) {
-            indexType = 'PRIMARY';
-        }
-        else {
-            indexType = indexProps.type || 'NON_UNIQUE';
-        }
+        const indexName = indexProps.name;
+        const indexType = indexProps.type || 'NON_UNIQUE';
         target['$$indexes'] = target['$$indexes'] || {};
         target['$$indexes'][indexName] = {
             columns: indexProps.columns,

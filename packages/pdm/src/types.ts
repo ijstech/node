@@ -41,9 +41,9 @@ export interface IGraphClient{
 export interface IDBConnection{
     url: string;
 };
-export type TableIndexType = 'PRIMARY'|'UNIQUE'|'NON_UNIQUE';
+export type TableIndexType = 'UNIQUE'|'NON_UNIQUE';
 export interface ITableIndexProps{
-    name?: string;
+    name: string;
     columns: string[]; 
     type?: TableIndexType;
 };

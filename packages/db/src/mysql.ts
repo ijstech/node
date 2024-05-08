@@ -568,10 +568,7 @@ export class MySQLClient implements Types.IDBClient {
             const existingIndexes: Record<string, Types.ITableIndexProps> = result.reduce((acc, row) => {
                 if (!acc[row.Key_name]) {
                     let indexType: Types.TableIndexType;
-                    if (row.Key_name === 'PRIMARY') {
-                        indexType = 'PRIMARY';
-                    }
-                    else if (row.Non_unique === 0) {
+                    if (row.Non_unique === 0) {
                         indexType = 'UNIQUE';
                     }
                     else {
@@ -591,10 +588,7 @@ export class MySQLClient implements Types.IDBClient {
             const createIndex = async (index: Types.ITableIndexProps) => {
                 const columns = index.columns.join(', ');
                 let createIndexSql;
-                if (index.type === 'PRIMARY') {
-                    createIndexSql = `ALTER TABLE ${this.escape(tableName)} ADD PRIMARY KEY (${columns})`;
-                }
-                else if (index.type === 'UNIQUE') {
+                if (index.type === 'UNIQUE') {
                     createIndexSql = `CREATE UNIQUE INDEX ${this.escape(index.name)} ON ${this.escape(tableName)} (${columns})`;
                 }
                 else {
@@ -603,13 +597,7 @@ export class MySQLClient implements Types.IDBClient {
                 await this.query(createIndexSql);
             }
             const dropIndex = async (indexName: string) => {
-                let dropIndexSql;
-                if (indexName === 'PRIMARY') {
-                    dropIndexSql = `ALTER TABLE ${this.escape(tableName)} DROP PRIMARY KEY`;
-                }
-                else {
-                    dropIndexSql = `DROP INDEX ${this.escape(indexName)} ON ${this.escape(tableName)}`;
-                }
+                let dropIndexSql = `DROP INDEX ${this.escape(indexName)} ON ${this.escape(tableName)}`;
                 await this.query(dropIndexSql);
             }
 

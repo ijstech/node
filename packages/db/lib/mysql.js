@@ -630,10 +630,7 @@ class MySQLClient {
             const existingIndexes = result.reduce((acc, row) => {
                 if (!acc[row.Key_name]) {
                     let indexType;
-                    if (row.Key_name === 'PRIMARY') {
-                        indexType = 'PRIMARY';
-                    }
-                    else if (row.Non_unique === 0) {
+                    if (row.Non_unique === 0) {
                         indexType = 'UNIQUE';
                     }
                     else {
@@ -651,10 +648,7 @@ class MySQLClient {
             const createIndex = async (index) => {
                 const columns = index.columns.join(', ');
                 let createIndexSql;
-                if (index.type === 'PRIMARY') {
-                    createIndexSql = `ALTER TABLE ${this.escape(tableName)} ADD PRIMARY KEY (${columns})`;
-                }
-                else if (index.type === 'UNIQUE') {
+                if (index.type === 'UNIQUE') {
                     createIndexSql = `CREATE UNIQUE INDEX ${this.escape(index.name)} ON ${this.escape(tableName)} (${columns})`;
                 }
                 else {
@@ -663,13 +657,7 @@ class MySQLClient {
                 await this.query(createIndexSql);
             };
             const dropIndex = async (indexName) => {
-                let dropIndexSql;
-                if (indexName === 'PRIMARY') {
-                    dropIndexSql = `ALTER TABLE ${this.escape(tableName)} DROP PRIMARY KEY`;
-                }
-                else {
-                    dropIndexSql = `DROP INDEX ${this.escape(indexName)} ON ${this.escape(tableName)}`;
-                }
+                let dropIndexSql = `DROP INDEX ${this.escape(indexName)} ON ${this.escape(tableName)}`;
                 await this.query(dropIndexSql);
             };
             for (const index of indexes) {

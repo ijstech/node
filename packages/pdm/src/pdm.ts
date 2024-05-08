@@ -684,14 +684,8 @@ export function RecordSet(tableName: string, recordType: typeof TRecord, recordS
 };
 export function Index(indexProps?: ITableIndexProps) {
     return function (target: Function) {
-        const indexName = indexProps.name || 'PRIMARY';
-        let indexType: TableIndexType;
-        if (!indexProps.name) {
-            indexType = 'PRIMARY';
-        }   
-        else {
-            indexType = indexProps.type || 'NON_UNIQUE'
-        }
+        const indexName = indexProps.name;
+        const indexType = indexProps.type || 'NON_UNIQUE';
         target['$$indexes'] = target['$$indexes'] || {};
         target['$$indexes'][indexName] = {
             columns: indexProps.columns, 
