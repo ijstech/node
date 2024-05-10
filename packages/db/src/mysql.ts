@@ -390,8 +390,64 @@ export class MySQLClient implements Types.IDBClient {
             });
         });
     };
+    
     async syncTableSchema(tableName: string, fields: Types.IFields): Promise<boolean> {
         try {
+            const buildColumn = (field: Types.IField, fieldName: string) => {
+                let primaryKeyName;
+                let sql;
+                let params: any;
+                switch (field.dataType) {
+                    case 'key':
+                        primaryKeyName = fieldName;
+                        sql = `${this.escape(fieldName)} VARCHAR(${field.size || 36}) NOT NULL`;
+                        break;
+                    case 'ref':
+                        sql = `${this.escape(fieldName)} VARCHAR(${field.size || 36})`;
+                        break;
+                    case 'char':
+                        sql = `${this.escape(fieldName)} CHAR(?)`;
+                        params = [field.size];
+                        break;
+                    case 'varchar':
+                        sql = `${this.escape(fieldName)} VARCHAR(?)`;
+                        params = [field.size];
+                        break; 
+                    case 'boolean':
+                        sql = `${this.escape(fieldName)} TINYINT(1)`
+                        break;
+                    case 'integer':
+                        sql = `${this.escape(fieldName)} INT(?)`
+                        params = [(<Types.IIntegerField>field).digits || 11];
+                        break;
+                    case 'decimal':
+                        sql = `${this.escape(fieldName)} DECIMAL(?, ?)`
+                        params = [(<Types.IDecimalField>field).digits || 11, (<Types.IDecimalField>field).decimals || 2];
+                        break;
+                    case 'date':
+                    case 'dateTime':
+                    case 'time':
+                    case 'text':
+                    case 'mediumText':
+                    case 'longText':                        
+                        sql = `${this.escape(fieldName)} ${field.dataType.toUpperCase()}`;
+                        break;
+                    case 'blob':
+                        sql = `${this.escape(fieldName)} MEDIUMBLOB`;
+                        break; 
+                }
+                if (sql) {
+                    if (!['key', 'blob', 'text', 'mediumText', 'longText'].includes(field.dataType)) {
+                        sql += field.notNull ? ' NOT NULL' : ' NULL';
+                        sql += field.default ? ` DEFAULT '${field.default}'` : '';
+                    }
+                }
+                return {
+                    primaryKeyName,
+                    sql,
+                    params    
+                }
+            }
             const tableExists = await this.checkTableExists(tableName);
             if (!tableExists) {
                 let pkName: string;
@@ -403,55 +459,13 @@ export class MySQLClient implements Types.IDBClient {
                     const fieldName = field.field;
                     if (!newFields[fieldName.toLowerCase()]) {
                         newFields[fieldName.toLowerCase()] = true;
-                        switch (field.dataType) {
-                            case 'key':
-                                pkName = fieldName;
-                                columnBuilder.push(`${this.escape(fieldName)} VARCHAR(${field.size || 36}) NOT NULL`);
-                                break;
-                            case 'ref':
-                                columnBuilder.push(`${this.escape(fieldName)} VARCHAR(${field.size || 36}) NULL`);
-                            case '1toM':
-                                break;
-                            case 'char':
-                                columnBuilder.push(`${this.escape(fieldName)} CHAR(?) NULL`);
-                                columnBuilderParams.push(field.size);
-                                break;
-                            case 'varchar':
-                                columnBuilder.push(`${this.escape(fieldName)} VARCHAR(?) NULL`);
-                                columnBuilderParams.push(field.size);
-                                break;
-                            case 'boolean':
-                                columnBuilder.push(`${this.escape(fieldName)} TINYINT(1) NULL`);
-                                break;
-                            case 'integer':
-                                columnBuilder.push(`${this.escape(fieldName)} INT(?) NULL`);
-                                columnBuilderParams.push((<Types.IIntegerField>field).digits || 11);
-                                break;
-                            case 'decimal':
-                                columnBuilder.push(`${this.escape(fieldName)} DECIMAL(?, ?) NULL`);
-                                columnBuilderParams.push((<Types.IDecimalField>field).digits || 11, (<Types.IDecimalField>field).decimals || 2);
-                                break;
-                            case 'date':
-                                columnBuilder.push(`${this.escape(fieldName)} DATE NULL`);
-                                break;
-                            case 'dateTime':
-                                columnBuilder.push(`${this.escape(fieldName)} DATETIME NULL`);
-                                break;
-                            case 'time':
-                                columnBuilder.push(`${this.escape(fieldName)} TIME NULL`);
-                                break;
-                            case 'blob':
-                                columnBuilder.push(`${this.escape(fieldName)} MEDIUMBLOB`);
-                                break;
-                            case 'text':
-                                columnBuilder.push(`${this.escape(fieldName)} TEXT`);
-                                break;
-                            case 'mediumText':
-                                columnBuilder.push(`${this.escape(fieldName)} MEDIUMTEXT`);
-                                break;
-                            case 'longText':
-                                columnBuilder.push(`${this.escape(fieldName)} LONGTEXT`);
-                                break;
+                        let {primaryKeyName, sql, params} = buildColumn(field, fieldName);
+                        pkName = primaryKeyName;
+                        if (sql) {
+                            columnBuilder.push(sql);
+                            if (params) {
+                                columnBuilderParams.push(...params);
+                            }
                         }
                     }
                 }
@@ -476,57 +490,24 @@ export class MySQLClient implements Types.IDBClient {
                     const fieldName = field.field;
                     const currentField = columnDef.find(v => v['Field'] === (fieldName));
                     if (!currentField) {
-                        switch (field.dataType) {
-                            case 'key':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} VARCHAR(${field.size || 36}) NOT NULL FIRST`);
-                                columnBuilderPK.push(`ADD PRIMARY KEY (${this.escape(fieldName)})`);
-                                break;
-                            case 'ref':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} VARCHAR(${field.size || 36}) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                break;
-                            case '1toM':
-                                break;
-                            case 'char':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} CHAR(?) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                columnBuilderParams.push(field.size);
-                                break;
-                            case 'varchar':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} VARCHAR(?) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                columnBuilderParams.push(field.size);
-                                break;
-                            case 'boolean':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} TINYINT(1) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                break;
-                            case 'integer':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} INT(?) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                columnBuilderParams.push((<Types.IIntegerField>field).digits || 11);
-                                break;
-                            case 'decimal':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} DECIMAL(?, ?) NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                columnBuilderParams.push((<Types.IDecimalField>field).digits || 11, (<Types.IDecimalField>field).decimals || 2)
-                                break;
-                            case 'date':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} DATE NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                break;
-                            case 'dateTime':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} DATETIME NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                break;
-                            case 'time':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} TIME NULL ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                break;
-                            case 'blob':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} MEDIUMBLOB ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                break;
-                            case 'text':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} TEXT ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                break;
-                            case 'mediumText':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} MEDIUMTEXT ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                break;
-                            case 'longText':
-                                columnBuilder.push(`ADD ${this.escape(fieldName)} LONGTEXT ${prevField ? `AFTER ${this.escape(prevField)}` : `FIRST`}`);
-                                break;
+                        let {primaryKeyName, sql, params} = buildColumn(field, fieldName);
+                        if (primaryKeyName) {
+                            columnBuilderPK.push(`ADD PRIMARY KEY (${this.escape(primaryKeyName)})`);
                         }
+                        if (sql) {
+                            sql = `ADD ${sql}`;
+                            if (field.dataType === 'key') {
+                                sql += ' FIRST';
+                            }
+                            else {
+                                sql += prevField ? ` AFTER ${this.escape(prevField)}` : ` FIRST`;
+                            }
+                            columnBuilder.push(sql);
+                            if (params) {
+                                columnBuilderParams.push(...params);
+                            }
+                        }
+
                     } else {
                         switch (field.dataType) {
                             case 'varchar':

@@ -219,6 +219,8 @@ export declare namespace Types{
         details?: any;
         table?: string;
         dataType?: 'key'|'ref'|'1toM'|'char'|'varchar'|'boolean'|'integer'|'decimal'|'date'|'dateTime'|'time'|'blob'|'text'|'mediumText'|'longText';
+        notNull?: boolean;
+        default?: any;
     }
     interface IFields{[name: string]: IField}    
     interface IQueryData{[prop: string]: any}
@@ -480,6 +482,8 @@ export interface IField{
     details?: any;
     table?: string;
     dataType?: 'key'|'ref'|'1toM'|'char'|'varchar'|'boolean'|'integer'|'decimal'|'date'|'blob'|'text'|'mediumText'|'longText';
+    notNull?: boolean;
+    default?: any;
 }
 export interface IQueryData{[prop: string]: any}
 export interface IQueryRecord{
