@@ -498,7 +498,7 @@ class MySQLClient {
                 if (sql) {
                     if (!['key', 'blob', 'text', 'mediumText', 'longText'].includes(field.dataType)) {
                         sql += field.notNull ? ' NOT NULL' : ' NULL';
-                        sql += field.default ? ` DEFAULT '${field.default}'` : '';
+                        sql += field.default !== undefined && field.default !== null ? ` DEFAULT ${field.default}` : '';
                     }
                 }
                 return {
@@ -538,8 +538,8 @@ class MySQLClient {
                 return true;
             }
             else {
-                const sql = `DESCRIBE ${this.escape(tableName)}`;
-                const columnDef = await this.query(sql);
+                const describeQuery = `DESCRIBE ${this.escape(tableName)}`;
+                const columnDef = await this.query(describeQuery);
                 const columnBuilder = [];
                 const columnBuilderPK = [];
                 const columnBuilderParams = [];
@@ -568,6 +568,9 @@ class MySQLClient {
                         }
                     }
                     else {
+                        const nullChanged = currentField['Null'] === 'YES' && field.notNull || currentField['Null'] === 'NO' && !field.notNull;
+                        const defaultChanged = currentField['Default'] == field.default ? false : true;
+                        let sizeChanged = false;
                         switch (field.dataType) {
                             case 'varchar':
                                 if (currentField['Type'].indexOf('varchar') >= 0) {
@@ -575,12 +578,21 @@ class MySQLClient {
                                     if (match) {
                                         const size = parseInt(match[0]);
                                         if (field.size > size) {
-                                            columnBuilder.push(`MODIFY ${this.escape(fieldName)} VARCHAR(?)`);
-                                            columnBuilderParams.push(field.size);
+                                            sizeChanged = true;
                                         }
                                     }
                                 }
                                 break;
+                        }
+                        if (nullChanged || defaultChanged || sizeChanged) {
+                            let { primaryKeyName, sql, params } = buildColumn(field, fieldName);
+                            if (sql) {
+                                sql = `MODIFY ${sql}`;
+                                columnBuilder.push(sql);
+                                if (params) {
+                                    columnBuilderParams.push(...params);
+                                }
+                            }
                         }
                     }
                     prevField = fieldName;
@@ -599,6 +611,8 @@ class MySQLClient {
             ;
         }
         catch (e) {
+            console.error(e);
+            return false;
         }
         ;
     }

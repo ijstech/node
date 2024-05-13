@@ -439,7 +439,7 @@ export class MySQLClient implements Types.IDBClient {
                 if (sql) {
                     if (!['key', 'blob', 'text', 'mediumText', 'longText'].includes(field.dataType)) {
                         sql += field.notNull ? ' NOT NULL' : ' NULL';
-                        sql += field.default ? ` DEFAULT '${field.default}'` : '';
+                        sql += field.default !== undefined && field.default !== null ? ` DEFAULT ${field.default}` : '';
                     }
                 }
                 return {
@@ -479,8 +479,8 @@ export class MySQLClient implements Types.IDBClient {
                 return true;
             }
             else {
-                const sql = `DESCRIBE ${this.escape(tableName)}`;
-                const columnDef = await this.query(sql);
+                const describeQuery = `DESCRIBE ${this.escape(tableName)}`;
+                const columnDef = await this.query(describeQuery);
                 const columnBuilder = [];
                 const columnBuilderPK = [];
                 const columnBuilderParams = [];
@@ -507,8 +507,11 @@ export class MySQLClient implements Types.IDBClient {
                                 columnBuilderParams.push(...params);
                             }
                         }
-
-                    } else {
+                    } 
+                    else {
+                        const nullChanged = currentField['Null'] === 'YES' && field.notNull || currentField['Null'] === 'NO' && !field.notNull;
+                        const defaultChanged = currentField['Default'] == field.default ? false : true;
+                        let sizeChanged = false;
                         switch (field.dataType) {
                             case 'varchar':
                                 if (currentField['Type'].indexOf('varchar') >= 0) {
@@ -516,12 +519,21 @@ export class MySQLClient implements Types.IDBClient {
                                     if (match) {
                                         const size = parseInt(match[0]);
                                         if (field.size > size) {
-                                            columnBuilder.push(`MODIFY ${this.escape(fieldName)} VARCHAR(?)`);
-                                            columnBuilderParams.push(field.size);
+                                            sizeChanged = true;
                                         }
                                     }
                                 }
-                                break;
+                                break;                             
+                        }
+                        if (nullChanged || defaultChanged || sizeChanged) {
+                            let {primaryKeyName, sql, params} = buildColumn(field, fieldName);
+                            if (sql) {
+                                sql = `MODIFY ${sql}`;
+                                columnBuilder.push(sql);
+                                if (params) {
+                                    columnBuilderParams.push(...params);
+                                }
+                            }
                         }
                     }
                     prevField = fieldName;
@@ -539,7 +551,8 @@ export class MySQLClient implements Types.IDBClient {
             };
         }
         catch (e) {
-            // throw e;
+            console.error(e);
+            return false;
         };
     };
 
