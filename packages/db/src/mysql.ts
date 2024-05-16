@@ -460,7 +460,7 @@ export class MySQLClient implements Types.IDBClient {
                     if (!newFields[fieldName.toLowerCase()]) {
                         newFields[fieldName.toLowerCase()] = true;
                         let {primaryKeyName, sql, params} = buildColumn(field, fieldName);
-                        pkName = primaryKeyName;
+                        if (!pkName) pkName = primaryKeyName;
                         if (sql) {
                             columnBuilder.push(sql);
                             if (params) {
