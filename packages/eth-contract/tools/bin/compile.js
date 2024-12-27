@@ -250,7 +250,8 @@ function processOutput(sourceDir, output, outputDir, outputOptions, exclude, inc
                     if (outputBytecode) {
                         file["bytecode"] = bytecode;
                     }
-                    if (Object.keys(linkReferences).length) {
+                    let hasLinkReferences = Object.keys(linkReferences).length;
+                    if (hasLinkReferences) {
                         file["linkReferences"] = linkReferences;
                     }
                     fs.writeFileSync(outputDir + '/' + p + j + '.json.ts', "export default " + prettyPrint(JSON.stringify(file)));
@@ -263,7 +264,7 @@ function processOutput(sourceDir, output, outputDir, outputOptions, exclude, inc
                         hasBatchCall,
                         hasTxData
                     };
-                    let code = codeGen_1.default(j, relPath, abi, options);
+                    let code = codeGen_1.default(j, relPath, abi, hasLinkReferences ? linkReferences : undefined, options);
                     fs.writeFileSync(outputDir + '/' + p + j + '.ts', code);
                     index += `export { ${j} } from \'./${p + j}\';\n`;
                 }

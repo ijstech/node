@@ -5,7 +5,7 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
-function default_1(name, abiPath, abi, options) {
+function default_1(name, abiPath, abi, linkReferences, options) {
     let result = [];
     let events = {};
     let callFunctionNames = [];
@@ -353,17 +353,23 @@ function default_1(name, abiPath, abi, options) {
     };
     const addDeployer = function (abi) {
         let item = abi.find(e => e.type == 'constructor');
+        let argOptions;
+        let input;
+        let deployOptions = linkReferences ? "{...options, linkReferences:Bin.linkReferences}" : "options";
         if (item) {
-            let input = (item.inputs.length > 0) ? `[${toSolidityInput(item)}]` : "[]";
-            addLine(1, `deploy(${inputs(item.name, item)}${payable(item)}): Promise<string>{`);
-            addLine(2, `return this.__deploy(${input}, options);`);
-            addLine(1, `}`);
+            input = (item.inputs.length > 0) ? `[${toSolidityInput(item)}]` : "[]";
+            argOptions = `${inputs(item.name, item)}${payable(item)}`;
         }
         else {
-            addLine(1, `deploy(options?: TransactionOptions): Promise<string>{`);
-            addLine(2, `return this.__deploy([], options);`);
-            addLine(1, `}`);
+            input = "[]";
+            argOptions = "options?: TransactionOptions";
         }
+        if (linkReferences) {
+            argOptions = argOptions.replace("TransactionOptions", "DeployOptions");
+        }
+        addLine(1, `deploy(${argOptions}): Promise<string>{`);
+        addLine(2, `return this.__deploy(${input}, ${deployOptions});`);
+        addLine(1, `}`);
     };
     const addParamsInterface = function (item) {
         let name = item.name;
@@ -391,7 +397,7 @@ function default_1(name, abiPath, abi, options) {
         }
     };
     const hasAbi = options.outputAbi && abi && abi.length;
-    addLine(0, `import {IWallet, Contract as _Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions} from "@ijstech/eth-contract";`);
+    addLine(0, `import {IWallet, Contract as _Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions${linkReferences ? ", DeployOptions as _DeployOptions" : ""}} from "@ijstech/eth-contract";`);
     addLine(0, `import Bin from "${abiPath}${name}.json";`);
     if (abi)
         for (let i = 0; i < abi.length; i++) {
@@ -399,6 +405,12 @@ function default_1(name, abiPath, abi, options) {
                 continue;
             addParamsInterface(abi[i]);
         }
+    if (linkReferences) {
+        let t = `{` +
+            Object.keys(linkReferences).map(file => `"${file}":{` + Object.keys(linkReferences[file]).map(contract => `"${contract}":string`).join(',') + `}`).join(',') +
+            `}`;
+        addLine(0, `export interface DeployOptions extends _DeployOptions {libraries: ${t}}`);
+    }
     addLine(0, `export class ${name} extends _Contract{`);
     if (hasAbi)
         addLine(1, `static _abi: any = Bin.abi;`);

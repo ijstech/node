@@ -234,7 +234,7 @@ function processOutput(sourceDir: string, output:Output, outputDir: string, outp
 
                 let outputBytecode = (outputOptions.bytecode === undefined) ? (!!(bytecode && abi && abi.length)) : (outputOptions.bytecode && bytecode);
                 let outputAbi = (outputOptions.abi === undefined) ? (!!(bytecode && abi && abi.length)) : (outputOptions.abi && abi && abi.length);
-                let linkReferences =output.contracts[i][j].evm?.bytecode?.linkReferences;
+                let linkReferences = output.contracts[i][j].evm?.bytecode?.linkReferences;
 
                 if (outputBytecode || outputAbi) {
                     if (!fs.existsSync(outputDir + '/' + p))
@@ -247,7 +247,8 @@ function processOutput(sourceDir: string, output:Output, outputDir: string, outp
                     if (outputBytecode) {
                         file["bytecode"] = bytecode;
                     }
-                    if (Object.keys(linkReferences).length) {
+                    let hasLinkReferences = Object.keys(linkReferences).length;
+                    if (hasLinkReferences) {
                         file["linkReferences"] = linkReferences;
                     }
                     fs.writeFileSync(outputDir + '/' + p + j +  '.json.ts', "export default " + prettyPrint(JSON.stringify(file)));
@@ -261,7 +262,7 @@ function processOutput(sourceDir: string, output:Output, outputDir: string, outp
                         hasBatchCall,
                         hasTxData
                     }
-                    let code = codeGen(j, relPath, abi, options);
+                    let code = codeGen(j, relPath, abi, hasLinkReferences?linkReferences:undefined, options);
                     fs.writeFileSync(outputDir + '/' + p + j +  '.ts', code);
 
                     index += `export { ${j} } from \'./${p + j}\';\n`;
