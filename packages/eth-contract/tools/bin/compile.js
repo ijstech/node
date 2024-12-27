@@ -223,7 +223,7 @@ function prettyPrint(s) {
     }).join('');
 }
 function processOutput(sourceDir, output, outputDir, outputOptions, exclude, include) {
-    var _a, _b;
+    var _a, _b, _c, _d;
     let index = '';
     if (output.contracts) {
         for (let i in output.contracts) {
@@ -239,6 +239,7 @@ function processOutput(sourceDir, output, outputDir, outputOptions, exclude, inc
                 let bytecode = (_b = (_a = output.contracts[i][j].evm) === null || _a === void 0 ? void 0 : _a.bytecode) === null || _b === void 0 ? void 0 : _b.object;
                 let outputBytecode = (outputOptions.bytecode === undefined) ? (!!(bytecode && abi && abi.length)) : (outputOptions.bytecode && bytecode);
                 let outputAbi = (outputOptions.abi === undefined) ? (!!(bytecode && abi && abi.length)) : (outputOptions.abi && abi && abi.length);
+                let linkReferences = (_d = (_c = output.contracts[i][j].evm) === null || _c === void 0 ? void 0 : _c.bytecode) === null || _d === void 0 ? void 0 : _d.linkReferences;
                 if (outputBytecode || outputAbi) {
                     if (!fs.existsSync(outputDir + '/' + p))
                         fs.mkdirSync(outputDir + '/' + p, { recursive: true });
@@ -248,6 +249,9 @@ function processOutput(sourceDir, output, outputDir, outputOptions, exclude, inc
                     }
                     if (outputBytecode) {
                         file["bytecode"] = bytecode;
+                    }
+                    if (Object.keys(linkReferences).length) {
+                        file["linkReferences"] = linkReferences;
                     }
                     fs.writeFileSync(outputDir + '/' + p + j + '.json.ts', "export default " + prettyPrint(JSON.stringify(file)));
                     let relPath = './';
