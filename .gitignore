@@ -7,4 +7,6 @@ certs
 temp
 packages/ipfs/.nyc_output
 packages/eth-contract/test/compiler/src/
+packages/eth-contract/test/compiler/lib/
+packages/eth-contract/test/compiler/types/
 packages/eth-contract/tools/bin/solcjs/
