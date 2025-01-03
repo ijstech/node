@@ -164,7 +164,7 @@ export class Contract {
     public wallet: IWallet;
     public _abi: any;
     public _bytecode: string;
-    public _linkReferences: LinkReferences
+    public _linkReferences: LinkReferences;
     public _address: string;
     private _events: any;
     public privateKey: string;
@@ -326,9 +326,8 @@ export class Contract {
         return bytecode;
     }
     protected async __deploy(params?:any[], options?:number|BigNumber|DeployOptions): Promise<string>{                        
-        let bytecode = this.getDeployBytecode(options);
         params = params || [];
-        params.unshift(bytecode);
+        params.unshift(this.getDeployBytecode(options));
         let receipt = await this._send('', params, options);
         this.address = receipt.contractAddress;
         return this.address;

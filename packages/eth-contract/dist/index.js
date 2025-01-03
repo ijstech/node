@@ -177,9 +177,8 @@ define("@ijstech/eth-contract", ["require", "exports", "bignumber.js"], function
             return bytecode;
         }
         async __deploy(params, options) {
-            let bytecode = this.getDeployBytecode(options);
             params = params || [];
-            params.unshift(bytecode);
+            params.unshift(this.getDeployBytecode(options));
             let receipt = await this._send('', params, options);
             this.address = receipt.contractAddress;
             return this.address;
