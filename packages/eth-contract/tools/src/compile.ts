@@ -262,7 +262,7 @@ function processOutput(sourceDir: string, output:Output, outputDir: string, outp
                         hasBatchCall,
                         hasTxData
                     }
-                    let code = codeGen(j, relPath, abi, hasLinkReferences?linkReferences:undefined, options);
+                    let code = codeGen(j, relPath, abi, hasLinkReferences?linkReferences:null, options);
                     fs.writeFileSync(outputDir + '/' + p + j +  '.ts', code);
 
                     index += `export { ${j} } from \'./${p + j}\';\n`;

@@ -377,7 +377,6 @@ export default function(name: string, abiPath: string, abi: Item[], linkReferenc
         let item = abi.find(e=>e.type=='constructor');
         let argOptions;
         let input;
-        let deployOptions = linkReferences ? "{...options, linkReferences:Bin.linkReferences}" : "options";
 
         if (item) {
             input = (item.inputs.length > 0) ? `[${toSolidityInput(item)}]` : "[]";
@@ -386,11 +385,11 @@ export default function(name: string, abiPath: string, abi: Item[], linkReferenc
             input = "[]";
             argOptions = "options?: TransactionOptions";
         }
-        if (linkReferences) {
-            argOptions = argOptions.replace("TransactionOptions","DeployOptions")
+        if (hasLinkReferences) {
+            argOptions = argOptions.replace("TransactionOptions","DeployOptions");
         }
         addLine(1, `deploy(${argOptions}): Promise<string>{`);
-        addLine(2, `return this.__deploy(${input}, ${deployOptions});`);
+        addLine(2, `return this.__deploy(${input}, options);`);
         addLine(1, `}`);
     }
     const addParamsInterface = function(item: Item): void {
@@ -419,14 +418,15 @@ export default function(name: string, abiPath: string, abi: Item[], linkReferenc
         } 
     }
     const hasAbi = options.outputAbi && abi && abi.length;
-    addLine(0, `import {IWallet, Contract as _Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions${linkReferences?", DeployOptions as _DeployOptions":""}} from "@ijstech/eth-contract";`);
+    const hasLinkReferences = linkReferences && Object.keys(linkReferences).length;
+    addLine(0, `import {IWallet, Contract as _Contract, Transaction, TransactionReceipt, BigNumber, Event, IBatchRequestObj, TransactionOptions${hasLinkReferences?", DeployOptions as _DeployOptions":""}} from "@ijstech/eth-contract";`);
     addLine(0, `import Bin from "${abiPath}${name}.json";`);
     if (abi)
     for (let i = 0; i < abi.length; i++) {
         if (abi[i].type != 'function' && abi[i].type != 'constructor') continue;
         addParamsInterface(abi[i]);
     }
-    if (linkReferences) {
+    if (hasLinkReferences) {
         let t = `{` + 
         Object.keys(linkReferences).map(file => 
             `"${file}":{` + Object.keys(linkReferences[file]).map(contract => `"${contract}":string`).join(',') + `}`
@@ -438,7 +438,7 @@ export default function(name: string, abiPath: string, abi: Item[], linkReferenc
     if (hasAbi)
         addLine(1, `static _abi: any = Bin.abi;`);
     addLine(1, `constructor(wallet: IWallet, address?: string){`);
-    addLine(2, `super(wallet, address, ${hasAbi ? "Bin.abi" : "undefined"}, ${options.outputBytecode ? "Bin.bytecode" : "undefined"});`);
+    addLine(2, `super(wallet, address, ${hasAbi ? "Bin.abi" : "undefined"}, ${options.outputBytecode ? ("Bin.bytecode" + (hasLinkReferences ? ", Bin.linkReferences" : "")) : "undefined"});`);
     addLine(2, `this.assign()`);
     addLine(1, `}`);
     if (abi && options.outputBytecode)
