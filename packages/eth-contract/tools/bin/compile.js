@@ -264,7 +264,7 @@ function processOutput(sourceDir, output, outputDir, outputOptions, exclude, inc
                         hasBatchCall,
                         hasTxData
                     };
-                    let code = codeGen_1.default(j, relPath, abi, hasLinkReferences ? linkReferences : undefined, options);
+                    let code = codeGen_1.default(j, relPath, abi, hasLinkReferences ? linkReferences : null, options);
                     fs.writeFileSync(outputDir + '/' + p + j + '.ts', code);
                     index += `export { ${j} } from \'./${p + j}\';\n`;
                 }

@@ -134,7 +134,6 @@ export interface TransactionOptions {
     value?: BigNumber | number;
 }
 export interface DeployOptions extends TransactionOptions {
-    linkReferences?: {[file:string]:{[contract:string]:{length:number; start:number;}[]}};
     libraries?: {[file:string]:{[contract:string]:string}};
 }
 export interface EventType{
@@ -155,17 +154,23 @@ export interface EventType{
     name: string
 }
 
-    
+interface LinkReferences {
+    [file:string]: {
+        [contract:string]: {length:number; start:number;}[]
+    }
+};
+
 export class Contract {
     public wallet: IWallet;
     public _abi: any;
-    public _bytecode: any;
+    public _bytecode: string;
+    public _linkReferences: LinkReferences;
     public _address: string;
     private _events: any;
     public privateKey: string;
     private abiHash: string;        
 
-    constructor(wallet: IWallet, address?: string, abi?: any, bytecode?: any) {            
+    constructor(wallet: IWallet, address?: string, abi?: any, bytecode?: string, linkReferences?: LinkReferences) {            
         this.wallet = wallet;
         if (abi)
             this.abiHash = this.wallet.registerAbi(abi);
@@ -174,6 +179,7 @@ export class Contract {
         else
             this._abi = abi            
         this._bytecode = bytecode
+        this._linkReferences = linkReferences;
         if (address)
             this._address = address;
     }    
@@ -302,21 +308,26 @@ export class Contract {
         params = params || [];         
         return await this.wallet._send(this.abiHash, this._address, methodName, params, options);
     }
-    protected async __deploy(params?:any[], options?:number|BigNumber|DeployOptions): Promise<string>{                        
+    getDeployBytecode(options?:number|BigNumber|DeployOptions): string{                   
         let bytecode = this._bytecode;
         let libraries = (<DeployOptions>options)?.libraries;
-        let linkReferences = (<DeployOptions>options)?.linkReferences;
-        if (libraries && linkReferences){
+        if (this._linkReferences){
+            if (!libraries) {
+                throw new Error("libraries not specified")
+            }
             for (let file in libraries) {
                 for (let contract in libraries[file]) {
-                    for (let offset of linkReferences[file][contract]) {
-                        bytecode = bytecode.substring(0, offset.start * 2 + 2) + libraries[file][contract].replace("0x","") + bytecode.substring(offset.start * 2 + 2 + offset.length * 2)
+                    for (let offset of this._linkReferences[file][contract]) {
+                        bytecode = bytecode.substring(0, offset.start * 2 + + (bytecode.startsWith("0x")?2:0)) + libraries[file][contract].replace("0x","") + bytecode.substring(offset.start * 2 + + (bytecode.startsWith("0x")?2:0) + offset.length * 2)
                     }
                 }
             }
         }
+        return bytecode;
+    }
+    protected async __deploy(params?:any[], options?:number|BigNumber|DeployOptions): Promise<string>{                        
         params = params || [];
-        params.unshift(bytecode);
+        params.unshift(this.getDeployBytecode(options));
         let receipt = await this._send('', params, options);
         this.address = receipt.contractAddress;
         return this.address;

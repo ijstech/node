@@ -140,14 +140,6 @@ export interface TransactionOptions {
     value?: BigNumber | number;
 }
 export interface DeployOptions extends TransactionOptions {
-    linkReferences?: {
-        [file: string]: {
-            [contract: string]: {
-                length: number;
-                start: number;
-            }[];
-        };
-    };
     libraries?: {
         [file: string]: {
             [contract: string]: string;
@@ -175,15 +167,24 @@ export interface IContract {
 export interface EventType {
     name: string;
 }
+interface LinkReferences {
+    [file: string]: {
+        [contract: string]: {
+            length: number;
+            start: number;
+        }[];
+    };
+}
 export declare class Contract {
     wallet: IWallet;
     _abi: any;
-    _bytecode: any;
+    _bytecode: string;
+    _linkReferences: LinkReferences;
     _address: string;
     private _events;
     privateKey: string;
     private abiHash;
-    constructor(wallet: IWallet, address?: string, abi?: any, bytecode?: any);
+    constructor(wallet: IWallet, address?: string, abi?: any, bytecode?: string, linkReferences?: LinkReferences);
     at(address: string): Contract;
     set address(value: string);
     get address(): string;
@@ -201,6 +202,7 @@ export declare class Contract {
     protected txData(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
     protected call(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
     private _send;
+    getDeployBytecode(options?: number | BigNumber | DeployOptions): string;
     protected __deploy(params?: any[], options?: number | BigNumber | DeployOptions): Promise<string>;
     protected send(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
     protected _deploy(...params: any[]): Promise<string>;
