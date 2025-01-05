@@ -34,6 +34,7 @@ describe('Plugins', function() {
         let manager = new PackageManager();       
         let pack = await manager.addPackage(Path.join(__dirname, 'packs/router'))
         let script = await manager.getScript(pack.name);        
+        console.dir(script)
         let router = new Router({
             baseUrl: '',
             methods: ['GET'],
