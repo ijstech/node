@@ -149,6 +149,8 @@ declare module "@ijstech/eth-contract" {
     }
     export interface EventType {
         name: string;
+        type: string;
+        components?: EventType[];
     }
     export const nullAddress = "0x0000000000000000000000000000000000000000";
     export interface IContractMethod {
@@ -192,6 +194,7 @@ declare module "@ijstech/eth-contract" {
         protected decodeEvents(receipt: TransactionReceipt): any[];
         protected parseEvents(receipt: TransactionReceipt, eventName: string): Event[];
         get events(): EventType[];
+        private _getInputList;
         protected getAbiEvents(): any;
         protected getAbiTopics(eventNames?: string[]): any[];
         scanEvents(fromBlock: number | {
