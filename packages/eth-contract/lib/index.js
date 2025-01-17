@@ -89,12 +89,15 @@ class Contract {
         }
         return result;
     }
+    _getInputList(inputs) {
+        return "(" + inputs.map(e => e.type.startsWith("tuple") ? (this._getInputList(e.components) + (e.type == "tuple[]" ? "[]" : "")) : e.type).join(",") + ")";
+    }
     getAbiEvents() {
         if (!this._events) {
             this._events = {};
             let events = this._abi.filter(e => e.type == "event");
             for (let i = 0; i < events.length; i++) {
-                let topic = this.wallet.utils.sha3(events[i].name + "(" + events[i].inputs.map(e => e.type == "tuple" ? "(" + (e.components.map(f => f.type)) + ")" : e.type).join(",") + ")");
+                let topic = this.wallet.utils.sha3(events[i].name + this._getInputList(events[i]));
                 this._events[topic] = events[i];
             }
         }

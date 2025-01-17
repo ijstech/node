@@ -148,6 +148,8 @@ export interface DeployOptions extends TransactionOptions {
 }
 export interface EventType {
     name: string;
+    type: string;
+    components?: EventType[];
 }
 export declare const nullAddress = "0x0000000000000000000000000000000000000000";
 export interface IContractMethod {
@@ -191,6 +193,7 @@ export declare class Contract {
     protected decodeEvents(receipt: TransactionReceipt): any[];
     protected parseEvents(receipt: TransactionReceipt, eventName: string): Event[];
     get events(): EventType[];
+    private _getInputList;
     protected getAbiEvents(): any;
     protected getAbiTopics(eventNames?: string[]): any[];
     scanEvents(fromBlock: number | {
