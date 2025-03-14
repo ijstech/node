@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 /*!-----------------------------------------------------------
 * Copyright (c) IJS Technologies. All rights reserved.
-* Released under dual AGPLv3/commercial license
+* Released under dual BSL 1.1/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
 define("crypto", ["require", "exports", "crypto"], function (require, exports, crypto_1) {
@@ -72,7 +72,7 @@ define("crypto", ["require", "exports", "crypto"], function (require, exports, c
 });
 /*!-----------------------------------------------------------
 * Copyright (c) IJS Technologies. All rights reserved.
-* Released under dual AGPLv3/commercial license
+* Released under dual BSL 1.1/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
 define("plugin", ["require", "exports"], function (require, exports) {

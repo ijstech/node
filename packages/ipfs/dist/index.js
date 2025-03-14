@@ -13,7 +13,7 @@ define("types", ["require", "exports"], function (require, exports) {
 });
 /*!-----------------------------------------------------------
 * Copyright (c) IJS Technologies. All rights reserved.
-* Released under dual AGPLv3/commercial license
+* Released under dual BSL 1.1/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
 ;
@@ -3906,7 +3906,7 @@ define("types", ["require", "exports"], function (require, exports) {
 })(this);
 /*!-----------------------------------------------------------
 * Copyright (c) IJS Technologies. All rights reserved.
-* Released under dual AGPLv3/commercial license
+* Released under dual BSL 1.1/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
 define("utils", ["require", "exports", "ipfs", "types"], function (require, exports, ipfs_js_1, types_1) {

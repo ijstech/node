@@ -68,7 +68,7 @@ define("dbClient", ["require", "exports"], function (require, exports) {
 });
 /*!-----------------------------------------------------------
 * Copyright (c) IJS Technologies. All rights reserved.
-* Released under dual AGPLv3/commercial license
+* Released under dual BSL 1.1/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
 define("pdm", ["require", "exports", "dbClient"], function (require, exports, dbClient_1) {
@@ -844,7 +844,7 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
 });
 /*!-----------------------------------------------------------
 * Copyright (c) IJS Technologies. All rights reserved.
-* Released under dual AGPLv3/commercial license
+* Released under dual BSL 1.1/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
 define("@ijstech/pdm", ["require", "exports", "pdm"], function (require, exports, PDM) {

@@ -1,7 +1,7 @@
 "use strict";
 /*!-----------------------------------------------------------
 * Copyright (c) IJS Technologies. All rights reserved.
-* Released under dual AGPLv3/commercial license
+* Released under dual BSL 1.1/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
