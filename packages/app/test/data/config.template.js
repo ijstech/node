@@ -3,6 +3,12 @@ const redis = {
     password: '',
     db: 1
 };
+const mysql = {
+    host: '',
+    user: '',
+    password: '',
+    database: ''
+};
 module.exports ={
     worker: {
         connection: {
@@ -20,12 +26,7 @@ module.exports ={
     },
     plugins: {
         db: {
-            mysql: {
-                host: '',
-                user: '',
-                password: '',
-                database: ''
-            }
+            mysql: mysql
         },
         cache: {
             redis: redis
