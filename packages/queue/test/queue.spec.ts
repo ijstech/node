@@ -18,7 +18,7 @@ describe('Job Queue', function () {
         queue.processJob(async (job)=>{      
             console.dir('## queue: ' + job.id);
             processCount ++; 
-            // await sleep(2);
+            await sleep(2);
             console.dir(job.data);
             return {id: job.id, data: 'ok'}
         });
