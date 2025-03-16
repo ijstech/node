@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = flattenSolidityFile;
 const fs = require("fs");
 const path = require("path");
 const importRegex = /^\s*import\s+(?:"([^"]+)"|'([^']+)')./gm;
@@ -62,4 +63,3 @@ async function flattenSolidityFile(sourcefilePath, targetFilePath) {
     fs.writeFileSync(targetFilePath, sourceCode);
     return sourceCode;
 }
-exports.default = flattenSolidityFile;

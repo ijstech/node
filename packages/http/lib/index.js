@@ -31,7 +31,7 @@ class HttpServer {
         this.options = options;
         this.packageManager = this.options.packageManager;
         if (this.options.worker)
-            this.queue = queue_1.getJobQueue(this.options.worker);
+            this.queue = (0, queue_1.getJobQueue)(this.options.worker);
         if (this.options.domains) {
             for (let domain in this.options.domains) {
                 let packages = this.options.domains[domain];
@@ -43,7 +43,7 @@ class HttpServer {
         ;
         if (this.options.port || this.options.securePort) {
             this.app = new koa_1.default();
-            this.app.use(koa_bodyparser_1.default());
+            this.app.use((0, koa_bodyparser_1.default)());
             this.ciphers = options.ciphers || [
                 "ECDHE-RSA-AES256-SHA384",
                 "DHE-RSA-AES256-SHA384",
@@ -279,7 +279,7 @@ class HttpServer {
                     if (route && params !== false) {
                         if (this.queue) {
                             let jobReq = {
-                                request: plugin_1.RouterRequest(ctx)
+                                request: (0, plugin_1.RouterRequest)(ctx)
                             };
                             let result = await this.queue.createJob(jobReq, true);
                             ctx.set('job-id', result.id);
@@ -328,7 +328,7 @@ class HttpServer {
                             }
                             ;
                             if (plugin && (['DELETE', 'GET', 'POST', 'PUT'].indexOf(ctx.method) >= 0)) {
-                                let request = plugin_1.RouterRequest(ctx);
+                                let request = (0, plugin_1.RouterRequest)(ctx);
                                 if (params === true)
                                     request.params = {};
                                 else {

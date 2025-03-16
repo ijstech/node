@@ -4,7 +4,6 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 
-import { Contract } from '@ijstech/eth-contract';
 import BigNumber from 'bignumber.js';
 export type stringArray = string | _stringArray;
 export interface _stringArray extends Array<stringArray> { }

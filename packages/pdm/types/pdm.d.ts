@@ -56,10 +56,10 @@ export declare class TContext {
     reset(): void;
     save(): Promise<any>;
 }
-declare type QueryOperator = 'like' | '=' | '!=' | '<' | '>' | '>=' | '<=';
-declare type ArrayQueryOperator = 'in';
-declare type RangeQueryOperator = 'between';
-declare type QueryFuncOverload<DT> = {
+type QueryOperator = 'like' | '=' | '!=' | '<' | '>' | '>=' | '<=';
+type ArrayQueryOperator = 'in';
+type RangeQueryOperator = 'between';
+type QueryFuncOverload<DT> = {
     <T extends DT, FieldName extends keyof T>(field: FieldName, op: QueryOperator, value: T[FieldName]): TQueryAndOr<T>;
     <T extends DT, FieldName extends keyof T>(field: FieldName, op: ArrayQueryOperator, value: T[FieldName][]): TQueryAndOr<T>;
     <T extends DT, FieldName extends keyof T>(field: FieldName, op: RangeQueryOperator, valueFrom: T[FieldName], valueTo: T[FieldName]): TQueryAndOr<T>;

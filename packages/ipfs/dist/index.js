@@ -6,7 +6,7 @@ define("types", ["require", "exports"], function (require, exports) {
     (function (CidCode) {
         CidCode[CidCode["DAG_PB"] = 112] = "DAG_PB";
         CidCode[CidCode["RAW"] = 85] = "RAW";
-    })(CidCode = exports.CidCode || (exports.CidCode = {}));
+    })(CidCode || (exports.CidCode = CidCode = {}));
     ;
     ;
     ;
@@ -3912,7 +3912,13 @@ define("types", ["require", "exports"], function (require, exports) {
 define("utils", ["require", "exports", "ipfs", "types"], function (require, exports, ipfs_js_1, types_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.cidToHash = exports.hashFile = exports.hashContent = exports.hashItems = exports.hashChunks = exports.hashChunk = exports.parse = void 0;
+    exports.parse = parse;
+    exports.hashChunk = hashChunk;
+    exports.hashChunks = hashChunks;
+    exports.hashItems = hashItems;
+    exports.hashContent = hashContent;
+    exports.hashFile = hashFile;
+    exports.cidToHash = cidToHash;
     function parse(cid, bytes) {
         let result = ipfs_js_1.default.parse(cid, bytes);
         let links = [];
@@ -3937,7 +3943,6 @@ define("utils", ["require", "exports", "ipfs", "types"], function (require, expo
             bytes: result.bytes
         };
     }
-    exports.parse = parse;
     ;
     ;
     async function hashChunk(data, version) {
@@ -3945,19 +3950,16 @@ define("utils", ["require", "exports", "ipfs", "types"], function (require, expo
             version = 1;
         return ipfs_js_1.default.hashChunk(data, version);
     }
-    exports.hashChunk = hashChunk;
     ;
     async function hashChunks(chunks, version) {
         if (version == undefined)
             version = 1;
         return ipfs_js_1.default.hashChunks(chunks, version);
     }
-    exports.hashChunks = hashChunks;
     ;
     async function hashItems(items, version) {
         return await ipfs_js_1.default.hashItems(items || [], version);
     }
-    exports.hashItems = hashItems;
     ;
     async function hashContent(content, version) {
         if (version == undefined)
@@ -3972,7 +3974,6 @@ define("utils", ["require", "exports", "ipfs", "types"], function (require, expo
         }
         return ipfs_js_1.default.hashContent(content, version);
     }
-    exports.hashContent = hashContent;
     ;
     async function hashFile(file, version) {
         if (version == undefined)
@@ -3996,12 +3997,10 @@ define("utils", ["require", "exports", "ipfs", "types"], function (require, expo
         else
             return this.hashContent(file, version);
     }
-    exports.hashFile = hashFile;
     ;
     function cidToHash(cid) {
         return ipfs_js_1.default.cidToHash(cid);
     }
-    exports.cidToHash = cidToHash;
     ;
 });
 define("fileManager", ["require", "exports", "utils", "types"], function (require, exports, utils_1, types_2) {
@@ -4164,7 +4163,7 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
         }
         ;
         async getCidInfo(cid) {
-            let cidInfo = utils_1.parse(cid);
+            let cidInfo = (0, utils_1.parse)(cid);
             if (cidInfo.code == types_2.CidCode.DAG_PB) {
                 let data = await fetch(`${this.options.endpoint}/stat/${cid}`);
                 if (data.status == 200) {
@@ -4458,9 +4457,9 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
             if (!this._cidInfo) {
                 if (this._isFile) {
                     if (this._fileContent)
-                        this._cidInfo = await utils_1.hashContent(this._fileContent);
+                        this._cidInfo = await (0, utils_1.hashContent)(this._fileContent);
                     else if (this._file)
-                        this._cidInfo = await utils_1.hashFile(this._file);
+                        this._cidInfo = await (0, utils_1.hashFile)(this._file);
                 }
                 else if (this._isFolder) {
                     let items = [];
@@ -4473,7 +4472,7 @@ define("fileManager", ["require", "exports", "utils", "types"], function (requir
                         }
                     }
                     ;
-                    this._cidInfo = await utils_1.hashItems(items);
+                    this._cidInfo = await (0, utils_1.hashItems)(items);
                 }
                 ;
             }

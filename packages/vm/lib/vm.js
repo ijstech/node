@@ -179,8 +179,8 @@ class VM {
             global.referenceToObject = referenceToObject;
         });
         script.runSync(this.context);
-        vmConsole_1.default(this);
-        vmGlobal_1.default(this);
+        (0, vmConsole_1.default)(this);
+        (0, vmGlobal_1.default)(this);
     }
     ;
     injectGlobalObject(name, obj, script) {

@@ -8,7 +8,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cidToHash = exports.hashFile = exports.hashContent = exports.hashItems = exports.hashChunks = exports.hashChunk = exports.parse = void 0;
+exports.parse = parse;
+exports.hashChunk = hashChunk;
+exports.hashChunks = hashChunks;
+exports.hashItems = hashItems;
+exports.hashContent = hashContent;
+exports.hashFile = hashFile;
+exports.cidToHash = cidToHash;
 const ipfs_js_1 = __importDefault(require("./ipfs.js"));
 const types_1 = require("./types");
 function parse(cid, bytes) {
@@ -35,7 +41,6 @@ function parse(cid, bytes) {
         bytes: result.bytes
     };
 }
-exports.parse = parse;
 ;
 ;
 async function hashChunk(data, version) {
@@ -43,19 +48,16 @@ async function hashChunk(data, version) {
         version = 1;
     return ipfs_js_1.default.hashChunk(data, version);
 }
-exports.hashChunk = hashChunk;
 ;
 async function hashChunks(chunks, version) {
     if (version == undefined)
         version = 1;
     return ipfs_js_1.default.hashChunks(chunks, version);
 }
-exports.hashChunks = hashChunks;
 ;
 async function hashItems(items, version) {
     return await ipfs_js_1.default.hashItems(items || [], version);
 }
-exports.hashItems = hashItems;
 ;
 async function hashContent(content, version) {
     if (version == undefined)
@@ -70,7 +72,6 @@ async function hashContent(content, version) {
     }
     return ipfs_js_1.default.hashContent(content, version);
 }
-exports.hashContent = hashContent;
 ;
 async function hashFile(file, version) {
     if (version == undefined)
@@ -94,10 +95,8 @@ async function hashFile(file, version) {
     else
         return this.hashContent(file, version);
 }
-exports.hashFile = hashFile;
 ;
 function cidToHash(cid) {
     return ipfs_js_1.default.cidToHash(cid);
 }
-exports.cidToHash = cidToHash;
 ;

@@ -5,6 +5,7 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = default_1;
 function default_1(name, abiPath, abi, linkReferences, options) {
     let result = [];
     let events = {};
@@ -183,7 +184,7 @@ function default_1(name, abiPath, abi, linkReferences, options) {
     const returnOutputsItem = function (item, isEvent, objPath, indent) {
         let newLines;
         if (item.type == 'tuple') {
-            newLines = [{ indent: indent, text: "" },
+            newLines = [{ indent: indent, text: "" }, // reserved for "[name]:" or "{name:"
                 ...returnOutputs(item.components, false, isEvent, objPath, indent),
                 { indent: indent, text: "" }]; // reserved for "}"
         }
@@ -476,4 +477,3 @@ function default_1(name, abiPath, abi, linkReferences, options) {
     }
     return result.join('\n');
 }
-exports.default = default_1;

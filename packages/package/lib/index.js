@@ -3,7 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PackageManager = exports.Package = exports.matchRoute = void 0;
+exports.PackageManager = exports.Package = void 0;
+exports.matchRoute = matchRoute;
 const tsc_1 = require("@ijstech/tsc");
 const storage_1 = require("@ijstech/storage");
 const fs_1 = require("fs");
@@ -18,7 +19,7 @@ function matchRoute(pack, route, url) {
         return true;
     if (!route._match) {
         let keys = [];
-        route._match = pathToRegexp_1.match(pack.baseUrl + route.url);
+        route._match = (0, pathToRegexp_1.match)(pack.baseUrl + route.url);
     }
     let result = route._match(url);
     if (result === false)
@@ -26,7 +27,6 @@ function matchRoute(pack, route, url) {
     else
         return Object.assign({}, result.params);
 }
-exports.matchRoute = matchRoute;
 ;
 ;
 ;

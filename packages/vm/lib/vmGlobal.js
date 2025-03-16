@@ -5,6 +5,7 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = loadModule;
 function loadModule(vm) {
     vm.injectGlobalFunction('sleep', sleep);
     vm.injectGlobalScript(`global.setTimeout = async (callback, timeout)=>{
@@ -12,7 +13,6 @@ function loadModule(vm) {
         callback();
     };`);
 }
-exports.default = loadModule;
 function sleep(timeout) {
     return new Promise((resolve) => {
         setTimeout(() => {

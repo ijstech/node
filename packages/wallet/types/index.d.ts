@@ -8,7 +8,7 @@ import { IWorker } from '@ijstech/types';
 import { IWalletRequiredPluginOptions } from '@ijstech/types';
 declare const _default: IWallet;
 export default _default;
-export declare type stringArray = string | _stringArray;
+export type stringArray = string | _stringArray;
 export interface _stringArray extends Array<stringArray> {
 }
 export declare function loadPlugin(worker: IWorker, options: IWalletRequiredPluginOptions): Promise<string | IWallet>;

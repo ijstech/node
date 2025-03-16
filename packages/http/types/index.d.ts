@@ -3,7 +3,6 @@
 * Released under dual BSL 1.1/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-/// <reference types="node" />
 import Koa from 'koa';
 import Tls from 'tls';
 import { IRouterPluginOptions } from '@ijstech/plugin';

@@ -5,7 +5,7 @@ var CidCode;
 (function (CidCode) {
     CidCode[CidCode["DAG_PB"] = 112] = "DAG_PB";
     CidCode[CidCode["RAW"] = 85] = "RAW";
-})(CidCode = exports.CidCode || (exports.CidCode = {}));
+})(CidCode || (exports.CidCode = CidCode = {}));
 ;
 ;
 ;

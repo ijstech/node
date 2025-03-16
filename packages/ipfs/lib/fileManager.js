@@ -159,7 +159,7 @@ class FileManagerHttpTransport {
     }
     ;
     async getCidInfo(cid) {
-        let cidInfo = utils_1.parse(cid);
+        let cidInfo = (0, utils_1.parse)(cid);
         if (cidInfo.code == types_1.CidCode.DAG_PB) {
             let data = await fetch(`${this.options.endpoint}/stat/${cid}`);
             if (data.status == 200) {
@@ -453,9 +453,9 @@ class FileNode {
         if (!this._cidInfo) {
             if (this._isFile) {
                 if (this._fileContent)
-                    this._cidInfo = await utils_1.hashContent(this._fileContent);
+                    this._cidInfo = await (0, utils_1.hashContent)(this._fileContent);
                 else if (this._file)
-                    this._cidInfo = await utils_1.hashFile(this._file);
+                    this._cidInfo = await (0, utils_1.hashFile)(this._file);
             }
             else if (this._isFolder) {
                 let items = [];
@@ -468,7 +468,7 @@ class FileNode {
                     }
                 }
                 ;
-                this._cidInfo = await utils_1.hashItems(items);
+                this._cidInfo = await (0, utils_1.hashItems)(items);
             }
             ;
         }

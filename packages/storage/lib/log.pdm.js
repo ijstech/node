@@ -13,6 +13,7 @@ exports.Context = exports.StorageUploadItem = exports.StorageUploadLog = void 0;
 const pdm_1 = __importDefault(require("@ijstech/pdm"));
 class StorageUploadLog extends pdm_1.default.TRecord {
 }
+exports.StorageUploadLog = StorageUploadLog;
 __decorate([
     pdm_1.default.KeyField()
 ], StorageUploadLog.prototype, "guid", void 0);
@@ -25,9 +26,9 @@ __decorate([
 __decorate([
     pdm_1.default.IntegerField()
 ], StorageUploadLog.prototype, "size", void 0);
-exports.StorageUploadLog = StorageUploadLog;
 class StorageUploadItem extends pdm_1.default.TRecord {
 }
+exports.StorageUploadItem = StorageUploadItem;
 __decorate([
     pdm_1.default.KeyField()
 ], StorageUploadItem.prototype, "guid", void 0);
@@ -46,15 +47,14 @@ __decorate([
 __decorate([
     pdm_1.default.IntegerField()
 ], StorageUploadItem.prototype, "type", void 0);
-exports.StorageUploadItem = StorageUploadItem;
 class Context extends pdm_1.default.TContext {
 }
+exports.Context = Context;
 __decorate([
     pdm_1.default.RecordSet('scom_storage_upload_log', StorageUploadLog)
 ], Context.prototype, "uploadLog", void 0);
 __decorate([
     pdm_1.default.RecordSet('scom_storage_upload_item', StorageUploadItem)
 ], Context.prototype, "uploadItem", void 0);
-exports.Context = Context;
 ;
 exports.default = Context;

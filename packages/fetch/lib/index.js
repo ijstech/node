@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loadPlugin = exports.Fetch = void 0;
+exports.Fetch = void 0;
+exports.loadPlugin = loadPlugin;
 exports.Fetch = {
     async get(url, data) {
         let result = await fetch(url, data);
@@ -64,5 +65,4 @@ function loadPlugin(worker, options) {
     else
         global['$$fetch_plugin'] = exports.Fetch;
 }
-exports.loadPlugin = loadPlugin;
 ;

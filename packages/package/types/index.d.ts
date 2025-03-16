@@ -88,7 +88,7 @@ export interface IPackageOptions {
     storage?: IStorageOptions;
     packages?: IPackages;
 }
-export declare type PackageImporter = (packageName: string, version?: string) => Promise<Package>;
+export type PackageImporter = (packageName: string, version?: string) => Promise<Package>;
 export interface IPackageScript {
     errors?: any[];
     script?: string;

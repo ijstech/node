@@ -3,7 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hashDir = exports.hashFile = void 0;
+exports.hashFile = hashFile;
+exports.hashDir = hashDir;
 const ipfs_js_1 = __importDefault(require("./ipfs.js"));
 const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
@@ -13,7 +14,7 @@ async function hashFile(file, options) {
     if (options?.version === 0)
         version = 0;
     if (file instanceof Uint8Array) {
-        return utils_1.hashContent(file, version);
+        return (0, utils_1.hashContent)(file, version);
     }
     else {
         let size;
@@ -31,15 +32,14 @@ async function hashFile(file, options) {
         ;
         if (version == 1) {
             let chunkSize = options?.chunkSize || 1048576;
-            fileStream = fs_1.createReadStream(file, { highWaterMark: chunkSize });
+            fileStream = (0, fs_1.createReadStream)(file, { highWaterMark: chunkSize });
         }
         else
-            fileStream = fs_1.createReadStream(file, { highWaterMark: 262144 });
+            fileStream = (0, fs_1.createReadStream)(file, { highWaterMark: 262144 });
         return ipfs_js_1.default.hashContent(fileStream, version);
     }
     ;
 }
-exports.hashFile = hashFile;
 ;
 async function hashDir(dirPath, version) {
     if (version == undefined)
@@ -68,7 +68,6 @@ async function hashDir(dirPath, version) {
         }
     }
     ;
-    return await utils_1.hashItems(items, version);
+    return await (0, utils_1.hashItems)(items, version);
 }
-exports.hashDir = hashDir;
 ;

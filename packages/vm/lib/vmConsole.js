@@ -5,10 +5,10 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = loadModule;
 function loadModule(vm) {
     return vm.injectGlobalObject('console', vmConsole(vm));
 }
-exports.default = loadModule;
 ;
 function vmConsole(vm) {
     return {

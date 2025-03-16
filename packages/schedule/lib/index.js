@@ -5,19 +5,19 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Scheduler = exports.parseCron = void 0;
+exports.Scheduler = void 0;
+exports.parseCron = parseCron;
 const plugin_1 = require("@ijstech/plugin");
 const cron_parser_1 = require("cron-parser");
 const package_1 = require("@ijstech/package");
 const queue_1 = require("@ijstech/queue");
 function parseCron(expression) {
-    let cron = cron_parser_1.parseExpression(expression);
+    let cron = (0, cron_parser_1.parseExpression)(expression);
     if (cron.hasNext())
         return new Date(cron.next().getTime());
     else
         return new Date('9999-01-01');
 }
-exports.parseCron = parseCron;
 ;
 ;
 ;

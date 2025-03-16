@@ -49,7 +49,7 @@ export interface IGraphClient {
 export interface IDBConnection {
     url: string;
 }
-export declare type TableIndexType = 'UNIQUE' | 'NON_UNIQUE';
+export type TableIndexType = 'UNIQUE' | 'NON_UNIQUE';
 export interface ITableIndexProps {
     name: string;
     columns: string[];

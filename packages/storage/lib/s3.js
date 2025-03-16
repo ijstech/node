@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -11,13 +15,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -157,7 +171,7 @@ class S3 {
             });
             let result = await this.s3.send(command);
             if (result.Body) {
-                await promises_1.pipeline(result.Body, fs_1.createWriteStream(targetFilePath));
+                await (0, promises_1.pipeline)(result.Body, (0, fs_1.createWriteStream)(targetFilePath));
                 return true;
             }
             ;
@@ -169,7 +183,7 @@ class S3 {
     }
     ;
     getObjectSignedUrl(key, options) {
-        return s3_request_presigner_1.getSignedUrl(this.s3, new client_s3_1.GetObjectCommand({ Bucket: this.options.bucket, Key: key }), { expiresIn: options?.expiresInSeconds || 3600 });
+        return (0, s3_request_presigner_1.getSignedUrl)(this.s3, new client_s3_1.GetObjectCommand({ Bucket: this.options.bucket, Key: key }), { expiresIn: options?.expiresInSeconds || 3600 });
     }
     ;
     async moveObject(fromKey, toKey) {
@@ -236,7 +250,7 @@ class S3 {
     }
     ;
     putObjectSignedUrl(key, options) {
-        return s3_request_presigner_1.getSignedUrl(this.s3, new client_s3_1.PutObjectCommand({
+        return (0, s3_request_presigner_1.getSignedUrl)(this.s3, new client_s3_1.PutObjectCommand({
             Bucket: this.options.bucket,
             Key: key,
             ContentType: mime_1.default.getType(key) || 'application/octet-stream',
@@ -248,7 +262,7 @@ class S3 {
     }
     ;
     putObjectFrom(key, filePath, progressCallback) {
-        let fileStream = fs_1.createReadStream(filePath);
+        let fileStream = (0, fs_1.createReadStream)(filePath);
         let params = { Bucket: this.options.bucket, Key: key, ContentType: mime_1.default.getType(filePath), Body: fileStream };
         let upload = new lib_storage_1.Upload({
             client: this.s3,

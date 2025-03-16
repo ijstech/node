@@ -8,7 +8,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PluginScript = exports.WalletPluginCompiler = exports.PluginCompiler = exports.Compiler = exports.resolveAbsolutePath = exports.resolveFilePath = void 0;
+exports.WalletPluginCompiler = exports.PluginCompiler = exports.Compiler = void 0;
+exports.resolveFilePath = resolveFilePath;
+exports.resolveAbsolutePath = resolveAbsolutePath;
+exports.PluginScript = PluginScript;
 const fs_1 = __importDefault(require("fs"));
 const typescript_1 = __importDefault(require("typescript"));
 const path_1 = __importDefault(require("path"));
@@ -41,7 +44,6 @@ function resolveFilePath(rootPaths, filePath, allowsOutsideRootPath) {
     else
         throw new Error('Invalid file path!');
 }
-exports.resolveFilePath = resolveFilePath;
 ;
 function getLib(fileName) {
     if (!Libs[fileName]) {
@@ -123,7 +125,6 @@ function resolveAbsolutePath(baseFilePath, relativeFilePath) {
     }, [])
         .join('/');
 }
-exports.resolveAbsolutePath = resolveAbsolutePath;
 ;
 class Compiler {
     constructor() {
@@ -540,5 +541,4 @@ async function PluginScript(plugin) {
         dependencies: result.dependencies
     };
 }
-exports.PluginScript = PluginScript;
 ;

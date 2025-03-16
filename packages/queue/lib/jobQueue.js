@@ -8,7 +8,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getJobQueue = exports.JobQueue = void 0;
+exports.JobQueue = void 0;
+exports.getJobQueue = getJobQueue;
 const bee_queue_1 = __importDefault(require("./bee-queue"));
 ;
 let Queues = {};
@@ -77,5 +78,4 @@ function getJobQueue(options) {
         Queues[id] = new JobQueue(options);
     return Queues[id];
 }
-exports.getJobQueue = getJobQueue;
 ;

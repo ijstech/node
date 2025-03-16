@@ -5,7 +5,8 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loadPlugin = exports.getClient = void 0;
+exports.getClient = getClient;
+exports.loadPlugin = loadPlugin;
 const local_1 = require("./local");
 const redis_1 = require("./redis");
 let Clients = {};
@@ -23,7 +24,6 @@ function getClient(options) {
         return Clients[id];
     }
 }
-exports.getClient = getClient;
 ;
 function loadPlugin(plugin, options, vm) {
     const resolveKey = (key) => {
@@ -65,6 +65,5 @@ function loadPlugin(plugin, options, vm) {
         }
     };
 }
-exports.loadPlugin = loadPlugin;
 ;
 exports.default = loadPlugin;

@@ -33,7 +33,7 @@ export interface IPackage {
     };
 }
 export declare function resolveAbsolutePath(baseFilePath: string, relativeFilePath: string): string;
-export declare type FileImporter = (fileName: string, isPackage?: boolean) => Promise<{
+export type FileImporter = (fileName: string, isPackage?: boolean) => Promise<{
     fileName: string;
     script: string;
     dts?: string;

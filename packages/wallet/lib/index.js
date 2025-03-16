@@ -5,7 +5,7 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loadPlugin = void 0;
+exports.loadPlugin = loadPlugin;
 const eth_wallet_1 = require("@ijstech/eth-wallet");
 function getWalletPlugin() {
     return global.$$wallet_plugin;
@@ -232,5 +232,4 @@ async function loadPlugin(worker, options) {
     else
         return wallet;
 }
-exports.loadPlugin = loadPlugin;
 ;

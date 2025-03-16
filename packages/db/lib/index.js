@@ -5,7 +5,8 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loadPlugin = exports.getClient = void 0;
+exports.getClient = getClient;
+exports.loadPlugin = loadPlugin;
 const mysql_1 = require("./mysql");
 let Clients = {};
 ;
@@ -26,7 +27,6 @@ function getClient(options) {
     }
     ;
 }
-exports.getClient = getClient;
 ;
 function getPluginClient(vm, db, client) {
     let name = '$$plugin_db_' + db;
@@ -90,6 +90,5 @@ function loadPlugin(plugin, options, vm) {
         }
     };
 }
-exports.loadPlugin = loadPlugin;
 ;
 exports.default = loadPlugin;

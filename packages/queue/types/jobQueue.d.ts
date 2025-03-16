@@ -5,7 +5,7 @@
 *-----------------------------------------------------------*/
 import Queue from './bee-queue';
 import * as Types from '@ijstech/types';
-declare type Job = Queue.Job<any>;
+type Job = Queue.Job<any>;
 export { Job };
 export interface IJobQueueOptions extends Types.IPluginOptions {
     jobQueue: string;

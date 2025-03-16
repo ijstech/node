@@ -126,7 +126,7 @@ export class VM {
             let ivm = global._ivm;            
             delete global._ivm;        
             global._$$modules = {};            
-            global.define = function(id, deps, callback){      
+            global.define = function(id, deps, callback){   
                 if (typeof(id) == 'function'){
                     callback = id;
                     global._$$modules[global['$$currPackName']] = callback();
@@ -243,7 +243,7 @@ export class VM {
         }`);
         s.runSync(this.context);
     };
-    injectGlobalScript(script: string) {        
+    injectGlobalScript(script: string) {   
         this.isolate.compileScriptSync(script).runSync(this.context);
     };    
     get script(): string{

@@ -1,6 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.pathToRegexp = exports.tokensToRegexp = exports.regexpToFunction = exports.match = exports.tokensToFunction = exports.compile = exports.parse = void 0;
+exports.parse = parse;
+exports.compile = compile;
+exports.tokensToFunction = tokensToFunction;
+exports.match = match;
+exports.regexpToFunction = regexpToFunction;
+exports.tokensToRegexp = tokensToRegexp;
+exports.pathToRegexp = pathToRegexp;
 function lexer(str) {
     const tokens = [];
     let i = 0;
@@ -161,11 +167,9 @@ function parse(str, options = {}) {
     }
     return result;
 }
-exports.parse = parse;
 function compile(str, options) {
     return tokensToFunction(parse(str, options), options);
 }
-exports.compile = compile;
 function tokensToFunction(tokens, options = {}) {
     const reFlags = flags(options);
     const { encode = (x) => x, validate = true } = options;
@@ -219,13 +223,11 @@ function tokensToFunction(tokens, options = {}) {
         return path;
     };
 }
-exports.tokensToFunction = tokensToFunction;
 function match(str, options) {
     const keys = [];
     const re = pathToRegexp(str, keys, options);
     return regexpToFunction(re, keys, options);
 }
-exports.match = match;
 function regexpToFunction(re, keys, options = {}) {
     const { decode = (x) => x } = options;
     return function (pathname) {
@@ -250,7 +252,6 @@ function regexpToFunction(re, keys, options = {}) {
         return { path, index, params };
     };
 }
-exports.regexpToFunction = regexpToFunction;
 function escapeString(str) {
     return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
 }
@@ -339,7 +340,6 @@ function tokensToRegexp(tokens, keys, options = {}) {
     }
     return new RegExp(route, flags(options));
 }
-exports.tokensToRegexp = tokensToRegexp;
 function pathToRegexp(path, keys, options) {
     if (path instanceof RegExp)
         return regexpToRegexp(path, keys);
@@ -347,4 +347,3 @@ function pathToRegexp(path, keys, options) {
         return arrayToRegexp(path, keys, options);
     return stringToRegexp(path, keys, options);
 }
-exports.pathToRegexp = pathToRegexp;

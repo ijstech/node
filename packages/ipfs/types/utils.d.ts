@@ -3,7 +3,6 @@
 * Released under dual BSL 1.1/commercial license
 * https://ijs.network
 *-----------------------------------------------------------*/
-/// <reference types="node" />
 import { ICidData, ICidInfo } from './types';
 export declare function parse(cid: string, bytes?: Uint8Array): ICidData;
 export interface IHashChunk {

@@ -4,7 +4,7 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 import BigNumber from 'bignumber.js';
-export declare type stringArray = string | _stringArray;
+export type stringArray = string | _stringArray;
 export interface _stringArray extends Array<stringArray> {
 }
 export interface IWalletNetwork {

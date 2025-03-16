@@ -5,7 +5,8 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loadPlugin = exports.Message = void 0;
+exports.Message = void 0;
+exports.loadPlugin = loadPlugin;
 const redis_1 = require("redis");
 let RedisClients = {};
 ;
@@ -69,5 +70,4 @@ function loadPlugin(worker, options) {
         }
     };
 }
-exports.loadPlugin = loadPlugin;
 ;

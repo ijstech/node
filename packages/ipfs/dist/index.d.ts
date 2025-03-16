@@ -1,4 +1,3 @@
-/// <reference types="node" />
 declare module "types" {
     export enum CidCode {
         DAG_PB = 112,

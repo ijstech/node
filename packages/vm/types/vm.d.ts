@@ -16,7 +16,7 @@ export interface IVMOptions {
     token?: string;
     script?: string;
 }
-export declare type Events = 'reset' | 'error' | 'start' | 'timeout' | 'end';
+export type Events = 'reset' | 'error' | 'start' | 'timeout' | 'end';
 export declare let DefaultTimeLimit: number;
 export declare let DefaultRamLimit: number;
 export declare let DefaultLogging: boolean;

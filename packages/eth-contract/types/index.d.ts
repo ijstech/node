@@ -6,7 +6,7 @@
 /// <amd-module name="@ijstech/eth-contract" />
 import { BigNumber } from "bignumber.js";
 export { BigNumber };
-declare type stringArray = string | _stringArray;
+type stringArray = string | _stringArray;
 interface _stringArray extends Array<stringArray> {
 }
 export interface IWalletUtils {

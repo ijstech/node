@@ -14,7 +14,7 @@ export interface IStorageOptions {
     };
     log?: IDbConnectionOptions;
 }
-export declare type IItemType = 'stat' | 'ipfs' | 'tmp';
+export type IItemType = 'stat' | 'ipfs' | 'tmp';
 export declare class Storage {
     private options;
     s3: S3;

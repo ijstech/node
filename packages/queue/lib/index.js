@@ -5,7 +5,8 @@
 * https://ijs.network
 *-----------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loadPlugin = exports.Queue = exports.JobQueue = exports.getJobQueue = void 0;
+exports.Queue = exports.JobQueue = exports.getJobQueue = void 0;
+exports.loadPlugin = loadPlugin;
 const plugin_1 = require("@ijstech/plugin");
 const message_1 = require("@ijstech/message");
 const jobQueue_1 = require("./jobQueue");
@@ -56,7 +57,7 @@ class Queue {
     runWorker(worker) {
         if (!worker.plugin)
             worker.plugin = new plugin_1.Worker(worker);
-        worker.queue = jobQueue_1.getJobQueue(worker);
+        worker.queue = (0, jobQueue_1.getJobQueue)(worker);
         if (worker.plugins && worker.plugins.message) {
             worker.message = new message_1.Message(worker.plugin, worker.plugins.message);
         }
@@ -76,7 +77,7 @@ class Queue {
             return;
         this.started = true;
         if (this.options.jobQueue && !this.options.disabled && this.options.connection) {
-            this.queue = jobQueue_1.getJobQueue({
+            this.queue = (0, jobQueue_1.getJobQueue)({
                 connection: this.options.connection,
                 jobQueue: this.options.jobQueue
             });
@@ -157,7 +158,7 @@ class Queue {
                         if (plugin) {
                             let result = {};
                             request.params = params;
-                            await plugin.route(null, plugin_1.RouterRequest(request), plugin_1.RouterResponse(result));
+                            await plugin.route(null, (0, plugin_1.RouterRequest)(request), (0, plugin_1.RouterResponse)(result));
                             return result;
                         }
                         ;
@@ -206,7 +207,7 @@ function loadPlugin(plugin, options, vm) {
             if (typeof (queue) == 'number')
                 queue = options.queues[queue];
             if (queue && options.queues.indexOf(queue) >= 0) {
-                let q = jobQueue_1.getJobQueue({
+                let q = (0, jobQueue_1.getJobQueue)({
                     jobQueue: queue,
                     connection: options.connection
                 });
@@ -223,6 +224,5 @@ function loadPlugin(plugin, options, vm) {
         }
     };
 }
-exports.loadPlugin = loadPlugin;
 ;
 exports.default = loadPlugin;

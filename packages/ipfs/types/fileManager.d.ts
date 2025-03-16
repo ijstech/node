@@ -28,7 +28,7 @@ export interface IUploadEndpoints {
         };
     };
 }
-export declare type IGetUploadUrlResult = {
+export type IGetUploadUrlResult = {
     success: true;
     data: IUploadEndpoints;
 };

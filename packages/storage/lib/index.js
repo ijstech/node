@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -11,13 +15,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -41,11 +55,11 @@ async function download(url, dest) {
     return new Promise((resolve, reject) => {
         const request = https_1.default.get(url, response => {
             if (response.statusCode === 200) {
-                const file = fs_1.createWriteStream(dest);
+                const file = (0, fs_1.createWriteStream)(dest);
                 file.on('finish', () => resolve(''));
                 file.on('error', err => {
                     file.close();
-                    fs_1.unlink(dest, () => reject(err.message));
+                    (0, fs_1.unlink)(dest, () => reject(err.message));
                 });
                 response.pipe(file);
             }
@@ -148,8 +162,8 @@ class Storage {
     ;
     moveFile(sourcePath, destPath) {
         return new Promise((resolve, reject) => {
-            const readStream = fs_1.createReadStream(sourcePath);
-            const writeStream = fs_1.createWriteStream(destPath);
+            const readStream = (0, fs_1.createReadStream)(sourcePath);
+            const writeStream = (0, fs_1.createWriteStream)(destPath);
             readStream.on('error', err => {
                 reject(err);
             });
@@ -292,7 +306,7 @@ class Storage {
         if (!to || to.s3 != false) {
             let logContext;
             if (this.options.log) {
-                let client = db_1.getClient(this.options.log);
+                let client = (0, db_1.getClient)(this.options.log);
                 logContext = new log_pdm_1.Context(client);
                 let log = logContext.uploadLog.add();
                 log.source = source;
@@ -336,7 +350,7 @@ class Storage {
         if (!to || to.s3 != false) {
             let logContext;
             if (this.options.log) {
-                let client = db_1.getClient(this.options.log);
+                let client = (0, db_1.getClient)(this.options.log);
                 logContext = new log_pdm_1.Context(client);
                 let log = logContext.uploadLog.add();
                 log.source = source;
@@ -456,7 +470,7 @@ class Storage {
         });
         let logContext;
         if (this.options.log) {
-            let client = db_1.getClient(this.options.log);
+            let client = (0, db_1.getClient)(this.options.log);
             logContext = new log_pdm_1.Context(client);
             let log = logContext.uploadLog.add();
             log.source = source;
@@ -486,7 +500,7 @@ class Storage {
         if (!to || to.s3 != false) {
             let logContext;
             if (this.options.log) {
-                let client = db_1.getClient(this.options.log);
+                let client = (0, db_1.getClient)(this.options.log);
                 logContext = new log_pdm_1.Context(client);
                 let log = logContext.uploadLog.add();
                 log.source = source;
@@ -507,7 +521,7 @@ class Storage {
         if (!exists) {
             if (item.code == IPFSUtils.CidCode.DAG_PB) {
                 if (item.type == 'file') {
-                    let fileStream = fs_1.createReadStream(sourcePath, { highWaterMark: 1048576 });
+                    let fileStream = (0, fs_1.createReadStream)(sourcePath, { highWaterMark: 1048576 });
                     let idx = 0;
                     for await (const data of fileStream) {
                         let chunk = item.links[idx];
@@ -563,7 +577,7 @@ class Storage {
         let id = crypto_1.default.randomUUID();
         let tmpDir = await fs_1.promises.mkdtemp(path_1.default.join(os_1.default.tmpdir(), appPrefix));
         let dir = `${tmpDir}/${id}`;
-        fs_1.mkdirSync(dir);
+        (0, fs_1.mkdirSync)(dir);
         try {
             let targetDir = `${dir}/dir`;
             let targetFile = `${dir}/file.zip`;
@@ -572,7 +586,7 @@ class Storage {
                 pinDir = path_1.default.join(pinDir, sourceDir);
             let url = `https://github.com/${repo.org}/${repo.repo}/archive/${repo.commit}.zip`;
             await download(url, targetFile);
-            await extract_zip_1.default(targetFile, { dir: targetDir });
+            await (0, extract_zip_1.default)(targetFile, { dir: targetDir });
             let name = `${repo.org}/${repo.repo}/${repo.commit}`;
             let result = await this.putDir(pinDir, to, name);
             return result;

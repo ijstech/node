@@ -1,6 +1,10 @@
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -10,13 +14,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 define("types", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -74,7 +88,20 @@ define("dbClient", ["require", "exports"], function (require, exports) {
 define("pdm", ["require", "exports", "dbClient"], function (require, exports, dbClient_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.OneToMany = exports.BlobField = exports.TimeField = exports.DateTimeField = exports.DateField = exports.BooleanField = exports.IntegerField = exports.DecimalField = exports.StringField = exports.RefTo = exports.KeyField = exports.Index = exports.RecordSet = exports.TRecordSet = exports.TRecord = exports.TContext = exports.DBClient = void 0;
+    exports.TRecordSet = exports.TRecord = exports.TContext = exports.DBClient = void 0;
+    exports.RecordSet = RecordSet;
+    exports.Index = Index;
+    exports.KeyField = KeyField;
+    exports.RefTo = RefTo;
+    exports.StringField = StringField;
+    exports.DecimalField = DecimalField;
+    exports.IntegerField = IntegerField;
+    exports.BooleanField = BooleanField;
+    exports.DateField = DateField;
+    exports.DateTimeField = DateTimeField;
+    exports.TimeField = TimeField;
+    exports.BlobField = BlobField;
+    exports.OneToMany = OneToMany;
     Object.defineProperty(exports, "DBClient", { enumerable: true, get: function () { return dbClient_1.DBClient; } });
     function generateUUID() {
         var d = new Date().getTime();
@@ -696,7 +723,6 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             };
         };
     }
-    exports.RecordSet = RecordSet;
     ;
     function Index(indexProps) {
         return function (target) {
@@ -709,7 +735,6 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             };
         };
     }
-    exports.Index = Index;
     function KeyField(fieldType) {
         return function (target, propName) {
             fieldType = fieldType || {};
@@ -719,7 +744,6 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             target['$$fields'][propName] = fieldType;
         };
     }
-    exports.KeyField = KeyField;
     function RefTo(record, field) {
         return function (target, propName) {
             let fieldType = {
@@ -731,7 +755,6 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             target['$$fields'][propName] = fieldType;
         };
     }
-    exports.RefTo = RefTo;
     function StringField(fieldType) {
         return function (target, propName) {
             fieldType = fieldType || {};
@@ -742,7 +765,6 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             target['$$fields'][propName] = fieldType;
         };
     }
-    exports.StringField = StringField;
     ;
     function DecimalField(fieldType) {
         return function (target, propName) {
@@ -759,7 +781,6 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             target['$$fields'][propName] = fieldType;
         };
     }
-    exports.DecimalField = DecimalField;
     ;
     function IntegerField(fieldType) {
         return function (target, propName) {
@@ -776,7 +797,6 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             target['$$fields'][propName] = fieldType;
         };
     }
-    exports.IntegerField = IntegerField;
     ;
     function BooleanField(fieldType) {
         return function (target, propName) {
@@ -787,7 +807,6 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             target['$$fields'][propName] = fieldType;
         };
     }
-    exports.BooleanField = BooleanField;
     ;
     function DateField(fieldType) {
         return function (target, propName) {
@@ -798,7 +817,6 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             target['$$fields'][propName] = fieldType;
         };
     }
-    exports.DateField = DateField;
     ;
     function DateTimeField(fieldType) {
         return function (target, propName) {
@@ -809,7 +827,6 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             target['$$fields'][propName] = fieldType;
         };
     }
-    exports.DateTimeField = DateTimeField;
     ;
     function TimeField(fieldType) {
         return function (target, propName) {
@@ -820,7 +837,6 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             target['$$fields'][propName] = fieldType;
         };
     }
-    exports.TimeField = TimeField;
     ;
     function BlobField(fieldType) {
         return function (target, propName) {
@@ -831,7 +847,6 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             target['$$fields'][propName] = fieldType;
         };
     }
-    exports.BlobField = BlobField;
     ;
     function OneToMany(record, prop, tableName, fieldName) {
         return function (target, propName) {
@@ -839,7 +854,6 @@ define("pdm", ["require", "exports", "dbClient"], function (require, exports, db
             target['$$fields'][propName] = { details: record, table: tableName, field: fieldName, prop: prop, dataType: '1toM' };
         };
     }
-    exports.OneToMany = OneToMany;
     ;
 });
 /*!-----------------------------------------------------------
