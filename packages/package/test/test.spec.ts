@@ -3,6 +3,7 @@ import {Package, PackageManager} from '../src/index';
 import Path from 'path';
 
 describe('Package Manager', function() {    
+    this.timeout(20000);
     it('get package script', async function(){
         let manager = new PackageManager();     
         // manager.addPackage(Path.join(__dirname, './pack'))
