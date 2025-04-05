@@ -1,9 +1,9 @@
 {
     "name": "@ijstech/node",
     "description": "Secure Node",
-    "version": "0.1.97",
+    "version": "0.1.98",
     "engines": {
-        "node": ">=22.0.0"
+        "node": ">=18.0.0"
     },
     "workspaces": [
         "packages/*"
