@@ -6,7 +6,7 @@
 import Koa from 'koa';
 import { VM } from '@ijstech/vm';
 import { IStepConfig, ITaskOptions, IPackageScript, BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions, IPluginOptions } from '@ijstech/types';
-export { ResponseType } from '@ijstech/types';
+export { ResponseType, IRequiredPlugins } from '@ijstech/types';
 export { BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions };
 export { LocalTaskManager } from './localTaskManager';
 export declare function step(config?: IStepConfig): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
@@ -324,12 +324,6 @@ export interface IRouterResponseData {
 }
 export declare function RouterResponse(ctx: Koa.Context | IRouterResponseData): IRouterResponse;
 export type QueueName = string;
-export interface IRequiredPlugins {
-    queue?: QueueName[];
-    cache?: boolean;
-    db?: boolean;
-    fetch?: boolean;
-}
 export declare abstract class IPlugin {
     init?(session: ISession, params?: any): Promise<void>;
 }

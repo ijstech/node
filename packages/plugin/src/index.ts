@@ -9,7 +9,7 @@ import Path from 'path';
 import Koa from 'koa';
 import {VM} from '@ijstech/vm';
 import {ITaskManager, IStepConfig, ITaskOptions, IPackageScript, BigNumber, IRouterRequest, IRouterResponse, IWorker, IWorkerPluginOptions, IRouterPluginOptions, ResponseType, IPlugins, IPluginOptions} from '@ijstech/types';
-export {ResponseType} from '@ijstech/types';
+export {ResponseType, IRequiredPlugins} from '@ijstech/types';
 export {BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions};
 import {PluginCompiler, PluginScript} from '@ijstech/tsc';
 export {LocalTaskManager} from './localTaskManager';
@@ -543,12 +543,12 @@ export function RouterResponse(ctx: Koa.Context | IRouterResponseData): IRouterR
     }
 };
 export type QueueName = string;
-export interface IRequiredPlugins{
-    queue?: QueueName[];
-    cache?: boolean;
-    db?: boolean;
-    fetch?: boolean;
-};
+// export interface IRequiredPlugins{
+//     queue?: QueueName[];
+//     cache?: boolean;
+//     db?: boolean;
+//     fetch?: boolean;
+// };
 export declare abstract class IPlugin {    
     init?(session: ISession, params?: any):Promise<void>;
 };

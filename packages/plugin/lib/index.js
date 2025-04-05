@@ -277,7 +277,6 @@ function RouterResponse(ctx) {
 ;
 ;
 ;
-;
 function getTaskManagerPlugin(taskManager) {
     let plugin = {
         completeStep: async function (taskId, stepName) {
