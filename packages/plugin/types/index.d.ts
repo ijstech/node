@@ -5,9 +5,12 @@
 *-----------------------------------------------------------*/
 import Koa from 'koa';
 import { VM } from '@ijstech/vm';
-import { IPackageScript, BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions, IPluginOptions } from '@ijstech/types';
+import { IStepConfig, ITaskOptions, IPackageScript, BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions, IPluginOptions } from '@ijstech/types';
 export { ResponseType } from '@ijstech/types';
 export { BigNumber, IRouterRequest, IRouterResponse, IWorkerPluginOptions, IRouterPluginOptions };
+export { LocalTaskManager } from './localTaskManager';
+export declare function step(config?: IStepConfig): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
+export declare function task(options?: ITaskOptions): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
 export declare namespace Types {
     interface IWalletAccount {
         address: string;
@@ -276,7 +279,7 @@ export declare namespace Types {
 }
 export declare function resolveFilePath(rootPaths: string[], filePath: string, allowsOutsideRootPath?: boolean): string;
 export declare function getPackageScript(packName: string, pack?: IPackageScript): Promise<string>;
-export declare type IPluginScript = any;
+export type IPluginScript = any;
 export declare function loadModule(script: string, name?: string): IPluginScript;
 export interface ICookie {
     [name: string]: {
@@ -320,7 +323,7 @@ export interface IRouterResponseData {
     header?: IHeader;
 }
 export declare function RouterResponse(ctx: Koa.Context | IRouterResponseData): IRouterResponse;
-export declare type QueueName = string;
+export type QueueName = string;
 export interface IRequiredPlugins {
     queue?: QueueName[];
     cache?: boolean;
@@ -331,6 +334,7 @@ export declare abstract class IPlugin {
     init?(session: ISession, params?: any): Promise<void>;
 }
 export interface ISession {
+    taskId?: string;
     params?: any;
     plugins: Types.IPlugins;
 }
@@ -376,7 +380,7 @@ declare class Plugin {
     loadDependenceModule(name: string): Promise<void>;
     createModule(): Promise<any>;
     init(params?: any): Promise<void>;
-    getSession(): Promise<ISession>;
+    getSession(taskId?: string): Promise<ISession>;
 }
 export declare class Router extends Plugin {
     protected plugin: IRouterPlugin;
@@ -391,5 +395,5 @@ export declare class Worker extends Plugin {
     constructor(options: IWorkerPluginOptions);
     createVM(): Promise<WorkerPluginVM>;
     message(channel: string, msg: string): Promise<void>;
-    process(data?: any): Promise<any>;
+    process(data?: any, taskId?: string): Promise<any>;
 }

@@ -1,5 +1,17 @@
 import {BigNumber} from 'bignumber.js';
 
+export interface ITaskOptions {
+    name: string;
+}
+export interface IStepConfig {
+    retryOnFailure?: boolean;
+    delay?: number;
+    maxAttempts?: number;
+    delayMultiplier?: number;
+}
+export declare function step(config?: IStepConfig): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
+export declare function task(options?: ITaskOptions): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
+
 export declare namespace Types{
     export interface IWalletTransactionOptions {
         from?: string;
@@ -255,6 +267,7 @@ export declare namespace Types{
 export interface ISession{
     params?: any;
     plugins: Types.IPlugins;
+    taskId?: string;
 }
 export declare abstract class IPlugin {
     init?(session: ISession, params?: any): Promise<void>;

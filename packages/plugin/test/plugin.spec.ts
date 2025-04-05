@@ -1,34 +1,25 @@
-import {Router, Worker, RouterRequest, RouterResponse} from '../src';
+import {Router, Worker, RouterRequest, RouterResponse, LocalTaskManager} from '../src';
 import assert from "assert";
 import {PackageManager, Package} from '@ijstech/package';
 import Path from 'path';
+// const taskManager = new LocalTaskManager();
 
 describe('Plugins', function() {    
     this.timeout(60000);
-    it('Worker Plugin', async function(){              
+    it('Agent Plugin', async function(){              
         let manager = new PackageManager();        
-        manager.packageImporter = async (packName: string): Promise<Package>=>{
-            if (packName == '@ijs/pack1')
-                return manager.addPackage(Path.join(__dirname, 'packs/pack1'))
-        };        
-        let workerPack = await manager.addPackage(Path.join(__dirname, 'packs/worker'))        
-        let script = await manager.getScript(workerPack.name);                
+         
+        let workerPack = await manager.addPackage(Path.join(__dirname, 'packs/agent'))   
+        let script = await manager.getScript(workerPack.name); 
         let worker = new Worker({
-            script: script.script,
-            dependencies: script.dependencies
+            plugins: {
+                fetch: { methods: [ 'GET' ] }
+            },
+            // taskManager: taskManager,
+            script: script.script
         });        
-        let result = await worker.process({v1:1,v2:2});                
-        assert.deepStrictEqual(result, {test: 'pack1 test result', value:3});        
-        result = await worker.process({v1:1,v2:3});        
-        assert.deepStrictEqual(result, {test: 'pack1 test result', value:4});        
-
-        script = await manager.getScript(workerPack.name, 'test.ts');
-        worker = new Worker({
-            script: script.script,
-            dependencies: script.dependencies
-        });
-        result = await worker.process();
-        assert.deepStrictEqual(result, {test: 'test1'});        
+        let result = await worker.process({v1:1,v2:2}, 'wf2');
+        assert.deepStrictEqual(result, {step1: true, step2: true, step3: true});
     });
     it('Router Plugin', async function(){              
         let manager = new PackageManager();       
@@ -45,5 +36,5 @@ describe('Plugins', function() {
         let request = RouterRequest({});
         await router.route(null, request, response);
         assert.deepStrictEqual(responseData, {statusCode: 200, contentType: 'application/json', body: 'hello' })        
-    })
+    });
 })

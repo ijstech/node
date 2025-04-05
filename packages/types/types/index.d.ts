@@ -73,6 +73,29 @@ export interface IWorker {
     data: any;
     vm: VM;
 }
+export interface ITask {
+    id: string;
+    name: string;
+    status: 'pending' | 'running' | 'completed';
+    lastCompletedStep: string;
+    completedSteps: string[];
+}
+export interface IStepConfig {
+    retryOnFailure?: boolean;
+    delay?: number;
+    maxAttempts?: number;
+    delayMultiplier?: number;
+}
+export interface ITaskOptions {
+    name: string;
+}
+export interface ITaskManager{
+    startTask(options: ITaskOptions|string, id?: string): Promise<ITask>;
+    resumeTask(taskId: string): Promise<void>;
+    completeStep(taskId: string, stepName: string): Promise<void>;
+    completeTask(taskId: string): Promise<void>;
+    loadTask(taskId: string): Promise<ITask | undefined>;
+}
 export interface IPluginOptions {
     id?: string;
     domain?: string;
@@ -86,6 +109,7 @@ export interface IPluginOptions {
     params?: any;
     dependencies?: IDependencies;
     plugins?: IRequiredPlugins;
+    taskManager?: ITaskManager;
 }
 // export interface IPluginOptions {
 //     memoryLimit?: number;

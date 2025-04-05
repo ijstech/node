@@ -8,13 +8,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Worker = exports.Router = exports.RouterResponse = exports.RouterRequest = exports.loadModule = exports.getPackageScript = exports.resolveFilePath = exports.BigNumber = void 0;
+exports.Worker = exports.Router = exports.LocalTaskManager = exports.BigNumber = void 0;
+exports.resolveFilePath = resolveFilePath;
+exports.getPackageScript = getPackageScript;
+exports.loadModule = loadModule;
+exports.RouterRequest = RouterRequest;
+exports.RouterResponse = RouterResponse;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const vm_1 = require("@ijstech/vm");
 const types_1 = require("@ijstech/types");
 Object.defineProperty(exports, "BigNumber", { enumerable: true, get: function () { return types_1.BigNumber; } });
 const tsc_1 = require("@ijstech/tsc");
+var localTaskManager_1 = require("./localTaskManager");
+Object.defineProperty(exports, "LocalTaskManager", { enumerable: true, get: function () { return localTaskManager_1.LocalTaskManager; } });
 ;
 const RootPath = process.cwd();
 let Modules = {};
@@ -57,7 +64,6 @@ function resolveFilePath(rootPaths, filePath, allowsOutsideRootPath) {
         return result;
     return result.startsWith(rootPath) ? result : undefined;
 }
-exports.resolveFilePath = resolveFilePath;
 ;
 function getScript(filePath, modulePath) {
     return new Promise(async (resolve) => {
@@ -149,7 +155,6 @@ async function getPackageScript(packName, pack) {
     }
     ;
 }
-exports.getPackageScript = getPackageScript;
 ;
 function loadModule(script, name) {
     global.define.amd = true;
@@ -167,7 +172,6 @@ function loadModule(script, name) {
     ;
     return Modules[name || 'index'] || LastDefineModule;
 }
-exports.loadModule = loadModule;
 ;
 function cloneObject(value) {
     if (value)
@@ -219,7 +223,6 @@ function RouterRequest(ctx) {
         };
     }
 }
-exports.RouterRequest = RouterRequest;
 ;
 function isContext(object) {
     return typeof (object.cookies?.set) == 'function';
@@ -269,12 +272,33 @@ function RouterResponse(ctx) {
         };
     }
 }
-exports.RouterResponse = RouterResponse;
 ;
 ;
 ;
 ;
 ;
+;
+function getTaskManagerPlugin(taskManager) {
+    let plugin = {
+        completeStep: async function (taskId, stepName) {
+            return await taskManager.completeStep(taskId, stepName);
+        },
+        completeTask: async function (taskId) {
+            return await taskManager.completeTask(taskId);
+        },
+        loadTask: async function (taskId) {
+            let result = await taskManager.loadTask(taskId);
+            return JSON.stringify(result);
+        },
+        resumeTask: async function (taskId) {
+            return await taskManager.resumeTask(taskId);
+        },
+        startTask: async function (options, id) {
+            return await taskManager.startTask(JSON.stringify(options), id);
+        }
+    };
+    return plugin;
+}
 ;
 class PluginVM {
     constructor(options) {
@@ -291,6 +315,133 @@ class PluginVM {
     }
     ;
     async setup() {
+        if (this.options.taskManager) {
+            this.vm.injectGlobalObject('$$taskManager', getTaskManagerPlugin(this.options.taskManager), '');
+        }
+        this.vm.injectGlobalScript(`
+define("@ijstech/plugin", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.task = exports.step = void 0;
+
+//copy from lib/decorators.js ==>
+exports.step = step;
+exports.task = task;
+function step(config) {
+    return function (target, propertyKey, descriptor) {
+        const originalMethod = descriptor?.value;
+        let stepName = propertyKey.toString();
+        descriptor.value = async function (...args) {
+            let taskManager = global['$$taskManager'];
+            const taskId = this.taskId;
+            if (taskManager) {
+                if (!taskId) {
+                    throw new Error('Task ID is not set.');
+                }
+                ;
+                if (taskManager) {
+                    let taskdata = await taskManager.loadTask(taskId);
+                    const task = JSON.parse(taskdata);
+                    if (task?.completedSteps.includes(stepName)) {
+                        return;
+                    }
+                    ;
+                }
+                ;
+            }
+            ;
+            let attempt = 0;
+            let delay = config?.delay || 1000;
+            let retryOnFailure;
+            let delayMultiplier = config?.delayMultiplier || 2;
+            if (config?.retryOnFailure !== false && config?.maxAttempts)
+                retryOnFailure = true;
+            else
+                retryOnFailure = config?.retryOnFailure || false;
+            let maxAttempts = config?.maxAttempts || 3;
+            while (attempt < maxAttempts) {
+                try {
+                    let result = await originalMethod.apply(this, args);
+                    if (taskManager)
+                        await taskManager.completeStep(taskId, stepName);
+                    return result;
+                }
+                catch (error) {
+                    if (!retryOnFailure) {
+                        throw error;
+                    }
+                    ;
+                    attempt++;
+                    if (attempt < maxAttempts) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= delayMultiplier;
+                    }
+                    else {
+                        throw error;
+                    }
+                    ;
+                }
+                ;
+            }
+            ;
+        };
+        return descriptor;
+    };
+}
+;
+function task(options) {
+    return function (target, propertyKey, descriptor) {
+        const originalMethod = descriptor.value;
+        descriptor.value = async function (taskId) {
+            let taskManager = global.$$taskManager;
+            if (taskManager) {
+                let task;
+                if (taskId) {
+                    let data = await taskManager.loadTask(taskId);
+                    if (typeof data == 'string')
+                        task = JSON.parse(data);
+                    else
+                        task = data;
+                }
+                if (!task) {
+                    const data = await taskManager.startTask(options, taskId);
+                    if (typeof data == 'string')
+                        task = JSON.parse(data);
+                    else
+                        task = data;
+                    taskId = task.id;
+                    this.taskId = task.id;
+                }
+                else {
+                    this.taskId = task.id;
+                    await taskManager.resumeTask(task.id);
+                }
+                ;
+                try {
+                    let result = await originalMethod.apply(this, [taskId]);
+                    await taskManager.completeTask(this.taskId);
+                    return result;
+                }
+                catch (error) {
+                    throw error;
+                }
+            }
+            else {
+                try {
+                    let result = await originalMethod.apply(this, [taskId]);
+                    return result;
+                }
+                catch (error) {
+                    throw error;
+                }
+            }
+        };
+        return descriptor;
+    };
+};
+//<<===   
+    
+});`);
         await this.loadDependencies();
         this.vm.injectGlobalScript(this.options.script);
         return;
@@ -409,7 +560,7 @@ class RouterPluginVM extends PluginVM {
 class WorkerPluginVM extends PluginVM {
     async setup() {
         await super.setup();
-        this.vm.injectGlobalScript(`
+        this.vm.injectGlobalScript(`            
             let module = global._$$modules['index'] || global._$$currModule
             let fn = module.default['worker'] || module.default;
             global.$$worker = new fn();
@@ -432,7 +583,7 @@ class WorkerPluginVM extends PluginVM {
                         let data = global.$$data;
                         if (data)
                             data = JSON.parse(data);
-                        let result = await global.$$worker.process(global.$$session, data);                        
+                        let result = await global.$$worker.process(global.$$session, data);
                         return result;
                     }
                 }
@@ -477,6 +628,7 @@ class WorkerPluginVM extends PluginVM {
             return result;
         }
         catch (err) {
+            console.dir('WorkerPluginVM exception');
             console.dir(err);
         }
         ;
@@ -514,7 +666,7 @@ class Plugin {
                 if (this.options.scriptPath.endsWith('.js'))
                     this.options.script = await getScript(this.options.scriptPath, this.options.modulePath);
                 else {
-                    let result = await tsc_1.PluginScript(this.options);
+                    let result = await (0, tsc_1.PluginScript)(this.options);
                     this.options.dependencies = this.options.dependencies || {};
                     for (let n in result.dependencies) {
                         if (result.dependencies[n].script)
@@ -611,10 +763,12 @@ class Plugin {
         }
     }
     ;
-    async getSession() {
+    async getSession(taskId) {
         if (this._session)
             return this._session;
         let result = Session(this.options);
+        if (taskId)
+            result.taskId = taskId;
         let script = '';
         this._session = result;
         if (this.options.plugins) {
@@ -705,12 +859,13 @@ class Worker extends Plugin {
             console.dir(err);
         }
     }
-    async process(data) {
+    async process(data, taskId) {
         let result;
         this.options.processing = true;
         try {
             await this.createPlugin();
-            result = await this.plugin.process(await this.getSession(), data);
+            let session = await this.getSession(taskId);
+            result = await this.plugin.process(session, data);
         }
         catch (err) {
             console.dir(err);

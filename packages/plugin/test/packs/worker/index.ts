@@ -1,17 +1,19 @@
-import {IWorkerPlugin, ISession} from '@ijstech/plugin';
-import {BigNumber} from 'bignumber.js';
-import test from '@ijs/pack1';
+import {IWorkerPlugin, ISession, task, step} from '@ijstech/plugin';
 
 export default class Worker implements IWorkerPlugin {
-    async process(session: ISession, data: any): Promise<any> {        
-        try{
-            return {
-                test: test(),
-                value: new BigNumber(data.v1).plus(data.v2).toNumber()
-            }
-        }
-        catch(err){
-            console.dir(err)
-        }
+    @task()
+    async process(session: ISession, data: any): Promise<any> {    
+        let retryCount = await this.step1();
+        return {retryCount: retryCount};
     };
+    @step({maxAttempts: 3})    
+    async step1(){
+        let self = this as any;
+        if (!self.retryCount){
+            self.retryCount = 1;
+            throw new Error('error')
+        };
+        self.retryCount ++;
+        return self.retryCount;
+    }
 };
