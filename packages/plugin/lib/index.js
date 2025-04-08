@@ -685,6 +685,12 @@ class Plugin {
                 if (v == 'db') {
                     let m = require('@ijstech/pdm');
                     await m.loadPlugin(this, this.options.plugins.db);
+                    if (this.vm && this.options.plugins.db.mysql) {
+                        m = require('@ijstech/db');
+                        let plugin = await m.loadPlugin(this, { default: this.options.plugins.db }, this.plugin.vm);
+                        plugin.getConnection('default');
+                    }
+                    ;
                     break;
                 }
                 ;
