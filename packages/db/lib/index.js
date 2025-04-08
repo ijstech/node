@@ -91,4 +91,7 @@ function loadPlugin(plugin, options, vm) {
     };
 }
 ;
-exports.default = loadPlugin;
+function getPlugin() {
+    return global.$$plugin_db;
+}
+exports.default = getPlugin();

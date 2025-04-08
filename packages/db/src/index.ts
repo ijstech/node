@@ -73,7 +73,7 @@ function getPluginClient(vm: VM, db: string, client: Types.IDBClient): string{
 }
 export function loadPlugin(plugin: Worker, options: Types.IDBRequiredPluginOptions, vm?: VM): Types.IDBPlugin{
     return {         
-        getConnection(name?: string): Types.IDBClient | string{            
+        getConnection(name?: string): Types.IDBClient | string{
             let opt: any;
             if (name)
                 opt = options[name]
@@ -89,4 +89,8 @@ export function loadPlugin(plugin: Worker, options: Types.IDBRequiredPluginOptio
         }
     };
 };
-export default loadPlugin;
+function getPlugin(): Types.IDBClient{
+    return global.$$plugin_db;
+}
+export default getPlugin();
+// export default loadPlugin;

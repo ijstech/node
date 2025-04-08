@@ -10,4 +10,5 @@ export interface IClient extends Types.IDBClient {
 }
 export declare function getClient(options?: Types.IDbConnectionOptions): IClient;
 export declare function loadPlugin(plugin: Worker, options: Types.IDBRequiredPluginOptions, vm?: VM): Types.IDBPlugin;
-export default loadPlugin;
+declare const _default: Types.IDBClient;
+export default _default;
