@@ -97,7 +97,7 @@ class Contract {
             this._events = {};
             let events = this._abi.filter(e => e.type == "event");
             for (let i = 0; i < events.length; i++) {
-                let topic = this.wallet.utils.sha3(events[i].name + this._getInputList(events[i]));
+                let topic = this.wallet.utils.sha3(events[i].name + this._getInputList(events[i].inputs));
                 this._events[topic] = events[i];
             }
         }
