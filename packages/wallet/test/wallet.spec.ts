@@ -141,7 +141,7 @@ describe('Wallet', function () {
         });
         transactionHash = result.transactionHash;
         assert.strictEqual(typeof (result.transactionHash), 'string');
-        assert.strictEqual(result.blockNumber, 2);
+        assert.strictEqual(result.blockNumber, '2');
     });
     it('Get Transaction', async function () {
         let result: Types.IWalletTransaction = await runWorker('getTransaction.ts', {

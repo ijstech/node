@@ -31,6 +31,9 @@ function convertDataType(value: any): any{
             return result;
         }
     }
+    else if (typeof (value) == 'bigint') {
+        return value.toString();
+    }
     else if (typeof(value) == 'object'){
         let result = {};
         for (let n in value)
